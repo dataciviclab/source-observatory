@@ -25,6 +25,8 @@ class ProbeResult:
     http_code: str
     note: str | None = None
     ssl_fallback_used: bool = False
+    final_url: str | None = None
+    content_type: str | None = None
 
 
 def load_registry(path: Path) -> dict[str, dict[str, Any]]:
@@ -62,6 +64,8 @@ def probe_url(base_url: str) -> ProbeResult:
             return ProbeResult(
                 status=classify_response(response.status_code),
                 http_code=str(response.status_code),
+                final_url=str(response.url),
+                content_type=response.headers.get("content-type"),
             )
     except requests.exceptions.SSLError as exc:
         try:
@@ -82,6 +86,8 @@ def probe_url(base_url: str) -> ProbeResult:
                         http_code=str(response.status_code),
                         note=note,
                         ssl_fallback_used=True,
+                        final_url=str(response.url),
+                        content_type=response.headers.get("content-type"),
                     )
         except requests.exceptions.Timeout:
             return ProbeResult(
@@ -168,6 +174,21 @@ def build_status_report(
     ]
 
     notes: list[str] = []
+
+    def format_probe_details(result: ProbeResult, fallback_note: str | None = None) -> str:
+        details: list[str] = []
+        if result.http_code != "-":
+            details.append(f"HTTP {result.http_code}")
+        if result.content_type:
+            details.append(f"content-type: {result.content_type}")
+        if result.final_url:
+            details.append(f"url finale: {result.final_url}")
+        if result.note:
+            details.append(result.note)
+        elif fallback_note:
+            details.append(fallback_note)
+        return " | ".join(details) if details else "Nessuna nota"
+
     for portal, meta in registry.items():
         result = results[portal]
         datasets = meta.get("datasets_in_use") or []
@@ -179,10 +200,11 @@ def build_status_report(
             f"| {portal} | {source_kind} | {protocol} | {mode} | {result.status} | {result.http_code} | {datasets_str} |"
         )
         if result.status in {"YELLOW", "RED"}:
-            details = result.note or (f"HTTP {result.http_code}" if result.http_code != "-" else None) or meta.get("note") or "Nessuna nota"
+            details = format_probe_details(result, meta.get("note"))
             notes.append(f"- `{portal}`: {details}")
         elif result.ssl_fallback_used:
-            notes.append(f"- `{portal}`: {result.note}")
+            details = format_probe_details(result, meta.get("note"))
+            notes.append(f"- `{portal}`: {details}")
 
     lines.extend(["", "## Note", ""])
     if notes:
