@@ -1,7 +1,7 @@
 ---
 name: source-check
 description: Workflow pubblico/light del Source Observatory per verificare se una fonte pubblica regge davvero come pista del Lab. Usare quando serve distinguere una fonte viva da una fonte che merita davvero un passo successivo.
-license: TBD public repo license
+license: MIT
 metadata:
   version: "0.1"
   owner: "DataCivicLab"

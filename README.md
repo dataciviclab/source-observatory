@@ -2,6 +2,8 @@
 
 `source-observatory` è un piccolo intelligence layer per fonti pubbliche.
 
+Fa parte dell'ecosistema [DataCivicLab](https://github.com/dataciviclab).
+
 La sua v0 ha un perimetro volutamente stretto:
 
 - verificare se una fonte è viva
@@ -86,6 +88,12 @@ File canonici:
   - workflow operativi posseduti dal repo
 
 ## Comandi canonici
+
+Eseguire i comandi dalla root del workspace:
+
+```text
+dataciviclab-workspace/
+```
 
 ```powershell
 python source-observatory/scripts/radar_check.py
