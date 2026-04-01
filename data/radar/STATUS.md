@@ -5,9 +5,9 @@ Ultimo run: 2026-04-01
 ## Sommario
 
 - Fonti controllate: 3
-- GREEN: 1
+- GREEN: 2
 - YELLOW: 1
-- RED: 1
+- RED: 0
 
 ## Tipi sorgente
 
@@ -31,11 +31,10 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | RED | 500 | popolazione-istat |
+| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | popolazione-istat |
 | anac | catalog | ckan | catalog-watch | YELLOW | 403 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | pens_2017, pens_2024 |
 
 ## Note
 
-- `istat_sdmx`: HTTP 500
-- `anac`: HTTP 403
+- `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | Catalogo CKAN piccolo ma pulito, adatto a segnali leggibili.
