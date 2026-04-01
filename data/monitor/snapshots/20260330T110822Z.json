@@ -1,0 +1,367 @@
+{
+  "generated_at": "2026-03-30T11:08:22.385068+00:00",
+  "generated_at_utc": "2026-03-30 11:08:22Z",
+  "source_count": 7,
+  "sources": [
+    {
+      "id": "istat-popolazione-residente",
+      "name": "ISTAT - Popolazione residente al 1° gennaio",
+      "adapter_type": "sdmx",
+      "status": "watchlist",
+      "di_candidate": null,
+      "tags": [
+        "istat",
+        "sdmx",
+        "popolazione",
+        "support-dataset"
+      ],
+      "notes": "Support dataset strategico del Lab. Il monitor controlla il dataflow SDMX, non una pagina HTML o un file demo.\n",
+      "resource_count": 0,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 0,
+      "removed_count": 0,
+      "error": null,
+      "resources": []
+    },
+    {
+      "id": "ispra-consumo-suolo",
+      "name": "ISPRA - Consumo di suolo (xlsx annuale)",
+      "adapter_type": "html",
+      "status": "active",
+      "di_candidate": "ispra-consumo-suolo",
+      "tags": [
+        "ispra",
+        "suolo",
+        "ambiente"
+      ],
+      "notes": "Fonte attiva coerente con il candidate DI. L'URL del file cambia a ogni edizione.\n",
+      "resource_count": 0,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 0,
+      "removed_count": 0,
+      "error": null,
+      "resources": []
+    },
+    {
+      "id": "civile-flussi",
+      "name": "Ministero Giustizia - Civile Flussi (xlsx)",
+      "adapter_type": "single_url",
+      "status": "active",
+      "di_candidate": "civile-flussi",
+      "tags": [
+        "giustizia",
+        "civile"
+      ],
+      "notes": "Monitoraggio diretto del file noto tramite ETag e Last-Modified. Aggiornare l'URL quando il Ministero pubblica una nuova edizione.\n",
+      "resource_count": 1,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 1,
+      "removed_count": 0,
+      "error": null,
+      "resources": [
+        {
+          "id": "8f342d61b59a2c445ad72764657d6738262ddbd5",
+          "name": "CivileFlussi20142024.xlsx",
+          "format": "XLSX",
+          "url": "https://datiestatistiche.giustizia.it/cmsresources/cms/documents/CivileFlussi20142024.xlsx",
+          "last_modified": "Tue, 03 Jun 2025 13:45:57 GMT",
+          "created": null,
+          "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "etag": "W/\"6263342-1748958357873\"",
+          "content_length": "6263342",
+          "signature": "a55f63dfa85adc7fc7a335efce9910d5f8ea295f",
+          "status": "unchanged",
+          "changes": []
+        }
+      ]
+    },
+    {
+      "id": "opencoesione-pagamenti",
+      "name": "OpenCoesione - Pagamenti UE 2014-2020 (zip)",
+      "adapter_type": "html",
+      "status": "active",
+      "di_candidate": "opencoesione-pagamenti-ue-2014-2020",
+      "tags": [
+        "opencoesione",
+        "fondi-ue",
+        "coesione"
+      ],
+      "notes": "Monitorare solo il tracciato 2014-2020 coerente con il candidate DI. Evitare pattern piu' larghi che producono rumore.\n",
+      "resource_count": 2,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 2,
+      "removed_count": 0,
+      "error": null,
+      "resources": [
+        {
+          "id": "11ccb3c0afd371e8e5599c0ed83cd19f48592b7c",
+          "name": "Scarica i dati (zip/csv 172,2 MB)",
+          "format": "ZIP",
+          "url": "https://opencoesione.gov.it/it/opendata/progetti_esteso_2014-2020.zip",
+          "last_modified": null,
+          "created": null,
+          "mimetype": null,
+          "signature": "eda99b1dcdef19b33279a60349e3846643ab859e",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "3036ef645bf260a93af9b76437557a06dd918ccb",
+          "name": "Scarica i dati (parquet 155,0 MB)",
+          "format": "PARQUET",
+          "url": "https://opencoesione.gov.it/it/opendata/progetti_esteso_2014-2020.parquet",
+          "last_modified": null,
+          "created": null,
+          "mimetype": null,
+          "signature": "e0a509d7a3bd2eecc69b50cd594b348b379fbdf2",
+          "status": "unchanged",
+          "changes": []
+        }
+      ]
+    },
+    {
+      "id": "terna-electricity-by-source",
+      "name": "Terna - Electricity by Source (xlsx per anno)",
+      "adapter_type": "html",
+      "status": "active",
+      "di_candidate": "terna-electricity-by-source",
+      "tags": [
+        "terna",
+        "energia",
+        "rinnovabili"
+      ],
+      "notes": "Fonte attiva con update attesi. Tenuta nel monitor per nuove annualita.\n",
+      "resource_count": 0,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 0,
+      "removed_count": 0,
+      "error": null,
+      "resources": []
+    },
+    {
+      "id": "mit-incidenti-ckan-res",
+      "name": "MIT - Incidenti stradali (CKAN resources)",
+      "adapter_type": "ckan",
+      "status": "active",
+      "di_candidate": "mit-incidentalita-mensile-2001-2018",
+      "tags": [
+        "mobilita",
+        "mit"
+      ],
+      "notes": "CKAN stabile. Anche se la serie sembra ferma, il package e' pulito e a basso rumore.\n",
+      "resource_count": 10,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 10,
+      "removed_count": 0,
+      "error": null,
+      "resources": [
+        {
+          "id": "121ad29a-1ec3-4f82-b93f-da65bed9e74e",
+          "name": "Incidenti, morti, feriti ed indicatori dell'incidentalità stradale per mese - Anni 2001-2018",
+          "format": "CSV",
+          "url": "https://dati.mit.gov.it/catalog/dataset/f3336ae0-3a6b-4a25-9013-7df0c3750916/resource/121ad29a-1ec3-4f82-b93f-da65bed9e74e/download/incidenti-morti-feriti-ed-indicatori-dellincidentalita-stradale-per-mese-anni-2001-2018.csv",
+          "last_modified": "2022-12-20T22:25:16.451855",
+          "created": "2015-11-18T13:23:25.555479",
+          "mimetype": "text/csv",
+          "signature": "b86858eac60bbe33a10b1207e5e6dd1710741313",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "bdbf3204-c6a9-40df-8149-90afaf888e5c",
+          "name": "Incidenti, morti, feriti ed indicatori dell'incidentalità stradale per mese - Anni 2001-2018",
+          "format": "XLSX",
+          "url": "https://dati.mit.gov.it/catalog/dataset/f3336ae0-3a6b-4a25-9013-7df0c3750916/resource/bdbf3204-c6a9-40df-8149-90afaf888e5c/download/incidenti-morti-feriti-ed-indicatori-dellincidentalita-stradale-per-mese-anni-2001-2018.xlsx",
+          "last_modified": "2022-12-20T22:25:43.071605",
+          "created": "2015-11-18T13:24:07.212713",
+          "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "signature": "4a5be20f8c84664ae07a131f2bfe0e31652f0738",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "130093e5-40f1-498f-82fd-8f36f6740566",
+          "name": "Incidenti per provincia e strada - Anni-2003-2017",
+          "format": "CSV",
+          "url": "https://dati.mit.gov.it/catalog/dataset/f3336ae0-3a6b-4a25-9013-7df0c3750916/resource/130093e5-40f1-498f-82fd-8f36f6740566/download/incidenti-per-provincia-e-strada-anni-2001-2017.csv",
+          "last_modified": "2022-12-20T22:26:09.706334",
+          "created": "2019-12-24T17:32:44.874277",
+          "mimetype": "text/csv",
+          "signature": "f57b57d52640e8e108ca24697cfb3d6cd0f2f693",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "a4547c5d-b913-4a3c-87d4-41a84e17086c",
+          "name": "Incidenti per provincia e strada - Anni-2003-2017",
+          "format": "XLS",
+          "url": "https://dati.mit.gov.it/catalog/dataset/f3336ae0-3a6b-4a25-9013-7df0c3750916/resource/a4547c5d-b913-4a3c-87d4-41a84e17086c/download/incidenti-per-provincia-e-strada-anni-2001-2017.xls",
+          "last_modified": "2022-12-20T22:26:35.702846",
+          "created": "2019-12-24T17:34:20.752128",
+          "mimetype": "application/vnd.ms-excel",
+          "signature": "192312feb8dcbcc3e1be81058fab7b532084282d",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "a9a8a469-9f5d-488b-b5e0-2e327330b4a6",
+          "name": "Incidenti mortali per provincia e strada - Anni-2003-2017",
+          "format": "CSV",
+          "url": "https://dati.mit.gov.it/catalog/dataset/f3336ae0-3a6b-4a25-9013-7df0c3750916/resource/a9a8a469-9f5d-488b-b5e0-2e327330b4a6/download/incidenti-mortali-per-provincia-e-strada-anni-2001-2017.csv",
+          "last_modified": "2022-12-20T22:27:03.731283",
+          "created": "2019-12-24T17:25:21.829995",
+          "mimetype": "text/csv",
+          "signature": "b814e83a30a8d939c80ec9ab89c4d5e67a638af3",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "2e1fdf6a-e9e3-426f-ae3e-38e257e22ccc",
+          "name": "Incidenti mortali per provincia e strada - Anni-2003-2017",
+          "format": "XLS",
+          "url": "https://dati.mit.gov.it/catalog/dataset/f3336ae0-3a6b-4a25-9013-7df0c3750916/resource/2e1fdf6a-e9e3-426f-ae3e-38e257e22ccc/download/incidenti-mortali-per-provincia-e-strada-anni-2001-2017.xls",
+          "last_modified": "2022-12-20T22:27:30.262196",
+          "created": "2019-12-24T17:21:43.376574",
+          "mimetype": "application/vnd.ms-excel",
+          "signature": "4a37f97156cce4b8b5ff1a83f96a3d0011865b47",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "8884b221-eea4-4b02-8a96-02d5f9814617",
+          "name": "Numero di morti per provincia e strada - Anni-2003-2017",
+          "format": "CSV",
+          "url": "https://dati.mit.gov.it/catalog/dataset/f3336ae0-3a6b-4a25-9013-7df0c3750916/resource/8884b221-eea4-4b02-8a96-02d5f9814617/download/numero-di-morti-per-provincia-e-strada-anni-2003-2017.csv",
+          "last_modified": "2022-12-20T22:27:59.529884",
+          "created": "2019-12-24T17:36:36.564937",
+          "mimetype": "text/csv",
+          "signature": "ffff02fc3012f909055cf30fc0c90d4693086f92",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "d8e079ec-6715-4c09-9069-0862787ede21",
+          "name": "Numero di morti per provincia e strada - Anni-2003-2017",
+          "format": "XLS",
+          "url": "https://dati.mit.gov.it/catalog/dataset/f3336ae0-3a6b-4a25-9013-7df0c3750916/resource/d8e079ec-6715-4c09-9069-0862787ede21/download/numero-di-morti-per-provincia-e-strada-anni-2003-2017.xls",
+          "last_modified": "2022-12-20T22:28:22.088184",
+          "created": "2019-12-24T17:37:36.599144",
+          "mimetype": "application/vnd.ms-excel",
+          "signature": "20826b1992daa5cd0e78cca5c13f29a1ec943f68",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "9adf3de7-0ca9-479c-8349-466a41d029dc",
+          "name": "Numero di feriti per provincia e strada - Anni-2003-2017",
+          "format": "CSV",
+          "url": "https://dati.mit.gov.it/catalog/dataset/f3336ae0-3a6b-4a25-9013-7df0c3750916/resource/9adf3de7-0ca9-479c-8349-466a41d029dc/download/numero-di-feriti-per-provincia-e-strada-anni-2001-2017.csv",
+          "last_modified": "2022-12-20T22:28:57.126487",
+          "created": "2019-12-24T17:39:04.038157",
+          "mimetype": "text/csv",
+          "signature": "4d36b23dc5174c4d6578070302901ac01cbde71f",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "ac8bf055-bfec-4ef3-bc78-7c87e3dfb1e6",
+          "name": "Numero di feriti per provincia e strada - Anni-2003-2017",
+          "format": "XLS",
+          "url": "https://dati.mit.gov.it/catalog/dataset/f3336ae0-3a6b-4a25-9013-7df0c3750916/resource/ac8bf055-bfec-4ef3-bc78-7c87e3dfb1e6/download/numero-di-feriti-per-provincia-e-strada-anni-2001-2017.xls",
+          "last_modified": "2022-12-20T22:29:26.949721",
+          "created": "2019-12-24T17:40:04.575557",
+          "mimetype": "application/vnd.ms-excel",
+          "signature": "0ed72378804f172731970d9b64fc8f8be2e3aaa4",
+          "status": "unchanged",
+          "changes": []
+        }
+      ]
+    },
+    {
+      "id": "mit-opere-incompiute-2020-ckan",
+      "name": "MIT - Opere incompiute 2020 (CKAN resources)",
+      "adapter_type": "ckan",
+      "status": "active",
+      "di_candidate": "mit-opere-incompiute-2020",
+      "tags": [
+        "infrastrutture",
+        "mit"
+      ],
+      "notes": "CKAN stabile e a basso rumore. Tenuto nel monitor come caso affidabile.\n",
+      "resource_count": 5,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 5,
+      "removed_count": 0,
+      "error": null,
+      "resources": [
+        {
+          "id": "2e22c2a2-d07e-4fb6-bd1e-3d7d853b631b",
+          "name": "Opere Incompiute al 31 dicembre 2020_MIMS e Regioni",
+          "format": "XLSX",
+          "url": "https://dati.mit.gov.it/catalog/dataset/64ea5931-39b2-47d6-9e37-41a9074dbf23/resource/2e22c2a2-d07e-4fb6-bd1e-3d7d853b631b/download/opere-incompiute-al-31-dicembre-2020mims-e-regioni.xlsx",
+          "last_modified": "2022-03-04T11:34:09.849650",
+          "created": "2021-07-13T09:49:45.345408",
+          "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "signature": "e0a6408f0dea6bd40fee0edb05283003d8912b2d",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "9c9fa07b-e673-447b-a79c-c2f54176bc5f",
+          "name": "Opere Incompiute al 31 dicembre 2020_LIGURIA",
+          "format": "XLSX",
+          "url": "https://dati.mit.gov.it/catalog/dataset/64ea5931-39b2-47d6-9e37-41a9074dbf23/resource/9c9fa07b-e673-447b-a79c-c2f54176bc5f/download/opere-incompiute-al-31-dicembre-2020liguria.xlsx",
+          "last_modified": "2022-03-04T11:34:50.782825",
+          "created": "2021-07-13T09:50:19.267262",
+          "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "signature": "6b10b16bead681b1a0fe9612a2125a8e4f9a4c90",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "f9457758-48be-455a-8234-8e7ab65ef05f",
+          "name": "Opere Incompiute al 31 dicembre 2020_LIGURIA",
+          "format": "CSV",
+          "url": "https://dati.mit.gov.it/catalog/dataset/64ea5931-39b2-47d6-9e37-41a9074dbf23/resource/f9457758-48be-455a-8234-8e7ab65ef05f/download/opere-incompiute-al-31-dicembre-2020liguria.csv",
+          "last_modified": "2022-03-04T11:35:29.961989",
+          "created": "2021-07-13T15:10:22.849587",
+          "mimetype": "text/csv",
+          "signature": "c1a8b0cbb2c1d5a610ef0504a2939ded328c2393",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "f1ee2095-17b9-4a36-9d37-a46cb58952f3",
+          "name": "Opere pubbliche incompiute al 31 Dicembre 2020 UMBRIA",
+          "format": "XLSX",
+          "url": "https://dati.mit.gov.it/catalog/dataset/64ea5931-39b2-47d6-9e37-41a9074dbf23/resource/f1ee2095-17b9-4a36-9d37-a46cb58952f3/download/umbria-2020graduatoria-pubblicata-il-14-07-2021.xlsx",
+          "last_modified": "2022-03-04T11:35:59.401711",
+          "created": "2021-07-30T10:25:37.419589",
+          "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "signature": "38f5ab9b71f26ef3e6d51cbb597b0d12b6b41f45",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "e0f8b469-8d77-4c64-abca-58a17b6da82f",
+          "name": "Opere Incompiute al 31 dicembre 2020_MIMS e Regioni",
+          "format": "CSV",
+          "url": "https://dati.mit.gov.it/catalog/dataset/64ea5931-39b2-47d6-9e37-41a9074dbf23/resource/e0f8b469-8d77-4c64-abca-58a17b6da82f/download/opere-incompiute-al-31-dicembre-2020mims-e-regioni.csv",
+          "last_modified": "2022-03-04T11:36:41.677277",
+          "created": "2021-08-25T15:21:33.591753",
+          "mimetype": "text/csv",
+          "signature": "3795db7517c6db4c3dd0e2a5e3c6d0f0fbd1a435",
+          "status": "unchanged",
+          "changes": []
+        }
+      ]
+    }
+  ]
+}

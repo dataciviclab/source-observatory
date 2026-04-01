@@ -1,0 +1,27 @@
+sources:
+
+  # Esempio minimo: tenere qui solo casi Tier 1.
+  # Se non c'e' un next step plausibile dopo un change, la fonte non deve stare nel monitor.
+
+  - id: civile-flussi
+    name: Ministero Giustizia - Civile Flussi (xlsx)
+    status: active
+    di_candidate: civile-flussi
+    adapter_type: single_url
+    url: https://datiestatistiche.giustizia.it/cmsresources/cms/documents/CivileFlussi20142024.xlsx
+    tags: [giustizia, civile]
+    notes: >
+      File diretto noto, con follow-up chiaro sul candidate DI se cambia.
+
+  - id: terna-electricity-by-source
+    name: Terna - Electricity by Source (xlsx per anno)
+    status: active
+    di_candidate: terna-electricity-by-source
+    adapter_type: html
+    url: https://dati.terna.it/
+    include_url_patterns:
+      - ElectricityBySource
+      - downloadcenter
+    tags: [terna, energia]
+    notes: >
+      Caso HTML ancora accettabile solo perche' l'update annuale ha valore operativo chiaro.

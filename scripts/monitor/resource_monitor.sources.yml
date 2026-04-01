@@ -1,0 +1,59 @@
+sources:
+
+  # -----------------------------------------------------------------------
+  # TIER 1 ONLY
+  # Tenere qui solo fonti con next step chiaro e difendibile:
+  # - candidate DI attivo
+  # - update attesi o cambi realmente rilevanti
+  # - follow-up plausibile se il segnale cambia
+  # -----------------------------------------------------------------------
+
+  - id: ispra-consumo-suolo
+    name: ISPRA - Consumo di suolo (xlsx annuale)
+    status: active
+    di_candidate: ispra-consumo-suolo
+    adapter_type: html
+    url: https://www.isprambiente.gov.it/it/attivita/suolo-e-territorio/suolo/il-consumo-di-suolo/
+    include_url_patterns:
+      - consumo_di_suolo
+      - estratto_dati
+    tags: [ispra, suolo, ambiente]
+    notes: >
+      Fonte attiva coerente con il candidate DI. L'URL del file cambia a ogni edizione.
+
+  - id: civile-flussi
+    name: Ministero Giustizia - Civile Flussi (xlsx)
+    status: active
+    di_candidate: civile-flussi
+    adapter_type: single_url
+    url: https://datiestatistiche.giustizia.it/cmsresources/cms/documents/CivileFlussi20142024.xlsx
+    tags: [giustizia, civile]
+    notes: >
+      Monitoraggio diretto del file noto tramite ETag e Last-Modified.
+      Aggiornare l'URL quando il Ministero pubblica una nuova edizione.
+
+  - id: opencoesione-pagamenti
+    name: OpenCoesione - Pagamenti UE 2014-2020 (zip)
+    status: active
+    di_candidate: opencoesione-pagamenti-ue-2014-2020
+    adapter_type: html
+    url: https://opencoesione.gov.it/it/opendata/
+    include_url_patterns:
+      - progetti_esteso_2014-2020
+    tags: [opencoesione, fondi-ue, coesione]
+    notes: >
+      Monitorare solo il tracciato 2014-2020 coerente con il candidate DI.
+      Evitare pattern piu' larghi che producono rumore.
+
+  - id: terna-electricity-by-source
+    name: Terna - Electricity by Source (xlsx per anno)
+    status: active
+    di_candidate: terna-electricity-by-source
+    adapter_type: html
+    url: https://dati.terna.it/
+    include_url_patterns:
+      - ElectricityBySource
+      - downloadcenter
+    tags: [terna, energia, rinnovabili]
+    notes: >
+      Fonte attiva con update attesi. Tenuta nel monitor per nuove annualita'.

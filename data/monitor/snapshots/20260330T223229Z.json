@@ -1,0 +1,126 @@
+{
+  "generated_at": "2026-03-30T22:32:29.165475+00:00",
+  "generated_at_utc": "2026-03-30 22:32:29Z",
+  "source_count": 4,
+  "sources": [
+    {
+      "id": "ispra-consumo-suolo",
+      "name": "ISPRA - Consumo di suolo (xlsx annuale)",
+      "adapter_type": "html",
+      "status": "active",
+      "di_candidate": "ispra-consumo-suolo",
+      "tags": [
+        "ispra",
+        "suolo",
+        "ambiente"
+      ],
+      "notes": "Fonte attiva coerente con il candidate DI. L'URL del file cambia a ogni edizione.\n",
+      "resource_count": 0,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 0,
+      "removed_count": 0,
+      "error": null,
+      "resources": []
+    },
+    {
+      "id": "civile-flussi",
+      "name": "Ministero Giustizia - Civile Flussi (xlsx)",
+      "adapter_type": "single_url",
+      "status": "active",
+      "di_candidate": "civile-flussi",
+      "tags": [
+        "giustizia",
+        "civile"
+      ],
+      "notes": "Monitoraggio diretto del file noto tramite ETag e Last-Modified. Aggiornare l'URL quando il Ministero pubblica una nuova edizione.\n",
+      "resource_count": 1,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 1,
+      "removed_count": 0,
+      "error": null,
+      "resources": [
+        {
+          "id": "8f342d61b59a2c445ad72764657d6738262ddbd5",
+          "name": "CivileFlussi20142024.xlsx",
+          "format": "XLSX",
+          "url": "https://datiestatistiche.giustizia.it/cmsresources/cms/documents/CivileFlussi20142024.xlsx",
+          "last_modified": "Tue, 03 Jun 2025 13:45:57 GMT",
+          "created": null,
+          "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "etag": "W/\"6263342-1748958357873\"",
+          "content_length": "6263342",
+          "signature": "a55f63dfa85adc7fc7a335efce9910d5f8ea295f",
+          "status": "unchanged",
+          "changes": []
+        }
+      ]
+    },
+    {
+      "id": "opencoesione-pagamenti",
+      "name": "OpenCoesione - Pagamenti UE 2014-2020 (zip)",
+      "adapter_type": "html",
+      "status": "active",
+      "di_candidate": "opencoesione-pagamenti-ue-2014-2020",
+      "tags": [
+        "opencoesione",
+        "fondi-ue",
+        "coesione"
+      ],
+      "notes": "Monitorare solo il tracciato 2014-2020 coerente con il candidate DI. Evitare pattern piu' larghi che producono rumore.\n",
+      "resource_count": 2,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 2,
+      "removed_count": 0,
+      "error": null,
+      "resources": [
+        {
+          "id": "11ccb3c0afd371e8e5599c0ed83cd19f48592b7c",
+          "name": "Scarica i dati (zip/csv 172,2 MB)",
+          "format": "ZIP",
+          "url": "https://opencoesione.gov.it/it/opendata/progetti_esteso_2014-2020.zip",
+          "last_modified": null,
+          "created": null,
+          "mimetype": null,
+          "signature": "eda99b1dcdef19b33279a60349e3846643ab859e",
+          "status": "unchanged",
+          "changes": []
+        },
+        {
+          "id": "3036ef645bf260a93af9b76437557a06dd918ccb",
+          "name": "Scarica i dati (parquet 155,0 MB)",
+          "format": "PARQUET",
+          "url": "https://opencoesione.gov.it/it/opendata/progetti_esteso_2014-2020.parquet",
+          "last_modified": null,
+          "created": null,
+          "mimetype": null,
+          "signature": "e0a509d7a3bd2eecc69b50cd594b348b379fbdf2",
+          "status": "unchanged",
+          "changes": []
+        }
+      ]
+    },
+    {
+      "id": "terna-electricity-by-source",
+      "name": "Terna - Electricity by Source (xlsx per anno)",
+      "adapter_type": "html",
+      "status": "active",
+      "di_candidate": "terna-electricity-by-source",
+      "tags": [
+        "terna",
+        "energia",
+        "rinnovabili"
+      ],
+      "notes": "Fonte attiva con update attesi. Tenuta nel monitor per nuove annualita'.\n",
+      "resource_count": 0,
+      "new_count": 0,
+      "changed_count": 0,
+      "unchanged_count": 0,
+      "removed_count": 0,
+      "error": null,
+      "resources": []
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "captured_at": "2026-03-30",
+  "sources_checked": 3,
+  "signals": [
+    {
+      "source": "istat_sdmx",
+      "protocol": "sdmx",
+      "signal_type": "[DATO MANCANTE]",
+      "result": "segnale parziale",
+      "detail": "Il conteggio dataflow restituito dal tool appare limitato rispetto alla baseline storica.",
+      "suggested_action": "verificare limite tool o endpoint"
+    },
+    {
+      "source": "anac",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "detail": "Conteggio package stabile rispetto alla baseline disponibile.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "inps",
+      "protocol": "ckan",
+      "signal_type": "inventory change",
+      "result": "rilevante",
+      "detail": "Il conteggio package osservato è molto superiore alla baseline registrata.",
+      "suggested_action": "follow-up umano / source-check mirato"
+    }
+  ]
+}
