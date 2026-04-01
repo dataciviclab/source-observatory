@@ -25,6 +25,13 @@ Output:
 
 - [STATUS.md](../data/radar/STATUS.md)
 
+Scheduling v0:
+
+- run giornaliero via GitHub Actions
+- `workflow_dispatch` disponibile per run manuali
+- il modello v0 e' `report-only`: aggiorna `STATUS.md` e `sources_registry.yaml`
+- nessuna issue automatica o alerting complesso in questa fase
+
 ## Catalog-watch
 
 Output correnti:
