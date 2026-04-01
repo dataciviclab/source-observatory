@@ -154,6 +154,11 @@ Usare questa tassonomia dei segnali:
 - `[DATO MANCANTE]`
   - non c'è abbastanza evidenza per classificare il segnale in modo affidabile
 
+Regola pratica v0:
+
+- per ogni fonte e per ogni run usare un solo segnale primario
+- `follow-up candidate` va trattato come raccomandazione di follow-up, non come tipo segnale concorrente
+
 ### Step 4 - Aggiorna il registry
 
 Per ogni fonte controllata, aggiornare il campo `last_probed` in `sources_registry.yaml`

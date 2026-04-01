@@ -146,6 +146,8 @@ Tassonomia raccomandata dei segnali:
 - `follow_up_candidate`
 - `missing_data`
 
+Per la v0 questa tassonomia va tenuta stretta: non va espansa facilmente e non dovrebbe mescolare segnale osservato e passo successivo.
+
 Questa tassonomia serve a evitare che il layer catalogo degeneri in:
 
 - scraping rumoroso

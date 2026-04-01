@@ -78,6 +78,12 @@ Usare:
 
 `measurement anomaly` può vivere come descrizione nel dettaglio, ma il tipo segnale da esporre nel report dovrebbe restare `missing_data`.
 
+`follow_up_candidate` non dovrebbe invece sostituire il segnale principale:
+
+- se il delta è debole o non confrontabile, resta `missing_data`
+- se il delta è difendibile, può diventare `inventory_change`
+- solo dopo, se serve davvero revisione umana, il report può suggerire un follow-up
+
 ## Regola editoriale
 
 Nel report:
