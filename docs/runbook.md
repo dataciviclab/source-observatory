@@ -45,6 +45,13 @@ Usa `catalog-watch` quando la domanda è:
 - c'è drift strutturale?
 - c'è un follow-up candidate che merita revisione umana?
 
+Modello v0:
+
+- `catalog-watch` resta `human-run`
+- nessuno scheduler dedicato in questa fase
+- il run va usato quando serve un check metodologicamente difendibile, non come polling continuo
+- gli output canonici restano `CATALOG_WATCH_REPORT.md` e `catalog_signals.json`
+
 ## Resource monitor
 
 ```powershell

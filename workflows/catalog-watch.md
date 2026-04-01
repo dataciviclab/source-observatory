@@ -1,9 +1,9 @@
 ---
 name: catalog-watch
 description: Workflow del Source Observatory per osservare fonti in modalità catalog-watch e produrre un report locale di intelligence senza aprire issue o avviare pipeline. Usare quando serve capire se un catalogo ha esposto segnali nuovi o strutturalmente rilevanti.
-license: TBD public repo license
+license: MIT
 metadata:
-  version: "1.2"
+  version: "1.3"
   owner: "DataCivicLab"
   tags: [source-observatory, catalog-watch, monitoring, scouting]
 ---
@@ -11,7 +11,7 @@ metadata:
 # Workflow: catalog-watch
 
 Workflow per l'osservazione periodica delle fonti in modalità `catalog-watch` nel Source Observatory.
-Versione: 1.2 - 2026-03-30
+Versione: 1.3 - 2026-04-01
 
 ---
 
@@ -20,6 +20,21 @@ Versione: 1.2 - 2026-03-30
 Controllare le fonti classificate come `catalog-watch` in `sources_registry.yaml` e produrre
 un report strutturato di intelligence. Non apre issue, non esegue source-check, non avvia
 pipeline. Risponde a: "questo catalogo ha esposto qualcosa di nuovo o strutturalmente rilevante?"
+
+## Modello di esecuzione v0
+
+Per la v0 pubblica, `catalog-watch` resta `human-run`.
+
+Questo significa:
+
+- nessun workflow schedulato dedicato
+- nessuna esecuzione automatica giornaliera o settimanale
+- nessuna apertura automatica di issue o source-check
+- output canonici confermati:
+  - `data/catalog/CATALOG_WATCH_REPORT.md`
+  - `data/catalog/catalog_signals.json`
+
+Il motivo è semplice: il valore del layer sta nella lettura metodologicamente difendibile dei segnali, non nella frequenza di esecuzione. Finché il confronto con la baseline non è abbastanza stabile su tutto l'universo v0, meglio pochi run umani chiari che automazione rumorosa.
 
 ## Definition of done
 
@@ -145,13 +160,13 @@ Per ogni fonte controllata, aggiornare il campo `last_probed` in `sources_regist
 con la data corrente.
 
 Non modificare `catalog_baseline` senza istruzione esplicita.
-La baseline va aggiornata solo quando Gabri decide che il nuovo stato osservato diventa il nuovo riferimento.
+La baseline va aggiornata solo quando il maintainer decide che il nuovo stato osservato diventa il nuovo riferimento.
 
 ---
 
 ## STOP POINT
 
-Fermarsi qui. Il report è pronto per revisione di Gabri.
+Fermarsi qui. Il report è pronto per revisione del maintainer.
 
 - Non aprire issue
 - Non eseguire source-check autonomamente
