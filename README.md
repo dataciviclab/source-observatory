@@ -61,10 +61,13 @@ Risponde a:
 - c'è drift strutturale?
 - c'è un segnale che merita follow-up umano?
 
+Per la v0, `catalog-watch` resta `human-run`.
+
 File canonici:
 
 - [CATALOG_WATCH_REPORT.md](data/catalog/CATALOG_WATCH_REPORT.md)
 - [catalog_signals.json](data/catalog/catalog_signals.json)
+- [catalog-watch.md](workflows/catalog-watch.md)
 
 ### `monitor`
 
