@@ -4,6 +4,7 @@ import argparse
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date
+import json
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +51,31 @@ def classify_response(status_code: int) -> str:
     return "RED"
 
 
+def validate_ckan_action_response(base_url: str, response: requests.Response) -> tuple[str, str | None]:
+    if "/api/3/action/" not in base_url:
+        return classify_response(response.status_code), None
+
+    status = classify_response(response.status_code)
+    if status != "GREEN":
+        return status, None
+
+    content_type = (response.headers.get("content-type") or "").lower()
+    if "json" not in content_type:
+        return "YELLOW", "CKAN API returned non-JSON content"
+
+    try:
+        payload = response.json()
+    except json.JSONDecodeError:
+        return "YELLOW", "CKAN API returned invalid JSON"
+    except ValueError:
+        return "YELLOW", "CKAN API returned unreadable payload"
+
+    if not isinstance(payload, dict) or "success" not in payload:
+        return "YELLOW", "CKAN API payload missing expected keys"
+
+    return status, None
+
+
 def probe_url(base_url: str) -> ProbeResult:
     headers = {"User-Agent": USER_AGENT}
     try:
@@ -61,9 +87,11 @@ def probe_url(base_url: str) -> ProbeResult:
             allow_redirects=True,
             stream=True,
         ) as response:
+            status, note = validate_ckan_action_response(base_url, response)
             return ProbeResult(
-                status=classify_response(response.status_code),
+                status=status,
                 http_code=str(response.status_code),
+                note=note,
                 final_url=str(response.url),
                 content_type=response.headers.get("content-type"),
             )
@@ -79,8 +107,10 @@ def probe_url(base_url: str) -> ProbeResult:
                     verify=False,
                     stream=True,
                 ) as response:
-                    status = classify_response(response.status_code)
+                    status, probe_note = validate_ckan_action_response(base_url, response)
                     note = f"SSL verify failed; fallback verify=False used ({exc.__class__.__name__})"
+                    if probe_note:
+                        note = f"{note} | {probe_note}"
                     return ProbeResult(
                         status=status,
                         http_code=str(response.status_code),
