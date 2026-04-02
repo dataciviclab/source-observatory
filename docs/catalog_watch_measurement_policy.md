@@ -14,6 +14,13 @@ Prima bisogna distinguere tra:
 
 ## Regola base
 
+Per la v0, la comparabilita' dovrebbe essere leggibile anche nella baseline:
+
+- `metric`
+- `value`
+- `method`
+- opzionale: `reliability`
+
 Un delta numerico è un **segnale reale di catalogo** solo se il confronto è metodologicamente comparabile.
 
 Se il confronto non è chiaramente comparabile, il delta va classificato come:
@@ -64,6 +71,12 @@ Lettura corretta:
 - probabile mismatch di metodo
 - probabile baseline incomparabile
 - non vera espansione editoriale finché non verificata
+
+Regola pratica:
+
+- se la baseline dichiara `method: package_list`, il confronto numerico va fatto con `package_list`
+- se la baseline dichiara `method: package_search`, il confronto numerico va fatto con `package_search`
+- se il metodo non e' dichiarato o non e' confrontabile, il delta va trattato come `[DATO MANCANTE]`
 
 ## Tassonomia operativa
 
