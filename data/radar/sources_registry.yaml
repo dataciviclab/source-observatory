@@ -8,6 +8,8 @@ istat_sdmx:
     captured_at: '2026-03-28'
     metric: dataflow_count
     value: 4787
+    method: dataflow_count
+    reliability: medium
     note: Conteggio totale dataflow esposto dal catalogo SDMX ISTAT.
   verdict: go
   note: Endpoint SDMX ricco e ad alto valore per scouting e source-check.
@@ -23,6 +25,8 @@ anac:
     captured_at: '2026-03-28'
     metric: package_count
     value: 69
+    method: package_list
+    reliability: low
     note: Conteggio totale package rilevati via CKAN Action API.
   verdict: go
   note: Catalogo CKAN piccolo ma pulito, adatto a segnali leggibili.
@@ -37,6 +41,8 @@ inps:
     captured_at: '2026-03-28'
     metric: package_count
     value: 544
+    method: package_list
+    reliability: medium
     note: Conteggio totale package rilevati via package_list.
   verdict: go
   note: Catalogo CKAN ricco e ad alto potenziale per candidati e source-check.
@@ -53,6 +59,8 @@ openbdap:
     captured_at: '2026-04-02'
     metric: package_count
     value: 3772
+    method: package_list
+    reliability: medium
     note: Conteggio totale package rilevati via package_list; package_search restituisce
       count inaffidabile.
   verdict: go

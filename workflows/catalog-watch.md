@@ -3,7 +3,7 @@ name: catalog-watch
 description: Workflow del Source Observatory per osservare fonti in modalità catalog-watch e produrre un report locale di intelligence senza aprire issue o avviare pipeline. Usare quando serve capire se un catalogo ha esposto segnali nuovi o strutturalmente rilevanti.
 license: MIT
 metadata:
-  version: "1.3"
+  version: "1.4"
   owner: "DataCivicLab"
   tags: [source-observatory, catalog-watch, monitoring, scouting]
 ---
@@ -11,7 +11,7 @@ metadata:
 # Workflow: catalog-watch
 
 Workflow per l'osservazione periodica delle fonti in modalità `catalog-watch` nel Source Observatory.
-Versione: 1.3 - 2026-04-01
+Versione: 1.4 - 2026-04-02
 
 ---
 
@@ -53,7 +53,7 @@ Il workflow è completo quando:
 File canonico: `source-observatory/data/radar/sources_registry.yaml`
 
 Leggere il file e filtrare le fonti con `observation_mode: catalog-watch`.
-Se presente, leggere anche `catalog_baseline`.
+Se presente, leggere anche `catalog_baseline`, inclusi `metric`, `value`, `method`, `reliability` e `note`.
 
 ## Perimetro corretto
 
@@ -90,12 +90,13 @@ o `nessuna conclusione` a una lettura forzata.
 | Protocollo | Tool |
 |---|---|
 | `sdmx` | `mcp__istat-sdmx__istat_list_dataflows` |
-| `ckan` | `mcp__fetch__fetch_json` su `/api/3/action/package_list` e `package_search` |
+| `ckan` | `mcp__fetch__fetch_json` sull'endpoint dichiarato e su eventuali endpoint comparabili |
 | `rest_json` | `mcp__fetch__fetch_json` sull'endpoint base |
 | `xlsx_direct` | `mcp__fetch__fetch_readable` o `mcp__fetch__fetch_html` sulla pagina catalogo |
 
 Per CKAN: il `base_url` nel registry punta già all'endpoint di probe corretto.
 Usare quello come punto di partenza, non costruire URL da zero.
+Se la baseline dichiara un `method`, il confronto numerico va fatto con lo stesso metodo.
 
 ---
 
@@ -105,6 +106,7 @@ Usare quello come punto di partenza, non costruire URL da zero.
 
 Leggere `sources_registry.yaml`. Per ogni fonte con `observation_mode: catalog-watch`:
 - estrarre `protocol`, `base_url`, `last_probed`, `note`, `datasets_in_use`, `catalog_baseline`
+- annotare esplicitamente `catalog_baseline.method` e `catalog_baseline.reliability`, se presenti
 
 ### Step 2 - Controlla ciascuna fonte
 
@@ -119,9 +121,13 @@ Per ogni fonte, eseguire il check appropriato al protocollo:
 
 **CKAN**
 - Chiamare `fetch_json` su `{base_url}`
-- Chiamare `fetch_json` su `/api/3/action/package_search?rows=0` per il conteggio totale
-- Se esiste `catalog_baseline.metric = package_count`, confrontare il totale con `catalog_baseline.value`
+- identificare il metodo di conteggio dichiarato nella baseline:
+  - se `method = package_list`, usare `package_list`
+  - se `method = package_search`, usare `package_search?rows=0`
+  - se il metodo non e' dichiarato, fermarsi a `[DATO MANCANTE]` per il delta numerico
+- Se esiste `catalog_baseline.metric = package_count`, confrontare il totale solo se il metodo osservato coincide con `catalog_baseline.method`
 - Se ci sono `datasets_in_use`, verificare che i package noti siano ancora presenti
+- Se `package_list` e `package_search` espongono universi diversi, trattare il delta come mismatch di metodo e non come `inventory_change`
 
 **REST JSON**
 - Chiamare `fetch_json` sull'endpoint base
@@ -158,6 +164,7 @@ Regola pratica v0:
 
 - per ogni fonte e per ogni run usare un solo segnale primario
 - `follow-up candidate` va trattato come raccomandazione di follow-up, non come tipo segnale concorrente
+- se il metodo osservato non e' comparabile con la baseline dichiarata, preferire `[DATO MANCANTE]`
 
 ### Step 4 - Aggiorna il registry
 
@@ -166,6 +173,7 @@ con la data corrente.
 
 Non modificare `catalog_baseline` senza istruzione esplicita.
 La baseline va aggiornata solo quando il maintainer decide che il nuovo stato osservato diventa il nuovo riferimento.
+Se la baseline ha `method` o `reliability`, non cambiarli implicitamente durante il run.
 
 ---
 
