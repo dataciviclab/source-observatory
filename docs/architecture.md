@@ -63,6 +63,7 @@ Per la v0 il set va tenuto deliberatamente piccolo:
 - `istat_sdmx`
 - `anac`
 - `inps`
+- `openbdap`
 
 Se una fonte non produce segnali chiari e difendibili, resta fuori dalla v0.
 
@@ -106,6 +107,7 @@ Buoni candidati v0:
 - ISTAT SDMX
 - ANAC
 - INPS
+- OpenBDAP
 
 ## Cosa sta nel resource monitor
 

@@ -18,15 +18,16 @@ Non è:
 
 ## V0 attuale
 
-La v0 pubblicabile è concentrata su 3 cataloghi ricchi:
+La v0 pubblicabile è concentrata su pochi cataloghi ricchi:
 
 - `istat_sdmx`
 - `anac`
 - `inps`
+- `openbdap`
 
 La regola guida è semplice:
 
-- meglio 3 cataloghi ricchi con segnali leggibili
+- meglio 4 cataloghi ricchi con segnali leggibili
 - peggio 12 fonti miste con poco segnale
 
 ## Componenti
