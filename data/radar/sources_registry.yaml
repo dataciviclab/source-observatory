@@ -70,3 +70,12 @@ openbdap:
   datasets_in_use:
   - dipendenti-pubblici
   - opencoesione-pagamenti-ue-2014-2020
+dati_camera:
+  source_kind: portal
+  protocol: sparql
+  observation_mode: radar-only
+  base_url: https://dati.camera.it/sparql
+  last_probed: '2026-04-02'
+  verdict: go
+  note: Aggiunto endpoint SPARQL come radar-only per monitoraggio infrastrutturale di base.
+  datasets_in_use: []
