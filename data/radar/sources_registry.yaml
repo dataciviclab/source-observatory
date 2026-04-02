@@ -3,7 +3,7 @@ istat_sdmx:
   protocol: sdmx
   observation_mode: catalog-watch
   base_url: https://sdmx.istat.it/SDMXWS/rest/dataflow/IT1
-  last_probed: '2026-04-01'
+  last_probed: '2026-04-02'
   catalog_baseline:
     captured_at: '2026-03-28'
     metric: dataflow_count
@@ -18,7 +18,7 @@ anac:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1
-  last_probed: '2026-04-01'
+  last_probed: '2026-04-02'
   catalog_baseline:
     captured_at: '2026-03-28'
     metric: package_count
@@ -32,7 +32,7 @@ inps:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
-  last_probed: '2026-04-01'
+  last_probed: '2026-04-02'
   catalog_baseline:
     captured_at: '2026-03-28'
     metric: package_count
