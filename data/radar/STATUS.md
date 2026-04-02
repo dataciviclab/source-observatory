@@ -8,12 +8,16 @@ Ultimo run: 2026-04-02
 - GREEN: 1
 - YELLOW: 1
 - RED: 1
+- Fonti controllate: 4
+- GREEN: 2
+- YELLOW: 1
+- RED: 1
 
 ## Tipi sorgente
 
 | Tipo | Conteggio |
 | --- | --- |
-| catalog | 3 |
+| catalog | 4 |
 | portal | 0 |
 | source | 0 |
 
@@ -22,7 +26,7 @@ Ultimo run: 2026-04-02
 | Modalita' | Conteggio | Significato |
 | --- | --- | --- |
 | radar-only | 0 | Salute della fonte senza segnali di inventario |
-| catalog-watch | 3 | Inventario e drift strutturale del catalogo |
+| catalog-watch | 4 | Inventario e drift strutturale del catalogo |
 | monitor-active | 0 | Caso ristretto con monitoraggio piu' vicino alla risorsa |
 
 Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornamento del dataset.
@@ -34,6 +38,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | istat_sdmx | catalog | sdmx | catalog-watch | RED | 500 | popolazione-istat |
 | anac | catalog | ckan | catalog-watch | YELLOW | 403 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | pens_2017, pens_2024 |
+| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | dipendenti-pubblici, opencoesione-pagamenti-ue-2014-2020 |
 
 ## Note
 

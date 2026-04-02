@@ -43,3 +43,21 @@ inps:
   datasets_in_use:
   - pens_2017
   - pens_2024
+openbdap:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
+  last_probed: '2026-04-02'
+  catalog_baseline:
+    captured_at: '2026-04-02'
+    metric: package_count
+    value: 3772
+    note: Conteggio totale package rilevati via package_list; package_search restituisce
+      count inaffidabile.
+  verdict: go
+  note: Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario
+    senza intake o monitor diffuso.
+  datasets_in_use:
+  - dipendenti-pubblici
+  - opencoesione-pagamenti-ue-2014-2020
