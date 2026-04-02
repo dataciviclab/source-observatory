@@ -38,12 +38,13 @@ inps:
   base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
   last_probed: '2026-04-02'
   catalog_baseline:
-    captured_at: '2026-03-28'
+    captured_at: '2026-04-02'
     metric: package_count
-    value: 544
+    value: 2323
     method: package_list
     reliability: medium
-    note: Conteggio totale package rilevati via package_list.
+    note: Conteggio totale package rilevati via package_list; baseline precedente
+      (544) risultata stale rispetto all'inventario corrente.
   verdict: go
   note: Catalogo CKAN ricco e ad alto potenziale per candidati e source-check.
   datasets_in_use:
