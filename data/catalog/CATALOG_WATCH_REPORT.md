@@ -1,45 +1,53 @@
 # Catalog Watch Report
 
-Ultimo run: 2026-03-31
+Ultimo run: 2026-04-03
 
 ## Sommario segnali
 
 | Classificazione | Conteggio | Dettaglio |
 | :--- | :--- | :--- |
-| `no signal` | 1 | ANAC stabile a quota 69. |
-| `inventory change` | 2 | ISTAT (calo drastico?) e INPS (crescita esplosiva). |
+| `no signal` | 2 | INPS (2323) e OpenBDAP (3772) allineati alle baseline correnti. |
+| `inventory change` | 0 | - |
 | `structural drift` | 0 | - |
-| `health` | 0 | - |
-| `follow-up candidate` | 1 | INPS merita ispezione per capire il delta +1779. |
-| `[DATO MANCANTE]` | 1 | ISTAT richiede verifica su endpoint SDMX completo. |
+| `health` | 1 | ANAC risponde ancora con pagina di reject HTML e non con JSON CKAN verificabile. |
+| `follow-up candidate` | 0 | - |
+| `[DATO MANCANTE]` | 1 | ISTAT (509 ripresi contro 4787 di baseline). Richiede verifica su endpoint o aggiornamento policy tool. |
 
 ---
 
 ## Dettaglio per fonte
 
 ### istat_sdmx
-- **Stato**: `inventory change` / `[ATTENZIONE]`
+- **Stato**: `[DATO MANCANTE]` / `[ATTENZIONE]`
 - **Baseline**: 4787 (2026-03-28)
-- **Osservato**: 509 (2026-03-31)
+- **Osservato**: 509 (2026-04-03)
 - **Delta**: -4278
-- **Nota**: Il conteggio rilevato tramite `istat_list_dataflows` è drasticamente inferiore alla baseline. È possibile che l'endpoint `.../rest/dataflow/IT1` restituisca solo un subset o che la struttura SDMX sia cambiata.
-- **Azione**: [DATO MANCANTE] - Verificare se la baseline originale includeva versioni o se l'endpoint completo `.../rest/dataflow/all/all` dia risultati diversi.
+- **Nota**: Il conteggio rilevato (tramite API pubblica ISTAT su path IT1) si conferma numericamente a quota 509. Rimane aperto il nodo d'interpretazione del calo rispetto alla baseline originaria.
+- **Azione**: E' opportuno decidere se allineare la baseline al nuovo output (considerandolo la "v2" o subset esposto dal tool) oppure se c'e' un malfunzionamento del feed originale.
 
 ### anac
-- **Stato**: `no signal`
+- **Stato**: `health`
 - **Baseline**: 69 (2026-03-28)
-- **Osservato**: 69 (2026-03-31)
-- **Delta**: 0
-- **Nota**: Catalogo CKAN perfettamente allineato alla baseline.
-- **Azione**: Nessuna azione richiesta.
+- **Osservato**: [DATO MANCANTE] (2026-04-03)
+- **Delta**: non verificabile
+- **Nota**: L'endpoint risponde con HTTP 200 ma restituisce ancora una pagina HTML di `Request Rejected`, non un payload JSON CKAN verificabile.
+- **Azione**: Trattare la fonte come problema di health/raggiungibilita' e non come inventario stabile finche' non torna una risposta JSON reale.
 
 ### inps
-- **Stato**: `inventory change` / `follow-up candidate`
-- **Baseline**: 544 (2026-03-28)
-- **Osservato**: 2323 (2026-03-31)
-- **Delta**: +1779
-- **Nota**: Incremento massivo del numero di package rilevati tramite `package_list`. I nomi dei package continuano a essere identificativi numerici (es. "544", "6002").
-- **Azione**: Eseguire uno `source-check` a campione sui nuovi ID per capire se si tratta di nuovi dataset reali o di una diversa esposizione granulare (es. singoli file esposti come package).
+- **Stato**: `no signal`
+- **Baseline**: 2323 (2026-04-02)
+- **Osservato**: 2323 (2026-04-03)
+- **Delta**: 0
+- **Nota**: Catalogo CKAN consolidato sulla nuova baseline misurata nei giorni scorsi.
+- **Azione**: Nessuna azione richiesta.
+
+### openbdap
+- **Stato**: `no signal`
+- **Baseline**: 3772 (2026-04-02)
+- **Osservato**: 3772 (2026-04-03)
+- **Delta**: 0
+- **Nota**: Le API di package_list confermano l'inventario dichiarato nella baseline recente.
+- **Azione**: Nessuna azione richiesta.
 
 ---
 
