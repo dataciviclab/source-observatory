@@ -52,6 +52,31 @@ Modello v0:
 - il run va usato quando serve un check metodologicamente difendibile, non come polling continuo
 - gli output canonici restano `CATALOG_WATCH_REPORT.md` e `catalog_signals.json`
 
+## Catalog inventory
+
+```powershell
+python source-observatory/scripts/build_catalog_inventory.py
+```
+
+Usa `catalog inventory` quando la domanda e':
+
+- quali item sono oggi enumerabili nei cataloghi osservati?
+- quali fonti `catalog-watch` producono un inventario riusabile per scouting?
+- il perimetro pubblico resta coerente con le esclusioni dichiarate?
+
+Output:
+
+- `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
+- `data/catalog_inventory/generated/catalog_inventory_report.json`
+
+Disciplina:
+
+- il perimetro segue le fonti `catalog-watch` del registry
+- una fonte puo' restare osservata in SO ma non essere inventariabile
+- `anac` oggi resta escluso dall'inventory automatico per vincoli WAF
+- l'upload su GCS e' opzionale e richiede secret espliciti
+- il workflow repo-side e' solo `workflow_dispatch`: nessuno schedule finche' il perimetro non resta stabile per piu' run consecutivi
+
 ## Resource monitor
 
 ```powershell
