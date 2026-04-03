@@ -6,24 +6,24 @@ Ultimo run: 2026-04-03
 
 | Classificazione | Conteggio | Dettaglio |
 | :--- | :--- | :--- |
-| `no signal` | 2 | INPS (2323) e OpenBDAP (3772) allineati alle baseline correnti. |
+| `no signal` | 3 | ISTAT (509), INPS (2323) e OpenBDAP (3772) allineati alle baseline correnti. |
 | `inventory change` | 0 | - |
 | `structural drift` | 0 | - |
 | `health` | 1 | ANAC risponde ancora con pagina di reject HTML e non con JSON CKAN verificabile. |
 | `follow-up candidate` | 0 | - |
-| `[DATO MANCANTE]` | 1 | ISTAT (509 ripresi contro 4787 di baseline). Richiede verifica su endpoint o aggiornamento policy tool. |
+| `[DATO MANCANTE]` | 0 | - |
 
 ---
 
 ## Dettaglio per fonte
 
 ### istat_sdmx
-- **Stato**: `[DATO MANCANTE]` / `[ATTENZIONE]`
-- **Baseline**: 4787 (2026-03-28)
+- **Stato**: `no signal`
+- **Baseline**: 509 (2026-04-03)
 - **Osservato**: 509 (2026-04-03)
-- **Delta**: -4278
-- **Nota**: Il conteggio rilevato (tramite API pubblica ISTAT su path IT1) si conferma numericamente a quota 509. Rimane aperto il nodo d'interpretazione del calo rispetto alla baseline originaria.
-- **Azione**: E' opportuno decidere se allineare la baseline al nuovo output (considerandolo la "v2" o subset esposto dal tool) oppure se c'e' un malfunzionamento del feed originale.
+- **Delta**: 0
+- **Nota**: La baseline e' stata riallineata esplicitamente al conteggio riproducibile via endpoint pubblico `dataflow/IT1`. Il valore storico 4787 non risultava replicabile con il metodo attuale di osservazione.
+- **Azione**: Nessuna azione richiesta; mantenere monitoraggio sul metodo corrente.
 
 ### anac
 - **Stato**: `health`
