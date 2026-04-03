@@ -10,6 +10,13 @@ permissions:
 jobs:
   catalog-inventory:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      CATALOG_INVENTORY_GCS_PREFIX: ${{ secrets.CATALOG_INVENTORY_GCS_PREFIX }}
 
     steps:
       - name: Checkout
@@ -61,18 +68,18 @@ jobs:
             data/catalog_inventory/generated/catalog_inventory_report.json
 
       - name: Authenticate to Google Cloud
-        if: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && secrets.GCP_SERVICE_ACCOUNT != '' && secrets.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
 
       - name: Set up gcloud
-        if: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && secrets.GCP_SERVICE_ACCOUNT != '' && secrets.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Upload snapshot to GCS
-        if: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && secrets.GCP_SERVICE_ACCOUNT != '' && secrets.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         run: |
           stamp=$(python - <<'PY'
           import json
@@ -82,7 +89,7 @@ jobs:
           print(report["captured_at"].replace(":", "").replace("-", ""))
           PY
           )
-          prefix='${{ secrets.CATALOG_INVENTORY_GCS_PREFIX }}'
+          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
           prefix="${prefix%/}"
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/catalog_inventory_latest.parquet"
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/catalog_inventory_report.json"
