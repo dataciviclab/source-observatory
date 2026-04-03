@@ -5,12 +5,14 @@ istat_sdmx:
   base_url: https://sdmx.istat.it/SDMXWS/rest/dataflow/IT1
   last_probed: '2026-04-03'
   catalog_baseline:
-    captured_at: '2026-03-28'
+    captured_at: '2026-04-03'
     metric: dataflow_count
-    value: 4787
+    value: 509
     method: dataflow_count
     reliability: medium
-    note: Conteggio totale dataflow esposto dal catalogo SDMX ISTAT.
+    note: Re-baseline esplicita sul conteggio riproducibile via endpoint pubblico
+      dataflow/IT1; la baseline precedente (4787) non e' risultata replicabile
+      con il metodo attuale.
   verdict: go
   note: Endpoint SDMX ricco e ad alto valore per scouting e source-check.
   datasets_in_use:
