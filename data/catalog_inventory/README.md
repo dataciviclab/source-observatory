@@ -40,6 +40,24 @@ La directory `generated/` non e' versionata nel repo:
 - gli artifact vengono esposti come artifact GitHub Actions
 - l'upload su GCS e' opzionale e richiede secret/config espliciti
 
+## Schema minimo del parquet
+
+Colonne chiave:
+- `captured_at`: timestamp UTC del run inventory
+- `source_id`: id della fonte nel registry (`istat_sdmx`, `inps`, `openbdap`, ...)
+- `source_kind`: oggi atteso `catalog`
+- `protocol`: protocollo della fonte (`ckan`, `sdmx`)
+- `inventory_method`: metodo usato per l'enumerazione (`package_search`, `package_list`, `dataflow_count`)
+- `item_kind`: tipo di item (`dataset` o `dataflow`)
+- `item_id`: identificativo tecnico dell'item
+- `item_name`: nome macchina o slug quando disponibile
+- `title`: titolo umano quando disponibile
+- `organization`: organizzazione CKAN quando disponibile
+- `tags`: tag CKAN compressi in stringa
+- `notes_excerpt`: estratto breve delle note, se disponibile
+- `source_url`: endpoint usato per l'inventory
+- `ordinal`: posizione del record nell'enumerazione della fonte
+
 ## Workflow
 
 Workflow GitHub Actions disponibile:
@@ -56,3 +74,4 @@ python source-observatory/scripts/build_catalog_inventory.py
 - il perimetro segue solo le fonti `catalog-watch` del registry
 - l'inventory puo' essere intenzionalmente parziale se una fonte e' osservabile ma non inventariabile in modo stabile
 - il README locale resta in `_local/data/catalog_inventory/README.md`
+- `istat_sdmx` oggi viene enumerato in modo riproducibile tramite `https://sdmx.istat.it/SDMXWS/rest/dataflow/IT1`, coerente con la baseline aggiornata a `509`

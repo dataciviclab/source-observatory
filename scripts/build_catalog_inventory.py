@@ -102,10 +102,10 @@ def collect_ckan_inventory_via_search(source_id: str, source_cfg: dict[str, Any]
     return rows
 
 
-def collect_ckan_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> list[dict[str, Any]]:
+def collect_ckan_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     try:
-        return collect_ckan_inventory_via_search(source_id, source_cfg, captured_at)
-    except Exception:
+        return collect_ckan_inventory_via_search(source_id, source_cfg, captured_at), None
+    except Exception as exc:
         endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_list")
         payload = ckan_get_json(endpoint)
         if not payload.get("success"):
@@ -135,7 +135,11 @@ def collect_ckan_inventory(source_id: str, source_cfg: dict[str, Any], captured_
                     "ordinal": idx,
                 }
             )
-        return rows
+        return rows, {
+            "type": "fallback_package_list",
+            "message": "Fallback da package_search a package_list.",
+            "package_search_error": str(exc),
+        }
 
 
 def parse_sdmx_name(name_elem: ET.Element | None) -> str | None:
@@ -189,7 +193,10 @@ def load_registry() -> dict[str, Any]:
 def collect_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> list[dict[str, Any]]:
     protocol = source_cfg.get("protocol")
     if protocol == "ckan":
-        return collect_ckan_inventory(source_id, source_cfg, captured_at)
+        rows, warning = collect_ckan_inventory(source_id, source_cfg, captured_at)
+        if warning:
+            source_cfg["_inventory_warning"] = warning
+        return rows
     if protocol == "sdmx":
         return collect_sdmx_inventory(source_id, source_cfg, captured_at)
     raise ValueError(f"Unsupported protocol for catalog inventory: {protocol}")
@@ -236,12 +243,16 @@ def main() -> None:
         try:
             rows = collect_inventory(source_id, source_cfg, captured_at)
             all_rows.extend(rows)
-            report["sources"][source_id] = {
+            source_report = {
                 "status": "ok",
                 "protocol": source_cfg.get("protocol"),
                 "rows": len(rows),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
             }
+            warning = source_cfg.pop("_inventory_warning", None)
+            if warning:
+                source_report["warning"] = warning
+            report["sources"][source_id] = source_report
         except Exception as exc:
             report["sources"][source_id] = {
                 "status": "error",

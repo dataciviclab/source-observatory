@@ -75,6 +75,7 @@ Disciplina:
 - una fonte puo' restare osservata in SO ma non essere inventariabile
 - `anac` oggi resta escluso dall'inventory automatico per vincoli WAF
 - l'upload su GCS e' opzionale e richiede secret espliciti
+- il workflow repo-side e' solo `workflow_dispatch`: nessuno schedule finche' il perimetro non resta stabile per piu' run consecutivi
 
 ## Resource monitor
 
