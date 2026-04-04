@@ -172,35 +172,32 @@ def collect_sdmx_inventory(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     attempts = len(SDMX_RETRY_DELAYS_SECONDS) + 1
+    endpoint = source_cfg["base_url"]
     response: requests.Response | None = None
     last_error: Exception | None = None
     retry_events: list[str] = []
 
     for attempt in range(1, attempts + 1):
         try:
-            response = requests.get(source_cfg["base_url"], timeout=120)
-            if response.status_code in SDMX_RETRYABLE_STATUS_CODES:
-                raise requests.HTTPError(
-                    f"HTTP {response.status_code}", response=response
-                )
+            response = requests.get(endpoint, timeout=120)
             response.raise_for_status()
             break
         except (requests.Timeout, requests.ConnectionError) as exc:
             last_error = exc
-            retry_events.append(f"tentativo {attempt}: {type(exc).__name__}")
+            retry_events.append(f"tentativo {attempt}: {type(exc).__name__} ({endpoint})")
         except requests.HTTPError as exc:
             status_code = exc.response.status_code if exc.response is not None else None
             if status_code not in SDMX_RETRYABLE_STATUS_CODES:
                 raise
             last_error = exc
-            retry_events.append(f"tentativo {attempt}: HTTP {status_code}")
+            retry_events.append(f"tentativo {attempt}: HTTP {status_code} ({endpoint})")
 
         if attempt < attempts:
             time.sleep(SDMX_RETRY_DELAYS_SECONDS[attempt - 1])
         else:
             details = ", ".join(retry_events) if retry_events else str(last_error)
             raise RuntimeError(
-                f"SDMX fetch failed after {attempts} attempts for {source_id}: {details}"
+                f"SDMX fetch failed after {attempts} attempts for {source_id} on {endpoint}: {details}"
             ) from last_error
 
     if response is None:
