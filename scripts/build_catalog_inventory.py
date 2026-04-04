@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,6 +23,8 @@ DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
 NON_INVENTORIABLE_SOURCES = {
     "anac": "Fonte osservata in source-observatory, ma non inventariabile con client HTTP standard per via di una risposta WAF 'Request Rejected'.",
 }
+SDMX_RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
+SDMX_RETRY_DELAYS_SECONDS = (2, 5)
 
 
 def now_utc_iso() -> str:
@@ -51,7 +54,9 @@ def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
     return response.json()
 
 
-def collect_ckan_inventory_via_search(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> list[dict[str, Any]]:
+def collect_ckan_inventory_via_search(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str
+) -> list[dict[str, Any]]:
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_search")
     page_size = 1000
     start = 0
@@ -69,9 +74,15 @@ def collect_ckan_inventory_via_search(source_id: str, source_cfg: dict[str, Any]
             break
 
         for item in items:
-            organization = (item.get("organization") or {}).get("title") or (item.get("organization") or {}).get("name")
+            organization = (item.get("organization") or {}).get("title") or (
+                item.get("organization") or {}
+            ).get("name")
             tag_items = item.get("tags") or []
-            tags = [t.get("display_name") or t.get("name") for t in tag_items if (t.get("display_name") or t.get("name"))]
+            tags = [
+                t.get("display_name") or t.get("name")
+                for t in tag_items
+                if (t.get("display_name") or t.get("name"))
+            ]
             notes = (item.get("notes") or "").strip()
             rows.append(
                 {
@@ -102,9 +113,13 @@ def collect_ckan_inventory_via_search(source_id: str, source_cfg: dict[str, Any]
     return rows
 
 
-def collect_ckan_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+def collect_ckan_inventory(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     try:
-        return collect_ckan_inventory_via_search(source_id, source_cfg, captured_at), None
+        return collect_ckan_inventory_via_search(
+            source_id, source_cfg, captured_at
+        ), None
     except Exception as exc:
         endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_list")
         payload = ckan_get_json(endpoint)
@@ -113,7 +128,9 @@ def collect_ckan_inventory(source_id: str, source_cfg: dict[str, Any], captured_
 
         result = payload.get("result")
         if not isinstance(result, list):
-            raise ValueError(f"Unexpected CKAN payload for {source_id}: result is not a list")
+            raise ValueError(
+                f"Unexpected CKAN payload for {source_id}: result is not a list"
+            )
 
         rows: list[dict[str, Any]] = []
         for idx, item_name in enumerate(result, start=1):
@@ -123,7 +140,9 @@ def collect_ckan_inventory(source_id: str, source_cfg: dict[str, Any], captured_
                     "source_id": source_id,
                     "source_kind": source_cfg.get("source_kind"),
                     "protocol": source_cfg.get("protocol"),
-                    "inventory_method": source_cfg.get("catalog_baseline", {}).get("method", "package_list"),
+                    "inventory_method": source_cfg.get("catalog_baseline", {}).get(
+                        "method", "package_list"
+                    ),
                     "item_kind": "dataset",
                     "item_id": str(item_name),
                     "item_name": str(item_name),
@@ -149,9 +168,44 @@ def parse_sdmx_name(name_elem: ET.Element | None) -> str | None:
     return text or None
 
 
-def collect_sdmx_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> list[dict[str, Any]]:
-    response = requests.get(source_cfg["base_url"], timeout=120)
-    response.raise_for_status()
+def collect_sdmx_inventory(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    attempts = len(SDMX_RETRY_DELAYS_SECONDS) + 1
+    response: requests.Response | None = None
+    last_error: Exception | None = None
+    retry_events: list[str] = []
+
+    for attempt in range(1, attempts + 1):
+        try:
+            response = requests.get(source_cfg["base_url"], timeout=120)
+            if response.status_code in SDMX_RETRYABLE_STATUS_CODES:
+                raise requests.HTTPError(
+                    f"HTTP {response.status_code}", response=response
+                )
+            response.raise_for_status()
+            break
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            last_error = exc
+            retry_events.append(f"tentativo {attempt}: {type(exc).__name__}")
+        except requests.HTTPError as exc:
+            status_code = exc.response.status_code if exc.response is not None else None
+            if status_code not in SDMX_RETRYABLE_STATUS_CODES:
+                raise
+            last_error = exc
+            retry_events.append(f"tentativo {attempt}: HTTP {status_code}")
+
+        if attempt < attempts:
+            time.sleep(SDMX_RETRY_DELAYS_SECONDS[attempt - 1])
+        else:
+            details = ", ".join(retry_events) if retry_events else str(last_error)
+            raise RuntimeError(
+                f"SDMX fetch failed after {attempts} attempts for {source_id}: {details}"
+            ) from last_error
+
+    if response is None:
+        raise RuntimeError(f"SDMX fetch produced no response for {source_id}")
+
     root = ET.fromstring(response.content)
 
     ns = {
@@ -170,7 +224,9 @@ def collect_sdmx_inventory(source_id: str, source_cfg: dict[str, Any], captured_
                 "source_id": source_id,
                 "source_kind": source_cfg.get("source_kind"),
                 "protocol": source_cfg.get("protocol"),
-                "inventory_method": source_cfg.get("catalog_baseline", {}).get("method", "dataflow_count"),
+                "inventory_method": source_cfg.get("catalog_baseline", {}).get(
+                    "method", "dataflow_count"
+                ),
                 "item_kind": "dataflow",
                 "item_id": flow_id,
                 "item_name": flow_id,
@@ -182,7 +238,14 @@ def collect_sdmx_inventory(source_id: str, source_cfg: dict[str, Any], captured_
                 "ordinal": idx,
             }
         )
-    return rows
+    warning = None
+    if retry_events:
+        warning = {
+            "type": "retry_backoff",
+            "message": "Recupero SDMX riuscito dopo retry con backoff.",
+            "events": retry_events,
+        }
+    return rows, warning
 
 
 def load_registry() -> dict[str, Any]:
@@ -190,7 +253,9 @@ def load_registry() -> dict[str, Any]:
         return yaml.safe_load(fh)
 
 
-def collect_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> list[dict[str, Any]]:
+def collect_inventory(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str
+) -> list[dict[str, Any]]:
     protocol = source_cfg.get("protocol")
     if protocol == "ckan":
         rows, warning = collect_ckan_inventory(source_id, source_cfg, captured_at)
@@ -198,13 +263,23 @@ def collect_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: s
             source_cfg["_inventory_warning"] = warning
         return rows
     if protocol == "sdmx":
-        return collect_sdmx_inventory(source_id, source_cfg, captured_at)
+        rows, warning = collect_sdmx_inventory(source_id, source_cfg, captured_at)
+        if warning:
+            source_cfg["_inventory_warning"] = warning
+        return rows
     raise ValueError(f"Unsupported protocol for catalog inventory: {protocol}")
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Costruisce il catalog inventory derivato dal registry di source-observatory.")
-    parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR, help="Directory di output per parquet e report JSON.")
+    parser = argparse.ArgumentParser(
+        description="Costruisce il catalog inventory derivato dal registry di source-observatory."
+    )
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=DEFAULT_OUT_DIR,
+        help="Directory di output per parquet e report JSON.",
+    )
     return parser.parse_args()
 
 
