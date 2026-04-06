@@ -3,7 +3,7 @@ istat_sdmx:
   protocol: sdmx
   observation_mode: catalog-watch
   base_url: https://sdmx.istat.it/SDMXWS/rest/dataflow/IT1
-  last_probed: '2026-04-05'
+  last_probed: '2026-04-06'
   catalog_baseline:
     captured_at: '2026-04-03'
     metric: dataflow_count
@@ -22,7 +22,7 @@ anac:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1
-  last_probed: '2026-04-05'
+  last_probed: '2026-04-06'
   catalog_baseline:
     captured_at: '2026-03-28'
     metric: package_count
@@ -38,7 +38,7 @@ inps:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
-  last_probed: '2026-04-05'
+  last_probed: '2026-04-06'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -57,7 +57,7 @@ openbdap:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
-  last_probed: '2026-04-05'
+  last_probed: '2026-04-06'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -77,7 +77,7 @@ dati_camera:
   protocol: sparql
   observation_mode: radar-only
   base_url: https://dati.camera.it/sparql
-  last_probed: '2026-04-05'
+  last_probed: '2026-04-06'
   verdict: go
   note: Aggiunto endpoint SPARQL come radar-only per monitoraggio infrastrutturale
     di base.
