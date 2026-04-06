@@ -72,6 +72,18 @@ openbdap:
   datasets_in_use:
   - dipendenti-pubblici
   - opencoesione-pagamenti-ue-2014-2020
+mim_opendata:
+  source_kind: portal
+  protocol: html
+  observation_mode: radar-only
+  base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
+  last_probed: '2026-04-06'
+  verdict: go
+  note: Portale HTML custom senza API catalog (CKAN/SDMX). Download CSV diretti
+    nel markup ma nessuna superficie inventariale strutturata osservabile via
+    probe semplice. Endpoint SPARQL come capacita secondaria.
+  datasets_in_use:
+  - mim-alunni-corso-eta
 dati_camera:
   source_kind: portal
   protocol: sparql
