@@ -25,9 +25,11 @@ NON_INVENTORIABLE_SOURCES = {
 }
 SDMX_RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
 SDMX_RETRY_DELAYS_SECONDS = (2, 5)
-SUPPORTED_PROTOCOLS = {"ckan", "sdmx"}
+INVENTORY_COLLECTORS: dict[str, Any] = {}
 
 
+def supported_protocols() -> set[str]:
+    return set(INVENTORY_COLLECTORS)
 def now_utc_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
