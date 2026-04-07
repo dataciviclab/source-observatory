@@ -25,6 +25,7 @@ NON_INVENTORIABLE_SOURCES = {
 }
 SDMX_RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
 SDMX_RETRY_DELAYS_SECONDS = (2, 5)
+SUPPORTED_PROTOCOLS = {"ckan", "sdmx"}
 
 
 def now_utc_iso() -> str:
@@ -184,7 +185,9 @@ def collect_sdmx_inventory(
             break
         except (requests.Timeout, requests.ConnectionError) as exc:
             last_error = exc
-            retry_events.append(f"tentativo {attempt}: {type(exc).__name__} ({endpoint})")
+            retry_events.append(
+                f"tentativo {attempt}: {type(exc).__name__} ({endpoint})"
+            )
         except requests.HTTPError as exc:
             status_code = exc.response.status_code if exc.response is not None else None
             if status_code not in SDMX_RETRYABLE_STATUS_CODES:
@@ -309,6 +312,16 @@ def main() -> None:
                 "protocol": source_cfg.get("protocol"),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
                 "reason": NON_INVENTORIABLE_SOURCES[source_id],
+            }
+            continue
+
+        protocol = source_cfg.get("protocol")
+        if protocol not in SUPPORTED_PROTOCOLS:
+            report["sources"][source_id] = {
+                "status": "protocol_not_supported",
+                "protocol": protocol,
+                "method": source_cfg.get("catalog_baseline", {}).get("method"),
+                "reason": f"Protocollo {protocol} non ancora supportato dal builder inventory.",
             }
             continue
 
