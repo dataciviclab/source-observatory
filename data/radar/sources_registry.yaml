@@ -73,7 +73,7 @@ openbdap:
   - dipendenti-pubblici
   - opencoesione-pagamenti-ue-2014-2020
 dati_salute:
-  source_kind: portal
+  source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.dati.salute.gov.it/
@@ -84,30 +84,23 @@ dati_salute:
     value: 191
     method: sitemap_dataset_count
     reliability: medium
-    note: Conteggio URL /it/dataset/ dal sitemap-0.xml sul dominio www.
+    note: Conteggio URL /it/dataset/ dal sitemap-0.xml sul dominio www. Protocollo
+      html non ancora supportato dal builder; watch manuale finche' non aggiunto.
   verdict: go
   note: Portale Ministero Salute con sitemap replicabile; usare dominio con www. Separare
-    eventuali superfici ISS/EpiCentro come radar-only.
+    eventuali superfici ISS/EpiCentro come radar-only. Protocollo html fuori dal
+    builder attuale.
   datasets_in_use: []
 inail_opendata:
   source_kind: portal
   protocol: aem
-  observation_mode: catalog-watch
+  observation_mode: radar-only
   base_url: https://dati.inail.it/
   last_probed: '2026-04-07'
-  catalog_baseline:
-    captured_at: '2026-04-07'
-    metric: dataset_page_count
-    value: null
-    method: open_api_probe
-    reliability: low
-    note: Nessun conteggio totale affidabile via probe semplice. Baseline basata su
-      endpoint Open API (https://dati.inail.it/api/OpenData/...) + HEAD su campione
-      file. Footer cita CKAN ma la superficie reale e' AEM + Open API.
   verdict: go
   note: Portale AEM con Open API documentate. Superficie operativa reale = catalogo
-    AEM + Open API, non CKAN standard (logo nel footer fuorviante). Tenere separati
-    eventuali contenuti editoriali non catalogo.
+    AEM + Open API, non CKAN standard (logo nel footer fuorviante). Baseline inventariale
+    non ancora difendibile; tenere in radar-only finche' non definito un metodo stabile.
   datasets_in_use: []
 mim_opendata:
   source_kind: portal
