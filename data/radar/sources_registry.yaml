@@ -72,6 +72,43 @@ openbdap:
   datasets_in_use:
   - dipendenti-pubblici
   - opencoesione-pagamenti-ue-2014-2020
+dati_salute:
+  source_kind: portal
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://www.dati.salute.gov.it/
+  last_probed: '2026-04-07'
+  catalog_baseline:
+    captured_at: '2026-04-07'
+    metric: dataset_url_count
+    value: 191
+    method: sitemap_dataset_count
+    reliability: medium
+    note: Conteggio URL /it/dataset/ dal sitemap-0.xml sul dominio www.
+  verdict: go
+  note: Portale Ministero Salute con sitemap replicabile; usare dominio con www. Separare
+    eventuali superfici ISS/EpiCentro come radar-only.
+  datasets_in_use: []
+inail_opendata:
+  source_kind: portal
+  protocol: aem
+  observation_mode: catalog-watch
+  base_url: https://dati.inail.it/
+  last_probed: '2026-04-07'
+  catalog_baseline:
+    captured_at: '2026-04-07'
+    metric: dataset_page_count
+    value: null
+    method: open_api_probe
+    reliability: low
+    note: Nessun conteggio totale affidabile via probe semplice. Baseline basata su
+      endpoint Open API (https://dati.inail.it/api/OpenData/...) + HEAD su campione
+      file. Footer cita CKAN ma la superficie reale e' AEM + Open API.
+  verdict: go
+  note: Portale AEM con Open API documentate. Superficie operativa reale = catalogo
+    AEM + Open API, non CKAN standard (logo nel footer fuorviante). Tenere separati
+    eventuali contenuti editoriali non catalogo.
+  datasets_in_use: []
 mim_opendata:
   source_kind: portal
   protocol: html
