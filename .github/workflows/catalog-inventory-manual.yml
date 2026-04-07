@@ -52,6 +52,8 @@ jobs:
                   lines.append(f"- `{source_id}`: ok ({info.get('rows')} item)")
               elif status == "non_inventariabile":
                   lines.append(f"- `{source_id}`: non inventariabile")
+              elif status == "protocol_not_supported":
+                  lines.append(f"- `{source_id}`: protocollo non supportato (`{info.get('protocol', 'n/d')}`)")
               else:
                   lines.append(f"- `{source_id}`: errore (`{info.get('error', 'n/d')}`)")
 
