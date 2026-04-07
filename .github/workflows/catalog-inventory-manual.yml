@@ -46,7 +46,20 @@ jobs:
           report = json.loads(report_path.read_text(encoding="utf-8"))
 
           lines = ["## Catalog inventory", ""]
-          for source_id, info in report.get("sources", {}).items():
+
+          sources = report.get("sources", {})
+          error_count = sum(1 for info in sources.values() if info.get("status") == "error")
+          ok_count = sum(1 for info in sources.values() if info.get("status") == "ok")
+          total_count = len(sources)
+
+          if error_count > 0:
+              lines.append(f"> [!WARNING]\n> {error_count}/{total_count} source hanno riportato errori nel report.")
+              lines.append("")
+
+          lines.append(f"- Fonti inventariate: {ok_count}/{total_count}")
+          lines.append("")
+
+          for source_id, info in sources.items():
               status = info.get("status")
               if status == "ok":
                   lines.append(f"- `{source_id}`: ok ({info.get('rows')} item)")
