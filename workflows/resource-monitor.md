@@ -1,3 +1,13 @@
+---
+name: resource-monitor
+description: Workflow canonico del Source Observatory per monitorare un insieme ristretto di risorse note e suggerire un next step umano.
+license: MIT
+metadata:
+  version: "1.2"
+  owner: "DataCivicLab"
+  tags: [source-observatory, resource-monitor, monitoring, follow-up]
+---
+
 # Workflow: resource-monitor
 
 Workflow canonico di `source-observatory` per il monitor di un insieme ristretto di risorse note.
@@ -40,9 +50,9 @@ Non usarlo quando:
 - il caso e' meglio descritto da `catalog-watch`
 - il monitor non porta quasi mai a decisioni utili
 
-## Input minimi
+## Preconditions minime
 
-Per partire servono almeno:
+Prima del run dovrebbero esserci almeno:
 
 - config fonti:
   - `source-observatory/scripts/monitor/resource_monitor.sources.yml`
@@ -51,11 +61,6 @@ Per partire servono almeno:
   - `source-observatory/scripts/monitor/resource_monitor.py`
 - output atteso:
   - `source-observatory/data/monitor/reports/latest.md`
-
-## Preconditions minime
-
-Prima del run dovrebbero esserci almeno:
-
 - una fonte Tier 1 o equivalente, gia' giustificata
 - un adapter abbastanza chiaro
 - un next step plausibile se compare un vero segnale
@@ -189,5 +194,6 @@ Il workflow e' chiuso bene quando:
 ## Dove orientarsi
 
 - [README.md](../README.md)
+- [workflows/README.md](./README.md)
 - [docs/runbook.md](../docs/runbook.md)
 - [docs/architecture.md](../docs/architecture.md)

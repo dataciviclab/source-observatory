@@ -1,3 +1,13 @@
+---
+name: radar-check
+description: Workflow canonico del Source Observatory per controllare la salute infrastrutturale delle fonti nel registry.
+license: MIT
+metadata:
+  version: "1.2"
+  owner: "DataCivicLab"
+  tags: [source-observatory, radar-check, health, monitoring]
+---
+
 # Workflow: radar-check
 
 Workflow canonico di `source-observatory` per il controllo di salute dei portali.
@@ -46,17 +56,12 @@ Non usarlo quando:
 - la domanda vera e' sul valore della fonte
 - stai cercando di fare source-check o intake
 
-## Input minimi
-
-Per partire servono almeno:
-
-- registry `source-observatory/data/radar/sources_registry.yaml`
-- script `source-observatory/scripts/radar_check.py`
-
 ## Preconditions minime
 
 Prima del run dovrebbero esserci almeno:
 
+- registry `source-observatory/data/radar/sources_registry.yaml`
+- script `source-observatory/scripts/radar_check.py`
 - un registry leggibile
 - una ragione semplice per eseguire il check:
   - health snapshot
