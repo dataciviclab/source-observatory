@@ -3,7 +3,7 @@ name: source-check
 description: Workflow canonico del Source Observatory per verificare se una fonte pubblica regge davvero come pista del Lab e merita un passo successivo.
 license: MIT
 metadata:
-  version: "0.2"
+  version: "1.0"
   owner: "DataCivicLab"
   tags: [source-observatory, source-check, scouting, datasets]
 ---
@@ -11,7 +11,7 @@ metadata:
 # Workflow: source-check
 
 Workflow canonico del Source Observatory.
-Versione: 0.2 - 2026-04-08
+Versione: 1.0 - 2026-04-08
 
 ## Obiettivo di fase
 
