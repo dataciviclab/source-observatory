@@ -39,3 +39,14 @@ Se la domanda e':
 - "il catalogo ha cambiato inventario o struttura?" -> `catalog-watch`
 - "questa risorsa nota e' cambiata in modo rilevante?" -> `resource-monitor`
 - "questa fonte regge davvero come pista del Lab?" -> `source-check`
+
+## Nota: catalog inventory
+
+`catalog inventory` non e' un workflow. E' un artifact derivato:
+uno snapshot tabulare di tutti gli item in un catalogo noto, prodotto da `scripts/build_catalog_inventory.py`.
+
+La distinzione rispetto a `catalog-watch`:
+- `catalog-watch` osserva se il catalogo e' cambiato (segnale)
+- `catalog inventory` enumera cosa c'e' dentro (snapshot per scouting)
+
+Il catalog inventory serve per scouting e triage di item promettenti, non per rilevare cambiamenti. Se nasce un dubbio su quale dei due usare: `catalog-watch` risponde a "e' cambiato qualcosa?", `catalog inventory` risponde a "cosa c'e' in questo catalogo?"
