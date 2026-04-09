@@ -3,7 +3,7 @@ name: source-check
 description: Workflow canonico del Source Observatory per verificare se una fonte pubblica regge davvero come pista del Lab e merita un passo successivo.
 license: MIT
 metadata:
-  version: "1.0"
+  version: "1.1"
   owner: "DataCivicLab"
   tags: [source-observatory, source-check, scouting, datasets]
 ---
@@ -11,7 +11,7 @@ metadata:
 # Workflow: source-check
 
 Workflow canonico del Source Observatory.
-Versione: 1.0 - 2026-04-08
+Versione: 1.1 - 2026-04-09
 
 ## Obiettivo di fase
 
@@ -58,14 +58,6 @@ Non usarlo quando:
 - sei gia' in intake o pipeline
 - stai facendo solo un health check del portale
 - il lavoro vero e' monitoraggio ricorrente e non valutazione della fonte
-
-## Input minimi
-
-Per partire servono almeno:
-
-- URL, pagina o endpoint reale
-- contesto minimo su che cosa dovrebbe contenere la fonte
-- una ragione concreta per cui potrebbe valere la pena guardarla
 
 ## Preconditions minime
 
@@ -133,6 +125,26 @@ Se il dato e' abbastanza strutturato, prova anche a estrarre:
 - campi principali
 - dimensioni confermate
 - rischio semantico principale
+
+### 3b. Verifica la sufficienza semantica per un v0
+
+Prima di procedere, rispondi in modo esplicito:
+
+1. il dato e' leggibile direttamente?
+2. le variabili chiave sono interpretabili standalone?
+3. esiste un output minimo utile senza join o metadata esterni obbligatori?
+
+Usa queste domande per distinguere tra:
+
+- fonte autosufficiente per un `v0`
+- fonte accessibile ma utile solo con enrichment
+- fonte troppo opaca o troppo scarna per reggere DI
+
+Qualificatore da annotare nella nota locale:
+
+- `self-contained`
+- `usable-with-enrichment`
+- `too-thin-for-v0`
 
 ### 4. Formula la domanda civica
 
@@ -247,6 +259,7 @@ Un source-check buono lascia:
 - domanda civica plausibile
 - perimetro v0 iniziale, se il caso regge
 - un verdict unico e leggibile
+- un qualificatore di sufficienza semantica
 - una nota locale riusabile
 - un next step esplicito
 
@@ -256,6 +269,7 @@ Il workflow e' chiuso bene quando:
 
 - il check non confonde fonte viva e fonte utile
 - il livello di accesso e' dichiarato in modo onesto
+- la sufficienza semantica del `v0` e' resa esplicita
 - il verdetto finale e' unico e coerente
 - esiste un next step plausibile se il verdetto e' positivo
 - esiste una nota locale che permette di riprendere il caso
@@ -268,6 +282,12 @@ Il workflow e' chiuso bene quando:
 - `support dataset`
 - `aggiorna artefatto esistente`
 - `no-go`
+
+Qualificatori ammessi da annotare accanto al verdetto:
+
+- `self-contained`
+- `usable-with-enrichment`
+- `too-thin-for-v0`
 
 ## Dove orientarsi
 
