@@ -1,0 +1,73 @@
+name: Portal scout
+description: Classifica un portale e decide il prossimo passo del funnel SO.
+title: "portal-scout: <portale>"
+labels: ["portal-scout", "scouting"]
+body:
+  - type: input
+    id: portal_name
+    attributes:
+      label: Portale / fonte
+      placeholder: "OpenCoesione"
+    validations:
+      required: true
+  - type: input
+    id: portal_url
+    attributes:
+      label: URL principale
+      placeholder: "https://opencoesione.gov.it"
+    validations:
+      required: true
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Superficie osservabile principale
+      options:
+        - CKAN
+        - SDMX
+        - HTML (sitemap/listing)
+        - API custom
+        - SPARQL
+        - Altro
+    validations:
+      required: true
+  - type: textarea
+    id: surfaces
+    attributes:
+      label: Superfici osservabili
+      description: "Elenca le superfici rilevanti (catalogo, API, sitemap, download)."
+      placeholder: "- catalogo JSON\n- sitemap dataset"
+    validations:
+      required: true
+  - type: textarea
+    id: inventory_feasibility
+    attributes:
+      label: Inventariabile?
+      description: "Sì/no e con quale metodo."
+      placeholder: "Si, via sitemap dataset; no crawler generale."
+    validations:
+      required: true
+  - type: textarea
+    id: overlap
+    attributes:
+      label: Overlap con filoni esistenti
+      description: "Se esistono filoni simili, indicare."
+    validations:
+      required: false
+  - type: dropdown
+    id: verdict
+    attributes:
+      label: Verdict
+      options:
+        - go catalog-watch
+        - go source-check item-based
+        - radar-only
+        - not now
+    validations:
+      required: true
+  - type: textarea
+    id: next_step
+    attributes:
+      label: Next step consigliato
+      placeholder: "Aprire catalog-watch o fare 1-2 source-check mirati"
+    validations:
+      required: true

@@ -1,0 +1,93 @@
+name: Source-check
+description: Verifica una fonte con accesso reale, shape, sufficienza semantica e verdict.
+title: "source-check: <fonte>"
+labels: ["source-check", "scouting"]
+body:
+  - type: input
+    id: source_name
+    attributes:
+      label: Fonte / nome breve
+      placeholder: "ISTAT 47_940 - Servizi sociali dei Comuni"
+    validations:
+      required: true
+  - type: input
+    id: source_url
+    attributes:
+      label: URL / endpoint principale
+      placeholder: "https://esploradati.istat.it/SDMXWS/rest/data/47_940"
+    validations:
+      required: true
+  - type: dropdown
+    id: protocol
+    attributes:
+      label: Protocollo / formato
+      options:
+        - SDMX
+        - CKAN
+        - CSV/Excel
+        - HTML
+        - RDF
+        - Altro
+    validations:
+      required: true
+  - type: textarea
+    id: access_probe
+    attributes:
+      label: Accesso reale (probe)
+      description: "Link o comando usato per verificare l'accesso reale."
+      placeholder: "GET ...?format=csv&detail=full"
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: Shape / dimensioni chiave
+      description: "Dimensioni principali, granularita territoriale e temporale."
+      placeholder: "- REF_AREA: comuni\n- TIME_PERIOD: 2001-2024\n- DATA_TYPE: incidenti, morti, feriti"
+    validations:
+      required: true
+  - type: textarea
+    id: v0_scope
+    attributes:
+      label: Perimetro v0 proposto
+      description: "Quale v0 minimale sarebbe difendibile."
+      placeholder: "Comuni + ultimi 3-5 anni + misure base"
+    validations:
+      required: true
+  - type: dropdown
+    id: semantic_sufficiency
+    attributes:
+      label: Sufficienza semantica del v0
+      options:
+        - self-contained
+        - usable-with-enrichment
+        - too-thin-for-v0
+    validations:
+      required: true
+  - type: textarea
+    id: overlap
+    attributes:
+      label: Overlap con filoni esistenti
+      description: "Se esiste un filone simile, indicarlo."
+      placeholder: "MIT incidenti 2001-2018"
+    validations:
+      required: false
+  - type: dropdown
+    id: verdict
+    attributes:
+      label: Verdict
+      options:
+        - go Discussion
+        - watchlist
+        - support dataset
+        - aggiorna artefatto esistente
+        - not now
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Note finali
+      description: "Rischi, caveat, trigger per riaprire."
+    validations:
+      required: false

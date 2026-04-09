@@ -1,0 +1,59 @@
+name: Catalog inventory scout
+description: Triage di un catalog inventory esistente per produrre una shortlist.
+title: "catalog-scout: <catalogo>"
+labels: ["catalog-scout", "scouting"]
+body:
+  - type: input
+    id: catalog_name
+    attributes:
+      label: Catalogo / fonte
+      placeholder: "ISTAT SDMX - catalog inventory"
+    validations:
+      required: true
+  - type: input
+    id: inventory_path
+    attributes:
+      label: Inventory path / riferimento
+      placeholder: "source-observatory/data/catalog_inventory/generated/catalog_inventory_latest.parquet"
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Criteri di triage
+      description: "Cosa rende un item degno di source-check."
+      placeholder: "rilevanza civica, granularita comunale, assenza overlap"
+    validations:
+      required: true
+  - type: textarea
+    id: shortlist
+    attributes:
+      label: Shortlist proposta
+      description: "Elenco corto di item con motivazione e verdict."
+      placeholder: "- 47_940: servizi sociali comuni -> source-check (alta)"
+    validations:
+      required: true
+  - type: textarea
+    id: watchlist
+    attributes:
+      label: Watchlist / backlog
+      description: "Item interessanti ma non prioritari."
+    validations:
+      required: false
+  - type: textarea
+    id: caveats
+    attributes:
+      label: Caveat tecnici
+      description: "Limiti dell'inventory o del catalogo (metadata poveri, protocollo non supportato)."
+    validations:
+      required: false
+  - type: dropdown
+    id: verdict
+    attributes:
+      label: Esito
+      options:
+        - shortlist pronta per source-check
+        - serve inventory enriched
+        - not now
+    validations:
+      required: true
