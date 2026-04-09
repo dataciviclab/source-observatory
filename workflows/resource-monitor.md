@@ -3,7 +3,7 @@ name: resource-monitor
 description: Workflow canonico del Source Observatory per monitorare un insieme ristretto di risorse note e suggerire un next step umano.
 license: MIT
 metadata:
-  version: "1.2"
+  version: "1.3"
   owner: "DataCivicLab"
   tags: [source-observatory, resource-monitor, monitoring, follow-up]
 ---
@@ -11,7 +11,13 @@ metadata:
 # Workflow: resource-monitor
 
 Workflow canonico di `source-observatory` per il monitor di un insieme ristretto di risorse note.
-Versione: 1.2 - 2026-04-08
+Versione: 1.3 - 2026-04-09
+
+Nota di stato:
+
+- `resource-monitor` e' congelato come utility legacy su poche fonti gia' presenti
+- non e' il punto di ingresso per nuove fonti o nuovi candidate
+- i futuri source ping orientati al dataset vivranno preferibilmente in `dataset-incubator`, vicino al candidate
 
 ## Obiettivo di fase
 
@@ -42,6 +48,7 @@ Usalo quando:
 - la fonte e' gia' importante per il Lab
 - esiste un next step plausibile se il segnale cambia
 - il monitor costa meno di uno scouting umano ripetuto
+- la fonte e' gia' una delle poche monitorate, non un nuovo ingresso nel funnel
 
 Non usarlo quando:
 
@@ -49,6 +56,7 @@ Non usarlo quando:
 - il caso e' meglio descritto da `radar-check`
 - il caso e' meglio descritto da `catalog-watch`
 - il monitor non porta quasi mai a decisioni utili
+- stai valutando se aggiungere una nuova fonte: quel gate passa prima da `portal-scout`, `source-check` o DI
 
 ## Preconditions minime
 
@@ -77,6 +85,7 @@ Fermati e non forzare conclusioni quando:
 - il cambio osservato dipende da rumore HTML o da fragilita' dell'adapter
 - non esiste un next step difendibile anche se il segnale fosse vero
 - stai per trattare un `changed` come rerun automatico senza leggere il tipo di cambio
+- stai per usare `resource-monitor` come canale per nuove fonti: il monitor e' congelato e non va esteso
 
 ## Passi canonici
 
