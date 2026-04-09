@@ -142,3 +142,21 @@ mim_ustat:
   note: Portale MUR USTAT (istruzione superiore/AFAM/DSU) con CKAN stabile e
     aggiornamenti recenti. Proposto per catalog-watch.
   datasets_in_use: []
+opencoesione:
+  source_kind: catalog
+  protocol: rest
+  observation_mode: catalog-watch
+  base_url: https://opencoesione.gov.it/it/api/
+  last_probed: '2026-04-09'
+  catalog_baseline:
+    captured_at: '2026-04-09'
+    metric: data_aggiornamento
+    value: '2025-10-31'
+    method: api_root
+    reliability: medium
+    note: Baseline su campo data_aggiornamento esposto dal root API.
+  verdict: go
+  note: API REST custom con endpoint aggregati e data_aggiornamento. Usare per change
+    detection e trigger re-run del candidate DI.
+  datasets_in_use:
+  - opencoesione-pagamenti-ue-2014-2020
