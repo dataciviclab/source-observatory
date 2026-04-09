@@ -13,12 +13,17 @@ Ultimo run: 2026-04-03
 | `follow-up candidate` | 0 | - |
 | `[DATO MANCANTE]` | 0 | - |
 
+## Fonti catalog-watch non inventariabili (builder non supporta)
+
+- `dati_salute` - protocollo `html` non supportato dal builder inventory
+
 ---
 
 ## Dettaglio per fonte
 
 ### istat_sdmx
 - **Stato**: `no signal`
+- **Inventariabile**: si (SDMX supportato)
 - **Baseline**: 509 (2026-04-03)
 - **Osservato**: 509 (2026-04-03)
 - **Delta**: 0
@@ -27,6 +32,7 @@ Ultimo run: 2026-04-03
 
 ### anac
 - **Stato**: `health`
+- **Inventariabile**: no (WAF / HTML non CKAN)
 - **Baseline**: 69 (2026-03-28)
 - **Osservato**: [DATO MANCANTE] (2026-04-03)
 - **Delta**: non verificabile
@@ -35,6 +41,7 @@ Ultimo run: 2026-04-03
 
 ### inps
 - **Stato**: `no signal`
+- **Inventariabile**: si (CKAN supportato)
 - **Baseline**: 2323 (2026-04-02)
 - **Osservato**: 2323 (2026-04-03)
 - **Delta**: 0
@@ -43,6 +50,7 @@ Ultimo run: 2026-04-03
 
 ### openbdap
 - **Stato**: `no signal`
+- **Inventariabile**: si (CKAN supportato)
 - **Baseline**: 3772 (2026-04-02)
 - **Osservato**: 3772 (2026-04-03)
 - **Delta**: 0
