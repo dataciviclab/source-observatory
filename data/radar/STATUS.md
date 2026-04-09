@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-04-08
+Ultimo run: 2026-04-09
 
 ## Sommario
 
 - Fonti controllate: 8
-- GREEN: 5
+- GREEN: 6
 - YELLOW: 1
-- RED: 2
+- RED: 1
 
 ## Tipi sorgente
 
@@ -31,7 +31,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | RED | 500 | popolazione-istat |
+| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | popolazione-istat |
 | anac | catalog | ckan | catalog-watch | YELLOW | 403 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | pens_2017, pens_2024 |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | dipendenti-pubblici, opencoesione-pagamenti-ue-2014-2020 |
@@ -42,6 +42,5 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
-- `istat_sdmx`: HTTP 500 | content-type: text/html; charset=utf-8 | url finale: https://sdmx.istat.it/SDMXWS/rest/dataflow/IT1 | SDMX retry esaurito (3 tentativi): nessun dettaglio
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | Catalogo CKAN piccolo ma pulito, adatto a segnali leggibili.
 - `dati_salute`: SSL verify failed; fallback connection error (SSLError)
