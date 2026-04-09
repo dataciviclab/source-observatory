@@ -124,3 +124,21 @@ dati_camera:
   note: Aggiunto endpoint SPARQL come radar-only per monitoraggio infrastrutturale
     di base.
   datasets_in_use: []
+mim_ustat:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati-ustat.mur.gov.it/api/3/action/package_list?limit=1
+  last_probed: '2026-04-09'
+  catalog_baseline:
+    captured_at: '2026-04-09'
+    metric: package_count
+    value: 68
+    method: package_list
+    reliability: medium
+    note: Baseline iniziale su CKAN package_list; portale con 68 dataset e metadata
+      completi, aggiornamenti recenti.
+  verdict: go
+  note: Portale MUR USTAT (istruzione superiore/AFAM/DSU) con CKAN stabile e
+    aggiornamenti recenti. Proposto per catalog-watch.
+  datasets_in_use: []
