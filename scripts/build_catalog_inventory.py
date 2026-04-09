@@ -23,13 +23,23 @@ DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
 NON_INVENTORIABLE_SOURCES = {
     "anac": "Fonte osservata in source-observatory, ma non inventariabile con client HTTP standard per via di una risposta WAF 'Request Rejected'.",
 }
+CKAN_ACTION_NAMES = {
+    "package_list",
+    "package_search",
+    "package_show",
+    "current_package_list_with_resources",
+}
+# Sources where current_package_list_with_resources is unreliable (SSL/GIL crash on Windows).
+# These skip the enrichment step and fall straight to package_list.
+CKAN_SKIP_CURRENT_LIST = {"inps"}
 SDMX_RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
 SDMX_RETRY_DELAYS_SECONDS = (2, 5)
-INVENTORY_COLLECTORS: dict[str, Any] = {}
 
 
 def supported_protocols() -> set[str]:
-    return set(INVENTORY_COLLECTORS)
+    return {"ckan", "sdmx"}
+
+
 def now_utc_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
@@ -48,13 +58,64 @@ def ckan_action_endpoint(base_url: str, action: str) -> str:
     if "/api/3/action/" in endpoint:
         root = endpoint.rsplit("/", 1)[0]
         return f"{root}/{action}"
+    last_segment = endpoint.rsplit("/", 1)[-1]
+    if last_segment in CKAN_ACTION_NAMES:
+        root = endpoint.rsplit("/", 1)[0]
+        return f"{root}/{action}"
     return endpoint
 
 
 def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
-    response = requests.get(url, timeout=60, **kwargs)
+    timeout = kwargs.pop("timeout", 60)
+    headers = kwargs.pop("headers", {}) or {}
+    headers.setdefault("Connection", "close")
+    response = requests.get(url, timeout=timeout, headers=headers, **kwargs)
     response.raise_for_status()
     return response.json()
+
+
+def extract_ckan_inventory_row(
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
+    item: dict[str, Any],
+    endpoint: str,
+    ordinal: int,
+    inventory_method: str,
+) -> dict[str, Any]:
+    organization = (item.get("organization") or {}).get("title") or (
+        item.get("organization") or {}
+    ).get("name")
+    if not organization:
+        organization = item.get("author") or item.get("maintainer")
+    tag_items = item.get("tags") or []
+    tags: list[str] = []
+    for tag_item in tag_items:
+        if isinstance(tag_item, dict):
+            tag_value = tag_item.get("display_name") or tag_item.get("name")
+        elif isinstance(tag_item, str):
+            tag_value = tag_item.strip()
+        else:
+            tag_value = None
+        if tag_value:
+            tags.append(tag_value)
+    notes = (item.get("notes") or "").strip()
+    return {
+        "captured_at": captured_at,
+        "source_id": source_id,
+        "source_kind": source_cfg.get("source_kind"),
+        "protocol": source_cfg.get("protocol"),
+        "inventory_method": inventory_method,
+        "item_kind": "dataset",
+        "item_id": item.get("id") or item.get("name"),
+        "item_name": item.get("name") or item.get("id"),
+        "title": item.get("title"),
+        "organization": organization,
+        "tags": ", ".join(tags) if tags else None,
+        "notes_excerpt": notes[:300] if notes else None,
+        "source_url": endpoint,
+        "ordinal": ordinal,
+    }
 
 
 def collect_ckan_inventory_via_search(
@@ -77,33 +138,16 @@ def collect_ckan_inventory_via_search(
             break
 
         for item in items:
-            organization = (item.get("organization") or {}).get("title") or (
-                item.get("organization") or {}
-            ).get("name")
-            tag_items = item.get("tags") or []
-            tags = [
-                t.get("display_name") or t.get("name")
-                for t in tag_items
-                if (t.get("display_name") or t.get("name"))
-            ]
-            notes = (item.get("notes") or "").strip()
             rows.append(
-                {
-                    "captured_at": captured_at,
-                    "source_id": source_id,
-                    "source_kind": source_cfg.get("source_kind"),
-                    "protocol": source_cfg.get("protocol"),
-                    "inventory_method": "package_search",
-                    "item_kind": "dataset",
-                    "item_id": item.get("id") or item.get("name"),
-                    "item_name": item.get("name") or item.get("id"),
-                    "title": item.get("title"),
-                    "organization": organization,
-                    "tags": ", ".join(tags) if tags else None,
-                    "notes_excerpt": notes[:300] if notes else None,
-                    "source_url": endpoint,
-                    "ordinal": ordinal,
-                }
+                extract_ckan_inventory_row(
+                    source_id=source_id,
+                    source_cfg=source_cfg,
+                    captured_at=captured_at,
+                    item=item,
+                    endpoint=endpoint,
+                    ordinal=ordinal,
+                    inventory_method="package_search",
+                )
             )
             ordinal += 1
 
@@ -116,6 +160,132 @@ def collect_ckan_inventory_via_search(
     return rows
 
 
+def collect_ckan_inventory_via_current_list(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    endpoint = ckan_action_endpoint(
+        source_cfg["base_url"], "current_package_list_with_resources"
+    )
+    page_size = 100
+    fallback_page_sizes = (50, 10)
+    request_timeout = 15
+    max_retries = 2
+    retry_delay = 1.0
+    offset = 0
+    ordinal = 1
+    rows: list[dict[str, Any]] = []
+
+    while True:
+        current_limit = page_size
+        while True:
+            attempt = 0
+            while True:
+                try:
+                    payload = ckan_get_json(
+                        endpoint,
+                        params={"limit": current_limit, "offset": offset},
+                        timeout=request_timeout,
+                    )
+                    break
+                except requests.Timeout:
+                    attempt += 1
+                    if attempt <= max_retries:
+                        time.sleep(retry_delay * attempt)
+                        continue
+                    next_limit = next(
+                        (size for size in fallback_page_sizes if size < current_limit),
+                        None,
+                    )
+                    if next_limit is None:
+                        if rows:
+                            return rows, {
+                                "type": "partial_current_package_list_with_resources",
+                                "message": "Arricchimento parziale da current_package_list_with_resources; ultimi chunk in timeout dopo retry.",
+                                "failed_offset": offset,
+                                "failed_limit": current_limit,
+                                "rows_collected": len(rows),
+                            }
+                        raise
+                    current_limit = next_limit
+                    attempt = 0
+        if not payload.get("success"):
+            raise ValueError(
+                f"CKAN current_package_list_with_resources failed for {source_id}"
+            )
+
+        result = payload.get("result")
+        if not isinstance(result, list):
+            raise ValueError(
+                f"Unexpected CKAN payload for {source_id}: current_package_list_with_resources result is not a list"
+            )
+        if not result:
+            break
+
+        for item in result:
+            rows.append(
+                extract_ckan_inventory_row(
+                    source_id=source_id,
+                    source_cfg=source_cfg,
+                    captured_at=captured_at,
+                    item=item,
+                    endpoint=endpoint,
+                    ordinal=ordinal,
+                    inventory_method="current_package_list_with_resources",
+                )
+            )
+            ordinal += 1
+
+        if len(result) < current_limit:
+            break
+        offset += len(result)
+        time.sleep(1.0)
+
+    if not rows:
+        raise ValueError(
+            f"CKAN current_package_list_with_resources returned no rows for {source_id}"
+        )
+    return rows, None
+
+
+def collect_ckan_inventory_via_package_list(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str
+) -> list[dict[str, Any]]:
+    endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_list")
+    payload = ckan_get_json(endpoint)
+    if not payload.get("success"):
+        raise ValueError(f"CKAN action failed for {source_id}")
+
+    result = payload.get("result")
+    if not isinstance(result, list):
+        raise ValueError(
+            f"Unexpected CKAN payload for {source_id}: result is not a list"
+        )
+
+    rows: list[dict[str, Any]] = []
+    for idx, item_name in enumerate(result, start=1):
+        rows.append(
+            {
+                "captured_at": captured_at,
+                "source_id": source_id,
+                "source_kind": source_cfg.get("source_kind"),
+                "protocol": source_cfg.get("protocol"),
+                "inventory_method": source_cfg.get("catalog_baseline", {}).get(
+                    "method", "package_list"
+                ),
+                "item_kind": "dataset",
+                "item_id": str(item_name),
+                "item_name": str(item_name),
+                "title": None,
+                "organization": None,
+                "tags": None,
+                "notes_excerpt": None,
+                "source_url": endpoint,
+                "ordinal": idx,
+            }
+        )
+    return rows
+
+
 def collect_ckan_inventory(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
@@ -123,45 +293,48 @@ def collect_ckan_inventory(
         return collect_ckan_inventory_via_search(
             source_id, source_cfg, captured_at
         ), None
-    except Exception as exc:
-        endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_list")
-        payload = ckan_get_json(endpoint)
-        if not payload.get("success"):
-            raise ValueError(f"CKAN action failed for {source_id}")
-
-        result = payload.get("result")
-        if not isinstance(result, list):
-            raise ValueError(
-                f"Unexpected CKAN payload for {source_id}: result is not a list"
+    except Exception as search_exc:
+        package_list_rows = collect_ckan_inventory_via_package_list(
+            source_id, source_cfg, captured_at
+        )
+        if source_id in CKAN_SKIP_CURRENT_LIST:
+            return package_list_rows, {
+                "type": "skip_current_package_list",
+                "message": f"Enrichment current_package_list_with_resources disabilitato per {source_id} (instabilita SSL/GIL in ambiente locale).",
+            }
+        time.sleep(1.0)
+        try:
+            current_rows, current_warning = collect_ckan_inventory_via_current_list(
+                source_id, source_cfg, captured_at
             )
+            enriched_by_id = {row["item_id"]: row for row in current_rows}
+            merged_rows: list[dict[str, Any]] = []
+            missing_metadata = 0
+            for row in package_list_rows:
+                enriched = enriched_by_id.get(row["item_id"])
+                if enriched is None:
+                    missing_metadata += 1
+                    merged_rows.append(row)
+                else:
+                    merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
 
-        rows: list[dict[str, Any]] = []
-        for idx, item_name in enumerate(result, start=1):
-            rows.append(
-                {
-                    "captured_at": captured_at,
-                    "source_id": source_id,
-                    "source_kind": source_cfg.get("source_kind"),
-                    "protocol": source_cfg.get("protocol"),
-                    "inventory_method": source_cfg.get("catalog_baseline", {}).get(
-                        "method", "package_list"
-                    ),
-                    "item_kind": "dataset",
-                    "item_id": str(item_name),
-                    "item_name": str(item_name),
-                    "title": None,
-                    "organization": None,
-                    "tags": None,
-                    "notes_excerpt": None,
-                    "source_url": endpoint,
-                    "ordinal": idx,
-                }
-            )
-        return rows, {
-            "type": "fallback_package_list",
-            "message": "Fallback da package_search a package_list.",
-            "package_search_error": str(exc),
-        }
+            warning: dict[str, Any] = {
+                "type": "fallback_current_package_list_with_resources",
+                "message": "Fallback da package_search a current_package_list_with_resources.",
+                "package_search_error": str(search_exc),
+                "rows_enriched": len(enriched_by_id),
+                "rows_missing_metadata": missing_metadata,
+            }
+            if current_warning:
+                warning["current_list_warning"] = current_warning
+            return merged_rows, warning
+        except Exception as current_list_exc:
+            return package_list_rows, {
+                "type": "fallback_package_list",
+                "message": "Fallback finale a package_list dopo fallimento di package_search e current_package_list_with_resources.",
+                "package_search_error": str(search_exc),
+                "current_list_error": str(current_list_exc),
+            }
 
 
 def parse_sdmx_name(name_elem: ET.Element | None) -> str | None:
@@ -318,7 +491,7 @@ def main() -> None:
             continue
 
         protocol = source_cfg.get("protocol")
-        if protocol not in SUPPORTED_PROTOCOLS:
+        if protocol not in supported_protocols():
             report["sources"][source_id] = {
                 "status": "protocol_not_supported",
                 "protocol": protocol,
