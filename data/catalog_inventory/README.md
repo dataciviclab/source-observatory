@@ -58,6 +58,11 @@ Colonne chiave:
 - `source_url`: endpoint usato per l'inventory
 - `ordinal`: posizione del record nell'enumerazione della fonte
 
+Nota operativa:
+- per cataloghi CKAN il builder prova in ordine `package_search`, `current_package_list_with_resources`, `package_list`
+- `current_package_list_with_resources` e' disabilitato per `inps` in ambiente locale Windows per instabilita SSL/GIL (fall-back diretto a `package_list` con warning esplicito)
+- la logica di enrichment resta attiva per altri cataloghi CKAN futuri
+
 ## Workflow
 
 Workflow GitHub Actions disponibile:
