@@ -39,3 +39,13 @@ Tenere solo un set Tier 1 molto piccolo ed evitare di trattare gli snapshot del 
 - usage note: `source-observatory/docs/usage.md`
 - config audit: `source-observatory/docs/config_audit_2026-03-27.md`
 - architecture note: `source-observatory/docs/architecture.md`
+
+## Stato del monitor
+
+Il monitor e' congelato come utility legacy su poche fonti gia' presenti.
+
+Regola pratica:
+
+- nessuna nuova fonte va aggiunta qui come primo passo
+- i nuovi portali passano da `portal-scout` / `source-check`
+- i futuri source ping orientati al dataset vanno preferibilmente vicino ai candidate in `dataset-incubator`

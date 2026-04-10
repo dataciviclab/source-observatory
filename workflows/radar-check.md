@@ -1,59 +1,83 @@
+---
+name: radar-check
+description: Workflow canonico del Source Observatory per controllare la salute infrastrutturale delle fonti nel registry.
+license: MIT
+metadata:
+  version: "1.2"
+  owner: "DataCivicLab"
+  tags: [source-observatory, radar-check, health, monitoring]
+---
+
 # Workflow: radar-check
 
-Workflow per l'esecuzione del radar di salute portali nel Source Observatory.
-Versione: 1.1 - 2026-03-30
+Workflow canonico di `source-observatory`.
+Versione: 1.2 - 2026-04-10
 
----
+## Obiettivo di fase
 
-## Scopo
+Verificare la raggiungibilita e la salute infrastrutturale delle fonti nel registry.
 
-Verificare la raggiungibilità e la salute infrastrutturale dei portali nel registry.
-Risponde a: "questo portale è vivo?"
+Questo workflow serve a:
 
-Non risponde a:
-- "il dataset è aggiornato?"
-- "c'è qualcosa di nuovo nel catalogo?"
-- "vale la pena analizzarlo?"
-
-Queste domande appartengono rispettivamente a:
-- `resource-monitor` nei pochissimi casi Tier 1 già giustificati
-- `catalog-watch`
-- `source-check`
-
----
-
-## Input
-
-- Registry: `source-observatory/data/radar/sources_registry.yaml`
-- Script: `source-observatory/scripts/radar_check.py`
-- Output script: `source-observatory/data/radar/STATUS.md`
-
-## Perimetro corretto
-
-`radar-check` è il layer più alto e più semplice del repo.
-
-Serve a osservare:
-
-- salute della fonte
-- raggiungibilità
-- errori SSL, DNS, timeout o risposta anomala
+- capire se una fonte e viva
+- rilevare errori SSL, DNS, timeout o risposta anomala
+- produrre una sintesi infrastrutturale leggibile
 
 Non serve a:
 
+- capire se un dataset e aggiornato
 - leggere il catalogo
-- inferire update di dataset
-- proporre source-check in automatico
+- decidere il valore civico della fonte
+- aprire follow-up automatici
 
----
+## Quando usarlo
 
-## Workflow
+Usarlo quando hai gia:
 
-### Step 1 - Leggi il registry
+- `sources_registry.yaml` aggiornato
+- script `source-observatory/scripts/radar_check.py`
+- bisogno di un check rapido sulla salute delle fonti
 
-Leggere `sources_registry.yaml` per avere il contesto delle fonti prima del run:
-- elencare le fonti con il loro `verdict` attuale e `observation_mode`
+Non usarlo quando:
 
-### Step 2 - Esegui radar_check
+- devi verificare una fonte specifica o un file
+- devi leggere delta di catalogo
+- devi interpretare un segnale a livello dataset
+
+## Preconditions minime
+
+Per partire servono:
+
+- registry leggibile
+- script radar eseguibile
+- output atteso chiaro: `source-observatory/data/radar/STATUS.md`
+- fonti con `base_url` plausibile
+
+Nel dubbio:
+
+- se la domanda vera non e "questa fonte e viva?", probabilmente non sei nel workflow giusto
+
+## Stop rules
+
+Fermarsi se:
+
+- stai per interpretare un problema infrastrutturale come update di contenuto
+- il caso appartiene a `catalog-watch` o `source-check`
+- il run produce solo rumore da una fonte gia nota come fragile
+- stai per modificare il registry a mano invece di limitarti a leggere il risultato del run
+
+## Passi canonici
+
+### 1. Leggi il registry
+
+Leggere `source-observatory/data/radar/sources_registry.yaml` per avere il contesto delle fonti prima del run:
+
+- fonte
+- `protocol`
+- `verdict`
+- `observation_mode`
+
+### 2. Esegui il radar
 
 Dalla root del workspace:
 
@@ -61,66 +85,61 @@ Dalla root del workspace:
 python source-observatory/scripts/radar_check.py
 ```
 
-Per un dry-run senza scrivere lo stato:
+Per un dry-run:
 
 ```powershell
 python source-observatory/scripts/radar_check.py --dry-run
 ```
 
-### Step 3 - Leggi STATUS.md
+### 3. Leggi `STATUS.md`
 
-Leggere `source-observatory/data/radar/STATUS.md` dopo il run.
+Leggere `source-observatory/data/radar/STATUS.md` e classificare ogni fonte in uno di questi stati:
 
-Classificare ogni fonte in uno di questi stati:
+- `ok`
+- `warning infrastrutturale`
+- `da osservare`
 
-| Classificazione | Segnale |
-|---|---|
-| `ok` | stato `GREEN`, nessun errore rilevante |
-| `warning infrastrutturale` | stato `YELLOW` o `RED` per timeout, SSL, DNS, request error |
-| `da osservare` | note ripetute o fallback SSL usato anche se la fonte risponde |
+### 4. Produci la sintesi
 
-### Step 4 - Sintesi
+Produrre una sintesi breve con:
 
-Produrre un breve output con:
 - conteggio per classificazione
-- lettura rapida dei tipi sorgente e delle modalità osservazione
-- fonti con `warning infrastrutturale` o `da osservare` con dettaglio
-- eventuali fonti `go` nel registry che ora mostrano problemi
+- fonti con warning o problemi ripetuti
+- eventuali fonti `go` che ora mostrano problemi infrastrutturali
 
----
+## Errori tipici
 
-## Regole di interpretazione
+- confondere salute del portale con update del dataset
+- promuovere un warning a decisione di workflow successivo
+- trattare un falso negativo noto come rottura reale
+- usare il radar per decidere da solo un source-check
 
-- `GREEN` / `ok` non implica lavoro sul dataset: è solo salute della fonte
-- Un warning SSL, DNS o timeout non è un aggiornamento di contenuto
-- Se una fonte SDMX restituisce 404 su HEAD: è un falso negativo noto
-- Errori ripetuti sulla stessa fonte: segnalarlo a Gabri, non modificare il registry da soli
-- La modalità osservazione aiuta a capire il next step atteso, ma non cambia il significato del segnale radar
+## Output minimo atteso
 
----
+Alla fine devono esistere:
 
-## STOP POINT
+- `STATUS.md` aggiornato dallo script oppure un dry-run leggibile
+- sintesi leggibile del run
+- eventuali fonti problematiche chiaramente evidenziate
 
-Fermarsi dopo la sintesi. Non aprire issue, non fare source-check, non modificare il registry
-senza istruzione esplicita.
+## Definition of done
 
-Se una fonte mostra un problema rilevante, segnalarlo chiaramente con `[ATTENZIONE]`
-e aspettare istruzioni.
+Il workflow e chiuso bene quando:
 
----
+- il radar e stato eseguito o simulato in modo esplicito
+- `STATUS.md` e leggibile
+- i problemi infrastrutturali sono distinti dai problemi di contenuto
+- il registry non e stato modificato manualmente
+- non sono stati aperti altri artefatti o workflow
 
-## Vincoli
+## Stati finali ammessi
 
-- Niente emoji, niente em dash
-- Non modificare `sources_registry.yaml`: il registry è aggiornato dallo script, non dalla skill
-- Non promuovere fonti a `monitor-active` o `catalog-watch` senza conferma
-- Non trattare una fonte come problema di dataset solo perché è collegata a un candidate o a un dataset noto
+- `ok`
+- `warning infrastrutturale`
+- `da osservare`
 
----
+## Dove orientarsi
 
-## Riferimenti
-
-- Script: `source-observatory/scripts/radar_check.py`
-- Registry: `source-observatory/data/radar/sources_registry.yaml`
-- Output: `source-observatory/data/radar/STATUS.md`
-- Runbook: `source-observatory/docs/runbook.md`
+- [README.md](../README.md)
+- [docs/runbook.md](../docs/runbook.md)
+- [data/radar/README.md](../data/radar/README.md)

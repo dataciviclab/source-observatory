@@ -1,208 +1,222 @@
 ---
 name: catalog-watch
-description: Workflow del Source Observatory per osservare fonti in modalità catalog-watch e produrre un report locale di intelligence senza aprire issue o avviare pipeline. Usare quando serve capire se un catalogo ha esposto segnali nuovi o strutturalmente rilevanti.
+description: Workflow canonico del Source Observatory per osservare pochi cataloghi in modalita catalog-watch e produrre un report locale di intelligence senza aprire issue o avviare pipeline.
 license: MIT
 metadata:
-  version: "1.4"
+  version: "1.5"
   owner: "DataCivicLab"
   tags: [source-observatory, catalog-watch, monitoring, scouting]
 ---
 
 # Workflow: catalog-watch
 
-Workflow per l'osservazione periodica delle fonti in modalità `catalog-watch` nel Source Observatory.
-Versione: 1.4 - 2026-04-02
-
----
+Workflow canonico di `source-observatory`.
+Versione: 1.5 - 2026-04-10
 
 ## Obiettivo di fase
 
-Controllare le fonti classificate come `catalog-watch` in `sources_registry.yaml` e produrre
-un report strutturato di intelligence. Non apre issue, non esegue source-check, non avvia
-pipeline. Risponde a: "questo catalogo ha esposto qualcosa di nuovo o strutturalmente rilevante?"
+Controllare i pochi cataloghi classificati come `catalog-watch` nel registry e capire se:
 
-## Modello di esecuzione v0
+- l'inventario e cambiato
+- la struttura del catalogo e cambiata
+- esiste un segnale che merita un follow-up umano
 
-Per la v0 pubblica, `catalog-watch` resta `human-run`.
+Questo workflow serve a:
 
-Questo significa:
-
-- nessun workflow schedulato dedicato
-- nessuna esecuzione automatica giornaliera o settimanale
-- nessuna apertura automatica di issue o source-check
-- output canonici confermati:
-  - `data/catalog/CATALOG_WATCH_REPORT.md`
-  - `data/catalog/catalog_signals.json`
-
-Il motivo è semplice: il valore del layer sta nella lettura metodologicamente difendibile dei segnali, non nella frequenza di esecuzione. Finché il confronto con la baseline non è abbastanza stabile su tutto l'universo v0, meglio pochi run umani chiari che automazione rumorosa.
-
-## Definition of done
-
-Il workflow è completo quando:
-
-- tutte le fonti `catalog-watch` nel registry sono state controllate con tool reali
-- il report `CATALOG_WATCH_REPORT.md` è stato aggiornato
-- `last_probed` è stato aggiornato nel registry, ma non la baseline
-- ogni segnale ha un'azione suggerita chiara
-- non sono state aperte issue, source-check o pipeline in automatico
-
----
-
-## Input
-
-File canonico: `source-observatory/data/radar/sources_registry.yaml`
-
-Leggere il file e filtrare le fonti con `observation_mode: catalog-watch`.
-Se presente, leggere anche `catalog_baseline`, inclusi `metric`, `value`, `method`, `reliability` e `note`.
-
-## Perimetro corretto
-
-`catalog-watch` è un layer sopra il dataset-level.
-
-Serve a osservare:
-
-- inventario del catalogo
-- drift strutturale
-- segnali che meritano follow-up
+- osservare l'inventario del catalogo
+- confrontare lo stato attuale con una baseline dichiarata
+- produrre un report di intelligence leggibile
+- suggerire, ma non eseguire, il next step umano
 
 Non serve a:
 
-- fare source-check automatici
-- aprire issue
-- monitorare in modo diffuso il singolo dataset o file
+- fare `source-check` automatici
+- aprire issue o PR
+- avviare pipeline o candidate
+- monitorare ogni dataset o file singolarmente
 
-## Protocolli core
+## Quando usarlo
 
-Trattare come protocolli core, in questo ordine:
+Usarlo quando hai gia:
 
-1. `ckan`
-2. `sdmx`
-3. `rest_json` quando il catalogo è davvero inventory-like
-4. `xlsx_direct` o `html` solo se inevitabili e con aspettativa di maggior rumore
+- fonti classificate come `catalog-watch` nel registry
+- una baseline inventariale o qualitativa dichiarata
+- una domanda del tipo:
+  - questo catalogo ha esposto qualcosa di nuovo o strutturalmente rilevante?
 
-Se il protocollo è fragile e il segnale non è chiaramente rilevante, preferire `[DATO MANCANTE]`
-o `nessuna conclusione` a una lettura forzata.
+Non usarlo quando:
 
----
+- la domanda vera e solo "la fonte e viva?"
+- il caso richiede un `source-check` puntuale su una fonte o dataset specifico
+- il caso e un monitor file-level o resource-level
+- la baseline non e abbastanza comparabile da sostenere un confronto serio
 
-## Tool disponibili per protocollo
+## Preconditions minime
 
-| Protocollo | Tool |
-|---|---|
-| `sdmx` | `mcp__istat-sdmx__istat_list_dataflows` |
-| `ckan` | `mcp__fetch__fetch_json` sull'endpoint dichiarato e su eventuali endpoint comparabili |
-| `rest_json` | `mcp__fetch__fetch_json` sull'endpoint base |
-| `xlsx_direct` | `mcp__fetch__fetch_readable` o `mcp__fetch__fetch_html` sulla pagina catalogo |
+Per partire servono almeno:
 
-Per CKAN: il `base_url` nel registry punta già all'endpoint di probe corretto.
-Usare quello come punto di partenza, non costruire URL da zero.
-Se la baseline dichiara un `method`, il confronto numerico va fatto con lo stesso metodo.
+- registry `source-observatory/data/radar/sources_registry.yaml`
+- fonti con `observation_mode: catalog-watch`
+- `protocol`, `base_url` e `catalog_baseline` leggibili
+- output canonici confermati:
+  - `source-observatory/data/catalog/CATALOG_WATCH_REPORT.md`
+  - `source-observatory/data/catalog/catalog_signals.json`
 
----
+Nel dubbio:
 
-## Workflow
+- se il metodo attuale non e comparabile con la baseline, meglio `[DATO MANCANTE]` che una conclusione forzata
 
-### Step 1 - Leggi il registry
+## Stop rules
 
-Leggere `sources_registry.yaml`. Per ogni fonte con `observation_mode: catalog-watch`:
-- estrarre `protocol`, `base_url`, `last_probed`, `note`, `datasets_in_use`, `catalog_baseline`
-- annotare esplicitamente `catalog_baseline.method` e `catalog_baseline.reliability`, se presenti
+Fermarsi quando:
 
-### Step 2 - Controlla ciascuna fonte
+- il protocollo reale non e chiaro
+- l'endpoint non restituisce dati comparabili con la baseline
+- il delta osservato dipende chiaramente da un mismatch di metodo
+- il catalogo e troppo fragile per distinguere tra `health` e `inventory change`
+- stai per trasformare un segnale grezzo in decisione automatica
 
-Per ogni fonte, eseguire il check appropriato al protocollo:
+## Passi canonici
 
-**SDMX**
-- Chiamare `istat_list_dataflows`
-- Contare i dataflow totali
-- Verificare se i dataflow correlati a `datasets_in_use` sono ancora presenti
-- Se esiste `catalog_baseline.metric = dataflow_count`, confrontare il conteggio con `catalog_baseline.value`
-- Se il conteggio è cambiato, segnalarlo esplicitamente nel report
+### 1. Leggi il registry
 
-**CKAN**
-- Chiamare `fetch_json` su `{base_url}`
-- identificare il metodo di conteggio dichiarato nella baseline:
-  - se `method = package_list`, usare `package_list`
-  - se `method = package_search`, usare `package_search?rows=0`
-  - se il metodo non e' dichiarato, fermarsi a `[DATO MANCANTE]` per il delta numerico
-- Se esiste `catalog_baseline.metric = package_count`, confrontare il totale solo se il metodo osservato coincide con `catalog_baseline.method`
-- Se ci sono `datasets_in_use`, verificare che i package noti siano ancora presenti
-- Se `package_list` e `package_search` espongono universi diversi, trattare il delta come mismatch di metodo e non come `inventory_change`
+Leggere `source-observatory/data/radar/sources_registry.yaml`.
 
-**REST JSON**
-- Chiamare `fetch_json` sull'endpoint base
-- Verificare disponibilità e struttura di massima
-- Segnalare cambi di schema o endpoint irraggiungibili
+Filtrare solo le fonti con:
 
-**XLSX direct / HTML**
-- Chiamare `fetch_readable` o `fetch_html` sulla pagina catalogo
-- Verificare raggiungibilità
-- Segnalare se la struttura dei link di download è cambiata
-- Se `catalog_baseline.metric = qualitative_signal`, confrontare il segnale attuale con la baseline testuale disponibile
+- `observation_mode: catalog-watch`
 
-### Step 3 - Produci il report
+Per ciascuna annotare almeno:
 
-Scrivere il report in:
-`source-observatory/data/catalog/CATALOG_WATCH_REPORT.md`
+- `protocol`
+- `base_url`
+- `last_probed`
+- `datasets_in_use`
+- `catalog_baseline.metric`
+- `catalog_baseline.value`
+- `catalog_baseline.method`
+- `catalog_baseline.reliability`
 
-Usare questa tassonomia dei segnali:
+### 2. Controlla ciascuna fonte col metodo giusto
+
+Per ogni fonte, eseguire il check coerente col protocollo.
+
+Per `sdmx`:
+
+- chiamare il listing dei dataflow
+- contare i dataflow totali
+- verificare se i dataflow correlati a `datasets_in_use` sono ancora presenti
+- se la baseline usa `dataflow_count`, confrontare il conteggio con il valore atteso
+
+Per `ckan`:
+
+- usare l'endpoint dichiarato nel registry
+- identificare il metodo di conteggio dichiarato nella baseline
+- confrontare il totale solo se il metodo osservato coincide con quello dichiarato
+- verificare, se presenti, i package correlati a `datasets_in_use`
+
+Regola:
+
+- se `package_list` e `package_search` descrivono universi diversi, trattare il caso come mismatch di metodo, non come `inventory change`
+
+Per `rest_json`:
+
+- verificare disponibilita e struttura di massima
+- segnalare cambi di schema o endpoint irraggiungibili
+
+Per `xlsx_direct` o `html`:
+
+- verificare raggiungibilita
+- controllare se la struttura dei link di download e cambiata
+- usare confronti qualitativi se la baseline e qualitativa
+
+### 3. Classifica il segnale primario
+
+Per ogni fonte e per ogni run, usare un solo segnale primario:
 
 - `no signal`
-  - nessuna novità affidabile
 - `health`
-  - il problema osservato è soprattutto di raggiungibilità o affidabilità della fonte
 - `inventory change`
-  - cambia il conteggio o l'inventario del catalogo
 - `structural drift`
-  - cambia la struttura, il pattern di naming o il layout del catalogo
 - `follow-up candidate`
-  - emerge un segnale che giustifica un follow-up umano, di solito `source-check`
 - `[DATO MANCANTE]`
-  - non c'è abbastanza evidenza per classificare il segnale in modo affidabile
 
-Regola pratica v0:
+Regole:
 
-- per ogni fonte e per ogni run usare un solo segnale primario
-- `follow-up candidate` va trattato come raccomandazione di follow-up, non come tipo segnale concorrente
-- se il metodo osservato non e' comparabile con la baseline dichiarata, preferire `[DATO MANCANTE]`
+- `follow-up candidate` e un suggerimento di follow-up umano, non un automatismo
+- se il metodo osservato non e comparabile con la baseline, preferire `[DATO MANCANTE]`
+- se il problema e soprattutto di raggiungibilita o affidabilita, preferire `health`
 
-### Step 4 - Aggiorna il registry
+### 4. Produci il report
 
-Per ogni fonte controllata, aggiornare il campo `last_probed` in `sources_registry.yaml`
-con la data corrente.
+Scrivere il report in:
 
-Non modificare `catalog_baseline` senza istruzione esplicita.
-La baseline va aggiornata solo quando il maintainer decide che il nuovo stato osservato diventa il nuovo riferimento.
-Se la baseline ha `method` o `reliability`, non cambiarli implicitamente durante il run.
+- `source-observatory/data/catalog/CATALOG_WATCH_REPORT.md`
 
----
+Per ogni fonte, il report deve lasciare almeno:
 
-## STOP POINT
+- fonte controllata
+- protocollo usato
+- baseline rilevante
+- osservazione principale
+- segnale primario
+- suggerimento di next step umano, se esiste
 
-Fermarsi qui. Il report è pronto per revisione del maintainer.
+### 5. Aggiorna il registry
 
-- Non aprire issue
-- Non eseguire source-check autonomamente
-- Non modificare candidate o dataset
+Per ogni fonte controllata, aggiornare:
 
-Se un segnale sembra urgente, segnalarlo
-chiaramente nel report con `[ATTENZIONE]` e aspettare istruzioni.
+- `last_probed`
 
----
+Non modificare:
 
-## Vincoli
+- `catalog_baseline`
+- `method`
+- `reliability`
 
-- Solo dati reali dai tool. Non stimare conteggi o inventare stati.
-- Se un endpoint non risponde, segnalarlo come `errore` nel report, non come `nessuna novità`.
-- Scrivere `[DATO MANCANTE]` se non riesci a ottenere un confronto affidabile.
-- Non trasformare delta numerici grezzi in decisioni automatiche: il follow-up umano resta separato.
-- Niente emoji, niente em dash.
+senza istruzione esplicita.
 
----
+## Errori tipici
 
-## Riferimenti
+- confrontare numeri prodotti da metodi diversi
+- trattare un endpoint rotto come `inventory change`
+- scambiare un problema di health per un segnale di catalogo
+- aprire follow-up automatici senza verifica umana
+- aggiornare la baseline implicitamente durante il run
 
-- Registry: `source-observatory/data/radar/sources_registry.yaml`
-- Output: `source-observatory/data/catalog/CATALOG_WATCH_REPORT.md`
-- Architettura: `source-observatory/docs/architecture.md`
-- Runbook: `source-observatory/docs/runbook.md`
+## Output minimo atteso
+
+Un run buono di `catalog-watch` lascia:
+
+- tutte le fonti `catalog-watch` controllate con tool reali
+- `CATALOG_WATCH_REPORT.md` aggiornato
+- `catalog_signals.json` aggiornato
+- `last_probed` aggiornato nel registry
+- un segnale primario per fonte
+- un next step umano suggerito, se serve
+
+## Definition of done
+
+Il workflow e chiuso bene quando:
+
+- tutte le fonti `catalog-watch` del registry sono state controllate
+- il report e aggiornato
+- nessun delta numerico e stato forzato senza comparabilita di metodo
+- non sono state aperte issue, source-check o pipeline in automatico
+- il maintainer puo leggere il report e capire subito se esiste un follow-up umano plausibile
+
+## Stati finali ammessi
+
+- `no signal`
+- `health`
+- `inventory change`
+- `structural drift`
+- `follow-up candidate`
+- `[DATO MANCANTE]`
+
+## Dove orientarsi
+
+- [README.md](../README.md)
+- [workflows/README.md](./README.md)
+- [docs/architecture.md](../docs/architecture.md)
+- [docs/runbook.md](../docs/runbook.md)
