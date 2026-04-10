@@ -13,16 +13,16 @@ Ultimo run: 2026-04-10
 
 | Tipo | Conteggio |
 | --- | --- |
-| catalog | 7 |
-| portal | 4 |
+| catalog | 8 |
+| portal | 3 |
 | source | 0 |
 
 ## Modalita' osservazione
 
 | Modalita' | Conteggio | Significato |
 | --- | --- | --- |
-| radar-only | 4 | Salute della fonte senza segnali di inventario |
-| catalog-watch | 7 | Inventario e drift strutturale del catalogo |
+| radar-only | 3 | Salute della fonte senza segnali di inventario |
+| catalog-watch | 8 | Inventario e drift strutturale del catalogo |
 | monitor-active | 0 | Caso ristretto con monitoraggio piu' vicino alla risorsa |
 
 Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornamento del dataset.
@@ -39,7 +39,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
 | mim_opendata | portal | html | radar-only | GREEN | 200 | mim-alunni-corso-eta |
 | dati_camera | portal | sparql | radar-only | GREEN | 200 | - |
-| consip_open_data | portal | ckan | radar-only | GREEN | 200 | - |
+| consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_ustat | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | opencoesione | catalog | rest | catalog-watch | GREEN | 200 | opencoesione-pagamenti-ue-2014-2020 |
 

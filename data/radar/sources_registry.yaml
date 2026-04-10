@@ -126,16 +126,24 @@ dati_camera:
     di base.
   datasets_in_use: []
 consip_open_data:
-  source_kind: portal
+  source_kind: catalog
   protocol: ckan
-  observation_mode: radar-only
+  observation_mode: catalog-watch
   base_url: https://dati.consip.it/api/3/action/package_list?limit=1
   last_probed: '2026-04-10'
+  catalog_baseline:
+    captured_at: '2026-04-10'
+    metric: package_count
+    value: 17
+    method: package_list
+    reliability: medium
+    note: Baseline iniziale su CKAN package_list. I source-check del 2026-04-10 hanno
+      confermato almeno due dataset primari difendibili (bandi-e-gare, consumi-convenzioni)
+      e un support dataset chiaro (operatori-economici).
   verdict: go
-  note: Portale CKAN Consip utile come sorgente radar-only. API catalogo stabili e
-    licenza chiara, ma il follow-up corretto resta dataset-specifico; non promuovere
-    a catalog-watch finche' non esiste un metodo inventariale difendibile e un caso
-    d'uso piu' stretto.
+  note: Catalogo CKAN piccolo ma difendibile per catalog-watch. I source-check dataset-specifici
+    hanno confermato che il catalogo contiene almeno due target primari e un support
+    dataset utile per il filone Consip acquisti PA.
   datasets_in_use: []
 mim_ustat:
   source_kind: catalog
