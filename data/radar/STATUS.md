@@ -1,19 +1,19 @@
 # Stato Radar
 
-Ultimo run: 2026-04-09
+Ultimo run: 2026-04-10
 
 ## Sommario
 
-- Fonti controllate: 8
+- Fonti controllate: 10
 - GREEN: 6
-- YELLOW: 1
+- YELLOW: 3
 - RED: 1
 
 ## Tipi sorgente
 
 | Tipo | Conteggio |
 | --- | --- |
-| catalog | 5 |
+| catalog | 7 |
 | portal | 3 |
 | source | 0 |
 
@@ -22,7 +22,7 @@ Ultimo run: 2026-04-09
 | Modalita' | Conteggio | Significato |
 | --- | --- | --- |
 | radar-only | 3 | Salute della fonte senza segnali di inventario |
-| catalog-watch | 5 | Inventario e drift strutturale del catalogo |
+| catalog-watch | 7 | Inventario e drift strutturale del catalogo |
 | monitor-active | 0 | Caso ristretto con monitoraggio piu' vicino alla risorsa |
 
 Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornamento del dataset.
@@ -39,8 +39,12 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
 | mim_opendata | portal | html | radar-only | GREEN | 200 | mim-alunni-corso-eta |
 | dati_camera | portal | sparql | radar-only | GREEN | 200 | - |
+| mim_ustat | catalog | ckan | catalog-watch | YELLOW | - | - |
+| opencoesione | catalog | rest | catalog-watch | YELLOW | 403 | opencoesione-pagamenti-ue-2014-2020 |
 
 ## Note
 
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | Catalogo CKAN piccolo ma pulito, adatto a segnali leggibili.
 - `dati_salute`: SSL verify failed; fallback connection error (SSLError)
+- `mim_ustat`: Timeout (ConnectTimeout)
+- `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/api/ | API REST custom con endpoint aggregati e data_aggiornamento. Usare per change detection e trigger re-run del candidate DI.
