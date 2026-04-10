@@ -3,30 +3,29 @@ istat_sdmx:
   protocol: sdmx
   observation_mode: catalog-watch
   base_url: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1
-  last_probed: "2026-04-10"
+  last_probed: '2026-04-10'
   catalog_baseline:
-    captured_at: "2026-04-10"
+    captured_at: '2026-04-10'
     metric: dataflow_count
     value: 4212
     method: dataflow_count
     reliability: medium
-    note:
-      Re-baseline su endpoint esploradati (MCP ondata). Il valore 4212 e'
-      il conteggio riproducibile via MCP discover_dataflows (no keyword, no
-      blacklist) dopo filtro NonProductionDataflow. Il valore 509 era il
-      conteggio su sdmx.istat.it (endpoint diverso).
+    note: Re-baseline su endpoint esploradati (MCP ondata). Il valore 4212 e' il conteggio
+      riproducibile via MCP discover_dataflows (no keyword, no blacklist) dopo filtro
+      NonProductionDataflow. Il valore 509 era il conteggio su sdmx.istat.it (endpoint
+      diverso).
   verdict: go
   note: Endpoint SDMX ricco e ad alto valore per scouting e source-check.
   datasets_in_use:
-    - popolazione-istat
+  - popolazione-istat
 anac:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1
-  last_probed: "2026-04-10"
+  last_probed: '2026-04-10'
   catalog_baseline:
-    captured_at: "2026-03-28"
+    captured_at: '2026-03-28'
     metric: package_count
     value: 69
     method: package_list
@@ -40,61 +39,56 @@ inps:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
-  last_probed: "2026-04-10"
+  last_probed: '2026-04-10'
   catalog_baseline:
-    captured_at: "2026-04-02"
+    captured_at: '2026-04-02'
     metric: package_count
     value: 2323
     method: package_list
     reliability: medium
-    note:
-      Conteggio totale package rilevati via package_list; baseline precedente
+    note: Conteggio totale package rilevati via package_list; baseline precedente
       (544) risultata stale rispetto all'inventario corrente.
   verdict: go
   note: Catalogo CKAN ricco e ad alto potenziale per candidati e source-check.
   datasets_in_use:
-    - pens_2017
-    - pens_2024
+  - pens_2017
+  - pens_2024
 openbdap:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
-  last_probed: "2026-04-10"
+  last_probed: '2026-04-10'
   catalog_baseline:
-    captured_at: "2026-04-02"
+    captured_at: '2026-04-02'
     metric: package_count
     value: 3772
     method: package_list
     reliability: medium
-    note:
-      Conteggio totale package rilevati via package_list; package_search restituisce
+    note: Conteggio totale package rilevati via package_list; package_search restituisce
       count inaffidabile.
   verdict: go
-  note:
-    Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario
+  note: Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario
     senza intake o monitor diffuso.
   datasets_in_use:
-    - dipendenti-pubblici
-    - opencoesione-pagamenti-ue-2014-2020
+  - dipendenti-pubblici
+  - opencoesione-pagamenti-ue-2014-2020
 dati_salute:
   source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.dati.salute.gov.it/
-  last_probed: "2026-04-10"
+  last_probed: '2026-04-10'
   catalog_baseline:
-    captured_at: "2026-04-07"
+    captured_at: '2026-04-07'
     metric: dataset_url_count
     value: 191
     method: sitemap_dataset_count
     reliability: medium
-    note:
-      Conteggio URL /it/dataset/ dal sitemap-0.xml sul dominio www. Protocollo
+    note: Conteggio URL /it/dataset/ dal sitemap-0.xml sul dominio www. Protocollo
       html non ancora supportato dal builder; watch manuale finche' non aggiunto.
   verdict: go
-  note:
-    Portale Ministero Salute con sitemap replicabile; usare dominio con www. Separare
+  note: Portale Ministero Salute con sitemap replicabile; usare dominio con www. Separare
     eventuali superfici ISS/EpiCentro come radar-only. Protocollo html fuori dal builder
     attuale.
   datasets_in_use: []
@@ -103,10 +97,9 @@ inail_opendata:
   protocol: aem
   observation_mode: radar-only
   base_url: https://dati.inail.it/
-  last_probed: "2026-04-09"
+  last_probed: '2026-04-10'
   verdict: go
-  note:
-    Portale AEM con Open API documentate. Superficie operativa reale = catalogo
+  note: Portale AEM con Open API documentate. Superficie operativa reale = catalogo
     AEM + Open API, non CKAN standard (logo nel footer fuorviante). Baseline inventariale
     non ancora difendibile; tenere in radar-only finche' non definito un metodo stabile.
   datasets_in_use: []
@@ -115,39 +108,56 @@ mim_opendata:
   protocol: html
   observation_mode: radar-only
   base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
-  last_probed: "2026-04-09"
+  last_probed: '2026-04-10'
   verdict: go
-  note:
-    Portale HTML custom senza API catalog (CKAN/SDMX). Download CSV diretti nel
+  note: Portale HTML custom senza API catalog (CKAN/SDMX). Download CSV diretti nel
     markup ma nessuna superficie inventariale strutturata osservabile via probe semplice.
     Endpoint SPARQL come capacita secondaria.
   datasets_in_use:
-    - mim-alunni-corso-eta
+  - mim-alunni-corso-eta
 dati_camera:
   source_kind: portal
   protocol: sparql
   observation_mode: radar-only
   base_url: https://dati.camera.it/sparql
-  last_probed: "2026-04-09"
+  last_probed: '2026-04-10'
   verdict: go
-  note:
-    Aggiunto endpoint SPARQL come radar-only per monitoraggio infrastrutturale
+  note: Aggiunto endpoint SPARQL come radar-only per monitoraggio infrastrutturale
     di base.
+  datasets_in_use: []
+consip_open_data:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.consip.it/api/3/action/package_list?limit=1
+  last_probed: '2026-04-10'
+  catalog_baseline:
+    captured_at: '2026-04-10'
+    metric: package_count
+    value: 17
+    method: package_list
+    reliability: medium
+    note: Baseline iniziale su CKAN package_list. I source-check del 2026-04-10 hanno
+      confermato almeno due dataset primari difendibili (bandi-e-gare, consumi-convenzioni)
+      e un support dataset chiaro (operatori-economici).
+  verdict: go
+  note: Catalogo CKAN piccolo ma difendibile per catalog-watch. I source-check dataset-specifici
+    hanno confermato che il catalogo contiene almeno due target primari e un support
+    dataset utile per il filone Consip acquisti PA.
   datasets_in_use: []
 mim_ustat:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati-ustat.mur.gov.it/api/3/action/package_list?limit=1
-  last_probed: "2026-04-10"
+  last_probed: '2026-04-10'
   catalog_baseline:
-    captured_at: "2026-04-09"
+    captured_at: '2026-04-09'
     metric: package_count
     value: 68
     method: package_list
     reliability: medium
-    note:
-      Baseline iniziale su CKAN package_list; portale con 68 dataset e metadata
+    note: Baseline iniziale su CKAN package_list; portale con 68 dataset e metadata
       completi, aggiornamenti recenti.
   verdict: go
   note: Portale MUR USTAT (istruzione superiore/AFAM/DSU) con CKAN stabile e aggiornamenti
@@ -158,17 +168,16 @@ opencoesione:
   protocol: rest
   observation_mode: catalog-watch
   base_url: https://opencoesione.gov.it/it/api/
-  last_probed: "2026-04-10"
+  last_probed: '2026-04-10'
   catalog_baseline:
-    captured_at: "2026-04-09"
+    captured_at: '2026-04-09'
     metric: data_aggiornamento
-    value: "2025-10-31"
+    value: '2025-10-31'
     method: api_root
     reliability: medium
     note: Baseline su campo data_aggiornamento esposto dal root API.
   verdict: go
-  note:
-    API REST custom con endpoint aggregati e data_aggiornamento. Usare per change
+  note: API REST custom con endpoint aggregati e data_aggiornamento. Usare per change
     detection e trigger re-run del candidate DI.
   datasets_in_use:
-    - opencoesione-pagamenti-ue-2014-2020
+  - opencoesione-pagamenti-ue-2014-2020
