@@ -10,23 +10,18 @@ metadata:
 
 # Workflow: resource-monitor
 
-Workflow canonico di `source-observatory` per il monitor di un insieme ristretto di risorse note.
-Versione: 1.3 - 2026-04-09
+Workflow canonico di `source-observatory`.
+Versione: 1.3 - 2026-04-10
 
 Nota di stato:
 
-- `resource-monitor` e' congelato come utility legacy su poche fonti gia' presenti
-- non e' il punto di ingresso per nuove fonti o nuovi candidate
+- `resource-monitor` e congelato come utility legacy su poche fonti gia presenti
+- non e il punto di ingresso per nuove fonti o nuovi candidate
 - i futuri source ping orientati al dataset vivranno preferibilmente in `dataset-incubator`, vicino al candidate
 
 ## Obiettivo di fase
 
 Rilevare cambi su un insieme molto ristretto di fonti note e capire se il segnale osservato richiede davvero un next step umano sul dataset.
-
-Questo workflow serve a rispondere a:
-
-- questa fonte nota e' cambiata in modo da richiedere lavoro sul dataset?
-- il segnale osservato e' un vero cambio di risorsa o solo rumore di monitoraggio?
 
 Questo workflow serve a:
 
@@ -43,24 +38,24 @@ Non serve a:
 
 ## Quando usarlo
 
-Usalo quando:
+Usarlo quando:
 
-- la fonte e' gia' importante per il Lab
+- la fonte e gia importante per il Lab
 - esiste un next step plausibile se il segnale cambia
 - il monitor costa meno di uno scouting umano ripetuto
-- la fonte e' gia' una delle poche monitorate, non un nuovo ingresso nel funnel
+- la fonte e gia una delle poche monitorate, non un nuovo ingresso nel funnel
 
 Non usarlo quando:
 
-- la fonte e' ancora solo interessante ma non ancora centrale
-- il caso e' meglio descritto da `radar-check`
-- il caso e' meglio descritto da `catalog-watch`
+- la fonte e ancora solo interessante ma non ancora centrale
+- il caso e meglio descritto da `radar-check`
+- il caso e meglio descritto da `catalog-watch`
 - il monitor non porta quasi mai a decisioni utili
-- stai valutando se aggiungere una nuova fonte: quel gate passa prima da `portal-scout`, `source-check` o DI
+- stai valutando se aggiungere una nuova fonte
 
 ## Preconditions minime
 
-Prima del run dovrebbero esserci almeno:
+Per partire servono:
 
 - config fonti:
   - `source-observatory/scripts/monitor/resource_monitor.sources.yml`
@@ -69,7 +64,7 @@ Prima del run dovrebbero esserci almeno:
   - `source-observatory/scripts/monitor/resource_monitor.py`
 - output atteso:
   - `source-observatory/data/monitor/reports/latest.md`
-- una fonte Tier 1 o equivalente, gia' giustificata
+- una fonte Tier 1 o equivalente, gia giustificata
 - un adapter abbastanza chiaro
 - un next step plausibile se compare un vero segnale
 
@@ -79,13 +74,13 @@ Nel dubbio:
 
 ## Stop rules
 
-Fermati e non forzare conclusioni quando:
+Fermarsi quando:
 
-- il segnale e' chiaramente infrastrutturale e appartiene a `radar-check`
-- il cambio osservato dipende da rumore HTML o da fragilita' dell'adapter
+- il segnale e chiaramente infrastrutturale e appartiene a `radar-check`
+- il cambio osservato dipende da rumore HTML o da fragilita dell'adapter
 - non esiste un next step difendibile anche se il segnale fosse vero
 - stai per trattare un `changed` come rerun automatico senza leggere il tipo di cambio
-- stai per usare `resource-monitor` come canale per nuove fonti: il monitor e' congelato e non va esteso
+- stai per usare `resource-monitor` come canale per nuove fonti
 
 ## Passi canonici
 
@@ -93,10 +88,10 @@ Fermati e non forzare conclusioni quando:
 
 Prima del run, chiediti:
 
-- questa fonte e' davvero un caso da monitor ristretto?
+- questa fonte e davvero un caso da monitor ristretto?
 - esiste un next step plausibile se il segnale cambia?
 
-Se la risposta e' no, il problema puo' essere nel perimetro del monitor, non nel dataset.
+Se la risposta e no, il problema puo essere nel perimetro del monitor, non nel dataset.
 
 ### 2. Esegui il monitor
 
@@ -108,25 +103,23 @@ python source-observatory/scripts/monitor/resource_monitor.py --sources source-o
 
 ### 3. Leggi `latest.md`
 
-Leggi:
+Leggere `source-observatory/data/monitor/reports/latest.md`.
 
-- `source-observatory/data/monitor/reports/latest.md`
-
-Classifica ogni segnale in una di queste classi:
+Classificare ogni segnale in una di queste classi:
 
 | Tipo | Significato |
 |---|---|
 | `new` | risorsa comparsa per la prima volta |
 | `changed` | URL, nome, formato o metadati modificati |
-| `removed` | risorsa presente in precedenza non piu' visibile |
+| `removed` | risorsa presente in precedenza non piu visibile |
 | `error` | problema di adapter o di portale |
 
-### 4. Valuta l'affidabilita' dell'adapter
+### 4. Valuta l'affidabilita dell'adapter
 
 Regola pratica:
 
-- `single_url` o `ckan` = segnale piu' affidabile
-- `html` = piu' sospetto, aspettati piu' falsi positivi
+- `single_url` o `ckan` = segnale piu affidabile
+- `html` = piu sospetto, aspettati piu falsi positivi
 
 Se il segnale viene da un adapter fragile:
 
@@ -145,15 +138,15 @@ Per ogni segnale non nullo, usa questa logica:
 | errore SSL/DNS/timeout | problema da radar, non da dataset |
 | nessun next step difendibile | proporre demotion o rimozione dal monitor |
 
-### 6. Fai una sintesi breve
+### 6. Produci la sintesi
 
-La sintesi dovrebbe lasciare:
+La sintesi deve lasciare:
 
 - conteggio segnali per tipo
 - per ogni segnale rilevante:
   - fonte
   - tipo
-  - affidabilita' dell'adapter
+  - affidabilita dell'adapter
   - azione suggerita
 - fonti senza segnale:
   - `ok, nessuna azione`
@@ -166,14 +159,6 @@ La sintesi dovrebbe lasciare:
 - tenere nel monitor fonti che quasi non producono mai decisioni utili
 - allargare il monitor a nuove fonti solo per entusiasmo
 
-## Regole di interpretazione
-
-- `changed` non implica rerun automatico: dipende dal tipo di cambio
-- `removed` dopo modifiche alla config del monitor puo' essere rumore: verificare prima la pagina o API
-- `error` ripetuti per SSL, DNS o HTML fragile suggeriscono un problema di perimetro del monitor
-- il monitor non valuta il valore civico della fonte: quello resta umano o da `source-check`
-- se `di_candidate` e' presente, ispezionalo sempre prima di decidere
-
 ## Output minimo atteso
 
 Un run buono di `resource-monitor` lascia:
@@ -185,9 +170,9 @@ Un run buono di `resource-monitor` lascia:
 
 ## Definition of done
 
-Il workflow e' chiuso bene quando:
+Il workflow e chiuso bene quando:
 
-- il report e' aggiornato e leggibile
+- il report e aggiornato e leggibile
 - ogni segnale rilevante ha un next step umano plausibile
 - i segnali infrastrutturali non sono stati scambiati per cambi del dataset
 - non sono state aperte issue o rilanciati candidate automaticamente

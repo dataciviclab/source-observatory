@@ -10,93 +10,74 @@ metadata:
 
 # Workflow: radar-check
 
-Workflow canonico di `source-observatory` per il controllo di salute dei portali.
-Versione: 1.2 - 2026-04-08
+Workflow canonico di `source-observatory`.
+Versione: 1.2 - 2026-04-10
 
 ## Obiettivo di fase
 
-Verificare la raggiungibilita' e la salute infrastrutturale delle fonti nel registry.
-
-Questo workflow serve a rispondere a:
-
-- questa fonte e' viva?
-- il portale risponde?
-- ci sono errori di SSL, DNS, timeout o risposta anomala?
+Verificare la raggiungibilita e la salute infrastrutturale delle fonti nel registry.
 
 Questo workflow serve a:
 
-- controllare la salute della fonte
-- produrre uno stato radar leggibile
-- distinguere rapidamente tra `ok` e problema infrastrutturale
+- capire se una fonte e viva
+- rilevare errori SSL, DNS, timeout o risposta anomala
+- produrre una sintesi infrastrutturale leggibile
 
 Non serve a:
 
-- dire se il dataset e' aggiornato
-- dire se il catalogo contiene qualcosa di nuovo
-- dire se la fonte merita lavoro del Lab
+- capire se un dataset e aggiornato
+- leggere il catalogo
+- decidere il valore civico della fonte
 - aprire follow-up automatici
-
-Queste domande appartengono invece a:
-
-- `catalog-watch`
-- `resource-monitor`
-- `source-check`
 
 ## Quando usarlo
 
-Usalo quando:
+Usarlo quando hai gia:
 
-- vuoi controllare la salute attuale delle fonti nel registry
-- vuoi aggiornare `STATUS.md`
-- vuoi capire se esistono problemi infrastrutturali ricorrenti
+- `sources_registry.yaml` aggiornato
+- script `source-observatory/scripts/radar_check.py`
+- bisogno di un check rapido sulla salute delle fonti
 
 Non usarlo quando:
 
-- la domanda vera e' sul contenuto del catalogo
-- la domanda vera e' sul valore della fonte
-- stai cercando di fare source-check o intake
+- devi verificare una fonte specifica o un file
+- devi leggere delta di catalogo
+- devi interpretare un segnale a livello dataset
 
 ## Preconditions minime
 
-Prima del run dovrebbero esserci almeno:
+Per partire servono:
 
-- registry `source-observatory/data/radar/sources_registry.yaml`
-- script `source-observatory/scripts/radar_check.py`
-- un registry leggibile
-- una ragione semplice per eseguire il check:
-  - health snapshot
-  - dry-run
-  - verifica dopo fix
+- registry leggibile
+- script radar eseguibile
+- output atteso chiaro: `source-observatory/data/radar/STATUS.md`
+- fonti con `base_url` plausibile
 
 Nel dubbio:
 
-- se la domanda vera non e' "questa fonte e' viva?", probabilmente non sei nel workflow giusto
+- se la domanda vera non e "questa fonte e viva?", probabilmente non sei nel workflow giusto
 
 ## Stop rules
 
-Fermati e non allargare il lavoro quando:
+Fermarsi se:
 
-- stai cercando di inferire aggiornamenti di contenuto dai soli segnali radar
-- stai per trasformare un warning infrastrutturale in giudizio sul dataset
-- stai per aprire issue o source-check in automatico
+- stai per interpretare un problema infrastrutturale come update di contenuto
+- il caso appartiene a `catalog-watch` o `source-check`
+- il run produce solo rumore da una fonte gia nota come fragile
 - stai per modificare il registry a mano invece di limitarti a leggere il risultato del run
 
 ## Passi canonici
 
 ### 1. Leggi il registry
 
-Leggi:
+Leggere `source-observatory/data/radar/sources_registry.yaml` per avere il contesto delle fonti prima del run:
 
-- `source-observatory/data/radar/sources_registry.yaml`
-
-Giusto per avere il contesto delle fonti prima del run:
-
+- fonte
 - `protocol`
-- `source_kind`
+- `verdict`
 - `observation_mode`
-- eventuale `verdict`
 
-### 2. Esegui il run
+### 2. Esegui il radar
 
 Dalla root del workspace:
 
@@ -104,70 +85,52 @@ Dalla root del workspace:
 python source-observatory/scripts/radar_check.py
 ```
 
-Per un dry-run senza scrivere lo stato:
+Per un dry-run:
 
 ```powershell
 python source-observatory/scripts/radar_check.py --dry-run
 ```
 
-Regola pratica:
-
-- se vuoi solo capire come si comporta il probe, parti da `--dry-run`
-
 ### 3. Leggi `STATUS.md`
 
-Dopo il run, leggi:
+Leggere `source-observatory/data/radar/STATUS.md` e classificare ogni fonte in uno di questi stati:
 
-- `source-observatory/data/radar/STATUS.md`
+- `ok`
+- `warning infrastrutturale`
+- `da osservare`
 
-Classifica almeno cosi':
+### 4. Produci la sintesi
 
-| Classificazione | Segnale |
-|---|---|
-| `ok` | stato `GREEN`, nessun errore rilevante |
-| `warning infrastrutturale` | stato `YELLOW` o `RED` per timeout, SSL, DNS, request error |
-| `da osservare` | note ripetute o fallback SSL usato anche se la fonte risponde |
-
-### 4. Fai una sintesi breve
-
-Lascia una sintesi con:
+Produrre una sintesi breve con:
 
 - conteggio per classificazione
-- fonti con `warning infrastrutturale`
-- fonti `da osservare`
-- eventuali fonti considerate importanti che ora mostrano problemi
+- fonti con warning o problemi ripetuti
+- eventuali fonti `go` che ora mostrano problemi infrastrutturali
 
 ## Errori tipici
 
-- leggere `GREEN` come segnale di valore del dataset
-- trattare un warning SSL, DNS o timeout come aggiornamento di contenuto
+- confondere salute del portale con update del dataset
+- promuovere un warning a decisione di workflow successivo
+- trattare un falso negativo noto come rottura reale
 - usare il radar per decidere da solo un source-check
-- confondere un problema di health con un problema del candidate o del dataset
-
-## Regole di interpretazione
-
-- `GREEN` non implica lavoro sul dataset: e' solo salute della fonte
-- un warning SSL, DNS o timeout non e' un aggiornamento di contenuto
-- se una fonte SDMX restituisce `404` su `HEAD`, puo' essere un falso negativo noto
-- la modalita' di osservazione aiuta a capire il contesto, ma non cambia il significato del segnale radar
 
 ## Output minimo atteso
 
-Un run buono di `radar-check` lascia:
+Alla fine devono esistere:
 
-- `STATUS.md` aggiornato oppure un dry-run leggibile
-- una classificazione semplice per fonte
-- una sintesi rapida dei problemi infrastrutturali osservati
+- `STATUS.md` aggiornato dallo script oppure un dry-run leggibile
+- sintesi leggibile del run
+- eventuali fonti problematiche chiaramente evidenziate
 
 ## Definition of done
 
-Il workflow e' chiuso bene quando:
+Il workflow e chiuso bene quando:
 
-- il run e' stato eseguito o simulato in modo esplicito
-- `STATUS.md` e' leggibile
-- la sintesi distingue chiaramente tra fonti sane e warning infrastrutturali
-- non sono stati aperti follow-up automatici
-- non sono state fatte inferenze improprie sul contenuto dei dataset
+- il radar e stato eseguito o simulato in modo esplicito
+- `STATUS.md` e leggibile
+- i problemi infrastrutturali sono distinti dai problemi di contenuto
+- il registry non e stato modificato manualmente
+- non sono stati aperti altri artefatti o workflow
 
 ## Stati finali ammessi
 
