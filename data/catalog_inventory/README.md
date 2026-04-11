@@ -64,7 +64,8 @@ Nota operativa:
 - `current_package_list_with_resources` e' disabilitato per `inps` in ambiente locale Windows per instabilita SSL/GIL (fall-back diretto a `package_list` con warning esplicito)
 - la logica di enrichment resta attiva per altri cataloghi CKAN futuri
 - per cataloghi SPARQL il builder usa solo query dichiarate nel registry o template espliciti; il pilot iniziale è `dcat_datasets`
-- il template SPARQL generico enumera dataset e metadati DCAT leggeri; query custom possono aggiungere campi opzionali come `distribution_url`, `distribution_count` e `format`
+- il template SPARQL generico enumera dataset e metadati DCAT leggeri; non popola `distribution_url`, `distribution_count` o `format`
+- per SPARQL `tags` resta vuoto e i temi DCAT stanno nel campo opzionale `theme`; query custom possono aggiungere campi opzionali come `distribution_url`, `distribution_count` e `format`
 
 ## Workflow
 

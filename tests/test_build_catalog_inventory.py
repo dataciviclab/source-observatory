@@ -271,7 +271,8 @@ def test_collect_sparql_inventory_groups_distribution_bindings(monkeypatch) -> N
     assert rows[0]["distribution_url"] == "https://example.test/download/alpha.csv"
     assert rows[0]["distribution_count"] == 2
     assert rows[0]["format"] == "CSV, RDF_TURTLE"
-    assert rows[0]["tags"] == "ENVI"
+    assert rows[0]["tags"] is None
+    assert rows[0]["theme"] == "ENVI"
     assert rows[1]["item_name"] == "beta"
 
     assert warning is not None

@@ -528,7 +528,7 @@ def collect_sparql_inventory(
                 "item_name": compact_uri_name(dataset_uri),
                 "title": row_state["title"],
                 "organization": row_state["publisher"],
-                "tags": ", ".join(themes) if themes else None,
+                "tags": None,
                 "notes_excerpt": description[:300] if description else None,
                 "source_url": endpoint,
                 "ordinal": idx,
@@ -657,9 +657,9 @@ def collect_inventory(
             source_cfg["_inventory_warning"] = warning
         return rows
     if protocol == "sparql":
-        rows, warning = collect_sparql_inventory(source_id, source_cfg, captured_at)
-        if warning:
-            source_cfg["_inventory_warning"] = warning
+        rows, summary = collect_sparql_inventory(source_id, source_cfg, captured_at)
+        if summary:
+            source_cfg["_inventory_summary"] = summary
         return rows
     raise ValueError(f"Unsupported protocol for catalog inventory: {protocol}")
 
@@ -731,6 +731,9 @@ def main() -> None:
             warning = source_cfg.pop("_inventory_warning", None)
             if warning:
                 source_report["warning"] = warning
+            summary = source_cfg.pop("_inventory_summary", None)
+            if summary:
+                source_report["summary"] = summary
             report["sources"][source_id] = source_report
         except Exception as exc:
             report["sources"][source_id] = {
