@@ -29,9 +29,11 @@ CKAN_ACTION_NAMES = {
     "package_show",
     "current_package_list_with_resources",
 }
+# Sources where package_search is unreliable (bad counts or timeouts).
+CKAN_SKIP_PACKAGE_SEARCH = {"lavoro_opendata"}
 # Sources where current_package_list_with_resources is unreliable (SSL/GIL crash on Windows).
 # These skip the enrichment step and fall straight to package_list.
-CKAN_SKIP_CURRENT_LIST = {"inps"}
+CKAN_SKIP_CURRENT_LIST = {"inps", "lavoro_opendata"}
 SDMX_RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
 SDMX_RETRY_DELAYS_SECONDS = (2, 5)
 
@@ -289,52 +291,64 @@ def collect_ckan_inventory_via_package_list(
 def collect_ckan_inventory(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    search_exc: Exception | None = None
+    if source_id not in CKAN_SKIP_PACKAGE_SEARCH:
+        try:
+            return collect_ckan_inventory_via_search(
+                source_id, source_cfg, captured_at
+            ), None
+        except Exception as exc:
+            search_exc = exc
+    else:
+        search_exc = ValueError(
+            f"CKAN package_search disabled for {source_id} (unreliable counts)."
+        )
+
+    package_list_rows = collect_ckan_inventory_via_package_list(
+        source_id, source_cfg, captured_at
+    )
+    if source_id in CKAN_SKIP_CURRENT_LIST:
+        return package_list_rows, {
+            "type": "skip_current_package_list",
+            "message": f"Enrichment current_package_list_with_resources disabilitato per {source_id} (instabilita SSL/GIL in ambiente locale).",
+        }
+    time.sleep(1.0)
     try:
-        return collect_ckan_inventory_via_search(
-            source_id, source_cfg, captured_at
-        ), None
-    except Exception as search_exc:
-        package_list_rows = collect_ckan_inventory_via_package_list(
+        current_rows, current_warning = collect_ckan_inventory_via_current_list(
             source_id, source_cfg, captured_at
         )
-        if source_id in CKAN_SKIP_CURRENT_LIST:
-            return package_list_rows, {
-                "type": "skip_current_package_list",
-                "message": f"Enrichment current_package_list_with_resources disabilitato per {source_id} (instabilita SSL/GIL in ambiente locale).",
-            }
-        time.sleep(1.0)
-        try:
-            current_rows, current_warning = collect_ckan_inventory_via_current_list(
-                source_id, source_cfg, captured_at
-            )
-            enriched_by_id = {row["item_id"]: row for row in current_rows}
-            merged_rows: list[dict[str, Any]] = []
-            missing_metadata = 0
-            for row in package_list_rows:
-                enriched = enriched_by_id.get(row["item_id"])
-                if enriched is None:
-                    missing_metadata += 1
-                    merged_rows.append(row)
-                else:
-                    merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
+        enriched_by_id = {row["item_id"]: row for row in current_rows}
+        merged_rows: list[dict[str, Any]] = []
+        missing_metadata = 0
+        for row in package_list_rows:
+            enriched = enriched_by_id.get(row["item_id"])
+            if enriched is None:
+                missing_metadata += 1
+                merged_rows.append(row)
+            else:
+                merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
 
-            warning: dict[str, Any] = {
-                "type": "fallback_current_package_list_with_resources",
-                "message": "Fallback da package_search a current_package_list_with_resources.",
-                "package_search_error": str(search_exc),
-                "rows_enriched": len(enriched_by_id),
-                "rows_missing_metadata": missing_metadata,
-            }
-            if current_warning:
-                warning["current_list_warning"] = current_warning
-            return merged_rows, warning
-        except Exception as current_list_exc:
-            return package_list_rows, {
-                "type": "fallback_package_list",
-                "message": "Fallback finale a package_list dopo fallimento di package_search e current_package_list_with_resources.",
-                "package_search_error": str(search_exc),
-                "current_list_error": str(current_list_exc),
-            }
+        warning: dict[str, Any] = {
+            "type": "fallback_current_package_list_with_resources",
+            "message": "Fallback da package_search a current_package_list_with_resources.",
+            "package_search_error": str(search_exc)
+            if search_exc is not None
+            else "package_search skipped",
+            "rows_enriched": len(enriched_by_id),
+            "rows_missing_metadata": missing_metadata,
+        }
+        if current_warning:
+            warning["current_list_warning"] = current_warning
+        return merged_rows, warning
+    except Exception as current_list_exc:
+        return package_list_rows, {
+            "type": "fallback_package_list",
+            "message": "Fallback finale a package_list dopo fallimento di package_search e current_package_list_with_resources.",
+            "package_search_error": str(search_exc)
+            if search_exc is not None
+            else "package_search skipped",
+            "current_list_error": str(current_list_exc),
+        }
 
 
 def parse_sdmx_name(name_elem: ET.Element | None) -> str | None:
