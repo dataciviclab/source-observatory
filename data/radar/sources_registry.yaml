@@ -116,14 +116,43 @@ mim_opendata:
   datasets_in_use:
   - mim-alunni-corso-eta
 dati_camera:
-  source_kind: portal
+  source_kind: catalog
   protocol: sparql
-  observation_mode: radar-only
+  observation_mode: catalog-watch
   base_url: https://dati.camera.it/sparql
   last_probed: '2026-04-11'
+  catalog_baseline:
+    captured_at: '2026-04-11'
+    metric: dataset_count
+    value: 104
+    method: sparql_query
+    query_name: camera_dcat
+    reliability: medium
+    note: Baseline fissata con query custom Camera perché il catalogo usa proprietà
+      DC 1.1 Elements per titolo e descrizione.
+  sparql:
+    endpoint_url: https://dati.camera.it/sparql
+    query_name: camera_dcat
+    limit: 5000
+    timeout_seconds: 60
+    query: |
+      PREFIX dcat: <http://www.w3.org/ns/dcat#>
+      PREFIX dc: <http://purl.org/dc/elements/1.1/>
+      PREFIX dct: <http://purl.org/dc/terms/>
+      SELECT DISTINCT ?dataset ?title ?description ?modified ?landingPage
+      WHERE {
+        ?dataset a dcat:Dataset .
+        OPTIONAL { ?dataset dc:title ?title . }
+        OPTIONAL { ?dataset dc:description ?description . }
+        OPTIONAL { ?dataset dct:modified ?modified . }
+        OPTIONAL { ?dataset dcat:landingPage ?landingPage . }
+      }
+      ORDER BY ?dataset
+      LIMIT 5000
   verdict: go
-  note: Aggiunto endpoint SPARQL come radar-only per monitoraggio infrastrutturale
-    di base.
+  note: Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template
+    DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title
+    e dc:description.
   datasets_in_use: []
 ispra_linked_data:
   source_kind: catalog
