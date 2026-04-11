@@ -31,6 +31,12 @@ class FakeResponse:
     def raise_for_status(self) -> None:
         pass
 
+    def __enter__(self) -> "FakeResponse":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        pass
+
 
 def test_classify_response_green() -> None:
     assert radar_check.classify_response(200) == "GREEN"
