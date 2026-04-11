@@ -145,6 +145,22 @@ consip_open_data:
     hanno confermato che il catalogo contiene almeno due target primari e un support
     dataset utile per il filone Consip acquisti PA.
   datasets_in_use: []
+lavoro_opendata:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
+  last_probed: '2026-04-11'
+  catalog_baseline:
+    captured_at: '2026-04-11'
+    metric: package_count
+    value: 159
+    method: package_list
+    reliability: medium
+    note: Baseline iniziale su SPOD CKAN (package_list). Package_search count inaffidabile.
+  verdict: go
+  note: Portale Ministero del Lavoro (SPOD CKAN) con API stabile e catalogo ~159 dataset.
+  datasets_in_use: []
 mim_ustat:
   source_kind: catalog
   protocol: ckan
