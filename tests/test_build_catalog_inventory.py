@@ -14,6 +14,17 @@ build_catalog_inventory = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(build_catalog_inventory)
 
 
+class FakeJsonResponse:
+    def __init__(self, payload: dict) -> None:
+        self._payload = payload
+
+    def raise_for_status(self) -> None:
+        return None
+
+    def json(self) -> dict:
+        return self._payload
+
+
 def test_collect_ckan_inventory_merges_current_list_metadata(monkeypatch) -> None:
     source_cfg = {
         "base_url": "https://example.test/api/3/action/package_search",
@@ -174,3 +185,98 @@ def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None
     assert warning is not None
     assert warning["type"] == "skip_current_package_list"
 
+
+def test_collect_sparql_inventory_groups_distribution_bindings(monkeypatch) -> None:
+    source_cfg = {
+        "base_url": "https://example.test/sparql",
+        "source_kind": "catalog",
+        "protocol": "sparql",
+        "catalog_baseline": {
+            "method": "sparql_query",
+            "query_name": "dcat_datasets",
+        },
+        "sparql": {
+            "endpoint_url": "https://example.test/sparql",
+            "query_name": "dcat_datasets",
+            "limit": 10,
+        },
+    }
+    payload = {
+        "results": {
+            "bindings": [
+                {
+                    "dataset": {
+                        "type": "uri",
+                        "value": "https://example.test/dataset/alpha",
+                    },
+                    "title": {"type": "literal", "value": "Dataset Alpha"},
+                    "description": {
+                        "type": "literal",
+                        "value": "Descrizione dataset alpha",
+                    },
+                    "publisherName": {
+                        "type": "literal",
+                        "value": "Ente demo",
+                    },
+                    "modified": {"type": "literal", "value": "2026-04-10"},
+                    "downloadURL": {
+                        "type": "uri",
+                        "value": "https://example.test/download/alpha.csv",
+                    },
+                    "format": {"type": "uri", "value": "CSV"},
+                    "theme": {"type": "uri", "value": "ENVI"},
+                },
+                {
+                    "dataset": {
+                        "type": "uri",
+                        "value": "https://example.test/dataset/alpha",
+                    },
+                    "downloadURL": {
+                        "type": "uri",
+                        "value": "https://example.test/download/alpha.ttl",
+                    },
+                    "format": {"type": "uri", "value": "RDF_TURTLE"},
+                    "theme": {"type": "uri", "value": "ENVI"},
+                },
+                {
+                    "dataset": {
+                        "type": "uri",
+                        "value": "https://example.test/dataset/beta",
+                    },
+                    "title": {"type": "literal", "value": "Dataset Beta"},
+                },
+            ]
+        }
+    }
+
+    def fake_get(url, **kwargs):
+        assert url == "https://example.test/sparql"
+        assert kwargs["headers"]["Accept"] == "application/sparql-results+json"
+        assert kwargs["params"]["format"] == "application/sparql-results+json"
+        assert "LIMIT 10" in kwargs["params"]["query"]
+        return FakeJsonResponse(payload)
+
+    monkeypatch.setattr(build_catalog_inventory.requests, "get", fake_get)
+
+    rows, warning = build_catalog_inventory.collect_sparql_inventory(
+        "demo_sparql", source_cfg, "2026-04-11T12:00:00+00:00"
+    )
+
+    assert len(rows) == 2
+    assert rows[0]["item_id"] == "https://example.test/dataset/alpha"
+    assert rows[0]["item_name"] == "alpha"
+    assert rows[0]["title"] == "Dataset Alpha"
+    assert rows[0]["organization"] == "Ente demo"
+    assert rows[0]["modified"] == "2026-04-10"
+    assert rows[0]["distribution_url"] == "https://example.test/download/alpha.csv"
+    assert rows[0]["distribution_count"] == 2
+    assert rows[0]["format"] == "CSV, RDF_TURTLE"
+    assert rows[0]["tags"] is None
+    assert rows[0]["theme"] == "ENVI"
+    assert rows[1]["item_name"] == "beta"
+
+    assert warning is not None
+    assert warning["type"] == "sparql_query_template"
+    assert warning["query_name"] == "dcat_datasets"
+    assert warning["bindings"] == 3
+    assert warning["datasets"] == 2

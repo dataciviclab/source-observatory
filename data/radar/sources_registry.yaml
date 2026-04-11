@@ -125,6 +125,29 @@ dati_camera:
   note: Aggiunto endpoint SPARQL come radar-only per monitoraggio infrastrutturale
     di base.
   datasets_in_use: []
+ispra_linked_data:
+  source_kind: catalog
+  protocol: sparql
+  observation_mode: catalog-watch
+  base_url: https://dati.isprambiente.it/sparql
+  last_probed: '2026-04-11'
+  catalog_baseline:
+    captured_at: '2026-04-11'
+    metric: dataset_count
+    value: 66
+    method: sparql_query
+    query_name: dcat_datasets
+    reliability: medium
+    note: Baseline fissata con query DCAT dichiarata su dataset distinti.
+  sparql:
+    endpoint_url: https://dati.isprambiente.it/sparql
+    query_name: dcat_datasets
+    limit: 5000
+  verdict: go
+  note: Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL.
+    Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate
+    per pipeline tabellari.
+  datasets_in_use: []
 consip_open_data:
   source_kind: catalog
   protocol: ckan

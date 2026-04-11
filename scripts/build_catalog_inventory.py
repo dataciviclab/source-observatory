@@ -36,10 +36,34 @@ CKAN_SKIP_PACKAGE_SEARCH = {"lavoro_opendata"}
 CKAN_SKIP_CURRENT_LIST = {"inps", "lavoro_opendata"}
 SDMX_RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
 SDMX_RETRY_DELAYS_SECONDS = (2, 5)
+SPARQL_QUERY_TEMPLATES = {
+    "dcat_datasets": """
+PREFIX dcat: <http://www.w3.org/ns/dcat#>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT DISTINCT ?dataset ?title ?description ?publisherName ?issued ?modified ?landingPage ?theme
+WHERE {
+  ?dataset a dcat:Dataset .
+  OPTIONAL { ?dataset dct:title ?title . }
+  OPTIONAL { ?dataset dct:description ?description . }
+  OPTIONAL {
+    ?dataset dct:publisher ?publisher .
+    OPTIONAL { ?publisher foaf:name ?publisherName . }
+  }
+  OPTIONAL { ?dataset dct:issued ?issued . }
+  OPTIONAL { ?dataset dct:modified ?modified . }
+  OPTIONAL { ?dataset dcat:landingPage ?landingPage . }
+  OPTIONAL { ?dataset dcat:theme ?theme . }
+}
+ORDER BY ?dataset
+LIMIT {limit}
+""".strip()
+}
 
 
 def supported_protocols() -> set[str]:
-    return {"ckan", "sdmx"}
+    return {"ckan", "sdmx", "sparql"}
 
 
 def now_utc_iso() -> str:
@@ -358,6 +382,182 @@ def parse_sdmx_name(name_elem: ET.Element | None) -> str | None:
     return text or None
 
 
+def sparql_binding_value(binding: dict[str, Any], name: str) -> str | None:
+    value = (binding.get(name) or {}).get("value")
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    return value or None
+
+
+def compact_uri_name(uri: str | None) -> str | None:
+    if not uri:
+        return None
+    value = uri.rstrip("/")
+    if "#" in value:
+        return value.rsplit("#", 1)[-1] or value
+    return value.rsplit("/", 1)[-1] or value
+
+
+def append_unique(values: list[str], value: str | None) -> None:
+    if value and value not in values:
+        values.append(value)
+
+
+def parse_int(value: str | None) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
+def build_sparql_query(source_cfg: dict[str, Any]) -> tuple[str, str]:
+    sparql_cfg = source_cfg.get("sparql") or {}
+    query_name = sparql_cfg.get("query_name") or source_cfg.get(
+        "catalog_baseline", {}
+    ).get("query_name")
+    query_text = sparql_cfg.get("query")
+    if not query_text:
+        query_name = query_name or "dcat_datasets"
+        query_text = SPARQL_QUERY_TEMPLATES.get(query_name)
+    if not query_text:
+        raise ValueError(f"SPARQL query template not found: {query_name}")
+    limit = int(sparql_cfg.get("limit", 5000))
+    if "{limit}" in query_text:
+        query_text = query_text.replace("{limit}", str(limit))
+    return query_text, query_name or "custom"
+
+
+def collect_sparql_inventory(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    sparql_cfg = source_cfg.get("sparql") or {}
+    endpoint = sparql_cfg.get("endpoint_url") or source_cfg["base_url"]
+    query_text, query_name = build_sparql_query(source_cfg)
+    response = requests.get(
+        endpoint,
+        params={"query": query_text, "format": "application/sparql-results+json"},
+        headers={
+            "Accept": "application/sparql-results+json",
+            "User-Agent": "DataCivicLab Source Observatory",
+        },
+        timeout=int(sparql_cfg.get("timeout_seconds", 60)),
+    )
+    response.raise_for_status()
+    payload = response.json()
+    bindings = ((payload.get("results") or {}).get("bindings")) or []
+    if not isinstance(bindings, list):
+        raise ValueError(
+            f"Unexpected SPARQL payload for {source_id}: bindings is not a list"
+        )
+
+    by_dataset: dict[str, dict[str, Any]] = {}
+    for binding in bindings:
+        dataset_uri = sparql_binding_value(binding, "dataset")
+        if not dataset_uri:
+            continue
+        row_state = by_dataset.setdefault(
+            dataset_uri,
+            {
+                "title": None,
+                "description": None,
+                "publisher": None,
+                "issued": None,
+                "modified": None,
+                "landing_page": None,
+                "distribution_count": None,
+                "distribution_urls": [],
+                "formats": [],
+                "themes": [],
+            },
+        )
+        row_state["title"] = row_state["title"] or sparql_binding_value(
+            binding, "title"
+        )
+        row_state["description"] = row_state["description"] or sparql_binding_value(
+            binding, "description"
+        )
+        row_state["publisher"] = row_state["publisher"] or sparql_binding_value(
+            binding, "publisherName"
+        )
+        row_state["issued"] = row_state["issued"] or sparql_binding_value(
+            binding, "issued"
+        )
+        row_state["modified"] = row_state["modified"] or sparql_binding_value(
+            binding, "modified"
+        )
+        row_state["landing_page"] = row_state["landing_page"] or sparql_binding_value(
+            binding, "landingPage"
+        )
+        row_state["distribution_count"] = row_state["distribution_count"] or parse_int(
+            sparql_binding_value(binding, "distributionCount")
+        )
+        append_unique(
+            row_state["distribution_urls"],
+            sparql_binding_value(binding, "distributionURL")
+            or sparql_binding_value(binding, "distributionUrl")
+            or sparql_binding_value(binding, "distribution_url")
+            or sparql_binding_value(binding, "downloadURL")
+            or sparql_binding_value(binding, "accessURL")
+            or sparql_binding_value(binding, "distribution"),
+        )
+        append_unique(row_state["formats"], sparql_binding_value(binding, "format"))
+        append_unique(row_state["themes"], sparql_binding_value(binding, "theme"))
+
+    rows: list[dict[str, Any]] = []
+    inventory_method = source_cfg.get("catalog_baseline", {}).get(
+        "method", "sparql_query"
+    )
+    for idx, (dataset_uri, row_state) in enumerate(by_dataset.items(), start=1):
+        description = row_state["description"]
+        distribution_urls = row_state["distribution_urls"]
+        distribution_count = row_state["distribution_count"]
+        formats = row_state["formats"]
+        themes = row_state["themes"]
+        rows.append(
+            {
+                "captured_at": captured_at,
+                "source_id": source_id,
+                "source_kind": source_cfg.get("source_kind"),
+                "protocol": source_cfg.get("protocol"),
+                "inventory_method": inventory_method,
+                "item_kind": "dataset",
+                "item_id": dataset_uri,
+                "item_name": compact_uri_name(dataset_uri),
+                "title": row_state["title"],
+                "organization": row_state["publisher"],
+                "tags": None,
+                "notes_excerpt": description[:300] if description else None,
+                "source_url": endpoint,
+                "ordinal": idx,
+                "issued": row_state["issued"],
+                "modified": row_state["modified"],
+                "landing_page": row_state["landing_page"],
+                "distribution_url": distribution_urls[0]
+                if distribution_urls
+                else None,
+                "distribution_count": distribution_count
+                if distribution_count is not None
+                else (len(distribution_urls) if distribution_urls else None),
+                "format": ", ".join(formats) if formats else None,
+                "theme": ", ".join(themes) if themes else None,
+            }
+        )
+
+    if not rows:
+        raise ValueError(f"SPARQL query returned no inventory rows for {source_id}")
+
+    return rows, {
+        "type": "sparql_query_template",
+        "message": "Inventory raccolto via query SPARQL dichiarata.",
+        "query_name": query_name,
+        "bindings": len(bindings),
+        "datasets": len(rows),
+    }
+
+
 def collect_sdmx_inventory(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
@@ -456,6 +656,11 @@ def collect_inventory(
         if warning:
             source_cfg["_inventory_warning"] = warning
         return rows
+    if protocol == "sparql":
+        rows, summary = collect_sparql_inventory(source_id, source_cfg, captured_at)
+        if summary:
+            source_cfg["_inventory_summary"] = summary
+        return rows
     raise ValueError(f"Unsupported protocol for catalog inventory: {protocol}")
 
 
@@ -526,6 +731,9 @@ def main() -> None:
             warning = source_cfg.pop("_inventory_warning", None)
             if warning:
                 source_report["warning"] = warning
+            summary = source_cfg.pop("_inventory_summary", None)
+            if summary:
+                source_report["summary"] = summary
             report["sources"][source_id] = source_report
         except Exception as exc:
             report["sources"][source_id] = {

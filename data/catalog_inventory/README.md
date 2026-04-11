@@ -18,6 +18,7 @@ Sorgenti oggi inventariate in modo riproducibile:
 - `istat_sdmx`
 - `inps`
 - `openbdap`
+- `ispra_linked_data`
 
 Sorgenti osservate ma non inventariate automaticamente:
 - `anac`
@@ -46,8 +47,8 @@ Colonne chiave:
 - `captured_at`: timestamp UTC del run inventory
 - `source_id`: id della fonte nel registry (`istat_sdmx`, `inps`, `openbdap`, ...)
 - `source_kind`: oggi atteso `catalog`
-- `protocol`: protocollo della fonte (`ckan`, `sdmx`)
-- `inventory_method`: metodo usato per l'enumerazione (`package_search`, `package_list`, `dataflow_count`)
+- `protocol`: protocollo della fonte (`ckan`, `sdmx`, `sparql`)
+- `inventory_method`: metodo usato per l'enumerazione (`package_search`, `package_list`, `dataflow_count`, `sparql_query`)
 - `item_kind`: tipo di item (`dataset` o `dataflow`)
 - `item_id`: identificativo tecnico dell'item
 - `item_name`: nome macchina o slug quando disponibile
@@ -62,6 +63,9 @@ Nota operativa:
 - per cataloghi CKAN il builder prova in ordine `package_search`, `current_package_list_with_resources`, `package_list`
 - `current_package_list_with_resources` e' disabilitato per `inps` in ambiente locale Windows per instabilita SSL/GIL (fall-back diretto a `package_list` con warning esplicito)
 - la logica di enrichment resta attiva per altri cataloghi CKAN futuri
+- per cataloghi SPARQL il builder usa solo query dichiarate nel registry o template espliciti; il pilot iniziale è `dcat_datasets`
+- il template SPARQL generico enumera dataset e metadati DCAT leggeri; non popola `distribution_url`, `distribution_count` o `format`
+- per SPARQL `tags` resta vuoto e i temi DCAT stanno nel campo opzionale `theme`; query custom possono aggiungere campi opzionali come `distribution_url`, `distribution_count` e `format`
 
 ## Workflow
 
