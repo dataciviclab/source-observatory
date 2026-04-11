@@ -1,17 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
-from pathlib import Path
-
-
-MODULE_PATH = (
-    Path(__file__).resolve().parents[1] / "scripts" / "build_catalog_inventory.py"
-)
-SPEC = importlib.util.spec_from_file_location("build_catalog_inventory", MODULE_PATH)
-assert SPEC is not None
-assert SPEC.loader is not None
-build_catalog_inventory = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(build_catalog_inventory)
+import build_catalog_inventory
 
 
 class FakeJsonResponse:
