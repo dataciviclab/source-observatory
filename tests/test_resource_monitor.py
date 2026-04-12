@@ -279,6 +279,12 @@ def test_fetch_sdmx_returns_error_on_xml_parse_error() -> None:
     class FakeResponse:
         text = "<invalid"
 
+        def __enter__(self) -> "FakeResponse":
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
         def raise_for_status(self) -> None:
             return None
 
