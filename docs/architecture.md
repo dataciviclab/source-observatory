@@ -9,7 +9,6 @@ Trattare `source-observatory` come un piccolo intelligence layer con confini chi
 
 - `radar_check.py` risponde a "la fonte o il catalogo è vivo?"
 - `catalog-watch` risponde a "un inventario noto è cambiato in modo rilevante?"
-- `resource_monitor.py` risponde a "una file/resource Tier 1 è cambiata?"
 - `source-check` risponde a "questa fonte merita lavoro del Lab?"
 
 L'obiettivo non è monitorare tutto il web o "dataset in generale".
@@ -38,8 +37,6 @@ Dovrebbe aiutare a decidere:
 ### Codice
 
 - `scripts/radar_check.py`
-- `scripts/resource_monitor.py`
-- `scripts/resource_monitor.sources.yml`
 
 ### Stato e output
 
@@ -47,8 +44,6 @@ Dovrebbe aiutare a decidere:
 - `data/radar/STATUS.md`
 - `data/catalog/CATALOG_WATCH_REPORT.md`
 - `data/catalog/catalog_signals.json`
-- `data/monitor/snapshots/`
-- `data/monitor/reports/latest.md`
 
 ### Note e decisioni
 
@@ -80,14 +75,11 @@ Questo implica tre livelli di segnale:
   - salute della fonte o del catalogo
 - `catalog-watch`
   - cambi di inventario e struttura su un catalogo noto
-- `resource_monitor`
-  - cambi file/resource su una lista corta di fonti ad alto segnale
 
 E un piccolo modello di stato per gli oggetti osservati:
 
 - `radar-only`
 - `catalog-watch`
-- `monitor-active`
 
 ## Cosa sta nel radar
 
@@ -104,29 +96,12 @@ Buoni candidati v0:
 - INPS
 - OpenBDAP
 
-## Cosa sta nel resource monitor
-
-Il resource monitor dovrebbe seguire solo fonti con una ragione operativa chiara.
-
-Includere:
-
-- candidate DI attivi con update attesi
-- dataset stabili in `analisi/` dove nuove annualita' contano
-- un numero molto piccolo di support dataset strategici
-
-Escludere:
-
-- watchlist larghe senza next step
-- portali instabili senza un adapter usabile
-- grandi listing HTML con pattern `include` deboli
-
 ## Cosa sta in catalog-watch
 
 `catalog-watch` è il livello intermedio tra radar e monitoraggio file.
 
 Usarlo quando:
 
-- il portale conta, ma un file monitor concreto sarebbe rumoroso
 - il protocollo è abbastanza stabile da poter essere osservato a livello inventario
 - il segnale può informare source-check o priorità connector del toolkit
 
@@ -155,10 +130,7 @@ Questa tassonomia serve a evitare che il layer catalogo degeneri in:
 
 Tenere il set monitorato piccolo:
 
-- radar/catalogo: 3 fonti ricche
-- monitor: 3-5 casi Tier 1 al massimo
-
-Se una fonte non ha un next step plausibile dopo un cambio, dovrebbe restare nel radar o nello scouting, non nel monitor.
+- radar/catalogo: poche fonti ricche con segnali leggibili
 
 ## Direzione
 
@@ -166,5 +138,4 @@ Per la v0 pubblicabile:
 
 1. universe piccolo
 2. segnali leggibili
-3. monitor davvero secondario
 4. niente automazione ampia finché il rumore non resta basso

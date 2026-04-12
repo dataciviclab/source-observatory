@@ -31,7 +31,7 @@ Non serve a:
 - verificare in profondita' un singolo dataset
 - costruire subito un inventory completo
 - fare monitoraggio continuo
-- sostituire `source-check`, `catalog-watch` o `resource-monitor`
+- sostituire `source-check` o `catalog-watch`
 
 ## Output minimo atteso
 
@@ -154,7 +154,6 @@ Il verdetto deve dire anche:
 - `portal-scout` classifica il portale e decide il metodo plausibile
 - `catalog-watch` osserva un catalogo con metodo stabile
 - `source-check` verifica una fonte specifica o un item promettente
-- `resource-monitor` segue una resource nota nel tempo
 
 ## Prossimo passo tipico
 

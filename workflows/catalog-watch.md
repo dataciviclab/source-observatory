@@ -48,7 +48,6 @@ Non usarlo quando:
 
 - la domanda vera è solo "la fonte è viva?"
 - il caso richiede un `source-check` puntuale su una fonte o dataset specifico
-- il caso è un monitor file-level o resource-level
 - la baseline non è abbastanza comparabile da sostenere un confronto serio
 
 ## Preconditions minime
