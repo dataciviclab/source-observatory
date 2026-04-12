@@ -22,24 +22,12 @@ REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 DEFAULT_OUT_DIR = REPO_ROOT / "data" / "catalog_inventory" / "generated"
 DEFAULT_OUT_PARQUET = "catalog_inventory_latest.parquet"
 DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
-NON_INVENTORIABLE_SOURCES = {
-    "anac": "Fonte osservata in source-observatory, ma non inventariabile con client HTTP standard per via di una risposta WAF 'Request Rejected'.",
-}
 CKAN_ACTION_NAMES = {
     "package_list",
     "package_search",
     "package_show",
     "current_package_list_with_resources",
 }
-# Sources where package_search is unreliable (bad counts or timeouts).
-CKAN_SKIP_PACKAGE_SEARCH = {"lavoro_opendata", "openbdap"}
-# Sources where current_package_list_with_resources is unreliable (SSL/GIL crash on Windows).
-# These skip the enrichment step and fall straight to package_list.
-CKAN_SKIP_CURRENT_LIST = {"inps", "lavoro_opendata"}
-# Sources where package_list rows (often numeric IDs) should be sampled and enriched
-# via package_show when current_package_list_with_resources is skipped.
-CKAN_PACKAGE_SHOW_SAMPLE_SOURCES = {"inps"}
-CKAN_PACKAGE_SHOW_SAMPLE_SIZE = 25
 SPARQL_QUERY_TEMPLATES = {
     "dcat_datasets": """
 PREFIX dcat: <http://www.w3.org/ns/dcat#>
@@ -64,6 +52,11 @@ ORDER BY ?dataset
 LIMIT {limit}
 """.strip()
 }
+
+
+def _inventory_cfg(source_cfg: dict[str, Any]) -> dict[str, Any]:
+    """Legge il blocco `inventory:` dalla config della fonte nel registry."""
+    return source_cfg.get("inventory") or {}
 
 
 def supported_protocols() -> set[str]:
@@ -368,7 +361,7 @@ def collect_ckan_inventory_via_package_show_sample(
     source_cfg: dict[str, Any],
     captured_at: str,
     package_list_rows: list[dict[str, Any]],
-    sample_size: int = CKAN_PACKAGE_SHOW_SAMPLE_SIZE,
+    sample_size: int = 25,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_show")
     sampled_idx = _sample_indexes(len(package_list_rows), sample_size)
@@ -420,8 +413,9 @@ def collect_ckan_inventory_via_package_show_sample(
 def collect_ckan_inventory(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    inv = _inventory_cfg(source_cfg)
     search_exc: Exception | None = None
-    if source_id not in CKAN_SKIP_PACKAGE_SEARCH:
+    if not inv.get("skip_package_search"):
         try:
             return collect_ckan_inventory_via_search(
                 source_id, source_cfg, captured_at
@@ -436,13 +430,14 @@ def collect_ckan_inventory(
     package_list_rows = collect_ckan_inventory_via_package_list(
         source_id, source_cfg, captured_at
     )
-    if source_id in CKAN_SKIP_CURRENT_LIST:
-        if source_id in CKAN_PACKAGE_SHOW_SAMPLE_SOURCES:
+    if inv.get("skip_current_list"):
+        if inv.get("package_show_sample"):
             enriched_rows, sample_warning = collect_ckan_inventory_via_package_show_sample(
                 source_id=source_id,
                 source_cfg=source_cfg,
                 captured_at=captured_at,
                 package_list_rows=package_list_rows,
+                sample_size=inv.get("sample_size", 25),
             )
             enriched_by_id = {row["item_id"]: row for row in enriched_rows}
             merged_rows: list[dict[str, Any]] = []
@@ -856,12 +851,13 @@ def main() -> None:
         if source_cfg.get("observation_mode") != "catalog-watch":
             continue
 
-        if source_id in NON_INVENTORIABLE_SOURCES:
+        inv = _inventory_cfg(source_cfg)
+        if inv.get("non_inventoriable"):
             report["sources"][source_id] = {
                 "status": "non_inventariabile",
                 "protocol": source_cfg.get("protocol"),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
-                "reason": NON_INVENTORIABLE_SOURCES[source_id],
+                "reason": inv.get("reason", "Fonte non inventariabile."),
             }
             continue
 

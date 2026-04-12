@@ -25,6 +25,9 @@ anac:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    non_inventoriable: true
+    reason: "Fonte osservata in source-observatory, ma non inventariabile con client HTTP standard per via di una risposta WAF 'Request Rejected'."
   last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-03-28'
@@ -41,6 +44,10 @@ inps:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
+  inventory:
+    skip_current_list: true
+    package_show_sample: true
+    sample_size: 25
   last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-02'
@@ -59,6 +66,8 @@ openbdap:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
+  inventory:
+    skip_package_search: true
   last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-02'
@@ -195,6 +204,9 @@ lavoro_opendata:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
+  inventory:
+    skip_package_search: true
+    skip_current_list: true
   last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-11'

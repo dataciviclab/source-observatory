@@ -122,6 +122,7 @@ def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None
         "source_kind": "catalog",
         "protocol": "ckan",
         "catalog_baseline": {"method": "package_list"},
+        "inventory": {"skip_current_list": True, "package_show_sample": True, "sample_size": 25},
     }
 
     def fake_search(*_args, **_kwargs):
@@ -190,6 +191,7 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
         "source_kind": "catalog",
         "protocol": "ckan",
         "catalog_baseline": {"method": "package_list"},
+        "inventory": {"skip_current_list": True, "package_show_sample": True, "sample_size": 25},
     }
 
     def fake_search(*_args, **_kwargs):
