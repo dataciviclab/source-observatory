@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import requests
+import urllib3
 import yaml
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -112,9 +113,7 @@ def _probe_once(base_url: str) -> ProbeResult:
     except requests.exceptions.SSLError as exc:
         try:
             with requests.Session() as session:
-                requests.packages.urllib3.disable_warnings(
-                    category=InsecureRequestWarning
-                )
+                urllib3.disable_warnings(category=InsecureRequestWarning)
                 with session.get(
                     base_url,
                     timeout=TIMEOUT_SECONDS,
