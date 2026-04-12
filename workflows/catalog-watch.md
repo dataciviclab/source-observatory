@@ -17,8 +17,8 @@ Versione: 1.5 - 2026-04-10
 
 Controllare i pochi cataloghi classificati come `catalog-watch` nel registry e capire se:
 
-- l'inventario e cambiato
-- la struttura del catalogo e cambiata
+- l'inventario è cambiato
+- la struttura del catalogo è cambiata
 - esiste un segnale che merita un follow-up umano
 
 Questo workflow serve a:
@@ -46,21 +46,21 @@ Usarlo quando hai gia:
 
 Non usarlo quando:
 
-- la domanda vera e solo "la fonte e viva?"
+- la domanda vera è solo "la fonte è viva?"
 - il caso richiede un `source-check` puntuale su una fonte o dataset specifico
-- il caso e un monitor file-level o resource-level
-- la baseline non e abbastanza comparabile da sostenere un confronto serio
+- il caso è un monitor file-level o resource-level
+- la baseline non è abbastanza comparabile da sostenere un confronto serio
 
 ## Preconditions minime
 
 Per partire servono almeno:
 
-- registry `source-observatory/data/radar/sources_registry.yaml`
+- registry `data/radar/sources_registry.yaml`
 - fonti con `observation_mode: catalog-watch`
 - `protocol`, `base_url` e `catalog_baseline` leggibili
 - output canonici confermati:
-  - `source-observatory/data/catalog/CATALOG_WATCH_REPORT.md`
-  - `source-observatory/data/catalog/catalog_signals.json`
+  - `data/catalog/CATALOG_WATCH_REPORT.md`
+  - `data/catalog/catalog_signals.json`
 
 Nel dubbio:
 
@@ -70,17 +70,17 @@ Nel dubbio:
 
 Fermarsi quando:
 
-- il protocollo reale non e chiaro
+- il protocollo reale non è chiaro
 - l'endpoint non restituisce dati comparabili con la baseline
 - il delta osservato dipende chiaramente da un mismatch di metodo
-- il catalogo e troppo fragile per distinguere tra `health` e `inventory change`
+- il catalogo è troppo fragile per distinguere tra `health` e `inventory change`
 - stai per trasformare un segnale grezzo in decisione automatica
 
 ## Passi canonici
 
 ### 1. Leggi il registry
 
-Leggere `source-observatory/data/radar/sources_registry.yaml`.
+Leggere `data/radar/sources_registry.yaml`.
 
 Filtrare solo le fonti con:
 
@@ -126,8 +126,8 @@ Per `rest_json`:
 
 Per `xlsx_direct` o `html`:
 
-- verificare raggiungibilita
-- controllare se la struttura dei link di download e cambiata
+- verificare raggiungibilità
+- controllare se la struttura dei link di download è cambiata
 - usare confronti qualitativi se la baseline e qualitativa
 
 ### 3. Classifica il segnale primario
@@ -143,15 +143,16 @@ Per ogni fonte e per ogni run, usare un solo segnale primario:
 
 Regole:
 
-- `follow-up candidate` e un suggerimento di follow-up umano, non un automatismo
-- se il metodo osservato non e comparabile con la baseline, preferire `[DATO MANCANTE]`
-- se il problema e soprattutto di raggiungibilita o affidabilita, preferire `health`
+- `follow-up candidate` è un suggerimento di follow-up umano, non un automatismo
+- quando il segnale è `follow-up candidate` o `inventory change`, il catalog inventory (`scripts/build_catalog_inventory.py`) è il punto di partenza per shortlistare item concreti senza navigare il portale a mano
+- se il metodo osservato non è comparabile con la baseline, preferire `[DATO MANCANTE]`
+- se il problema è soprattutto di raggiungibilità o affidabilità, preferire `health`
 
 ### 4. Produci il report
 
 Scrivere il report in:
 
-- `source-observatory/data/catalog/CATALOG_WATCH_REPORT.md`
+- `data/catalog/CATALOG_WATCH_REPORT.md`
 
 Per ogni fonte, il report deve lasciare almeno:
 
@@ -197,13 +198,13 @@ Un run buono di `catalog-watch` lascia:
 
 ## Definition of done
 
-Il workflow e chiuso bene quando:
+Il workflow è chiuso bene quando:
 
 - tutte le fonti `catalog-watch` del registry sono state controllate
-- il report e aggiornato
-- nessun delta numerico e stato forzato senza comparabilita di metodo
+- il report è aggiornato
+- nessun delta numerico è stato forzato senza comparabilità di metodo
 - non sono state aperte issue, source-check o pipeline in automatico
-- il maintainer puo leggere il report e capire subito se esiste un follow-up umano plausibile
+- il maintainer può leggere il report e capire subito se esiste un follow-up umano plausibile
 
 ## Stati finali ammessi
 

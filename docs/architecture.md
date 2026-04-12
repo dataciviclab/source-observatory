@@ -7,15 +7,15 @@
 
 Trattare `source-observatory` come un piccolo intelligence layer con confini chiari:
 
-- `radar_check.py` risponde a "la fonte o il catalogo e' vivo?"
-- `catalog-watch` risponde a "un inventario noto e' cambiato in modo rilevante?"
-- `resource_monitor.py` risponde a "una file/resource Tier 1 e' cambiata?"
+- `radar_check.py` risponde a "la fonte o il catalogo è vivo?"
+- `catalog-watch` risponde a "un inventario noto è cambiato in modo rilevante?"
+- `resource_monitor.py` risponde a "una file/resource Tier 1 è cambiata?"
 - `source-check` risponde a "questa fonte merita lavoro del Lab?"
 
-L'obiettivo non e' monitorare tutto il web o "dataset in generale".
-L'obiettivo e' seguire una lista molto corta di fonti e cataloghi ricchi che contano gia' per DataCivicLab e capire se un segnale merita davvero un passo successivo.
+L'obiettivo non è monitorare tutto il web o "dataset in generale".
+L'obiettivo è seguire una lista molto corta di fonti e cataloghi ricchi che contano già per DataCivicLab e capire se un segnale merita davvero un passo successivo.
 
-Il repo rende di piu' se trattato come un intelligence layer leggero tra scouting e lavoro di pipeline.
+Il repo rende di più se trattato come un intelligence layer leggero tra scouting e lavoro di pipeline.
 
 ## Rapporto con il toolkit
 
@@ -29,7 +29,7 @@ Il repo rende di piu' se trattato come un intelligence layer leggero tra scoutin
 Quindi l'osservatorio non dovrebbe provare a diventare un secondo sistema di pipeline.
 Dovrebbe aiutare a decidere:
 
-- se una fonte e' reale e stabile
+- se una fonte è reale e stabile
 - se un cambiamento conta davvero
 - se un pattern di fonte ricorrente merita supporto nel toolkit
 
@@ -37,39 +37,34 @@ Dovrebbe aiutare a decidere:
 
 ### Codice
 
-- `source-observatory/scripts/radar_check.py`
-- `source-observatory/scripts/monitor/resource_monitor.py`
-- `source-observatory/scripts/monitor/resource_monitor.sources.yml.example`
+- `scripts/radar_check.py`
+- `scripts/resource_monitor.py`
+- `scripts/resource_monitor.sources.yml`
 
 ### Stato e output
 
-- `source-observatory/data/radar/sources_registry.yaml`
-- `source-observatory/data/radar/STATUS.md`
-- `source-observatory/data/catalog/CATALOG_WATCH_REPORT.md`
-- `source-observatory/data/catalog/catalog_signals.json`
-- `source-observatory/data/monitor/snapshots/`
-- `source-observatory/data/monitor/reports/latest.md`
+- `data/radar/sources_registry.yaml`
+- `data/radar/STATUS.md`
+- `data/catalog/CATALOG_WATCH_REPORT.md`
+- `data/catalog/catalog_signals.json`
+- `data/monitor/snapshots/`
+- `data/monitor/reports/latest.md`
 
 ### Note e decisioni
 
-- `source-observatory/docs/usage.md`
-- `source-observatory/docs/runbook.md`
-- `source-observatory/docs/catalog_watch_measurement_policy.md`
+- `docs/usage.md`
+- `docs/runbook.md`
+- `docs/catalog_watch_measurement_policy.md`
 
-## Universe v0
+## Perimetro
 
-Per la v0 il set va tenuto deliberatamente piccolo:
+Il set di fonti osservate è definito in `data/radar/sources_registry.yaml`.
 
-- `istat_sdmx`
-- `anac`
-- `inps`
-- `openbdap`
-
-Se una fonte non produce segnali chiari e difendibili, resta fuori dalla v0.
+Regola: se una fonte non produce segnali chiari e difendibili, resta fuori dal perimetro.
 
 ## Intelligence layer: inquadramento
 
-L'osservatorio e' piu' utile quando ogni segnale porta a un next step concreto:
+L'osservatorio è più utile quando ogni segnale porta a un next step concreto:
 
 - nessuna azione
 - source-check
@@ -77,7 +72,7 @@ L'osservatorio e' piu' utile quando ogni segnale porta a un next step concreto:
 - verifica di un dataset pubblico stabile
 - valutazione di pattern ricorrenti per il toolkit
 
-Se un segnale non implica nessuno di questi follow-up, probabilmente e' rumore.
+Se un segnale non implica nessuno di questi follow-up, probabilmente è rumore.
 
 Questo implica tre livelli di segnale:
 
@@ -127,13 +122,13 @@ Escludere:
 
 ## Cosa sta in catalog-watch
 
-`catalog-watch` e' il livello intermedio tra radar e monitoraggio file.
+`catalog-watch` è il livello intermedio tra radar e monitoraggio file.
 
 Usarlo quando:
 
 - il portale conta, ma un file monitor concreto sarebbe rumoroso
-- il protocollo e' abbastanza stabile da poter essere osservato a livello inventario
-- il segnale puo' informare source-check o priorita' connector del toolkit
+- il protocollo è abbastanza stabile da poter essere osservato a livello inventario
+- il segnale può informare source-check o priorità connector del toolkit
 
 Casi tipici v0:
 
@@ -172,4 +167,4 @@ Per la v0 pubblicabile:
 1. universe piccolo
 2. segnali leggibili
 3. monitor davvero secondario
-4. niente automazione ampia finche' il rumore non resta basso
+4. niente automazione ampia finché il rumore non resta basso

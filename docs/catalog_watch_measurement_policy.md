@@ -76,7 +76,7 @@ Regola pratica:
 
 - se la baseline dichiara `method: package_list`, il confronto numerico va fatto con `package_list`
 - se la baseline dichiara `method: package_search`, il confronto numerico va fatto con `package_search`
-- se il metodo non e' dichiarato o non e' confrontabile, il delta va trattato come `[DATO MANCANTE]`
+- se il metodo non è dichiarato o non è confrontabile, il delta va trattato come `[DATO MANCANTE]`
 
 ## Tassonomia operativa
 

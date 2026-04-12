@@ -19,7 +19,7 @@ import yaml
 
 # --- Script constants
 # All paths are relative to the workspace root
-WORKSPACE_ROOT = Path(__file__).resolve().parents[2]
+WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_DIR = Path(__file__).resolve().parent
 DATA_DIR = WORKSPACE_ROOT / "data" / "monitor"
 

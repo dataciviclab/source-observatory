@@ -4,22 +4,16 @@ Guida operativa breve per la v0 attuale.
 
 ## Radar
 
-```powershell
-python source-observatory/scripts/radar_check.py --dry-run
-python source-observatory/scripts/radar_check.py
+```bash
+python scripts/radar_check.py --dry-run
+python scripts/radar_check.py
 ```
 
 Usa `radar` quando la domanda è:
 
 - la fonte risponde?
 - ci sono problemi di timeout, SSL, DNS o HTTP?
-- il piccolo universe v0 è sano?
-
-Universe v0 attuale:
-
-- `istat_sdmx`
-- `anac`
-- `inps`
+- il registry è sano?
 
 Output:
 
@@ -29,7 +23,7 @@ Scheduling v0:
 
 - run giornaliero via GitHub Actions
 - `workflow_dispatch` disponibile per run manuali
-- il modello v0 e' `report-only`: aggiorna `STATUS.md` e `sources_registry.yaml`
+- il modello v0 è `report-only`: aggiorna `STATUS.md` e `sources_registry.yaml`
 - nessuna issue automatica o alerting complesso in questa fase
 
 ## Catalog-watch
@@ -54,33 +48,35 @@ Modello v0:
 
 ## Catalog inventory
 
-```powershell
-python source-observatory/scripts/build_catalog_inventory.py
+```bash
+python scripts/build_catalog_inventory.py
 ```
 
-Usa `catalog inventory` quando la domanda e':
+Usa `catalog inventory` quando la domanda è:
 
 - quali item sono oggi enumerabili nei cataloghi osservati?
 - quali fonti `catalog-watch` producono un inventario riusabile per scouting?
 - il perimetro pubblico resta coerente con le esclusioni dichiarate?
 
-Output:
+Output (non versionati nel repo):
 
 - `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
 - `data/catalog_inventory/generated/catalog_inventory_report.json`
 
+Per ottenere l'ultimo output senza rieseguire: artifact del workflow `catalog-inventory` su GitHub Actions, oppure GCS se configurato.
+
 Disciplina:
 
 - il perimetro segue le fonti `catalog-watch` del registry
-- una fonte puo' restare osservata in SO ma non essere inventariabile
+- una fonte può restare osservata in SO ma non essere inventariabile
 - `anac` oggi resta escluso dall'inventory automatico per vincoli WAF
-- l'upload su GCS e' opzionale e richiede secret espliciti
-- il workflow repo-side e' solo `workflow_dispatch`: nessuno schedule finche' il perimetro non resta stabile per piu' run consecutivi
+- l'upload su GCS è opzionale e richiede secret espliciti
+- il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`
 
 ## Resource monitor
 
-```powershell
-python source-observatory/scripts/monitor/resource_monitor.py --sources source-observatory/scripts/monitor/resource_monitor.sources.yml
+```bash
+python scripts/resource_monitor.py --sources scripts/resource_monitor.sources.yml --timeout 20
 ```
 
 Usa `monitor` solo per un set molto piccolo di casi Tier 1 in cui il change detection file/resource ha un next step difendibile.

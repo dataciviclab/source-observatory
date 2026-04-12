@@ -3,11 +3,11 @@
 Artifact derivato dai cataloghi osservati in `source-observatory`.
 
 Serve per:
-- consultazione veloce dei cataloghi gia' osservati
+- consultazione veloce dei cataloghi già osservati
 - scouting di dataset e dataflow per nuovi source-check
-- query locali o snapshot pubblici leggeri quando il perimetro e' abbastanza stabile
+- query locali o snapshot pubblici leggeri quando il perimetro è abbastanza stabile
 
-Non e':
+Non è:
 - il catalogo canonico del Lab
 - una promessa di copertura completa di tutte le fonti nel registry
 - un sostituto del radar o del catalog-watch
@@ -37,9 +37,9 @@ Il workflow manuale produce due file:
 Per default questi output vengono generati in:
 - `data/catalog_inventory/generated/`
 
-La directory `generated/` non e' versionata nel repo:
+La directory `generated/` non è versionata nel repo:
 - gli artifact vengono esposti come artifact GitHub Actions
-- l'upload su GCS e' opzionale e richiede secret/config espliciti
+- l'upload su GCS è opzionale e richiede secret/config espliciti
 
 ## Schema minimo del parquet
 
@@ -61,7 +61,7 @@ Colonne chiave:
 
 Nota operativa:
 - per cataloghi CKAN il builder prova in ordine `package_search`, `current_package_list_with_resources`, `package_list`
-- `current_package_list_with_resources` e' disabilitato per `inps` in ambiente locale Windows per instabilita SSL/GIL (fall-back diretto a `package_list` con warning esplicito)
+- `current_package_list_with_resources` è disabilitato per `inps` in ambiente locale Windows per instabilita SSL/GIL (fall-back diretto a `package_list` con warning esplicito)
 - la logica di enrichment resta attiva per altri cataloghi CKAN futuri
 - per cataloghi SPARQL il builder usa solo query dichiarate nel registry o template espliciti; il pilot iniziale è `dcat_datasets`
 - il template SPARQL generico enumera dataset e metadati DCAT leggeri; non popola `distribution_url`, `distribution_count` o `format`
@@ -74,13 +74,13 @@ Workflow GitHub Actions disponibile:
 
 Comando locale equivalente:
 
-```powershell
-python source-observatory/scripts/build_catalog_inventory.py
+```bash
+python scripts/build_catalog_inventory.py
 ```
 
 ## Caveat
 
 - il perimetro segue solo le fonti `catalog-watch` del registry
-- l'inventory puo' essere intenzionalmente parziale se una fonte e' osservabile ma non inventariabile in modo stabile
+- l'inventory può essere intenzionalmente parziale se una fonte e' osservabile ma non inventariabile in modo stabile
 - il README locale resta in `_local/data/catalog_inventory/README.md`
 - `istat_sdmx` oggi viene enumerato in modo riproducibile tramite `https://sdmx.istat.it/SDMXWS/rest/dataflow/IT1`, coerente con la baseline aggiornata a `509`

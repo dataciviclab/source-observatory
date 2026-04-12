@@ -1,112 +1,77 @@
 # Source Observatory
 
-`source-observatory` è un piccolo intelligence layer per fonti pubbliche.
+Intelligence layer leggero per fonti pubbliche italiane.
 
 Fa parte dell'ecosistema [DataCivicLab](https://github.com/dataciviclab).
 
-La sua v0 ha un perimetro volutamente stretto:
+Tre pezzi principali:
 
-- verificare se una fonte è viva
-- osservare un piccolo set di cataloghi ricchi per segnali di inventario significativi
-- tenere il monitoraggio file/resource limitato a pochi casi Tier 1
+1. **catalog inventory** - enumera cosa esiste nei cataloghi osservati e produce un parquet interrogabile
+2. **radar** - verifica se una fonte risponde prima di investirci tempo
+3. **source-check / portal-scout** - workflow disciplinati per decidere se una fonte merita lavoro del Lab
 
 Non è:
 
 - una pipeline dataset
 - un sistema di intake candidate
-- una piattaforma di monitoraggio diffuso dataset-per-dataset
+- una piattaforma di monitoraggio diffuso
 
-## V0 attuale
+## Catalog inventory
 
-La v0 pubblicabile è concentrata su pochi cataloghi ricchi:
+`scripts/build_catalog_inventory.py` entra nei cataloghi CKAN, SDMX e SPARQL del registry e produce uno snapshot tabulare di tutti gli item enumerabili.
 
-- `istat_sdmx`
-- `anac`
-- `inps`
-- `openbdap`
+Output:
 
-La regola guida è semplice:
+- `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
+- `data/catalog_inventory/generated/catalog_inventory_report.json`
 
-- meglio 4 cataloghi ricchi con segnali leggibili
-- peggio 12 fonti miste con poco segnale
+Il parquet contiene oggi oltre 6000 item da fonti come INPS, OpenBDAP, MIM USTAT, Lavoro, Consip, Camera, ISPRA. È il punto di partenza per lo scouting: invece di navigare portali ostili manualmente, si interroga il parquet in DuckDB e si shortlista.
 
-## Componenti
+Questi file **non sono versionati nel repo**. Per ottenerli: artifact del workflow `catalog-inventory` su GitHub Actions, oppure GCS se configurato. Per generarli localmente usare il comando sotto.
 
-### `source-check`
+```bash
+python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/generated
+```
 
-Workflow pubblico/light per verificare se una fonte osservata regge davvero come pista del Lab.
+## Radar
 
-File canonici:
+`scripts/radar_check.py` fa un health check economico di tutte le fonti nel registry: risponde, ha problemi SSL, è fragile?
 
-- [source-check.md](workflows/source-check.md)
-- [usage.md](docs/usage.md)
+Output: [`data/radar/STATUS.md`](data/radar/STATUS.md) - un artefatto leggibile usabile come pre-flight prima di un source-check o di un run DI.
 
-### `radar`
+```bash
+python scripts/radar_check.py
+```
 
-Risponde a:
+Schedulato giornalmente via GitHub Actions. Il registry è in [`data/radar/sources_registry.yaml`](data/radar/sources_registry.yaml).
 
-- la fonte è raggiungibile?
-- è fragile?
+## Source-check e portal-scout
 
-File canonici:
+Non sono script, sono workflow disciplinati documentati in `workflows/`.
 
-- [sources_registry.yaml](data/radar/sources_registry.yaml)
-- [STATUS.md](data/radar/STATUS.md)
-- [radar_check.py](scripts/radar_check.py)
+- [`portal-scout.md`](workflows/portal-scout.md) - classifica un portale prima che entri nel registry: è un catalogo reale? è inventariabile? quale modalità di osservazione ha senso?
+- [`source-check.md`](workflows/source-check.md) - verifica se una fonte o un dataset regge davvero come pista del Lab. Entra con una fonte opaca, esce con un verdetto esplicito e un next step.
 
-### `catalog-watch`
+Il valore è nel processo: impedisce di portare in `dataset-incubator` candidate non ancora maturi.
 
-Risponde a:
+## Catalog-watch
 
-- l'inventario del catalogo è cambiato?
-- c'è drift strutturale?
-- c'è un segnale che merita follow-up umano?
+Osserva i cataloghi del registry per segnali di cambiamento inventariale. Non enumera cosa c'è dentro (quello è catalog inventory), risponde a "il catalogo è cambiato?".
 
-Per la v0, `catalog-watch` resta `human-run`.
+Output: [`data/catalog/CATALOG_WATCH_REPORT.md`](data/catalog/CATALOG_WATCH_REPORT.md)
 
-File canonici:
-
-- [CATALOG_WATCH_REPORT.md](data/catalog/CATALOG_WATCH_REPORT.md)
-- [catalog_signals.json](data/catalog/catalog_signals.json)
-- [catalog-watch.md](workflows/catalog-watch.md)
-
-### `monitor`
-
-Layer secondario di supporto per un set molto piccolo di risorse Tier 1 già note.
-
-File canonici:
-
-- [resource_monitor.py](scripts/monitor/resource_monitor.py)
-- [resource_monitor.sources.yml](scripts/monitor/resource_monitor.sources.yml)
-- [latest.md](data/monitor/reports/latest.md)
+Resta `human-run` nella v0.
 
 ## Struttura del repo
 
-- `scripts/`
-  - codice runtime canonico
-- `data/`
-  - stato generato e report
-- `docs/`
-  - uso, architettura, piano, runbook
-- `workflows/`
-  - workflow operativi posseduti dal repo
-
-## Comandi canonici
-
-Eseguire i comandi dalla root del workspace:
-
-```text
-dataciviclab-workspace/
-```
-
-```powershell
-python source-observatory/scripts/radar_check.py
-python source-observatory/scripts/monitor/resource_monitor.py --sources source-observatory/scripts/monitor/resource_monitor.sources.yml
-```
+- `scripts/` - codice runtime canonico
+- `data/` - stato generato e report
+- `docs/` - architettura, runbook, policy di misura
+- `workflows/` - workflow operativi documentati
 
 ## Documentazione
 
 - [runbook.md](docs/runbook.md)
 - [architecture.md](docs/architecture.md)
-- [catalog_watch_measurement_policy.md](docs/catalog_watch_measurement_policy.md)
 - [usage.md](docs/usage.md)
+- [catalog_watch_measurement_policy.md](docs/catalog_watch_measurement_policy.md)
