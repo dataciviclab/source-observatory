@@ -5,20 +5,30 @@ Stato canonico per il monitoraggio file/resource.
 ## Struttura
 
 - `snapshots/`
-  - snapshot JSON con timestamp scritti da `source-observatory/scripts/monitor/resource_monitor.py`
+  - snapshot JSON completi con timestamp, scritti da `resource_monitor.py`
 - `reports/latest.md`
-  - ultimo report differenziale leggibile
+  - ultimo report differenziale leggibile (Markdown)
+- `reports/diff_summary.json`
+  - summary minimale per consumer esterni (macchine)
 
 ## Perimetro
 
-Quest'area traccia cambi su una lista corta di fonti già rilevanti:
+Quest'area osserva e segnala cambiamenti su una lista corta di fonti già rilevanti:
 
 - file nuovi
 - file cambiati
 - file rimossi
 - errori di adapter
 
-Non è un catalogo di scouting e non è il posto in cui si decide la qualità della fonte.
+**Il monitor osserva, non agisce.** Non invalida raw, non rilancia pipeline, non decide se un cambiamento richiede azione. E' responsabilita' del consumatore del `diff_summary.json` decidere cosa fare con il segnale.
+
+## Consumer esterni
+
+Il `diff_summary.json` e' progettato per essere consumato da:
+
+- Script o workflow che vogliono sapere "cosa e' cambiato" senza parsare lo snapshot completo
+- La toolkit pipeline, eventualmente, come segnale per invalidare il raw layer
+- Esseri umani che leggono `reports/latest.md`
 
 ## Input
 

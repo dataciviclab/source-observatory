@@ -1,12 +1,14 @@
 """Test per monitor/resource_monitor.py."""
 from __future__ import annotations
 
+import json
 from unittest.mock import patch
 from xml.etree import ElementTree as ET
 
 import requests
 
 from monitor.resource_monitor import (
+    DIFF_SUMMARY_PATH,
     annotate_resources,
     diff_fields,
     fetch_sdmx,
@@ -14,6 +16,7 @@ from monitor.resource_monitor import (
     is_data_link,
     parse_sdmx_resources,
     resource_signature,
+    write_diff_summary,
 )
 
 
@@ -297,3 +300,67 @@ def test_fetch_sdmx_returns_error_on_xml_parse_error() -> None:
             result = fetch_sdmx(source, timeout=5)
     assert result.error is not None
     assert "SDMX XML parse error" in result.error
+
+
+def test_write_diff_summary_writes_minimal_machine_readable_payload(
+    tmp_path, monkeypatch
+) -> None:
+    reports_dir = tmp_path / "reports"
+    diff_path = reports_dir / "diff_summary.json"
+    monkeypatch.setattr("monitor.resource_monitor.REPORTS_DIR", reports_dir)
+    monkeypatch.setattr("monitor.resource_monitor.DIFF_SUMMARY_PATH", diff_path)
+
+    snapshot = {
+        "generated_at": "2026-04-12T14:00:00+00:00",
+        "generated_at_utc": "2026-04-12 14:00:00Z",
+        "source_count": 1,
+        "sources": [
+            {
+                "id": "inps-ckan",
+                "new_count": 1,
+                "changed_count": 1,
+                "removed_count": 1,
+                "unchanged_count": 3,
+                "error": None,
+                "resources": [
+                    {
+                        "id": "r-new",
+                        "name": "Nuovo file",
+                        "format": "CSV",
+                        "url": "https://example.test/new.csv",
+                        "status": "new",
+                    },
+                    {
+                        "id": "r-chg",
+                        "name": "File aggiornato",
+                        "format": "CSV",
+                        "url": "https://example.test/changed.csv",
+                        "status": "changed",
+                        "changes": ["last_modified: 'a' -> 'b'"],
+                    },
+                    {
+                        "id": "r-del",
+                        "name": "File rimosso",
+                        "format": "CSV",
+                        "url": "https://example.test/removed.csv",
+                        "status": "removed",
+                    },
+                ],
+            }
+        ],
+    }
+
+    write_diff_summary(snapshot)
+    assert DIFF_SUMMARY_PATH.name == "diff_summary.json"
+    assert diff_path.exists()
+
+    payload = json.loads(diff_path.read_text(encoding="utf-8"))
+    assert payload["source_count"] == 1
+    assert payload["sources_with_changes"] == ["inps-ckan"]
+    assert payload["sources_with_errors"] == []
+    assert payload["per_source"]["inps-ckan"]["new"] == 1
+    assert payload["per_source"]["inps-ckan"]["changed"] == 1
+    assert payload["per_source"]["inps-ckan"]["removed"] == 1
+    assert payload["per_source"]["inps-ckan"]["new_resources"][0]["id"] == "r-new"
+    assert payload["per_source"]["inps-ckan"]["changed_resources"][0]["id"] == "r-chg"
+    assert payload["per_source"]["inps-ckan"]["removed_resources"][0]["id"] == "r-del"
