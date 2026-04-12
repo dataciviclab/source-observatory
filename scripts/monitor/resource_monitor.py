@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from html.parser import HTMLParser
@@ -29,7 +30,17 @@ REPORTS_DIR = DATA_DIR / "reports"
 LATEST_REPORT_PATH = REPORTS_DIR / "latest.md"
 USER_AGENT = "dataciviclab-resource-diff/0.1"
 
-DATA_EXTENSIONS = {".csv", ".xlsx", ".xls", ".json", ".xml", ".zip", ".parquet", ".ods", ".tsv"}
+DATA_EXTENSIONS = {
+    ".csv",
+    ".xlsx",
+    ".xls",
+    ".json",
+    ".xml",
+    ".zip",
+    ".parquet",
+    ".ods",
+    ".tsv",
+}
 DATA_URL_PATTERNS = ["/download/", "/export/"]
 CHANGE_PREVIEW_LIMIT = 12
 DETAIL_PREVIEW_LIMIT = 8
@@ -62,10 +73,12 @@ class LinkExtractor(HTMLParser):
     def handle_endtag(self, tag: str) -> None:
         if tag != "a" or self._href is None:
             return
-        self.links.append({
-            "href": self._href,
-            "text": re.sub(r"\s+", " ", "".join(self._text_parts)).strip(),
-        })
+        self.links.append(
+            {
+                "href": self._href,
+                "text": re.sub(r"\s+", " ", "".join(self._text_parts)).strip(),
+            }
+        )
         self._href = None
         self._text_parts = []
 
@@ -85,14 +98,16 @@ def utc_now() -> datetime:
 
 
 def resource_signature(resource: dict[str, Any]) -> str:
-    raw = "|".join([
-        resource.get("id", ""),
-        resource.get("url", "") or "",
-        resource.get("format", "") or "",
-        resource.get("name", "") or "",
-        resource.get("version", "") or "",
-        resource.get("last_modified", "") or "",
-    ])
+    raw = "|".join(
+        [
+            resource.get("id", ""),
+            resource.get("url", "") or "",
+            resource.get("format", "") or "",
+            resource.get("name", "") or "",
+            resource.get("version", "") or "",
+            resource.get("last_modified", "") or "",
+        ]
+    )
     return sha1_text(raw)
 
 
@@ -198,46 +213,49 @@ def fetch_single_url(source: dict[str, Any], timeout: int) -> FetchResult:
     if not url:
         raise ValueError("single_url source requires url")
 
-    response = requests.get(
+    with requests.get(
         url,
         headers={"User-Agent": USER_AGENT},
         timeout=timeout,
         stream=True,
-    )
-    response.raise_for_status()
+    ) as response:
+        response.raise_for_status()
 
-    parsed = urlparse(url)
-    filename = unquote(Path(parsed.path).name) or source.get("name") or url
-    etag = normalize_whitespace(response.headers.get("ETag"))
-    last_modified = normalize_whitespace(response.headers.get("Last-Modified"))
-    content_type = normalize_whitespace(response.headers.get("Content-Type"))
-    content_length = normalize_whitespace(response.headers.get("Content-Length"))
+        parsed = urlparse(url)
+        filename = unquote(Path(parsed.path).name) or source.get("name") or url
+        etag = normalize_whitespace(response.headers.get("ETag"))
+        last_modified = normalize_whitespace(response.headers.get("Last-Modified"))
+        content_type = normalize_whitespace(response.headers.get("Content-Type"))
+        content_length = normalize_whitespace(response.headers.get("Content-Length"))
 
-    resource = {
-        "id": source.get("resource_id") or sha1_text(url),
-        "name": source.get("resource_name") or filename[:120],
-        "format": source.get("format") or Path(parsed.path).suffix.lstrip(".").upper() or "",
-        "url": url,
-        "last_modified": last_modified or None,
-        "created": None,
-        "mimetype": content_type or None,
-        "etag": etag or None,
-        "content_length": content_length or None,
-    }
-    resource["signature"] = sha1_text(
-        "|".join([
-            resource["id"],
-            resource["url"],
-            resource["format"],
-            resource["name"],
-            resource.get("last_modified") or "",
-            resource.get("etag") or "",
-            resource.get("content_length") or "",
-            resource.get("mimetype") or "",
-        ])
-    )
-    response.close()
-    return FetchResult(source=source, resources=[resource])
+        resource = {
+            "id": source.get("resource_id") or sha1_text(url),
+            "name": source.get("resource_name") or filename[:120],
+            "format": source.get("format")
+            or Path(parsed.path).suffix.lstrip(".").upper()
+            or "",
+            "url": url,
+            "last_modified": last_modified or None,
+            "created": None,
+            "mimetype": content_type or None,
+            "etag": etag or None,
+            "content_length": content_length or None,
+        }
+        resource["signature"] = sha1_text(
+            "|".join(
+                [
+                    resource["id"],
+                    resource["url"],
+                    resource["format"],
+                    resource["name"],
+                    resource.get("last_modified") or "",
+                    resource.get("etag") or "",
+                    resource.get("content_length") or "",
+                    resource.get("mimetype") or "",
+                ]
+            )
+        )
+        return FetchResult(source=source, resources=[resource])
 
 
 SDMX_NAMESPACES = {
@@ -262,16 +280,29 @@ def extract_sdmx_last_modified(dataflow: ET.Element, root: ET.Element) -> str | 
     ]
 
     for annotation in dataflow.findall(".//com:Annotation", SDMX_NAMESPACES):
-        title = normalize_whitespace(annotation.findtext("com:AnnotationTitle", default="", namespaces=SDMX_NAMESPACES)).lower()
-        text = normalize_whitespace(annotation.findtext("com:AnnotationText", default="", namespaces=SDMX_NAMESPACES))
+        title = normalize_whitespace(
+            annotation.findtext(
+                "com:AnnotationTitle", default="", namespaces=SDMX_NAMESPACES
+            )
+        ).lower()
+        text = normalize_whitespace(
+            annotation.findtext(
+                "com:AnnotationText", default="", namespaces=SDMX_NAMESPACES
+            )
+        )
         haystack = f"{title} {text}".lower()
-        if any(token in haystack for token in ("update", "updated", "aggiorn", "modified", "rilasc")):
+        if any(
+            token in haystack
+            for token in ("update", "updated", "aggiorn", "modified", "rilasc")
+        ):
             for pattern in date_patterns:
                 match = re.search(pattern, text)
                 if match:
                     return match.group(0)
 
-    prepared = normalize_whitespace(root.findtext("mes:Header/mes:Prepared", default="", namespaces=SDMX_NAMESPACES))
+    prepared = normalize_whitespace(
+        root.findtext("mes:Header/mes:Prepared", default="", namespaces=SDMX_NAMESPACES)
+    )
     return prepared or None
 
 
@@ -311,13 +342,24 @@ def fetch_sdmx(source: dict[str, Any], timeout: int) -> FetchResult:
     if not endpoint:
         raise ValueError("SDMX source requires api_url or url")
 
-    response = requests.get(
-        endpoint,
-        headers={"User-Agent": USER_AGENT, "Accept": "application/xml, text/xml;q=0.9, */*;q=0.1"},
-        timeout=timeout,
-    )
-    response.raise_for_status()
-    resources = parse_sdmx_resources(response.text, source)
+    try:
+        response = requests.get(
+            endpoint,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/xml, text/xml;q=0.9, */*;q=0.1",
+            },
+            timeout=timeout,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        return FetchResult(source=source, error=f"SDMX fetch failed: {exc}")
+
+    try:
+        resources = parse_sdmx_resources(response.text, source)
+    except ET.ParseError as exc:
+        return FetchResult(source=source, error=f"SDMX XML parse error: {exc}")
+
     return FetchResult(source=source, resources=resources)
 
 
@@ -332,7 +374,9 @@ def fetch_source(source: dict[str, Any], timeout: int) -> FetchResult:
             return fetch_single_url(source, timeout=timeout)
         if adapter_type == "sdmx":
             return fetch_sdmx(source, timeout=timeout)
-        return FetchResult(source=source, error=f"Unsupported adapter_type: {adapter_type}")
+        return FetchResult(
+            source=source, error=f"Unsupported adapter_type: {adapter_type}"
+        )
     except Exception as exc:
         return FetchResult(source=source, error=str(exc))
 
@@ -348,7 +392,9 @@ def load_snapshot(path: Path | None) -> dict[str, Any] | None:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def previous_index(snapshot: dict[str, Any] | None) -> dict[str, dict[str, dict[str, Any]]]:
+def previous_index(
+    snapshot: dict[str, Any] | None,
+) -> dict[str, dict[str, dict[str, Any]]]:
     index: dict[str, dict[str, dict[str, Any]]] = {}
     if not snapshot:
         return index
@@ -416,7 +462,13 @@ def read_sources(path: Path) -> list[dict[str, Any]]:
 def candidate_config_path(di_candidate: str | None) -> Path | None:
     if not di_candidate or di_candidate == "~":
         return None
-    config_path = WORKSPACE_ROOT / "dataset-incubator" / "candidates" / di_candidate / "dataset.yml"
+    config_path = (
+        WORKSPACE_ROOT
+        / "dataset-incubator"
+        / "candidates"
+        / di_candidate
+        / "dataset.yml"
+    )
     if config_path.exists():
         return config_path
     return None
@@ -476,26 +528,32 @@ def build_snapshot(
         if result.error:
             # On fetch failure, carry forward previous resources unchanged.
             # Diffing against an empty list would misreport everything as removed.
-            resources = [dict(r, status="unchanged", changes=[]) for r in old_resources.values()]
+            resources = [
+                dict(r, status="unchanged", changes=[]) for r in old_resources.values()
+            ]
             counts = {"new": 0, "changed": 0, "unchanged": len(resources), "removed": 0}
         else:
             resources, counts = annotate_resources(result, old_resources)
-        snapshot_sources.append({
-            "id": source["id"],
-            "name": source["name"],
-            "adapter_type": source["adapter_type"],
-            "status": source.get("status"),
-            "di_candidate": source.get("di_candidate"),
-            "tags": source.get("tags", []),
-            "notes": source.get("notes"),
-            "resource_count": len([r for r in resources if r["status"] != "removed"]),
-            "new_count": counts["new"],
-            "changed_count": counts["changed"],
-            "unchanged_count": counts["unchanged"],
-            "removed_count": counts["removed"],
-            "error": result.error,
-            "resources": resources,
-        })
+        snapshot_sources.append(
+            {
+                "id": source["id"],
+                "name": source["name"],
+                "adapter_type": source["adapter_type"],
+                "status": source.get("status"),
+                "di_candidate": source.get("di_candidate"),
+                "tags": source.get("tags", []),
+                "notes": source.get("notes"),
+                "resource_count": len(
+                    [r for r in resources if r["status"] != "removed"]
+                ),
+                "new_count": counts["new"],
+                "changed_count": counts["changed"],
+                "unchanged_count": counts["unchanged"],
+                "removed_count": counts["removed"],
+                "error": result.error,
+                "resources": resources,
+            }
+        )
 
     return {
         "generated_at": run_at.isoformat(),
@@ -509,7 +567,9 @@ def write_snapshot(snapshot: dict[str, Any]) -> Path:
     SNAPSHOTS_DIR.mkdir(parents=True, exist_ok=True)
     stamp = datetime.fromisoformat(snapshot["generated_at"]).strftime("%Y%m%dT%H%M%SZ")
     path = SNAPSHOTS_DIR / f"{stamp}.json"
-    path.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False), encoding="utf-8")
+    path.write_text(
+        json.dumps(snapshot, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     return path
 
 
@@ -529,7 +589,9 @@ def render_report(
         "",
         f"- Generated at: {snapshot['generated_at_utc']}",
         f"- Snapshot: `{snapshot_path.name}`",
-        f"- Previous snapshot: `{previous_path.name}`" if previous_path else "- Previous snapshot: none",
+        f"- Previous snapshot: `{previous_path.name}`"
+        if previous_path
+        else "- Previous snapshot: none",
         f"- Sources checked: {snapshot['source_count']}",
         f"- New: {total_new} | Changed: {total_changed} | Removed: {total_removed} | Errors: {total_errors}",
         "",
@@ -537,7 +599,8 @@ def render_report(
 
     # Changes section: only shown when there is something actionable
     active_changes = [
-        s for s in sources
+        s
+        for s in sources
         if s["new_count"] > 0 or s["changed_count"] > 0 or s["removed_count"] > 0
     ]
 
@@ -569,7 +632,9 @@ def render_report(
                     fmt = f" [{r['format']}]" if r["format"] else ""
                     lines.append(f"- {r['name']}{fmt} | {r['url']}")
                 if len(removed_r) > CHANGE_PREVIEW_LIMIT:
-                    lines.append(f"- ... and {len(removed_r) - CHANGE_PREVIEW_LIMIT} more")
+                    lines.append(
+                        f"- ... and {len(removed_r) - CHANGE_PREVIEW_LIMIT} more"
+                    )
                 lines.append("")
     else:
         lines.extend(["- (nessuna novita)", ""])
@@ -585,12 +650,14 @@ def render_report(
         lines.extend(["- (nessun warning operativo)", ""])
 
     # Summary table
-    lines.extend([
-        "## Source Summary",
-        "",
-        "| Source | Adapter | Resources | New | Changed | Removed | Status |",
-        "| --- | --- | ---: | ---: | ---: | ---: | --- |",
-    ])
+    lines.extend(
+        [
+            "## Source Summary",
+            "",
+            "| Source | Adapter | Resources | New | Changed | Removed | Status |",
+            "| --- | --- | ---: | ---: | ---: | ---: | --- |",
+        ]
+    )
     for s in sources:
         status = "error" if s["error"] else "ok"
         lines.append(
@@ -621,7 +688,9 @@ def render_report(
             lines.append("")
             continue
 
-        append_resource_preview(lines, active, DETAIL_PREVIEW_LIMIT, include_status=True)
+        append_resource_preview(
+            lines, active, DETAIL_PREVIEW_LIMIT, include_status=True
+        )
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
@@ -633,7 +702,9 @@ def write_report(report: str) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Resource-level diff for known dataset sources.")
+    parser = argparse.ArgumentParser(
+        description="Resource-level diff for known dataset sources."
+    )
     parser.add_argument(
         "--sources",
         default=str(DEFAULT_SOURCES_PATH),
@@ -644,7 +715,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
-    import sys
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
@@ -659,7 +729,9 @@ def main() -> int:
             print(f"Using example configuration: {example_path}")
             sources_path = example_path
         else:
-            print(f"Error: configuration file not found at {sources_path} (and no .example found)")
+            print(
+                f"Error: configuration file not found at {sources_path} (and no .example found)"
+            )
             return 1
 
     sources = read_sources(sources_path)
