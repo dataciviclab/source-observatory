@@ -99,9 +99,9 @@ Eseguire i comandi dalla root del workspace:
 dataciviclab-workspace/
 ```
 
-```powershell
-python source-observatory/scripts/radar_check.py
-python source-observatory/scripts/resource_monitor.py --sources source-observatory/scripts/resource_monitor.sources.yml
+```bash
+python scripts/radar_check.py
+python scripts/resource_monitor.py --sources scripts/resource_monitor.sources.yml --timeout 20
 ```
 
 ## Documentazione

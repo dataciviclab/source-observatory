@@ -37,9 +37,9 @@ Dovrebbe aiutare a decidere:
 
 ### Codice
 
-- `source-observatory/scripts/radar_check.py`
-- `source-observatory/scripts/resource_monitor.py`
-- `source-observatory/scripts/resource_monitor.sources.yml`
+- `scripts/radar_check.py`
+- `scripts/resource_monitor.py`
+- `scripts/resource_monitor.sources.yml`
 
 ### Stato e output
 

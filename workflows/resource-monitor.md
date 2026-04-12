@@ -58,12 +58,11 @@ Non usarlo quando:
 Per partire servono:
 
 - config fonti:
-  - `source-observatory/scripts/resource_monitor.sources.yml`
-  - oppure `resource_monitor.sources.yml.example` come riferimento
+  - `scripts/resource_monitor.sources.yml`
 - script:
-  - `source-observatory/scripts/resource_monitor.py`
+  - `scripts/resource_monitor.py`
 - output atteso:
-  - `source-observatory/data/monitor/reports/latest.md`
+  - `data/monitor/reports/latest.md`
 - una fonte Tier 1 o equivalente, gia giustificata
 - un adapter abbastanza chiaro
 - un next step plausibile se compare un vero segnale
@@ -95,15 +94,15 @@ Se la risposta e no, il problema puo essere nel perimetro del monitor, non nel d
 
 ### 2. Esegui il monitor
 
-Dalla root del workspace:
+Dalla root del repo:
 
-```powershell
-python source-observatory/scripts/resource_monitor.py --sources source-observatory/scripts/resource_monitor.sources.yml
+```bash
+python scripts/resource_monitor.py --sources scripts/resource_monitor.sources.yml --timeout 20
 ```
 
 ### 3. Leggi `latest.md`
 
-Leggere `source-observatory/data/monitor/reports/latest.md`.
+Leggere `data/monitor/reports/latest.md`.
 
 Classificare ogni segnale in una di queste classi:
 

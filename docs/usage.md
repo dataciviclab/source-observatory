@@ -4,9 +4,9 @@ Nota operativa breve.
 
 Serve a chiarire quando usare:
 
-- `source-observatory/scripts/radar_check.py`
+- `scripts/radar_check.py`
 - `catalog-watch`
-- `source-observatory/scripts/resource_monitor.py`
+- `scripts/resource_monitor.py`
 - il workflow `source-check`
 
 ## 1. Radar
@@ -104,9 +104,9 @@ Ordine tipico:
 
 ## Comandi minimi
 
-```powershell
-python source-observatory/scripts/radar_check.py
-python source-observatory/scripts/resource_monitor.py
+```bash
+python scripts/radar_check.py
+python scripts/resource_monitor.py --sources scripts/resource_monitor.sources.yml --timeout 20
 ```
 
 Il source-check non e' uno script solo: segue il workflow e chiude con un verdetto.

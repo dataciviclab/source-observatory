@@ -35,7 +35,7 @@ Non serve a:
 Usarlo quando hai gia:
 
 - `sources_registry.yaml` aggiornato
-- script `source-observatory/scripts/radar_check.py`
+- script `scripts/radar_check.py`
 - bisogno di un check rapido sulla salute delle fonti
 
 Non usarlo quando:
@@ -50,7 +50,7 @@ Per partire servono:
 
 - registry leggibile
 - script radar eseguibile
-- output atteso chiaro: `source-observatory/data/radar/STATUS.md`
+- output atteso chiaro: `data/radar/STATUS.md`
 - fonti con `base_url` plausibile
 
 Nel dubbio:
@@ -81,14 +81,14 @@ Leggere `source-observatory/data/radar/sources_registry.yaml` per avere il conte
 
 Dalla root del workspace:
 
-```powershell
-python source-observatory/scripts/radar_check.py
+```bash
+python scripts/radar_check.py
 ```
 
 Per un dry-run:
 
-```powershell
-python source-observatory/scripts/radar_check.py --dry-run
+```bash
+python scripts/radar_check.py --dry-run
 ```
 
 ### 3. Leggi `STATUS.md`
