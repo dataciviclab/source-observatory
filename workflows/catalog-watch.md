@@ -55,12 +55,12 @@ Non usarlo quando:
 
 Per partire servono almeno:
 
-- registry `source-observatory/data/radar/sources_registry.yaml`
+- registry `data/radar/sources_registry.yaml`
 - fonti con `observation_mode: catalog-watch`
 - `protocol`, `base_url` e `catalog_baseline` leggibili
 - output canonici confermati:
-  - `source-observatory/data/catalog/CATALOG_WATCH_REPORT.md`
-  - `source-observatory/data/catalog/catalog_signals.json`
+  - `data/catalog/CATALOG_WATCH_REPORT.md`
+  - `data/catalog/catalog_signals.json`
 
 Nel dubbio:
 
@@ -80,7 +80,7 @@ Fermarsi quando:
 
 ### 1. Leggi il registry
 
-Leggere `source-observatory/data/radar/sources_registry.yaml`.
+Leggere `data/radar/sources_registry.yaml`.
 
 Filtrare solo le fonti con:
 
@@ -151,7 +151,7 @@ Regole:
 
 Scrivere il report in:
 
-- `source-observatory/data/catalog/CATALOG_WATCH_REPORT.md`
+- `data/catalog/CATALOG_WATCH_REPORT.md`
 
 Per ogni fonte, il report deve lasciare almeno:
 

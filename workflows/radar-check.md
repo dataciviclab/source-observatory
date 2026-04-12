@@ -70,7 +70,7 @@ Fermarsi se:
 
 ### 1. Leggi il registry
 
-Leggere `source-observatory/data/radar/sources_registry.yaml` per avere il contesto delle fonti prima del run:
+Leggere `data/radar/sources_registry.yaml` per avere il contesto delle fonti prima del run:
 
 - fonte
 - `protocol`
@@ -93,7 +93,7 @@ python scripts/radar_check.py --dry-run
 
 ### 3. Leggi `STATUS.md`
 
-Leggere `source-observatory/data/radar/STATUS.md` e classificare ogni fonte in uno di questi stati:
+Leggere `data/radar/STATUS.md` e classificare ogni fonte in uno di questi stati:
 
 - `ok`
 - `warning infrastrutturale`

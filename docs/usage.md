@@ -11,34 +11,34 @@ Serve a chiarire quando usare:
 
 ## 1. Radar
 
-Usare `radar_check.py` quando la domanda e':
+Usare `radar_check.py` quando la domanda è:
 
 - il portale risponde?
-- l'endpoint base e' vivo?
+- l'endpoint base è vivo?
 - ci sono timeout, SSL error o 404?
 
 Esempio:
-- controllo periodico dei pochi cataloghi in `source-observatory/data/radar/sources_registry.yaml`
+- controllo periodico dei pochi cataloghi in `data/radar/sources_registry.yaml`
 
 Output:
-- `source-observatory/data/radar/STATUS.md`
+- `data/radar/STATUS.md`
 
 Non usare il radar per capire:
 - se ci sono file nuovi
-- se una resource specifica e' cambiata
+- se una resource specifica è cambiata
 - se un dataset merita intake
 
 ## 2. Catalog-watch
 
-Usare `catalog-watch` quando la domanda e':
+Usare `catalog-watch` quando la domanda è:
 
 - il catalogo ha cambiato inventario?
-- c'e' drift strutturale?
+- c'è drift strutturale?
 - emerge un segnale che merita follow-up umano?
 
 Output:
-- `source-observatory/data/catalog/CATALOG_WATCH_REPORT.md`
-- `source-observatory/data/catalog/catalog_signals.json`
+- `data/catalog/CATALOG_WATCH_REPORT.md`
+- `data/catalog/catalog_signals.json`
 
 Non usare `catalog-watch` per:
 - promuovere automaticamente candidate
@@ -47,10 +47,10 @@ Non usare `catalog-watch` per:
 
 ## 3. Resource monitor
 
-Usare `resource_monitor.py` quando la domanda e':
+Usare `resource_monitor.py` quando la domanda è:
 
-- su una fonte gia' nota sono comparsi file nuovi?
-- una resource e' stata aggiornata, rimossa o sostituita?
+- su una fonte già nota sono comparsi file nuovi?
+- una resource è stata aggiornata, rimossa o sostituita?
 - una pagina HTML o un dataset CKAN ha cambiato inventario?
 
 Esempio:
@@ -58,8 +58,8 @@ Esempio:
 - monitorare una fonte Tier 1 con update attesi e follow-up reale
 
 Output:
-- snapshot JSON in `source-observatory/data/monitor/snapshots/`
-- report in `source-observatory/data/monitor/reports/latest.md`
+- snapshot JSON in `data/monitor/snapshots/`
+- report in `data/monitor/reports/latest.md`
 
 Non usare il resource monitor per:
 - decidere da solo il valore civico della fonte
@@ -69,24 +69,24 @@ Non usare il resource monitor per:
 
 ## 4. Source-check
 
-Usare `source-check` quando la domanda e':
+Usare `source-check` quando la domanda è:
 
-- questa fonte e' un candidato serio per il Lab?
-- accesso, formato e granularita' reggono davvero?
+- questa fonte è un candidato serio per il Lab?
+- accesso, formato e granularità reggono davvero?
 - merita `go Discussion`, `watchlist`, `support dataset` o `scarto`?
 
 Output tipico:
 - checklist o nota verificata
 - verdict chiaro
 
-Il source-check e' il passaggio giusto quando:
+Il source-check è il passaggio giusto quando:
 - una fonte nuova sembra promettente
 - il radar segnala una fonte viva ma non sai se vale qualcosa
 - il resource monitor trova un file nuovo e vuoi capire se cambia davvero il quadro
 
 Nel repo, il workflow pubblico/light sta in:
 
-- `source-observatory/workflows/source-check.md`
+- `workflows/source-check.md`
 
 ## Regola pratica
 
@@ -109,17 +109,4 @@ python scripts/radar_check.py
 python scripts/resource_monitor.py --sources scripts/resource_monitor.sources.yml --timeout 20
 ```
 
-Il source-check non e' uno script solo: segue il workflow e chiude con un verdetto.
-
-## Universe v0
-
-Per ora la v0 resta concentrata su:
-
-- `istat_sdmx`
-- `anac`
-- `inps`
-
-La regola pratica e' semplice:
-
-- meglio 3 cataloghi ricchi e leggibili
-- peggio 12 fonti eterogenee con poco segnale
+Il source-check non è uno script solo: segue il workflow e chiude con un verdetto.

@@ -16,19 +16,14 @@ Non è:
 - un sistema di intake candidate
 - una piattaforma di monitoraggio diffuso dataset-per-dataset
 
-## V0 attuale
+## Perimetro attuale
 
-La v0 pubblicabile è concentrata su pochi cataloghi ricchi:
-
-- `istat_sdmx`
-- `anac`
-- `inps`
-- `openbdap`
+Il perimetro è definito in [`data/radar/sources_registry.yaml`](data/radar/sources_registry.yaml).
 
 La regola guida è semplice:
 
-- meglio 4 cataloghi ricchi con segnali leggibili
-- peggio 12 fonti miste con poco segnale
+- segnali leggibili su pochi cataloghi ricchi
+- nessuna watchlist larga senza next step concreto
 
 ## Componenti
 
@@ -93,11 +88,7 @@ File canonici:
 
 ## Comandi canonici
 
-Eseguire i comandi dalla root del workspace:
-
-```text
-dataciviclab-workspace/
-```
+Dalla root del repo:
 
 ```bash
 python scripts/radar_check.py

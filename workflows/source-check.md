@@ -19,8 +19,8 @@ Decidere se una fonte o un dataset pubblico merita davvero un passo successivo d
 
 Questo workflow serve a rispondere a:
 
-- la fonte e' davvero accessibile?
-- formato, granularita' e copertura reggono?
+- la fonte è davvero accessibile?
+- formato, granularità e copertura reggono?
 - esiste una domanda civica plausibile?
 - il caso merita un passo successivo oppure no?
 
@@ -41,7 +41,7 @@ Non serve a:
 
 ## Quando usarlo
 
-Usalo quando hai gia':
+Usalo quando hai già:
 
 - una fonte nuova che sembra promettente
 - una URL, pagina o dataset reale da verificare
@@ -50,14 +50,14 @@ Usalo quando hai gia':
 Usalo anche quando:
 
 - `catalog-watch` o `resource-monitor` segnalano un caso che merita verifica umana
-- un portale e' vivo ma non e' ancora chiaro se il dato valga davvero
+- un portale è vivo ma non è ancora chiaro se il dato valga davvero
 
 Non usarlo quando:
 
-- la fonte e' gia' stata verificata e devi solo lavorare il passo successivo
-- sei gia' in intake o pipeline
+- la fonte è già stata verificata e devi solo lavorare il passo successivo
+- sei già in intake o pipeline
 - stai facendo solo un health check del portale
-- il lavoro vero e' monitoraggio ricorrente e non valutazione della fonte
+- il lavoro vero è monitoraggio ricorrente e non valutazione della fonte
 
 ## Preconditions minime
 
@@ -77,9 +77,9 @@ Fermati e non forzare source-check quando:
 
 - hai solo un tema astratto ma non una fonte reale
 - il caso appartiene ancora a `radar-check` o `catalog-watch`
-- il caso e' gia' abbastanza maturo da richiedere direttamente un workflow successivo
+- il caso è già abbastanza maturo da richiedere direttamente un workflow successivo
 - stai per aprire automaticamente artifact pubblici senza aver chiuso il verdetto
-- la fonte e' cosi' opaca che non riesci a verificare neppure il minimo accesso reale
+- la fonte è così opaca che non riesci a verificare neppure il minimo accesso reale
 
 ## Passi canonici
 
@@ -108,19 +108,19 @@ Distinguere sempre tra:
 - `verificato`
 - `inferito`
 
-Se il file non e' accessibile ma il pattern sembra plausibile, dillo chiaramente. Non fingere accesso pieno.
+Se il file non è accessibile ma il pattern sembra plausibile, dillo chiaramente. Non fingere accesso pieno.
 
 ### 3. Verifica la shape minima del dato
 
 Controlla almeno:
 
 - formato
-- granularita'
+- granularità
 - copertura temporale o geografica
 - una riga rappresenta cosa
 - misura o struttura principale
 
-Se il dato e' abbastanza strutturato, prova anche a estrarre:
+Se il dato è abbastanza strutturato, prova anche a estrarre:
 
 - campi principali
 - dimensioni confermate
@@ -130,7 +130,7 @@ Se il dato e' abbastanza strutturato, prova anche a estrarre:
 
 Prima di procedere, rispondi in modo esplicito:
 
-1. il dato e' leggibile direttamente?
+1. il dato è leggibile direttamente?
 2. le variabili chiave sono interpretabili standalone?
 3. esiste un output minimo utile senza join o metadata esterni obbligatori?
 
@@ -151,9 +151,9 @@ Qualificatore da annotare nella nota locale:
 Scrivi in una riga:
 
 - quale domanda civica la fonte potrebbe sostenere
-- perche' non e' solo descrittiva o inventariale
+- perche' non è solo descrittiva o inventariale
 
-Se non riesci a formulare una domanda leggibile, e' spesso un segnale che il caso apre male.
+Se non riesci a formulare una domanda leggibile, è spesso un segnale che il caso apre male.
 
 ### 5. Fissa un perimetro v0 plausibile
 
@@ -166,22 +166,22 @@ Se la fonte regge, indica:
 
 Regola pratica:
 
-- meglio un v0 piu' stretto ma difendibile che una fonte ampia con perimetro confuso
+- meglio un v0 più stretto ma difendibile che una fonte ampia con perimetro confuso
 
-### 6. Controlla se il filone e' gia' vivo
+### 6. Controlla se il filone è già vivo
 
-Prima di chiudere il verdetto, verifica se esiste gia' un artefatto rilevante del Lab sullo stesso caso.
+Prima di chiudere il verdetto, verifica se esiste già un artefatto rilevante del Lab sullo stesso caso.
 
-Controlla almeno se esiste gia':
+Controlla almeno se esiste già:
 
 - una `Discussion Datasets`
 - una `Discussion Domande`
 - una `Discussion Analisi`
 - un candidate DI chiaramente aperto
 
-Se il filone e' gia' vivo, non aprire un doppione concettuale.
+Se il filone è già vivo, non aprire un doppione concettuale.
 
-In quel caso il verdetto tipico non e':
+In quel caso il verdetto tipico non è:
 
 - `go Discussion`
 
@@ -202,20 +202,20 @@ Scegli un solo verdetto finale:
 Usa:
 
 - `go Discussion` se la fonte regge davvero come pista autonoma
-- `watchlist` se e' promettente ma non ancora pronta
+- `watchlist` se è promettente ma non ancora pronta
 - `support dataset` se serve soprattutto come join o supporto
-- `aggiorna artefatto esistente` se il filone e' gia' vivo e il passo giusto e' aggiornare, non aprire
+- `aggiorna artefatto esistente` se il filone è già vivo e il passo giusto è aggiornare, non aprire
 - `no-go` se accesso, formato o valore civico non reggono
 
 ### 8. Produci sempre una nota locale
 
-Il source-check non e' chiuso bene se resta solo come giudizio orale o mentale.
+Il source-check non è chiuso bene se resta solo come giudizio orale o mentale.
 
 Lascia sempre una nota locale con almeno:
 
 - fonte e link principali
-- cosa e' stato verificato davvero
-- cosa e' solo inferito
+- cosa è stato verificato davvero
+- cosa è solo inferito
 - shape minima del dato
 - domanda civica plausibile
 - perimetro v0 consigliato, se esiste
@@ -232,7 +232,7 @@ Pattern tipici:
 - `go Discussion`
   - next step normale: preparare o aprire una `Discussion Datasets`
 - `aggiorna artefatto esistente`
-  - next step normale: aggiornare il filone gia' vivo, non aprirne uno nuovo
+  - next step normale: aggiornare il filone già vivo, non aprirne uno nuovo
 - `watchlist`
   - next step normale: lasciare un trigger di riapertura
 - `support dataset`
@@ -248,7 +248,7 @@ Pattern tipici:
 - formulare una domanda troppo generica
 - allargare troppo presto il perimetro v0
 - usare `go Discussion` per entusiasmo anche quando sarebbe meglio `watchlist`
-- non controllare se il filone e' gia' vivo prima di dire `go Discussion`
+- non controllare se il filone è già vivo prima di dire `go Discussion`
 
 ## Output minimo atteso
 
@@ -265,13 +265,13 @@ Un source-check buono lascia:
 
 ## Definition of done
 
-Il workflow e' chiuso bene quando:
+Il workflow è chiuso bene quando:
 
 - il check non confonde fonte viva e fonte utile
-- il livello di accesso e' dichiarato in modo onesto
-- la sufficienza semantica del `v0` e' resa esplicita
-- il verdetto finale e' unico e coerente
-- esiste un next step plausibile se il verdetto e' positivo
+- il livello di accesso è dichiarato in modo onesto
+- la sufficienza semantica del `v0` è resa esplicita
+- il verdetto finale è unico e coerente
+- esiste un next step plausibile se il verdetto è positivo
 - esiste una nota locale che permette di riprendere il caso
 - non sono stati aperti automaticamente artifact pubblici o pipeline
 

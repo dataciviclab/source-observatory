@@ -9,11 +9,11 @@ python scripts/radar_check.py --dry-run
 python scripts/radar_check.py
 ```
 
-Usa `radar` quando la domanda e':
+Usa `radar` quando la domanda è:
 
 - la fonte risponde?
 - ci sono problemi di timeout, SSL, DNS o HTTP?
-- il registry e' sano?
+- il registry è sano?
 
 Output:
 
@@ -23,7 +23,7 @@ Scheduling v0:
 
 - run giornaliero via GitHub Actions
 - `workflow_dispatch` disponibile per run manuali
-- il modello v0 e' `report-only`: aggiorna `STATUS.md` e `sources_registry.yaml`
+- il modello v0 è `report-only`: aggiorna `STATUS.md` e `sources_registry.yaml`
 - nessuna issue automatica o alerting complesso in questa fase
 
 ## Catalog-watch
@@ -52,7 +52,7 @@ Modello v0:
 python scripts/build_catalog_inventory.py
 ```
 
-Usa `catalog inventory` quando la domanda e':
+Usa `catalog inventory` quando la domanda è:
 
 - quali item sono oggi enumerabili nei cataloghi osservati?
 - quali fonti `catalog-watch` producono un inventario riusabile per scouting?
@@ -66,10 +66,10 @@ Output:
 Disciplina:
 
 - il perimetro segue le fonti `catalog-watch` del registry
-- una fonte puo' restare osservata in SO ma non essere inventariabile
+- una fonte può restare osservata in SO ma non essere inventariabile
 - `anac` oggi resta escluso dall'inventory automatico per vincoli WAF
-- l'upload su GCS e' opzionale e richiede secret espliciti
-- il workflow repo-side e' solo `workflow_dispatch`: nessuno schedule finche' il perimetro non resta stabile per piu' run consecutivi
+- l'upload su GCS è opzionale e richiede secret espliciti
+- il workflow repo-side è solo `workflow_dispatch`: nessuno schedule finché il perimetro non resta stabile per più run consecutivi
 
 ## Resource monitor
 
