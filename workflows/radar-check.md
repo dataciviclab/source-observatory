@@ -79,7 +79,7 @@ Leggere `data/radar/sources_registry.yaml` per avere il contesto delle fonti pri
 
 ### 2. Esegui il radar
 
-Dalla root del workspace:
+Dalla root del repo:
 
 ```bash
 python scripts/radar_check.py
