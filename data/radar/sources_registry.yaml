@@ -17,7 +17,9 @@ istat_sdmx:
   verdict: go
   note: Endpoint SDMX ricco e ad alto valore per scouting e source-check.
   datasets_in_use:
-  - popolazione-istat
+  - istat-gini-regionale
+  - istat-housing-crowding
+  - istat-ipab-aree
 anac:
   source_kind: catalog
   protocol: ckan
@@ -51,8 +53,7 @@ inps:
   verdict: go
   note: Catalogo CKAN ricco e ad alto potenziale per candidati e source-check.
   datasets_in_use:
-  - pens_2017
-  - pens_2024
+  - inps-pensioni
 openbdap:
   source_kind: catalog
   protocol: ckan
@@ -72,7 +73,7 @@ openbdap:
     senza intake o monitor diffuso.
   datasets_in_use:
   - dipendenti-pubblici
-  - opencoesione-pagamenti-ue-2014-2020
+  - bdap-lea
 dati_salute:
   source_kind: catalog
   protocol: html
