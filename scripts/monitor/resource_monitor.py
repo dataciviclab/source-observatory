@@ -343,20 +343,18 @@ def fetch_sdmx(source: dict[str, Any], timeout: int) -> FetchResult:
         raise ValueError("SDMX source requires api_url or url")
 
     try:
-        response = requests.get(
+        with requests.get(
             endpoint,
             headers={
                 "User-Agent": USER_AGENT,
                 "Accept": "application/xml, text/xml;q=0.9, */*;q=0.1",
             },
             timeout=timeout,
-        )
-        response.raise_for_status()
+        ) as response:
+            response.raise_for_status()
+            resources = parse_sdmx_resources(response.text, source)
     except requests.RequestException as exc:
         return FetchResult(source=source, error=f"SDMX fetch failed: {exc}")
-
-    try:
-        resources = parse_sdmx_resources(response.text, source)
     except ET.ParseError as exc:
         return FetchResult(source=source, error=f"SDMX XML parse error: {exc}")
 
