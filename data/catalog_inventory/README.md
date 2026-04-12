@@ -74,8 +74,8 @@ Workflow GitHub Actions disponibile:
 
 Comando locale equivalente:
 
-```powershell
-python source-observatory/scripts/build_catalog_inventory.py
+```bash
+python scripts/build_catalog_inventory.py
 ```
 
 ## Caveat

@@ -100,7 +100,7 @@ Separare sempre:
 - home o branding del portale
 - superficie tecnica reale usabile per osservazione
 
-### 4. Valuta l'inventariabilita'
+### 4. Valuta l'inventariabilità
 
 Chiedersi in modo esplicito:
 

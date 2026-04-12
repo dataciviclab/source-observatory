@@ -34,8 +34,8 @@ Il `diff_summary.json` e' progettato per essere consumato da:
 
 La config corrente del monitor vive in:
 
-- `source-observatory/scripts/resource_monitor.sources.yml`
-- `source-observatory/scripts/resource_monitor.sources.yml`
+- `scripts/resource_monitor.sources.yml`
+- `scripts/resource_monitor.sources.yml`
 
 La config deve restare selettiva. Se una fonte non ha un next step plausibile dopo un cambio, non deve entrare nel set monitorato.
 
@@ -46,9 +46,9 @@ Tenere solo un set Tier 1 molto piccolo ed evitare di trattare gli snapshot del 
 
 ## Note collegate
 
-- usage note: `source-observatory/docs/usage.md`
-- config audit: `source-observatory/docs/config_audit_2026-03-27.md`
-- architecture note: `source-observatory/docs/architecture.md`
+- usage note: `docs/usage.md`
+- config audit: `docs/config_audit_2026-03-27.md`
+- architecture note: `docs/architecture.md`
 
 ## Stato del monitor
 

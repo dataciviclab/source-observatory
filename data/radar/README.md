@@ -5,7 +5,7 @@ Stato canonico dei controlli radar a livello portale.
 ## File
 
 - `sources_registry.yaml`
-  - registry di input per `source-observatory/scripts/radar_check.py`
+  - registry di input per `scripts/radar_check.py`
   - una entry per portale
 - `STATUS.md`
   - ultimo output leggibile del probe radar
@@ -22,6 +22,6 @@ Non e' un inventario di resource e non decide se una fonte merita un candidate.
 
 ## Strumenti collegati
 
-- script: `source-observatory/scripts/radar_check.py`
-- nota d'uso: `source-observatory/docs/usage.md`
-- nota architetturale: `source-observatory/docs/architecture.md`
+- script: `scripts/radar_check.py`
+- nota d'uso: `docs/usage.md`
+- nota architetturale: `docs/architecture.md`
