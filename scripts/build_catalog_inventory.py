@@ -32,7 +32,7 @@ CKAN_ACTION_NAMES = {
     "current_package_list_with_resources",
 }
 # Sources where package_search is unreliable (bad counts or timeouts).
-CKAN_SKIP_PACKAGE_SEARCH = {"lavoro_opendata"}
+CKAN_SKIP_PACKAGE_SEARCH = {"lavoro_opendata", "openbdap"}
 # Sources where current_package_list_with_resources is unreliable (SSL/GIL crash on Windows).
 # These skip the enrichment step and fall straight to package_list.
 CKAN_SKIP_CURRENT_LIST = {"inps", "lavoro_opendata"}
