@@ -57,7 +57,10 @@ LIMIT {limit}
 
 def _inventory_cfg(source_cfg: dict[str, Any]) -> dict[str, Any]:
     """Legge il blocco `inventory:` dalla config della fonte nel registry."""
-    return source_cfg.get("inventory") or {}
+    inv = source_cfg.get("inventory")
+    if isinstance(inv, dict):
+        return inv
+    return {}
 
 
 def supported_protocols() -> set[str]:
@@ -425,7 +428,7 @@ def collect_ckan_inventory(
             search_exc = exc
     else:
         search_exc = ValueError(
-            f"CKAN package_search disabled for {source_id} (unreliable counts)."
+            f"CKAN package_search disabled for {source_id} ({inv.get('skip_package_search_reason', 'disabled by registry config')})."
         )
 
     package_list_rows = collect_ckan_inventory_via_package_list(
@@ -836,6 +839,8 @@ def parse_args() -> argparse.Namespace:
         "--workers",
         type=int,
         default=1,
+        choices=range(1, 9),
+        metavar="N (1-8)",
         help="Thread per la raccolta parallela (default: 1 = seriale).",
     )
     return parser.parse_args()

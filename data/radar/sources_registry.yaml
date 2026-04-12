@@ -68,6 +68,7 @@ openbdap:
   base_url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
   inventory:
     skip_package_search: true
+    skip_package_search_reason: "timeout sistematico a 60s"
   last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-02'
@@ -206,6 +207,7 @@ lavoro_opendata:
   base_url: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
   inventory:
     skip_package_search: true
+    skip_package_search_reason: "count inaffidabile"
     skip_current_list: true
   last_probed: '2026-04-12'
   catalog_baseline:
