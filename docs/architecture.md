@@ -38,8 +38,8 @@ Dovrebbe aiutare a decidere:
 ### Codice
 
 - `source-observatory/scripts/radar_check.py`
-- `source-observatory/scripts/monitor/resource_monitor.py`
-- `source-observatory/scripts/monitor/resource_monitor.sources.yml.example`
+- `source-observatory/scripts/resource_monitor.py`
+- `source-observatory/scripts/resource_monitor.sources.yml`
 
 ### Stato e output
 

@@ -76,8 +76,8 @@ Layer secondario di supporto per un set molto piccolo di risorse Tier 1 già not
 
 File canonici:
 
-- [resource_monitor.py](scripts/monitor/resource_monitor.py)
-- [resource_monitor.sources.yml](scripts/monitor/resource_monitor.sources.yml)
+- [resource_monitor.py](scripts/resource_monitor.py)
+- [resource_monitor.sources.yml](scripts/resource_monitor.sources.yml)
 - [latest.md](data/monitor/reports/latest.md)
 
 ## Struttura del repo
@@ -101,7 +101,7 @@ dataciviclab-workspace/
 
 ```powershell
 python source-observatory/scripts/radar_check.py
-python source-observatory/scripts/monitor/resource_monitor.py --sources source-observatory/scripts/monitor/resource_monitor.sources.yml
+python source-observatory/scripts/resource_monitor.py --sources source-observatory/scripts/resource_monitor.sources.yml
 ```
 
 ## Documentazione

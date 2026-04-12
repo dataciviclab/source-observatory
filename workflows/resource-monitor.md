@@ -58,10 +58,10 @@ Non usarlo quando:
 Per partire servono:
 
 - config fonti:
-  - `source-observatory/scripts/monitor/resource_monitor.sources.yml`
+  - `source-observatory/scripts/resource_monitor.sources.yml`
   - oppure `resource_monitor.sources.yml.example` come riferimento
 - script:
-  - `source-observatory/scripts/monitor/resource_monitor.py`
+  - `source-observatory/scripts/resource_monitor.py`
 - output atteso:
   - `source-observatory/data/monitor/reports/latest.md`
 - una fonte Tier 1 o equivalente, gia giustificata
@@ -98,7 +98,7 @@ Se la risposta e no, il problema puo essere nel perimetro del monitor, non nel d
 Dalla root del workspace:
 
 ```powershell
-python source-observatory/scripts/monitor/resource_monitor.py --sources source-observatory/scripts/monitor/resource_monitor.sources.yml
+python source-observatory/scripts/resource_monitor.py --sources source-observatory/scripts/resource_monitor.sources.yml
 ```
 
 ### 3. Leggi `latest.md`

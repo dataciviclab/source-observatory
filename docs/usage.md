@@ -6,7 +6,7 @@ Serve a chiarire quando usare:
 
 - `source-observatory/scripts/radar_check.py`
 - `catalog-watch`
-- `source-observatory/scripts/monitor/resource_monitor.py`
+- `source-observatory/scripts/resource_monitor.py`
 - il workflow `source-check`
 
 ## 1. Radar
@@ -106,7 +106,7 @@ Ordine tipico:
 
 ```powershell
 python source-observatory/scripts/radar_check.py
-python source-observatory/scripts/monitor/resource_monitor.py
+python source-observatory/scripts/resource_monitor.py
 ```
 
 Il source-check non e' uno script solo: segue il workflow e chiude con un verdetto.

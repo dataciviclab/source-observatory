@@ -32,11 +32,12 @@ jobs:
           SMOKE_ROOT: ${{ runner.temp }}/resource-monitor-smoke
         run: |
           mkdir -p "$SMOKE_ROOT/scripts"
-          cp -a scripts/monitor "$SMOKE_ROOT/scripts/"
+          cp scripts/resource_monitor.py "$SMOKE_ROOT/scripts/"
+          cp scripts/resource_monitor.sources.yml "$SMOKE_ROOT/scripts/"
           mkdir -p "$SMOKE_ROOT/data/monitor/snapshots" "$SMOKE_ROOT/data/monitor/reports"
 
-          python "$SMOKE_ROOT/scripts/monitor/resource_monitor.py" \
-            --sources "$SMOKE_ROOT/scripts/monitor/resource_monitor.sources.yml" \
+          python "$SMOKE_ROOT/scripts/resource_monitor.py" \
+            --sources "$SMOKE_ROOT/scripts/resource_monitor.sources.yml" \
             --timeout 20
 
       - name: Verify checkout remains clean

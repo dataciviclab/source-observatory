@@ -1,4 +1,4 @@
-"""Test per monitor/resource_monitor.py."""
+"""Test per scripts/resource_monitor.py."""
 from __future__ import annotations
 
 import json
@@ -7,7 +7,7 @@ from xml.etree import ElementTree as ET
 
 import requests
 
-from monitor.resource_monitor import (
+from resource_monitor import (
     annotate_resources,
     diff_fields,
     fetch_sdmx,
@@ -258,7 +258,7 @@ def test_fetch_single_url_reads_headers_with_context_manager() -> None:
             return None
 
     source = {"id": "single", "adapter_type": "single_url", "url": "https://example.test/data.csv"}
-    with patch("monitor.resource_monitor.requests.get", return_value=FakeResponse()):
+    with patch("resource_monitor.requests.get", return_value=FakeResponse()):
         result = fetch_single_url(source, timeout=5)
     assert result.error is None
     assert len(result.resources) == 1
@@ -269,7 +269,7 @@ def test_fetch_single_url_reads_headers_with_context_manager() -> None:
 def test_fetch_sdmx_returns_error_on_request_exception() -> None:
     source = {"id": "sdmx", "adapter_type": "sdmx", "api_url": "https://example.test/sdmx"}
     with patch(
-        "monitor.resource_monitor.requests.get",
+        "resource_monitor.requests.get",
         side_effect=requests.RequestException("network down"),
     ):
         result = fetch_sdmx(source, timeout=5)
@@ -291,9 +291,9 @@ def test_fetch_sdmx_returns_error_on_xml_parse_error() -> None:
             return None
 
     source = {"id": "sdmx", "adapter_type": "sdmx", "api_url": "https://example.test/sdmx"}
-    with patch("monitor.resource_monitor.requests.get", return_value=FakeResponse()):
+    with patch("resource_monitor.requests.get", return_value=FakeResponse()):
         with patch(
-            "monitor.resource_monitor.parse_sdmx_resources",
+            "resource_monitor.parse_sdmx_resources",
             side_effect=ET.ParseError("bad xml"),
         ):
             result = fetch_sdmx(source, timeout=5)
@@ -306,8 +306,8 @@ def test_write_diff_summary_writes_minimal_machine_readable_payload(
 ) -> None:
     reports_dir = tmp_path / "reports"
     diff_path = reports_dir / "diff_summary.json"
-    monkeypatch.setattr("monitor.resource_monitor.REPORTS_DIR", reports_dir)
-    monkeypatch.setattr("monitor.resource_monitor.DIFF_SUMMARY_PATH", diff_path)
+    monkeypatch.setattr("resource_monitor.REPORTS_DIR", reports_dir)
+    monkeypatch.setattr("resource_monitor.DIFF_SUMMARY_PATH", diff_path)
 
     snapshot = {
         "generated_at": "2026-04-12T14:00:00+00:00",
