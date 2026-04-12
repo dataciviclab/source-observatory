@@ -4,6 +4,7 @@ import argparse
 import json
 import time
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -22,24 +23,12 @@ REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 DEFAULT_OUT_DIR = REPO_ROOT / "data" / "catalog_inventory" / "generated"
 DEFAULT_OUT_PARQUET = "catalog_inventory_latest.parquet"
 DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
-NON_INVENTORIABLE_SOURCES = {
-    "anac": "Fonte osservata in source-observatory, ma non inventariabile con client HTTP standard per via di una risposta WAF 'Request Rejected'.",
-}
 CKAN_ACTION_NAMES = {
     "package_list",
     "package_search",
     "package_show",
     "current_package_list_with_resources",
 }
-# Sources where package_search is unreliable (bad counts or timeouts).
-CKAN_SKIP_PACKAGE_SEARCH = {"lavoro_opendata"}
-# Sources where current_package_list_with_resources is unreliable (SSL/GIL crash on Windows).
-# These skip the enrichment step and fall straight to package_list.
-CKAN_SKIP_CURRENT_LIST = {"inps", "lavoro_opendata"}
-# Sources where package_list rows (often numeric IDs) should be sampled and enriched
-# via package_show when current_package_list_with_resources is skipped.
-CKAN_PACKAGE_SHOW_SAMPLE_SOURCES = {"inps"}
-CKAN_PACKAGE_SHOW_SAMPLE_SIZE = 25
 SPARQL_QUERY_TEMPLATES = {
     "dcat_datasets": """
 PREFIX dcat: <http://www.w3.org/ns/dcat#>
@@ -64,6 +53,14 @@ ORDER BY ?dataset
 LIMIT {limit}
 """.strip()
 }
+
+
+def _inventory_cfg(source_cfg: dict[str, Any]) -> dict[str, Any]:
+    """Legge il blocco `inventory:` dalla config della fonte nel registry."""
+    inv = source_cfg.get("inventory")
+    if isinstance(inv, dict):
+        return inv
+    return {}
 
 
 def supported_protocols() -> set[str]:
@@ -368,7 +365,7 @@ def collect_ckan_inventory_via_package_show_sample(
     source_cfg: dict[str, Any],
     captured_at: str,
     package_list_rows: list[dict[str, Any]],
-    sample_size: int = CKAN_PACKAGE_SHOW_SAMPLE_SIZE,
+    sample_size: int = 25,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_show")
     sampled_idx = _sample_indexes(len(package_list_rows), sample_size)
@@ -420,8 +417,9 @@ def collect_ckan_inventory_via_package_show_sample(
 def collect_ckan_inventory(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    inv = _inventory_cfg(source_cfg)
     search_exc: Exception | None = None
-    if source_id not in CKAN_SKIP_PACKAGE_SEARCH:
+    if not inv.get("skip_package_search"):
         try:
             return collect_ckan_inventory_via_search(
                 source_id, source_cfg, captured_at
@@ -430,19 +428,20 @@ def collect_ckan_inventory(
             search_exc = exc
     else:
         search_exc = ValueError(
-            f"CKAN package_search disabled for {source_id} (unreliable counts)."
+            f"CKAN package_search disabled for {source_id} ({inv.get('skip_package_search_reason', 'disabled by registry config')})."
         )
 
     package_list_rows = collect_ckan_inventory_via_package_list(
         source_id, source_cfg, captured_at
     )
-    if source_id in CKAN_SKIP_CURRENT_LIST:
-        if source_id in CKAN_PACKAGE_SHOW_SAMPLE_SOURCES:
+    if inv.get("skip_current_list"):
+        if inv.get("package_show_sample"):
             enriched_rows, sample_warning = collect_ckan_inventory_via_package_show_sample(
                 source_id=source_id,
                 source_cfg=source_cfg,
                 captured_at=captured_at,
                 package_list_rows=package_list_rows,
+                sample_size=inv.get("sample_size", 25),
             )
             enriched_by_id = {row["item_id"]: row for row in enriched_rows}
             merged_rows: list[dict[str, Any]] = []
@@ -800,24 +799,30 @@ def load_registry() -> dict[str, Any]:
 
 def collect_inventory(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None]:
+    """Raccoglie l'inventory per una fonte. Ritorna (rows, warning, summary) senza side-effect."""
     protocol = source_cfg.get("protocol")
     if protocol == "ckan":
         rows, warning = collect_ckan_inventory(source_id, source_cfg, captured_at)
-        if warning:
-            source_cfg["_inventory_warning"] = warning
-        return rows
+        return rows, warning, None
     if protocol == "sdmx":
         rows, warning = collect_sdmx_inventory(source_id, source_cfg, captured_at)
-        if warning:
-            source_cfg["_inventory_warning"] = warning
-        return rows
+        return rows, warning, None
     if protocol == "sparql":
         rows, summary = collect_sparql_inventory(source_id, source_cfg, captured_at)
-        if summary:
-            source_cfg["_inventory_summary"] = summary
-        return rows
+        return rows, None, summary
     raise ValueError(f"Unsupported protocol for catalog inventory: {protocol}")
+
+
+def _collect_source(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str
+) -> tuple[str, list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]:
+    """Worker per ThreadPoolExecutor: raccoglie una fonte e cattura eccezioni."""
+    try:
+        rows, warning, summary = collect_inventory(source_id, source_cfg, captured_at)
+        return source_id, rows, warning, summary, None
+    except Exception as exc:
+        return source_id, [], None, None, exc
 
 
 def parse_args() -> argparse.Namespace:
@@ -829,6 +834,14 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=DEFAULT_OUT_DIR,
         help="Directory di output per parquet e report JSON.",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        choices=range(1, 9),
+        metavar="N (1-8)",
+        help="Thread per la raccolta parallela (default: 1 = seriale).",
     )
     return parser.parse_args()
 
@@ -850,18 +863,21 @@ def main() -> None:
         "sources": {},
     }
 
+    # Fase 1: filtra fonti inventariabili (in ordine del registry)
+    inventoriable: list[tuple[str, dict[str, Any]]] = []
     for source_id, source_cfg in registry.items():
         if source_cfg.get("source_kind") != "catalog":
             continue
         if source_cfg.get("observation_mode") != "catalog-watch":
             continue
 
-        if source_id in NON_INVENTORIABLE_SOURCES:
+        inv = _inventory_cfg(source_cfg)
+        if inv.get("non_inventoriable"):
             report["sources"][source_id] = {
                 "status": "non_inventariabile",
                 "protocol": source_cfg.get("protocol"),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
-                "reason": NON_INVENTORIABLE_SOURCES[source_id],
+                "reason": inv.get("reason", "Fonte non inventariabile."),
             }
             continue
 
@@ -875,29 +891,42 @@ def main() -> None:
             }
             continue
 
-        try:
-            rows = collect_inventory(source_id, source_cfg, captured_at)
-            all_rows.extend(rows)
-            source_report = {
-                "status": "ok",
-                "protocol": source_cfg.get("protocol"),
-                "rows": len(rows),
-                "method": source_cfg.get("catalog_baseline", {}).get("method"),
-            }
-            warning = source_cfg.pop("_inventory_warning", None)
-            if warning:
-                source_report["warning"] = warning
-            summary = source_cfg.pop("_inventory_summary", None)
-            if summary:
-                source_report["summary"] = summary
-            report["sources"][source_id] = source_report
-        except Exception as exc:
+        inventoriable.append((source_id, source_cfg))
+
+    # Fase 2: raccolta (seriale con workers=1, parallela con workers>1)
+    collected: dict[str, tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]] = {}
+    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+        future_to_id = {
+            executor.submit(_collect_source, source_id, source_cfg, captured_at): source_id
+            for source_id, source_cfg in inventoriable
+        }
+        for future in as_completed(future_to_id):
+            sid, rows, warning, summary, exc = future.result()
+            collected[sid] = (rows, warning, summary, exc)
+
+    # Fase 3: assembla report in ordine del registry
+    for source_id, source_cfg in inventoriable:
+        rows, warning, summary, exc = collected[source_id]
+        if exc is not None:
             report["sources"][source_id] = {
                 "status": "error",
                 "protocol": source_cfg.get("protocol"),
                 "error": str(exc),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
             }
+            continue
+        all_rows.extend(rows)
+        source_report: dict[str, Any] = {
+            "status": "ok",
+            "protocol": source_cfg.get("protocol"),
+            "rows": len(rows),
+            "method": source_cfg.get("catalog_baseline", {}).get("method"),
+        }
+        if warning:
+            source_report["warning"] = warning
+        if summary:
+            source_report["summary"] = summary
+        report["sources"][source_id] = source_report
 
     if not all_rows:
         raise RuntimeError("No catalog inventory rows collected.")
