@@ -1,4 +1,4 @@
-name: catalog-inventory-manual
+name: catalog-inventory
 
 on:
   workflow_dispatch:

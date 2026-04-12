@@ -27,7 +27,7 @@ Output:
 
 Il parquet contiene oggi oltre 6000 item da fonti come INPS, OpenBDAP, MIM USTAT, Lavoro, Consip, Camera, ISPRA. È il punto di partenza per lo scouting: invece di navigare portali ostili manualmente, si interroga il parquet in DuckDB e si shortlista.
 
-Questi file **non sono versionati nel repo**. Per ottenerli: artifact del workflow `catalog-inventory-manual` su GitHub Actions, oppure GCS se configurato. Per generarli localmente usare il comando sotto.
+Questi file **non sono versionati nel repo**. Per ottenerli: artifact del workflow `catalog-inventory` su GitHub Actions, oppure GCS se configurato. Per generarli localmente usare il comando sotto.
 
 ```bash
 python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/generated

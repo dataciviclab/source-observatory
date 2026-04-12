@@ -63,7 +63,7 @@ Output (non versionati nel repo):
 - `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
 - `data/catalog_inventory/generated/catalog_inventory_report.json`
 
-Per ottenere l'ultimo output senza rieseguire: artifact del workflow `catalog-inventory-manual` su GitHub Actions, oppure GCS se configurato.
+Per ottenere l'ultimo output senza rieseguire: artifact del workflow `catalog-inventory` su GitHub Actions, oppure GCS se configurato.
 
 Disciplina:
 
@@ -71,7 +71,7 @@ Disciplina:
 - una fonte può restare osservata in SO ma non essere inventariabile
 - `anac` oggi resta escluso dall'inventory automatico per vincoli WAF
 - l'upload su GCS è opzionale e richiede secret espliciti
-- il workflow repo-side è solo `workflow_dispatch`: nessuno schedule finché il perimetro non resta stabile per più run consecutivi
+- il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`
 
 ## Resource monitor
 
