@@ -28,7 +28,7 @@ DEFAULT_SOURCES_PATH = SCRIPT_DIR / "resource_monitor.sources.yml"
 SNAPSHOTS_DIR = DATA_DIR / "snapshots"
 REPORTS_DIR = DATA_DIR / "reports"
 LATEST_REPORT_PATH = REPORTS_DIR / "latest.md"
-USER_AGENT = "dataciviclab-resource-diff/0.1"
+USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 
 DATA_EXTENSIONS = {
     ".csv",

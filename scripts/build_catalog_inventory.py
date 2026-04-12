@@ -14,6 +14,8 @@ import pandas as pd
 import requests
 import yaml
 
+from _constants import SDMX_RETRYABLE_STATUS_CODES, SDMX_RETRY_DELAYS_SECONDS
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
@@ -34,8 +36,6 @@ CKAN_SKIP_PACKAGE_SEARCH = {"lavoro_opendata"}
 # Sources where current_package_list_with_resources is unreliable (SSL/GIL crash on Windows).
 # These skip the enrichment step and fall straight to package_list.
 CKAN_SKIP_CURRENT_LIST = {"inps", "lavoro_opendata"}
-SDMX_RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
-SDMX_RETRY_DELAYS_SECONDS = (2, 5)
 SPARQL_QUERY_TEMPLATES = {
     "dcat_datasets": """
 PREFIX dcat: <http://www.w3.org/ns/dcat#>
@@ -535,9 +535,7 @@ def collect_sparql_inventory(
                 "issued": row_state["issued"],
                 "modified": row_state["modified"],
                 "landing_page": row_state["landing_page"],
-                "distribution_url": distribution_urls[0]
-                if distribution_urls
-                else None,
+                "distribution_url": distribution_urls[0] if distribution_urls else None,
                 "distribution_count": distribution_count
                 if distribution_count is not None
                 else (len(distribution_urls) if distribution_urls else None),

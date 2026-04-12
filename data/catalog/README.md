@@ -21,7 +21,7 @@ Quest'area serve per intelligence su cataloghi e inventari:
 Nel report `CATALOG_WATCH_REPORT.md` vanno esplicitate anche le fonti
 `catalog-watch` non inventariabili dal builder corrente (es. protocollo non supportato).
 
-Non Ã¨ il posto per:
+Non e' il posto per:
 
 - salute del portale
 - monitoraggio file-level
