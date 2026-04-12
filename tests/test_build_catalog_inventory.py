@@ -150,6 +150,9 @@ def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None
     def fail_if_called(*_args, **_kwargs):
         raise AssertionError("current list non dovrebbe essere chiamato per INPS")
 
+    def fake_package_show_sample(*_args, **_kwargs):
+        return ([], None)
+
     monkeypatch.setattr(
         build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search
     )
@@ -163,6 +166,11 @@ def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None
         "collect_ckan_inventory_via_current_list",
         fail_if_called,
     )
+    monkeypatch.setattr(
+        build_catalog_inventory,
+        "collect_ckan_inventory_via_package_show_sample",
+        fake_package_show_sample,
+    )
 
     rows, warning = build_catalog_inventory.collect_ckan_inventory(
         "inps", source_cfg, "2026-04-09T12:00:00+00:00"
@@ -172,7 +180,110 @@ def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None
     assert rows[0]["item_id"] == "544"
     assert rows[0]["title"] is None
     assert warning is not None
-    assert warning["type"] == "skip_current_package_list"
+    assert warning["type"] == "skip_current_package_list_with_package_show_sample"
+    assert warning["rows_enriched"] == 0
+
+
+def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypatch) -> None:
+    source_cfg = {
+        "base_url": "https://www.inps.it/odapi/api/3/action/package_search",
+        "source_kind": "catalog",
+        "protocol": "ckan",
+        "catalog_baseline": {"method": "package_list"},
+    }
+
+    def fake_search(*_args, **_kwargs):
+        raise ValueError("package_search rotto")
+
+    def fake_package_list(source_id, source_cfg, captured_at):
+        return [
+            {
+                "captured_at": captured_at,
+                "source_id": source_id,
+                "source_kind": source_cfg.get("source_kind"),
+                "protocol": source_cfg.get("protocol"),
+                "inventory_method": "package_list",
+                "item_kind": "dataset",
+                "item_id": "544",
+                "item_name": "544",
+                "title": None,
+                "organization": None,
+                "tags": None,
+                "notes_excerpt": None,
+                "source_url": "https://www.inps.it/odapi/api/3/action/package_list",
+                "ordinal": 1,
+            },
+            {
+                "captured_at": captured_at,
+                "source_id": source_id,
+                "source_kind": source_cfg.get("source_kind"),
+                "protocol": source_cfg.get("protocol"),
+                "inventory_method": "package_list",
+                "item_kind": "dataset",
+                "item_id": "545",
+                "item_name": "545",
+                "title": None,
+                "organization": None,
+                "tags": None,
+                "notes_excerpt": None,
+                "source_url": "https://www.inps.it/odapi/api/3/action/package_list",
+                "ordinal": 2,
+            },
+        ]
+
+    def fake_package_show_sample(*_args, **_kwargs):
+        return (
+            [
+                {
+                    "item_id": "544",
+                    "item_name": "rdc-statistiche",
+                    "title": "Reddito di cittadinanza - statistiche",
+                    "organization": "INPS",
+                    "tags": "welfare",
+                    "notes_excerpt": "descrizione",
+                    "source_url": "https://www.inps.it/odapi/api/3/action/package_show",
+                    "inventory_method": "package_show_sample",
+                    "ordinal": 99,
+                }
+            ],
+            None,
+        )
+
+    def fail_if_called(*_args, **_kwargs):
+        raise AssertionError("current list non dovrebbe essere chiamato per INPS")
+
+    monkeypatch.setattr(
+        build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search
+    )
+    monkeypatch.setattr(
+        build_catalog_inventory,
+        "collect_ckan_inventory_via_package_list",
+        fake_package_list,
+    )
+    monkeypatch.setattr(
+        build_catalog_inventory,
+        "collect_ckan_inventory_via_package_show_sample",
+        fake_package_show_sample,
+    )
+    monkeypatch.setattr(
+        build_catalog_inventory,
+        "collect_ckan_inventory_via_current_list",
+        fail_if_called,
+    )
+
+    rows, warning = build_catalog_inventory.collect_ckan_inventory(
+        "inps", source_cfg, "2026-04-09T12:00:00+00:00"
+    )
+
+    assert len(rows) == 2
+    assert rows[0]["item_id"] == "544"
+    assert rows[0]["title"] == "Reddito di cittadinanza - statistiche"
+    assert rows[1]["item_id"] == "545"
+    assert rows[1]["title"] is None
+    assert warning is not None
+    assert warning["type"] == "skip_current_package_list_with_package_show_sample"
+    assert warning["rows_enriched"] == 1
+    assert warning["rows_missing_metadata"] == 1
 
 
 def test_collect_sparql_inventory_groups_distribution_bindings(monkeypatch) -> None:
