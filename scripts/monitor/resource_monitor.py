@@ -457,21 +457,6 @@ def read_sources(path: Path) -> list[dict[str, Any]]:
     return sources
 
 
-def candidate_config_path(di_candidate: str | None) -> Path | None:
-    if not di_candidate or di_candidate == "~":
-        return None
-    config_path = (
-        WORKSPACE_ROOT
-        / "dataset-incubator"
-        / "candidates"
-        / di_candidate
-        / "dataset.yml"
-    )
-    if config_path.exists():
-        return config_path
-    return None
-
-
 def operational_warning(source: dict[str, Any]) -> list[str]:
     if source.get("changed_count", 0) <= 0:
         return []
@@ -480,14 +465,9 @@ def operational_warning(source: dict[str, Any]) -> list[str]:
     di_candidate = source.get("di_candidate")
     if di_candidate and di_candidate != "~":
         lines.append(f"  - Candidate collegato: `{di_candidate}`")
-        config_path = candidate_config_path(di_candidate)
-        if config_path:
-            lines.append(
-                "  - Comando suggerito: "
-                f"`python -m toolkit.cli.app run all --config {config_path}`"
-            )
-        else:
-            lines.append("  - Config candidate non trovata nel workspace")
+        lines.append(
+            "  - Verifica se i cambiamenti richiedono un aggiornamento della pipeline."
+        )
     else:
         lines.append("  - Nessun candidate DI collegato nel config")
 
@@ -699,6 +679,89 @@ def write_report(report: str) -> None:
     LATEST_REPORT_PATH.write_text(report, encoding="utf-8")
 
 
+DIFF_SUMMARY_PATH = REPORTS_DIR / "diff_summary.json"
+
+
+def write_diff_summary(snapshot: dict[str, Any]) -> None:
+    """Scrive un JSON minimale con solo le informazioni utili per consumer esterni.
+
+    Il formato e' progettato per essere consumato da script o dalla toolkit
+    senza dover parsare lo snapshot completo.
+    """
+    per_source: dict[str, dict[str, Any]] = {}
+    sources_with_changes: list[str] = []
+    sources_with_errors: list[str] = []
+
+    for s in snapshot["sources"]:
+        entry: dict[str, Any] = {
+            "new": s["new_count"],
+            "changed": s["changed_count"],
+            "removed": s["removed_count"],
+            "unchanged": s["unchanged_count"],
+            "error": s.get("error"),
+        }
+
+        changed_resources = [
+            {
+                "id": r["id"],
+                "name": r["name"],
+                "format": r.get("format"),
+                "url": r.get("url"),
+                "fields_changed": r.get("changes", []),
+            }
+            for r in s.get("resources", [])
+            if r.get("status") == "changed"
+        ]
+        new_resources = [
+            {
+                "id": r["id"],
+                "name": r["name"],
+                "format": r.get("format"),
+                "url": r.get("url"),
+            }
+            for r in s.get("resources", [])
+            if r.get("status") == "new"
+        ]
+        removed_resources = [
+            {
+                "id": r["id"],
+                "name": r["name"],
+                "format": r.get("format"),
+                "url": r.get("url"),
+            }
+            for r in s.get("resources", [])
+            if r.get("status") == "removed"
+        ]
+
+        if changed_resources:
+            entry["changed_resources"] = changed_resources
+        if new_resources:
+            entry["new_resources"] = new_resources
+        if removed_resources:
+            entry["removed_resources"] = removed_resources
+
+        per_source[s["id"]] = entry
+
+        if s["changed_count"] > 0 or s["new_count"] > 0 or s["removed_count"] > 0:
+            sources_with_changes.append(s["id"])
+        if s["error"]:
+            sources_with_errors.append(s["id"])
+
+    summary = {
+        "generated_at": snapshot["generated_at"],
+        "generated_at_utc": snapshot["generated_at_utc"],
+        "source_count": snapshot["source_count"],
+        "sources_with_changes": sources_with_changes,
+        "sources_with_errors": sources_with_errors,
+        "per_source": per_source,
+    }
+
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    DIFF_SUMMARY_PATH.write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Resource-level diff for known dataset sources."
@@ -739,8 +802,10 @@ def main() -> int:
     snapshot_path = write_snapshot(snapshot)
     report = render_report(snapshot, previous_path, snapshot_path)
     write_report(report)
-    print(f"Wrote snapshot: {snapshot_path}")
-    print(f"Wrote report:   {LATEST_REPORT_PATH}")
+    write_diff_summary(snapshot)
+    print(f"Wrote snapshot:   {snapshot_path}")
+    print(f"Wrote report:     {LATEST_REPORT_PATH}")
+    print(f"Wrote diff:       {DIFF_SUMMARY_PATH}")
     return 0
 
 
