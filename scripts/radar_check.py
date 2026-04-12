@@ -14,17 +14,14 @@ import urllib3
 import yaml
 from urllib3.exceptions import InsecureRequestWarning
 
+from _constants import SDMX_RETRYABLE_STATUS_CODES, SDMX_RETRY_DELAYS_SECONDS
+
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = WORKSPACE_ROOT / "data" / "radar" / "sources_registry.yaml"
 STATUS_PATH = WORKSPACE_ROOT / "data" / "radar" / "STATUS.md"
-USER_AGENT = "Mozilla/5.0"
+USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 TIMEOUT_SECONDS = 10
-
-# Retry/backoff per SDMX endpoints noti instabili (es. ISTAT).
-# Condivisi con build_catalog_inventory.py per coerenza.
-SDMX_RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
-SDMX_RETRY_DELAYS_SECONDS = (2, 5)
 
 
 @dataclass
