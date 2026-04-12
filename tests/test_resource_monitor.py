@@ -1,9 +1,16 @@
 """Test per monitor/resource_monitor.py."""
 from __future__ import annotations
 
+from unittest.mock import patch
+from xml.etree import ElementTree as ET
+
+import requests
+
 from monitor.resource_monitor import (
     annotate_resources,
     diff_fields,
+    fetch_sdmx,
+    fetch_single_url,
     is_data_link,
     parse_sdmx_resources,
     resource_signature,
@@ -227,3 +234,66 @@ def test_parse_sdmx_resources_empty() -> None:
     source = {"id": "istat"}
     resources = parse_sdmx_resources(xml, source)
     assert len(resources) == 0
+
+
+def test_fetch_single_url_reads_headers_with_context_manager() -> None:
+    class FakeResponse:
+        def __init__(self) -> None:
+            self.headers = {
+                "ETag": "abc123",
+                "Last-Modified": "Wed, 01 Jan 2026 00:00:00 GMT",
+                "Content-Type": "text/csv",
+                "Content-Length": "42",
+            }
+
+        def __enter__(self) -> "FakeResponse":
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+        def raise_for_status(self) -> None:
+            return None
+
+    source = {"id": "single", "adapter_type": "single_url", "url": "https://example.test/data.csv"}
+    with patch("monitor.resource_monitor.requests.get", return_value=FakeResponse()):
+        result = fetch_single_url(source, timeout=5)
+    assert result.error is None
+    assert len(result.resources) == 1
+    assert result.resources[0]["etag"] == "abc123"
+    assert result.resources[0]["content_length"] == "42"
+
+
+def test_fetch_sdmx_returns_error_on_request_exception() -> None:
+    source = {"id": "sdmx", "adapter_type": "sdmx", "api_url": "https://example.test/sdmx"}
+    with patch(
+        "monitor.resource_monitor.requests.get",
+        side_effect=requests.RequestException("network down"),
+    ):
+        result = fetch_sdmx(source, timeout=5)
+    assert result.error is not None
+    assert "SDMX fetch failed" in result.error
+
+
+def test_fetch_sdmx_returns_error_on_xml_parse_error() -> None:
+    class FakeResponse:
+        text = "<invalid"
+
+        def __enter__(self) -> "FakeResponse":
+            return self
+
+        def __exit__(self, exc_type, exc, tb) -> None:
+            return None
+
+        def raise_for_status(self) -> None:
+            return None
+
+    source = {"id": "sdmx", "adapter_type": "sdmx", "api_url": "https://example.test/sdmx"}
+    with patch("monitor.resource_monitor.requests.get", return_value=FakeResponse()):
+        with patch(
+            "monitor.resource_monitor.parse_sdmx_resources",
+            side_effect=ET.ParseError("bad xml"),
+        ):
+            result = fetch_sdmx(source, timeout=5)
+    assert result.error is not None
+    assert "SDMX XML parse error" in result.error
