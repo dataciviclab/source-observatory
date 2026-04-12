@@ -73,29 +73,13 @@ Disciplina:
 - l'upload su GCS è opzionale e richiede secret espliciti
 - il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`
 
-## Resource monitor
-
-```bash
-python scripts/resource_monitor.py --sources scripts/resource_monitor.sources.yml --timeout 20
-```
-
-Usa `monitor` solo per un set molto piccolo di casi Tier 1 in cui il change detection file/resource ha un next step difendibile.
-
-Output:
-
-- [latest.md](../data/monitor/reports/latest.md)
-- [snapshots](../data/monitor/snapshots)
-
 ## Ordine consigliato
 
 1. esegui `radar`
 2. leggi `catalog-watch`
-3. esegui `monitor` solo sui casi Tier 1
-4. decidi se esiste davvero un follow-up umano giustificato
+3. decidi se esiste davvero un follow-up umano giustificato
 
 ## Disciplina
 
 - tieni l'universo piccolo
 - preferisci segnali leggibili alla copertura larga
-- non trattare il monitor file/resource come prodotto principale
-- non automatizzare follow-up oltre il reporting semplice finché i falsi positivi non restano bassi

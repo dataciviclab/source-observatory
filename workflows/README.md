@@ -20,9 +20,6 @@ Indice minimo dei workflow canonici di `source-observatory`.
   - controlla la salute infrastrutturale della fonte
   - risponde alla domanda: la fonte e viva?
 
-- [resource-monitor.md](./resource-monitor.md)
-  - monitora poche risorse note ad alto valore
-  - segnala cambi che possono richiedere un next step umano sul dataset
 
 ## Boundary rapido
 
@@ -32,8 +29,6 @@ Indice minimo dei workflow canonici di `source-observatory`.
   - health della fonte o del portale
 - `catalog-watch`
   - cambi inventariali o strutturali del catalogo
-- `resource-monitor`
-  - cambi su risorse note e ristrette
 - `source-check`
   - valutazione umana della fonte come possibile pista del Lab
 
@@ -44,7 +39,6 @@ Se la domanda e:
 - "la fonte e viva?" -> `radar-check`
 - "questo portale e davvero un catalogo osservabile?" -> `portal-scout`
 - "il catalogo ha cambiato inventario o struttura?" -> `catalog-watch`
-- "questa risorsa nota e cambiata in modo rilevante?" -> `resource-monitor`
 - "questa fonte regge davvero come pista del Lab?" -> `source-check`
 
 ## Onboarding portali

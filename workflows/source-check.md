@@ -37,7 +37,7 @@ Non serve a:
 - aprire automaticamente issue, PR o Discussion
 - fare intake in `dataset-incubator`
 - fare monitoraggio continuo
-- sostituire `radar-check`, `catalog-watch` o `resource-monitor`
+- sostituire `radar-check` o `catalog-watch`
 
 ## Quando usarlo
 
@@ -49,7 +49,7 @@ Usalo quando hai già:
 
 Usalo anche quando:
 
-- `catalog-watch` o `resource-monitor` segnalano un caso che merita verifica umana
+- `catalog-watch` segnala un caso che merita verifica umana
 - un portale è vivo ma non è ancora chiaro se il dato valga davvero
 
 Non usarlo quando:
