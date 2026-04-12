@@ -58,10 +58,12 @@ Usa `catalog inventory` quando la domanda è:
 - quali fonti `catalog-watch` producono un inventario riusabile per scouting?
 - il perimetro pubblico resta coerente con le esclusioni dichiarate?
 
-Output:
+Output (non versionati nel repo):
 
 - `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
 - `data/catalog_inventory/generated/catalog_inventory_report.json`
+
+Per ottenere l'ultimo output senza rieseguire: artifact del workflow `catalog-inventory-manual` su GitHub Actions, oppure GCS se configurato.
 
 Disciplina:
 
