@@ -3,7 +3,7 @@ istat_sdmx:
   protocol: sdmx
   observation_mode: catalog-watch
   base_url: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: dataflow_count
@@ -23,7 +23,7 @@ anac:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-03-28'
     metric: package_count
@@ -39,7 +39,7 @@ inps:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -58,7 +58,7 @@ openbdap:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -78,7 +78,7 @@ dati_salute:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.dati.salute.gov.it/
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-07'
     metric: dataset_url_count
@@ -97,7 +97,7 @@ inail_opendata:
   protocol: aem
   observation_mode: radar-only
   base_url: https://dati.inail.it/
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   verdict: go
   note: Portale AEM con Open API documentate. Superficie operativa reale = catalogo
     AEM + Open API, non CKAN standard (logo nel footer fuorviante). Baseline inventariale
@@ -108,7 +108,7 @@ mim_opendata:
   protocol: html
   observation_mode: radar-only
   base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   verdict: go
   note: Portale HTML custom senza API catalog (CKAN/SDMX). Download CSV diretti nel
     markup ma nessuna superficie inventariale strutturata osservabile via probe semplice.
@@ -120,7 +120,7 @@ dati_camera:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.camera.it/sparql
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -135,20 +135,12 @@ dati_camera:
     query_name: camera_dcat
     limit: 5000
     timeout_seconds: 60
-    query: |
-      PREFIX dcat: <http://www.w3.org/ns/dcat#>
-      PREFIX dc: <http://purl.org/dc/elements/1.1/>
-      PREFIX dct: <http://purl.org/dc/terms/>
-      SELECT DISTINCT ?dataset ?title ?description ?modified ?landingPage
-      WHERE {
-        ?dataset a dcat:Dataset .
-        OPTIONAL { ?dataset dc:title ?title . }
-        OPTIONAL { ?dataset dc:description ?description . }
-        OPTIONAL { ?dataset dct:modified ?modified . }
-        OPTIONAL { ?dataset dcat:landingPage ?landingPage . }
-      }
-      ORDER BY ?dataset
-      LIMIT 5000
+    query: "PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dc: <http://purl.org/dc/elements/1.1/>\n\
+      PREFIX dct: <http://purl.org/dc/terms/>\nSELECT DISTINCT ?dataset ?title ?description\
+      \ ?modified ?landingPage\nWHERE {\n  ?dataset a dcat:Dataset .\n  OPTIONAL {\
+      \ ?dataset dc:title ?title . }\n  OPTIONAL { ?dataset dc:description ?description\
+      \ . }\n  OPTIONAL { ?dataset dct:modified ?modified . }\n  OPTIONAL { ?dataset\
+      \ dcat:landingPage ?landingPage . }\n}\nORDER BY ?dataset\nLIMIT 5000\n"
   verdict: go
   note: Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template
     DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title
@@ -159,7 +151,7 @@ ispra_linked_data:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.isprambiente.it/sparql
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -173,16 +165,16 @@ ispra_linked_data:
     query_name: dcat_datasets
     limit: 5000
   verdict: go
-  note: Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL.
-    Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate
-    per pipeline tabellari.
+  note: Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot
+    per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline
+    tabellari.
   datasets_in_use: []
 consip_open_data:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.consip.it/api/3/action/package_list?limit=1
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: package_count
@@ -202,7 +194,7 @@ lavoro_opendata:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: package_count
@@ -218,7 +210,7 @@ mim_ustat:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati-ustat.mur.gov.it/api/3/action/package_list?limit=1
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-09'
     metric: package_count
@@ -236,7 +228,7 @@ opencoesione:
   protocol: rest
   observation_mode: catalog-watch
   base_url: https://opencoesione.gov.it/it/api/
-  last_probed: '2026-04-11'
+  last_probed: '2026-04-12'
   catalog_baseline:
     captured_at: '2026-04-09'
     metric: data_aggiornamento
