@@ -1,9 +1,0 @@
-id,should_trigger,prompt
-test-01,true,"Esegui catalog-watch sui portali osservati nel Source Observatory"
-test-02,true,"Controlla se i portali catalog-watch hanno segnali nuovi"
-test-03,true,"Aggiorna il report catalog-watch e dimmi se ci sono novita rilevanti"
-test-04,true,"Fai il giro dei portali in modalita catalog-watch"
-test-05,false,"Fai source-check di questo dataset ANAC"
-test-06,false,"Esegui resource-monitor sulle fonti attive"
-test-07,false,"Controlla solo la salute infrastrutturale dei portali"
-test-08,false,"Apri issue se trovi qualcosa di interessante"
