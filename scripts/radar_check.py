@@ -88,6 +88,65 @@ def _is_sdmx_url(url: str) -> bool:
     return any(marker in url for marker in sdmx_markers)
 
 
+def _make_error_result(
+    exc: requests.exceptions.RequestException,
+    *,
+    ssl_fallback_used: bool = False,
+    ssl_failure: requests.exceptions.SSLError | None = None,
+) -> ProbeResult:
+    if isinstance(exc, requests.exceptions.Timeout):
+        if ssl_fallback_used:
+            note = f"SSL verify failed; fallback timed out ({(ssl_failure or exc).__class__.__name__})"
+        else:
+            note = f"Timeout ({exc.__class__.__name__})"
+        return ProbeResult(
+            status="YELLOW",
+            http_code="-",
+            note=note,
+            ssl_fallback_used=ssl_fallback_used,
+        )
+
+    if isinstance(exc, requests.exceptions.ConnectionError):
+        detail = "connection error" if ssl_fallback_used else "Connection error"
+    else:
+        detail = "request error" if ssl_fallback_used else "Request error"
+
+    if ssl_fallback_used:
+        note = f"SSL verify failed; fallback {detail} ({exc.__class__.__name__})"
+    else:
+        note = f"{detail} ({exc.__class__.__name__})"
+
+    return ProbeResult(
+        status="RED",
+        http_code="-",
+        note=note,
+        ssl_fallback_used=ssl_fallback_used,
+    )
+
+
+def _build_probe_result(
+    base_url: str,
+    response: requests.Response,
+    *,
+    ssl_failure: requests.exceptions.SSLError | None = None,
+) -> ProbeResult:
+    status, probe_note = validate_ckan_action_response(base_url, response)
+    note = probe_note
+    ssl_fallback_used = ssl_failure is not None
+    if ssl_failure is not None:
+        note = f"SSL verify failed; fallback verify=False used ({ssl_failure.__class__.__name__})"
+        if probe_note:
+            note = f"{note} | {probe_note}"
+    return ProbeResult(
+        status=status,
+        http_code=str(response.status_code),
+        note=note,
+        ssl_fallback_used=ssl_fallback_used,
+        final_url=str(response.url),
+        content_type=response.headers.get("content-type"),
+    )
+
+
 def _probe_once(base_url: str) -> ProbeResult:
     """Single probe attempt (no retry)."""
     headers = {"User-Agent": USER_AGENT}
@@ -99,14 +158,7 @@ def _probe_once(base_url: str) -> ProbeResult:
             allow_redirects=True,
             stream=True,
         ) as response:
-            status, note = validate_ckan_action_response(base_url, response)
-            return ProbeResult(
-                status=status,
-                http_code=str(response.status_code),
-                note=note,
-                final_url=str(response.url),
-                content_type=response.headers.get("content-type"),
-            )
+            return _build_probe_result(base_url, response)
     except requests.exceptions.SSLError as exc:
         try:
             with requests.Session() as session:
@@ -119,59 +171,15 @@ def _probe_once(base_url: str) -> ProbeResult:
                     verify=False,
                     stream=True,
                 ) as response:
-                    status, probe_note = validate_ckan_action_response(
-                        base_url, response
-                    )
-                    note = f"SSL verify failed; fallback verify=False used ({exc.__class__.__name__})"
-                    if probe_note:
-                        note = f"{note} | {probe_note}"
-                    return ProbeResult(
-                        status=status,
-                        http_code=str(response.status_code),
-                        note=note,
-                        ssl_fallback_used=True,
-                        final_url=str(response.url),
-                        content_type=response.headers.get("content-type"),
-                    )
-        except requests.exceptions.Timeout:
-            return ProbeResult(
-                status="YELLOW",
-                http_code="-",
-                note=f"SSL verify failed; fallback timed out ({exc.__class__.__name__})",
-                ssl_fallback_used=True,
-            )
-        except requests.exceptions.ConnectionError as fallback_exc:
-            return ProbeResult(
-                status="RED",
-                http_code="-",
-                note=f"SSL verify failed; fallback connection error ({fallback_exc.__class__.__name__})",
-                ssl_fallback_used=True,
-            )
+                    return _build_probe_result(base_url, response, ssl_failure=exc)
         except requests.exceptions.RequestException as fallback_exc:
-            return ProbeResult(
-                status="RED",
-                http_code="-",
-                note=f"SSL verify failed; fallback request error ({fallback_exc.__class__.__name__})",
+            return _make_error_result(
+                fallback_exc,
                 ssl_fallback_used=True,
+                ssl_failure=exc,
             )
-    except requests.exceptions.Timeout as exc:
-        return ProbeResult(
-            status="YELLOW",
-            http_code="-",
-            note=f"Timeout ({exc.__class__.__name__})",
-        )
-    except requests.exceptions.ConnectionError as exc:
-        return ProbeResult(
-            status="RED",
-            http_code="-",
-            note=f"Connection error ({exc.__class__.__name__})",
-        )
     except requests.exceptions.RequestException as exc:
-        return ProbeResult(
-            status="RED",
-            http_code="-",
-            note=f"Request error ({exc.__class__.__name__})",
-        )
+        return _make_error_result(exc)
 
 
 def probe_url(base_url: str) -> ProbeResult:

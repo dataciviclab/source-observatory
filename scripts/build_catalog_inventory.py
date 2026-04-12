@@ -190,6 +190,47 @@ def collect_ckan_inventory_via_search(
     return rows
 
 
+def _fetch_ckan_chunk_with_fallback(
+    endpoint: str,
+    params: dict[str, Any],
+    page_size: int,
+    *,
+    fallback_page_sizes: tuple[int, ...],
+    request_timeout: int,
+    max_retries: int,
+    retry_delay: float,
+) -> tuple[dict[str, Any] | None, str | None, int]:
+    current_limit = page_size
+
+    while True:
+        for attempt in range(max_retries + 1):
+            try:
+                payload = ckan_get_json(
+                    endpoint,
+                    params={**params, "limit": current_limit},
+                    timeout=request_timeout,
+                )
+                return payload, None, current_limit
+            except requests.Timeout:
+                if attempt < max_retries:
+                    time.sleep(retry_delay * (attempt + 1))
+                    continue
+                break
+
+        next_limit = next(
+            (size for size in fallback_page_sizes if size < current_limit),
+            None,
+        )
+        if next_limit is None:
+            offset = params.get("offset")
+            return (
+                None,
+                f"timeout after retry at offset {offset} with limit {current_limit}",
+                current_limit,
+            )
+        current_limit = next_limit
+
+
 def collect_ckan_inventory_via_current_list(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
@@ -206,38 +247,29 @@ def collect_ckan_inventory_via_current_list(
     rows: list[dict[str, Any]] = []
 
     while True:
-        current_limit = page_size
-        while True:
-            attempt = 0
-            while True:
-                try:
-                    payload = ckan_get_json(
-                        endpoint,
-                        params={"limit": current_limit, "offset": offset},
-                        timeout=request_timeout,
-                    )
-                    break
-                except requests.Timeout:
-                    attempt += 1
-                    if attempt <= max_retries:
-                        time.sleep(retry_delay * attempt)
-                        continue
-                    next_limit = next(
-                        (size for size in fallback_page_sizes if size < current_limit),
-                        None,
-                    )
-                    if next_limit is None:
-                        if rows:
-                            return rows, {
-                                "type": "partial_current_package_list_with_resources",
-                                "message": "Arricchimento parziale da current_package_list_with_resources; ultimi chunk in timeout dopo retry.",
-                                "failed_offset": offset,
-                                "failed_limit": current_limit,
-                                "rows_collected": len(rows),
-                            }
-                        raise
-                    current_limit = next_limit
-                    attempt = 0
+        payload, failure_reason, current_limit = _fetch_ckan_chunk_with_fallback(
+            endpoint,
+            {"offset": offset},
+            page_size,
+            fallback_page_sizes=fallback_page_sizes,
+            request_timeout=request_timeout,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
+        )
+        if payload is None:
+            if rows:
+                return rows, {
+                    "type": "partial_current_package_list_with_resources",
+                    "message": "Arricchimento parziale da current_package_list_with_resources; ultimi chunk in timeout dopo retry.",
+                    "failed_offset": offset,
+                    "failed_limit": current_limit,
+                    "rows_collected": len(rows),
+                    "failure": failure_reason,
+                }
+            raise requests.Timeout(
+                f"CKAN current_package_list_with_resources timed out for {source_id}: {failure_reason}"
+            )
+
         if not payload.get("success"):
             raise ValueError(
                 f"CKAN current_package_list_with_resources failed for {source_id}"
@@ -529,30 +561,9 @@ def build_sparql_query(source_cfg: dict[str, Any]) -> tuple[str, str]:
     return query_text, query_name or "custom"
 
 
-def collect_sparql_inventory(
-    source_id: str, source_cfg: dict[str, Any], captured_at: str
-) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-    sparql_cfg = source_cfg.get("sparql") or {}
-    endpoint = sparql_cfg.get("endpoint_url") or source_cfg["base_url"]
-    query_text, query_name = build_sparql_query(source_cfg)
-    response = requests.get(
-        endpoint,
-        params={"query": query_text, "format": "application/sparql-results+json"},
-        headers={
-            "Accept": "application/sparql-results+json",
-            "User-Agent": "DataCivicLab Source Observatory",
-        },
-        timeout=int(sparql_cfg.get("timeout_seconds", 60)),
-    )
-    response.raise_for_status()
-    payload = response.json()
-    bindings = ((payload.get("results") or {}).get("bindings")) or []
-    if not isinstance(bindings, list):
-        raise ValueError(
-            f"Unexpected SPARQL payload for {source_id}: bindings is not a list"
-        )
-
+def _group_sparql_bindings(bindings: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     by_dataset: dict[str, dict[str, Any]] = {}
+
     for binding in bindings:
         dataset_uri = sparql_binding_value(binding, "dataset")
         if not dataset_uri:
@@ -605,10 +616,22 @@ def collect_sparql_inventory(
         append_unique(row_state["formats"], sparql_binding_value(binding, "format"))
         append_unique(row_state["themes"], sparql_binding_value(binding, "theme"))
 
+    return by_dataset
+
+
+def _build_sparql_rows(
+    by_dataset: dict[str, dict[str, Any]],
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
+    endpoint: str,
+    query_name: str,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     inventory_method = source_cfg.get("catalog_baseline", {}).get(
         "method", "sparql_query"
     )
+
     for idx, (dataset_uri, row_state) in enumerate(by_dataset.items(), start=1):
         description = row_state["description"]
         distribution_urls = row_state["distribution_urls"]
@@ -643,16 +666,52 @@ def collect_sparql_inventory(
             }
         )
 
-    if not rows:
-        raise ValueError(f"SPARQL query returned no inventory rows for {source_id}")
-
     return rows, {
         "type": "sparql_query_template",
         "message": "Inventory raccolto via query SPARQL dichiarata.",
         "query_name": query_name,
-        "bindings": len(bindings),
         "datasets": len(rows),
     }
+
+
+def collect_sparql_inventory(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    sparql_cfg = source_cfg.get("sparql") or {}
+    endpoint = sparql_cfg.get("endpoint_url") or source_cfg["base_url"]
+    query_text, query_name = build_sparql_query(source_cfg)
+    response = requests.get(
+        endpoint,
+        params={"query": query_text, "format": "application/sparql-results+json"},
+        headers={
+            "Accept": "application/sparql-results+json",
+            "User-Agent": "DataCivicLab Source Observatory",
+        },
+        timeout=int(sparql_cfg.get("timeout_seconds", 60)),
+    )
+    response.raise_for_status()
+    payload = response.json()
+    bindings = ((payload.get("results") or {}).get("bindings")) or []
+    if not isinstance(bindings, list):
+        raise ValueError(
+            f"Unexpected SPARQL payload for {source_id}: bindings is not a list"
+        )
+
+    by_dataset = _group_sparql_bindings(bindings)
+    rows, summary = _build_sparql_rows(
+        by_dataset,
+        source_id,
+        source_cfg,
+        captured_at,
+        endpoint,
+        query_name,
+    )
+
+    if not rows:
+        raise ValueError(f"SPARQL query returned no inventory rows for {source_id}")
+
+    summary["bindings"] = len(bindings)
+    return rows, summary
 
 
 def collect_sdmx_inventory(
