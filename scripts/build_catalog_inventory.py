@@ -36,6 +36,10 @@ CKAN_SKIP_PACKAGE_SEARCH = {"lavoro_opendata"}
 # Sources where current_package_list_with_resources is unreliable (SSL/GIL crash on Windows).
 # These skip the enrichment step and fall straight to package_list.
 CKAN_SKIP_CURRENT_LIST = {"inps", "lavoro_opendata"}
+# Sources where package_list rows (often numeric IDs) should be sampled and enriched
+# via package_show when current_package_list_with_resources is skipped.
+CKAN_PACKAGE_SHOW_SAMPLE_SOURCES = {"inps"}
+CKAN_PACKAGE_SHOW_SAMPLE_SIZE = 25
 SPARQL_QUERY_TEMPLATES = {
     "dcat_datasets": """
 PREFIX dcat: <http://www.w3.org/ns/dcat#>
@@ -312,6 +316,75 @@ def collect_ckan_inventory_via_package_list(
     return rows
 
 
+def _sample_indexes(total: int, sample_size: int) -> list[int]:
+    if total <= 0 or sample_size <= 0:
+        return []
+    if total <= sample_size:
+        return list(range(total))
+
+    indexes: set[int] = {0, total - 1}
+    step = max(total // sample_size, 1)
+    for idx in range(0, total, step):
+        indexes.add(idx)
+        if len(indexes) >= sample_size:
+            break
+    return sorted(indexes)
+
+
+def collect_ckan_inventory_via_package_show_sample(
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
+    package_list_rows: list[dict[str, Any]],
+    sample_size: int = CKAN_PACKAGE_SHOW_SAMPLE_SIZE,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_show")
+    sampled_idx = _sample_indexes(len(package_list_rows), sample_size)
+    if not sampled_idx:
+        return [], None
+
+    enriched_rows: list[dict[str, Any]] = []
+    errors: list[str] = []
+
+    for idx in sampled_idx:
+        base_row = package_list_rows[idx]
+        package_id = str(base_row["item_id"])
+        try:
+            payload = ckan_get_json(endpoint, params={"id": package_id}, timeout=30)
+            if not payload.get("success"):
+                errors.append(f"{package_id}: package_show success=false")
+                continue
+            item = payload.get("result")
+            if not isinstance(item, dict):
+                errors.append(f"{package_id}: package_show result non-dict")
+                continue
+            enriched = extract_ckan_inventory_row(
+                source_id=source_id,
+                source_cfg=source_cfg,
+                captured_at=captured_at,
+                item=item,
+                endpoint=endpoint,
+                ordinal=base_row["ordinal"],
+                inventory_method="package_show_sample",
+            )
+            # Keep package_list key for deterministic merge against base rows.
+            enriched["item_id"] = package_id
+            enriched_rows.append(enriched)
+        except Exception as exc:
+            errors.append(f"{package_id}: {exc}")
+
+    warning: dict[str, Any] | None = None
+    if errors:
+        warning = {
+            "type": "package_show_sample_partial",
+            "message": "Arricchimento sample via package_show completato con errori parziali.",
+            "sample_size": len(sampled_idx),
+            "rows_enriched": len(enriched_rows),
+            "errors_preview": errors[:10],
+        }
+    return enriched_rows, warning
+
+
 def collect_ckan_inventory(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
@@ -332,6 +405,32 @@ def collect_ckan_inventory(
         source_id, source_cfg, captured_at
     )
     if source_id in CKAN_SKIP_CURRENT_LIST:
+        if source_id in CKAN_PACKAGE_SHOW_SAMPLE_SOURCES:
+            enriched_rows, sample_warning = collect_ckan_inventory_via_package_show_sample(
+                source_id=source_id,
+                source_cfg=source_cfg,
+                captured_at=captured_at,
+                package_list_rows=package_list_rows,
+            )
+            enriched_by_id = {row["item_id"]: row for row in enriched_rows}
+            merged_rows: list[dict[str, Any]] = []
+            missing_metadata = 0
+            for row in package_list_rows:
+                enriched = enriched_by_id.get(row["item_id"])
+                if enriched is None:
+                    missing_metadata += 1
+                    merged_rows.append(row)
+                else:
+                    merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
+            warning: dict[str, Any] = {
+                "type": "skip_current_package_list_with_package_show_sample",
+                "message": f"current_package_list_with_resources disabilitato per {source_id}; applicato enrich sample via package_show.",
+                "rows_enriched": len(enriched_by_id),
+                "rows_missing_metadata": missing_metadata,
+            }
+            if sample_warning:
+                warning["package_show_sample_warning"] = sample_warning
+            return merged_rows, warning
         return package_list_rows, {
             "type": "skip_current_package_list",
             "message": f"Enrichment current_package_list_with_resources disabilitato per {source_id} (instabilita SSL/GIL in ambiente locale).",
