@@ -61,8 +61,7 @@ Colonne chiave:
 
 Nota operativa:
 - per cataloghi CKAN il builder prova in ordine `package_search`, `current_package_list_with_resources`, `package_list`
-- `current_package_list_with_resources` è disabilitato per `inps` in ambiente locale Windows per instabilita SSL/GIL (fall-back diretto a `package_list` con warning esplicito)
-- la logica di enrichment resta attiva per altri cataloghi CKAN futuri
+- il comportamento per fonte (skip di `package_search`, skip di `current_package_list_with_resources`, enrich via `package_show` sample) è configurato nel blocco `inventory:` del registry, non hardcoded nello script
 - per cataloghi SPARQL il builder usa solo query dichiarate nel registry o template espliciti; il pilot iniziale è `dcat_datasets`
 - il template SPARQL generico enumera dataset e metadati DCAT leggeri; non popola `distribution_url`, `distribution_count` o `format`
 - per SPARQL `tags` resta vuoto e i temi DCAT stanno nel campo opzionale `theme`; query custom possono aggiungere campi opzionali come `distribution_url`, `distribution_count` e `format`
@@ -70,7 +69,7 @@ Nota operativa:
 ## Workflow
 
 Workflow GitHub Actions disponibile:
-- `.github/workflows/catalog-inventory-manual.yml`
+- `.github/workflows/catalog-inventory.yml`
 
 Comando locale equivalente:
 
@@ -78,9 +77,14 @@ Comando locale equivalente:
 python scripts/build_catalog_inventory.py
 ```
 
+Con raccolta parallela (sperimentale, usare con cautela su endpoint fragili):
+
+```bash
+python scripts/build_catalog_inventory.py --workers 3
+```
+
 ## Caveat
 
 - il perimetro segue solo le fonti `catalog-watch` del registry
-- l'inventory può essere intenzionalmente parziale se una fonte e' osservabile ma non inventariabile in modo stabile
+- l'inventory può essere intenzionalmente parziale se una fonte è osservabile ma non inventariabile in modo stabile
 - il README locale resta in `_local/data/catalog_inventory/README.md`
-- `istat_sdmx` oggi viene enumerato in modo riproducibile tramite `https://sdmx.istat.it/SDMXWS/rest/dataflow/IT1`, coerente con la baseline aggiornata a `509`

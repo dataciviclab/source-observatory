@@ -50,6 +50,7 @@ Modello v0:
 
 ```bash
 python scripts/build_catalog_inventory.py
+python scripts/build_catalog_inventory.py --workers 3  # parallelo, sperimentale
 ```
 
 Usa `catalog inventory` quando la domanda è:
