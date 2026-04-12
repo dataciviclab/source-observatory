@@ -698,7 +698,7 @@ def write_diff_summary(snapshot: dict[str, Any]) -> None:
             "changed": s["changed_count"],
             "removed": s["removed_count"],
             "unchanged": s["unchanged_count"],
-            "error": s["error"],
+            "error": s.get("error"),
         }
 
         changed_resources = [

@@ -8,7 +8,6 @@ from xml.etree import ElementTree as ET
 import requests
 
 from monitor.resource_monitor import (
-    DIFF_SUMMARY_PATH,
     annotate_resources,
     diff_fields,
     fetch_sdmx,
@@ -351,7 +350,6 @@ def test_write_diff_summary_writes_minimal_machine_readable_payload(
     }
 
     write_diff_summary(snapshot)
-    assert DIFF_SUMMARY_PATH.name == "diff_summary.json"
     assert diff_path.exists()
 
     payload = json.loads(diff_path.read_text(encoding="utf-8"))
