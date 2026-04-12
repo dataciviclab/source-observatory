@@ -4,6 +4,7 @@ import argparse
 import json
 import time
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -795,24 +796,30 @@ def load_registry() -> dict[str, Any]:
 
 def collect_inventory(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None]:
+    """Raccoglie l'inventory per una fonte. Ritorna (rows, warning, summary) senza side-effect."""
     protocol = source_cfg.get("protocol")
     if protocol == "ckan":
         rows, warning = collect_ckan_inventory(source_id, source_cfg, captured_at)
-        if warning:
-            source_cfg["_inventory_warning"] = warning
-        return rows
+        return rows, warning, None
     if protocol == "sdmx":
         rows, warning = collect_sdmx_inventory(source_id, source_cfg, captured_at)
-        if warning:
-            source_cfg["_inventory_warning"] = warning
-        return rows
+        return rows, warning, None
     if protocol == "sparql":
         rows, summary = collect_sparql_inventory(source_id, source_cfg, captured_at)
-        if summary:
-            source_cfg["_inventory_summary"] = summary
-        return rows
+        return rows, None, summary
     raise ValueError(f"Unsupported protocol for catalog inventory: {protocol}")
+
+
+def _collect_source(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str
+) -> tuple[str, list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]:
+    """Worker per ThreadPoolExecutor: raccoglie una fonte e cattura eccezioni."""
+    try:
+        rows, warning, summary = collect_inventory(source_id, source_cfg, captured_at)
+        return source_id, rows, warning, summary, None
+    except Exception as exc:
+        return source_id, [], None, None, exc
 
 
 def parse_args() -> argparse.Namespace:
@@ -824,6 +831,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=DEFAULT_OUT_DIR,
         help="Directory di output per parquet e report JSON.",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Thread per la raccolta parallela (default: 1 = seriale).",
     )
     return parser.parse_args()
 
@@ -845,6 +858,8 @@ def main() -> None:
         "sources": {},
     }
 
+    # Fase 1: filtra fonti inventariabili (in ordine del registry)
+    inventoriable: list[tuple[str, dict[str, Any]]] = []
     for source_id, source_cfg in registry.items():
         if source_cfg.get("source_kind") != "catalog":
             continue
@@ -871,29 +886,42 @@ def main() -> None:
             }
             continue
 
-        try:
-            rows = collect_inventory(source_id, source_cfg, captured_at)
-            all_rows.extend(rows)
-            source_report = {
-                "status": "ok",
-                "protocol": source_cfg.get("protocol"),
-                "rows": len(rows),
-                "method": source_cfg.get("catalog_baseline", {}).get("method"),
-            }
-            warning = source_cfg.pop("_inventory_warning", None)
-            if warning:
-                source_report["warning"] = warning
-            summary = source_cfg.pop("_inventory_summary", None)
-            if summary:
-                source_report["summary"] = summary
-            report["sources"][source_id] = source_report
-        except Exception as exc:
+        inventoriable.append((source_id, source_cfg))
+
+    # Fase 2: raccolta (seriale con workers=1, parallela con workers>1)
+    collected: dict[str, tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]] = {}
+    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+        future_to_id = {
+            executor.submit(_collect_source, source_id, source_cfg, captured_at): source_id
+            for source_id, source_cfg in inventoriable
+        }
+        for future in as_completed(future_to_id):
+            sid, rows, warning, summary, exc = future.result()
+            collected[sid] = (rows, warning, summary, exc)
+
+    # Fase 3: assembla report in ordine del registry
+    for source_id, source_cfg in inventoriable:
+        rows, warning, summary, exc = collected[source_id]
+        if exc is not None:
             report["sources"][source_id] = {
                 "status": "error",
                 "protocol": source_cfg.get("protocol"),
                 "error": str(exc),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
             }
+            continue
+        all_rows.extend(rows)
+        source_report: dict[str, Any] = {
+            "status": "ok",
+            "protocol": source_cfg.get("protocol"),
+            "rows": len(rows),
+            "method": source_cfg.get("catalog_baseline", {}).get("method"),
+        }
+        if warning:
+            source_report["warning"] = warning
+        if summary:
+            source_report["summary"] = summary
+        report["sources"][source_id] = source_report
 
     if not all_rows:
         raise RuntimeError("No catalog inventory rows collected.")
