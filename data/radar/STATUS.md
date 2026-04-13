@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-04-12
+Ultimo run: 2026-04-13
 
 ## Sommario
 
@@ -31,10 +31,10 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | popolazione-istat |
+| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat-gini-regionale, istat-housing-crowding, istat-ipab-aree |
 | anac | catalog | ckan | catalog-watch | YELLOW | 403 | - |
-| inps | catalog | ckan | catalog-watch | GREEN | 200 | pens_2017, pens_2024 |
-| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | dipendenti-pubblici, opencoesione-pagamenti-ue-2014-2020 |
+| inps | catalog | ckan | catalog-watch | GREEN | 200 | inps-pensioni |
+| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | dipendenti-pubblici, bdap-lea |
 | dati_salute | catalog | html | catalog-watch | RED | - | - |
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
 | mim_opendata | portal | html | radar-only | GREEN | 200 | mim-alunni-corso-eta |
