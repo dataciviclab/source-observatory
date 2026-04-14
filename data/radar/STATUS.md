@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-04-13
+Ultimo run: 2026-04-14
 
 ## Sommario
 
@@ -31,7 +31,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat-gini-regionale, istat-housing-crowding, istat-ipab-aree |
+| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat-gini-regionale, istat-housing-crowding, istat-ipab-aree |
 | anac | catalog | ckan | catalog-watch | YELLOW | 403 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps-pensioni |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | dipendenti-pubblici, bdap-lea |
@@ -43,11 +43,11 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_ustat | catalog | ckan | catalog-watch | YELLOW | - | - |
-| opencoesione | catalog | rest | catalog-watch | YELLOW | 403 | opencoesione-pagamenti-ue-2014-2020 |
+| opencoesione | catalog | rest | catalog-watch | GREEN | 200 | opencoesione-pagamenti-ue-2014-2020 |
 
 ## Note
 
+- `istat_sdmx`: Timeout (ReadTimeout)
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | Catalogo CKAN piccolo ma pulito, adatto a segnali leggibili.
 - `dati_salute`: SSL verify failed; fallback connection error (SSLError)
 - `mim_ustat`: Timeout (ConnectTimeout)
-- `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/api/ | API REST custom con endpoint aggregati e data_aggiornamento. Usare per change detection e trigger re-run del candidate DI.
