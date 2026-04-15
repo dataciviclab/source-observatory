@@ -19,7 +19,7 @@ Partire da un inventory di catalogo (generato da `scripts/build_catalog_inventor
 
 Questo workflow serve a chiudere il gap tra un inventory ampio/rumoroso e i workflow successivi di approfondimento.
 
-## Quando usarla
+## Quando usarlo
 
 Usalo quando hai già uno di questi input:
 - `data/catalog_inventory/generated/*.parquet` (generato dalla CI o manualmente)
@@ -27,7 +27,7 @@ Usalo quando hai già uno di questi input:
 
 Usalo soprattutto se devi capire rapidamente cosa vale la pena approfondire e cosa ignorare senza perdere tempo.
 
-## Non usarla quando
+## Non usarlo quando
 
 - Devi verificare davvero una singola fonte: in quel caso fai [source-check.md](./source-check.md).
 - Devi confrontare un portale con una baseline per vedere cambiamenti strutturali: in quel caso fai [catalog-watch.md](./catalog-watch.md).

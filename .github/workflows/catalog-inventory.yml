@@ -50,9 +50,11 @@ jobs:
 
           report_path = Path("data/catalog_inventory/generated/catalog_inventory_report.json")
           report = json.loads(report_path.read_text(encoding="utf-8"))
+          repo = "${{ github.repository }}"
+          sha = "${{ github.sha }}"
 
           lines = ["## Catalog inventory", ""]
-          lines.append("Workflow: [catalog-inventory-scout.md](workflows/catalog-inventory-scout.md)")
+          lines.append(f"Workflow: [catalog-inventory-scout.md](https://github.com/{repo}/blob/{sha}/workflows/catalog-inventory-scout.md)")
           lines.append("")
 
           sources = report.get("sources", {})
