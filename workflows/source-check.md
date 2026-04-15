@@ -50,6 +50,7 @@ Usalo quando hai già:
 Usalo anche quando:
 
 - `catalog-watch` segnala un caso che merita verifica umana
+- `catalog-inventory-scout` produce una shortlist di item promettenti
 - un portale è vivo ma non è ancora chiaro se il dato valga davvero
 
 Non usarlo quando:

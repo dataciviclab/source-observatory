@@ -52,6 +52,8 @@ jobs:
           report = json.loads(report_path.read_text(encoding="utf-8"))
 
           lines = ["## Catalog inventory", ""]
+          lines.append("Workflow: [catalog-inventory-scout.md](workflows/catalog-inventory-scout.md)")
+          lines.append("")
 
           sources = report.get("sources", {})
           error_count = sum(1 for info in sources.values() if info.get("status") == "error")
