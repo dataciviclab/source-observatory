@@ -472,17 +472,17 @@ def collect_ckan_inventory(
             source_id, source_cfg, captured_at
         )
         enriched_by_id = {row["item_id"]: row for row in current_rows}
-        merged_rows: list[dict[str, Any]] = []
+        fallback_merged_rows: list[dict[str, Any]] = []
         missing_metadata = 0
         for row in package_list_rows:
             enriched = enriched_by_id.get(row["item_id"])
             if enriched is None:
                 missing_metadata += 1
-                merged_rows.append(row)
+                fallback_merged_rows.append(row)
             else:
-                merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
+                fallback_merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
 
-        warning: dict[str, Any] = {
+        fallback_warning: dict[str, Any] = {
             "type": "fallback_current_package_list_with_resources",
             "message": "Fallback da package_search a current_package_list_with_resources.",
             "package_search_error": str(search_exc)
@@ -492,8 +492,8 @@ def collect_ckan_inventory(
             "rows_missing_metadata": missing_metadata,
         }
         if current_warning:
-            warning["current_list_warning"] = current_warning
-        return merged_rows, warning
+            fallback_warning["current_list_warning"] = current_warning
+        return fallback_merged_rows, fallback_warning
     except Exception as current_list_exc:
         return package_list_rows, {
             "type": "fallback_package_list",
