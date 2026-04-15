@@ -143,7 +143,7 @@ Per ogni fonte e per ogni run, usare un solo segnale primario:
 Regole:
 
 - `follow-up candidate` è un suggerimento di follow-up umano, non un automatismo
-- quando il segnale è `follow-up candidate` o `inventory change`, il catalog inventory (`scripts/build_catalog_inventory.py`) è il punto di partenza per shortlistare item concreti senza navigare il portale a mano
+- quando il segnale è `follow-up candidate` o `inventory change`, il workflow [catalog-inventory-scout.md](./catalog-inventory-scout.md) è il punto di partenza per triagiare l'inventory e shortlistare item concreti senza navigare il portale a mano
 - se il metodo osservato non è comparabile con la baseline, preferire `[DATO MANCANTE]`
 - se il problema è soprattutto di raggiungibilità o affidabilità, preferire `health`
 

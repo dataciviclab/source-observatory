@@ -42,16 +42,14 @@ Una nota o checklist verificata che chiuda con un solo verdetto:
 - `portale utile solo per source-check item-based`
 - `superficie non abbastanza chiara`
 
-## Quando usarla
-
-Usarla quando:
+## Quando usarlo
 
 - un portale nuovo entra nel radar del repo
 - una landing dati sembra catalogo ma la superficie reale non è ancora chiara
 - una fonte sembra promettente ma non è chiaramente CKAN, SDMX o altra famiglia già nota
 - serve una classificazione prima di aggiornare `sources_registry.yaml`
 
-Non usarla quando:
+Non usarlo quando:
 
 - devi verificare una singola fonte o file: in quel caso usare `source-check`
 - hai già un inventory leggibile e devi shortlistare item: in quel caso lavorare sull'inventory

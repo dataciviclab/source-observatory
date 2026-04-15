@@ -36,8 +36,8 @@ Non serve a:
 
 - aprire automaticamente issue, PR o Discussion
 - fare intake in `dataset-incubator`
-- fare monitoraggio continuo
-- sostituire `radar-check` o `catalog-watch`
+- monitorare ogni risorsa singolarmente (usare `resource-monitor`)
+- sostituire l'health check radar ([docs/runbook.md#radar](../docs/runbook.md#radar)) o `catalog-watch`
 
 ## Quando usarlo
 
@@ -50,6 +50,7 @@ Usalo quando hai già:
 Usalo anche quando:
 
 - `catalog-watch` segnala un caso che merita verifica umana
+- `catalog-inventory-scout` produce una shortlist di item promettenti
 - un portale è vivo ma non è ancora chiaro se il dato valga davvero
 
 Non usarlo quando:
@@ -76,7 +77,7 @@ Nel dubbio:
 Fermati e non forzare source-check quando:
 
 - hai solo un tema astratto ma non una fonte reale
-- il caso appartiene ancora a `radar-check` o `catalog-watch`
+- il caso appartiene ancora all'health check radar ([docs/runbook.md#radar](../docs/runbook.md#radar)) o `catalog-watch`
 - il caso è già abbastanza maturo da richiedere direttamente un workflow successivo
 - stai per aprire automaticamente artifact pubblici senza aver chiuso il verdetto
 - la fonte è così opaca che non riesci a verificare neppure il minimo accesso reale

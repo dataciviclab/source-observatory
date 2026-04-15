@@ -21,10 +21,21 @@ Output:
 
 Scheduling v0:
 
-- run giornaliero via GitHub Actions
+- run giornaliero via GitHub Actions (`radar-scheduled.yml`)
 - `workflow_dispatch` disponibile per run manuali
 - il modello v0 è `report-only`: aggiorna `STATUS.md` e `sources_registry.yaml`
 - nessuna issue automatica o alerting complesso in questa fase
+
+Manutenzione del Registry:
+
+- Se una fonte è stabilmente giù, verificare manualmente l'URL.
+- Se l'URL è cambiato, aggiornare `data/radar/sources_registry.yaml`.
+- Se la fonte è definitivamente rimossa, valutare la disattivazione o rimozione nel registry.
+
+Boundary:
+
+- Se il problema è di contenuto (non infrastrutturale) -> [source-check.md](../workflows/source-check.md)
+- Se il catalogo è cambiato ma la fonte è viva -> [catalog-watch.md](../workflows/catalog-watch.md)
 
 ## Catalog-watch
 
