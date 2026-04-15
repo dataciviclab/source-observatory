@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -103,6 +104,14 @@ jobs:
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         uses: google-github-actions/setup-gcloud@v3
 
+      - name: Download previous report
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        continue-on-error: true
+        run: |
+          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
+          prefix="${prefix%/}"
+          gcloud storage cp "$prefix/catalog_inventory_report.json" previous_report.json || echo "{}" > previous_report.json
+
       - name: Upload snapshot to GCS
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         run: |
@@ -120,3 +129,16 @@ jobs:
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/catalog_inventory_report.json"
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/snapshots/catalog_inventory_${stamp}.parquet"
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/snapshots/catalog_inventory_report_${stamp}.json"
+
+      - name: Generate diff and alert
+        if: ${{ hashFiles('previous_report.json') != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/catalog_diff.py previous_report.json data/catalog_inventory/generated/catalog_inventory_report.json --output diff.md
+          if [ -s diff.md ]; then
+            echo "Diff rilevato. Apro issue."
+            gh issue create --title "[Catalog] Rilevate variazioni nell'inventario" --body-file diff.md --label "catalog-alert"
+          else
+            echo "Nessuna variazione rilevata."
+          fi
