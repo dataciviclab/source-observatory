@@ -19,3 +19,7 @@ Thumbs.db
 
 # Runtime monitor outputs
 data/monitor/reports/diff_summary.json
+
+# Local artifacts (parquet, reports)
+data/catalog_inventory/generated/
+
