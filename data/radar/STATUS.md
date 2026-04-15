@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-04-14
+Ultimo run: 2026-04-15
 
 ## Sommario
 
 - Fonti controllate: 13
-- GREEN: 9
-- YELLOW: 3
-- RED: 1
+- GREEN: 5
+- YELLOW: 8
+- RED: 0
 
 ## Tipi sorgente
 
@@ -34,20 +34,24 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat-gini-regionale, istat-housing-crowding, istat-ipab-aree |
 | anac | catalog | ckan | catalog-watch | YELLOW | 403 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps-pensioni |
-| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | dipendenti-pubblici, bdap-lea |
-| dati_salute | catalog | html | catalog-watch | RED | - | - |
+| openbdap | catalog | ckan | catalog-watch | YELLOW | - | dipendenti-pubblici, bdap-lea |
+| dati_salute | catalog | html | catalog-watch | YELLOW | - | - |
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
 | mim_opendata | portal | html | radar-only | GREEN | 200 | mim-alunni-corso-eta |
-| dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | - |
+| dati_camera | catalog | sparql | catalog-watch | YELLOW | 403 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | - |
-| consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| consip_open_data | catalog | ckan | catalog-watch | YELLOW | - | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_ustat | catalog | ckan | catalog-watch | YELLOW | - | - |
-| opencoesione | catalog | rest | catalog-watch | GREEN | 200 | opencoesione-pagamenti-ue-2014-2020 |
+| opencoesione | catalog | rest | catalog-watch | YELLOW | 403 | opencoesione-pagamenti-ue-2014-2020 |
 
 ## Note
 
-- `istat_sdmx`: Timeout (ReadTimeout)
+- `istat_sdmx`: Timeout (ConnectTimeout)
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | Catalogo CKAN piccolo ma pulito, adatto a segnali leggibili.
-- `dati_salute`: SSL verify failed; fallback connection error (SSLError)
+- `openbdap`: Timeout (ConnectTimeout)
+- `dati_salute`: Timeout (ConnectTimeout)
+- `dati_camera`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.camera.it/sparql | Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.
+- `consip_open_data`: Timeout (ConnectTimeout)
 - `mim_ustat`: Timeout (ConnectTimeout)
+- `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/api/ | API REST custom con endpoint aggregati e data_aggiornamento. Usare per change detection e trigger re-run del candidate DI.
