@@ -135,10 +135,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python scripts/catalog_diff.py previous_report.json data/catalog_inventory/generated/catalog_inventory_report.json --output diff.md
+          # Skip diff on first run (no baseline yet — previous_report.json is empty {})
+          if python -c "import json,sys; d=json.load(open('previous_report.json')); sys.exit(0 if d.get('sources') else 1)"; then
+            python scripts/catalog_diff.py previous_report.json data/catalog_inventory/generated/catalog_inventory_report.json --output diff.md
+          else
+            echo "Nessun baseline precedente — skip diff (primo run)."
+            exit 0
+          fi
+
           if [ -s diff.md ]; then
-            echo "Diff rilevato. Apro issue."
-            gh issue create --title "[Catalog] Rilevate variazioni nell'inventario" --body-file diff.md --label "catalog-alert"
+            echo "Diff rilevato."
+            ISSUE_TITLE="[Catalog] Variazioni rilevate nell'inventario"
+            EXISTING=$(gh issue list --label "catalog-alert" --state open --json number,title --jq ".[] | select(.title==\"$ISSUE_TITLE\") | .number" | head -1)
+            if [ -n "$EXISTING" ]; then
+              echo "Aggiorno issue #$EXISTING esistente."
+              gh issue comment "$EXISTING" --body-file diff.md
+            else
+              echo "Apro nuova issue."
+              gh issue create --title "$ISSUE_TITLE" --body-file diff.md --label "catalog-alert"
+            fi
           else
             echo "Nessuna variazione rilevata."
           fi
