@@ -1,9 +1,15 @@
 from __future__ import annotations
 
-import requests
 from typing import Any
 
-from .base import CollectorResult, sparql_binding_value, compact_uri_name, append_unique, parse_int
+from .base import (
+    CollectorResult,
+    sparql_binding_value,
+    compact_uri_name,
+    append_unique,
+    parse_int,
+    observatory_get,
+)
 
 
 SPARQL_QUERY_TEMPLATES = {
@@ -166,12 +172,11 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     sparql_cfg = source_cfg.get("sparql") or {}
     endpoint = sparql_cfg.get("endpoint_url") or source_cfg["base_url"]
     query_text, query_name = build_sparql_query(source_cfg)
-    response = requests.get(
+    response = observatory_get(
         endpoint,
         params={"query": query_text, "format": "application/sparql-results+json"},
         headers={
             "Accept": "application/sparql-results+json",
-            "User-Agent": "DataCivicLab Source Observatory",
         },
         timeout=int(sparql_cfg.get("timeout_seconds", 60)),
     )

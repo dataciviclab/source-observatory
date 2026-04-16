@@ -5,6 +5,12 @@ from dataclasses import dataclass
 from typing import Any
 from datetime import datetime, timezone
 
+import requests
+
+
+USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
+DEFAULT_TIMEOUT_SECONDS = 60
+
 
 @dataclass
 class CollectorResult:
@@ -15,6 +21,35 @@ class CollectorResult:
 
 def now_utc_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def get_observatory_session() -> requests.Session:
+    session = requests.Session()
+    session.headers.update(
+        {
+            "User-Agent": USER_AGENT,
+            "Connection": "close",
+        }
+    )
+    return session
+
+
+def observatory_get(
+    url: str,
+    *,
+    timeout: int | float = DEFAULT_TIMEOUT_SECONDS,
+    headers: dict[str, str] | None = None,
+    **kwargs: Any,
+) -> requests.Response:
+    request_headers = dict(headers or {})
+    with get_observatory_session() as session:
+        response = session.get(
+            url,
+            timeout=timeout,
+            headers=request_headers or None,
+            **kwargs,
+        )
+    return response
 
 
 def strip_query(url: str) -> str:

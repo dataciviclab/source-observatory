@@ -4,7 +4,7 @@ import time
 import requests
 from typing import Any
 
-from .base import CollectorResult, strip_query, inventory_cfg
+from .base import CollectorResult, strip_query, inventory_cfg, observatory_get
 
 
 CKAN_ACTION_NAMES = {
@@ -33,11 +33,26 @@ def ckan_action_endpoint(base_url: str, action: str) -> str:
 
 def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
     timeout = kwargs.pop("timeout", 60)
-    headers = kwargs.pop("headers", {}) or {}
-    headers.setdefault("Connection", "close")
-    response = requests.get(url, timeout=timeout, headers=headers, **kwargs)
+    headers = kwargs.pop("headers", None)
+    response = observatory_get(url, timeout=timeout, headers=headers, **kwargs)
     response.raise_for_status()
-    return response.json()
+    content_type = (response.headers.get("content-type") or "").lower()
+    if "json" not in content_type:
+        preview = response.text[:200].replace("\n", " ").strip()
+        raise ValueError(
+            "CKAN API returned non-JSON content "
+            f"(status={response.status_code}, content_type={content_type or 'unknown'}, "
+            f"preview={preview!r})"
+        )
+    try:
+        return response.json()
+    except ValueError as exc:
+        preview = response.text[:200].replace("\n", " ").strip()
+        raise ValueError(
+            "CKAN API returned invalid JSON "
+            f"(status={response.status_code}, content_type={content_type or 'unknown'}, "
+            f"preview={preview!r})"
+        ) from exc
 
 
 def extract_ckan_inventory_row(
@@ -453,4 +468,3 @@ def collect(
                 "current_list_error": str(current_list_exc),
             },
         )
-

@@ -5,7 +5,7 @@ import requests
 import xml.etree.ElementTree as ET
 from typing import Any
 
-from .base import CollectorResult
+from .base import CollectorResult, observatory_get
 from _constants import SDMX_RETRYABLE_STATUS_CODES, SDMX_RETRY_DELAYS_SECONDS
 
 
@@ -25,7 +25,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
 
     for attempt in range(1, attempts + 1):
         try:
-            response = requests.get(endpoint, timeout=120)
+            response = observatory_get(endpoint, timeout=120)
             response.raise_for_status()
             break
         except (requests.Timeout, requests.ConnectionError) as exc:
@@ -51,7 +51,14 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     if response is None:
         raise RuntimeError(f"SDMX fetch produced no response for {source_id}")
 
-    root = ET.fromstring(response.content)
+    try:
+        root = ET.fromstring(response.content)
+    except ET.ParseError as exc:
+        preview = response.text[:200].replace("\n", " ").strip()
+        raise ValueError(
+            f"SDMX endpoint returned invalid XML for {source_id} "
+            f"(status={response.status_code}, preview={preview!r})"
+        ) from exc
 
     ns = {
         "message": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message",
