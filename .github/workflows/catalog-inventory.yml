@@ -41,7 +41,7 @@ jobs:
 
       - name: Build catalog inventory
         run: |
-          python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/generated
+          python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/generated --workers=4
 
       - name: Publish summary
         run: |

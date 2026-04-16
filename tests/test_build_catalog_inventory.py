@@ -1,16 +1,30 @@
 from __future__ import annotations
 
 import build_catalog_inventory
+import collectors.ckan
+import collectors.sparql
 
 
 class FakeJsonResponse:
-    def __init__(self, payload: dict) -> None:
+    def __init__(
+        self,
+        payload: dict | None,
+        *,
+        status_code: int = 200,
+        text: str = "",
+        headers: dict[str, str] | None = None,
+    ) -> None:
         self._payload = payload
+        self.status_code = status_code
+        self.text = text
+        self.headers = headers or {"content-type": "application/json"}
 
     def raise_for_status(self) -> None:
         return None
 
     def json(self) -> dict:
+        if self._payload is None:
+            raise ValueError("invalid json")
         return self._payload
 
 
@@ -97,7 +111,7 @@ def test_collect_ckan_inventory_merges_current_list_metadata(monkeypatch) -> Non
         "collect_ckan_inventory_via_current_list",
         fake_current_list,
     )
-    monkeypatch.setattr(build_catalog_inventory.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(collectors.ckan.time, "sleep", lambda _seconds: None)
 
     rows, warning = build_catalog_inventory.collect_ckan_inventory(
         "demo", source_cfg, "2026-04-09T12:00:00+00:00"
@@ -288,6 +302,27 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
     assert warning["rows_missing_metadata"] == 1
 
 
+def test_ckan_get_json_reports_non_json_response(monkeypatch) -> None:
+    def fake_get(*_args, **_kwargs):
+        return FakeJsonResponse(
+            None,
+            text="<html>Request Rejected</html>",
+            headers={"content-type": "text/html"},
+        )
+
+    monkeypatch.setattr(collectors.ckan, "observatory_get", fake_get)
+
+    try:
+        collectors.ckan.ckan_get_json("https://example.test/api/3/action/package_list")
+    except ValueError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("Expected non-JSON CKAN response to raise ValueError")
+
+    assert "non-JSON" in message
+    assert "Request Rejected" in message
+
+
 def test_collect_sparql_inventory_groups_distribution_bindings(monkeypatch) -> None:
     source_cfg = {
         "base_url": "https://example.test/sparql",
@@ -358,7 +393,7 @@ def test_collect_sparql_inventory_groups_distribution_bindings(monkeypatch) -> N
         assert "LIMIT 10" in kwargs["params"]["query"]
         return FakeJsonResponse(payload)
 
-    monkeypatch.setattr(build_catalog_inventory.requests, "get", fake_get)
+    monkeypatch.setattr(collectors.sparql, "observatory_get", fake_get)
 
     rows, warning = build_catalog_inventory.collect_sparql_inventory(
         "demo_sparql", source_cfg, "2026-04-11T12:00:00+00:00"
