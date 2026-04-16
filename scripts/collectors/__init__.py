@@ -16,7 +16,7 @@ def supported_protocols() -> set[str]:
 
 
 def dispatch(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> CollectorResult:
-    protocol = source_cfg.get("protocol")
+    protocol: str = source_cfg.get("protocol") or ""
     collector = COLLECTORS.get(protocol)
     if not collector:
         raise ValueError(f"Unsupported protocol for catalog inventory: {protocol}")
