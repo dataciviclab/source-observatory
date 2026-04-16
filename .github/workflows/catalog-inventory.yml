@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -103,6 +104,13 @@ jobs:
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         uses: google-github-actions/setup-gcloud@v3
 
+      - name: Download previous report
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        run: |
+          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
+          prefix="${prefix%/}"
+          gcloud storage cp "$prefix/catalog_inventory_report.json" previous_report.json || echo "{}" > previous_report.json
+
       - name: Upload snapshot to GCS
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         run: |
@@ -120,3 +128,31 @@ jobs:
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/catalog_inventory_report.json"
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/snapshots/catalog_inventory_${stamp}.parquet"
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/snapshots/catalog_inventory_report_${stamp}.json"
+
+      - name: Generate diff and alert
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Skip diff on first run (no baseline yet — previous_report.json is empty {})
+          if python -c "import json,sys; d=json.load(open('previous_report.json')); sys.exit(0 if d.get('sources') else 1)"; then
+            python scripts/catalog_diff.py previous_report.json data/catalog_inventory/generated/catalog_inventory_report.json --output diff.md
+          else
+            echo "Nessun baseline precedente — skip diff (primo run)."
+            exit 0
+          fi
+
+          if [ -s diff.md ]; then
+            echo "Diff rilevato."
+            ISSUE_TITLE="[Catalog] Variazioni rilevate nell'inventario"
+            EXISTING=$(gh issue list --label "catalog-alert" --state open --json number,title --jq ".[] | select(.title==\"$ISSUE_TITLE\") | .number" | head -1)
+            if [ -n "$EXISTING" ]; then
+              echo "Aggiorno issue #$EXISTING esistente."
+              gh issue comment "$EXISTING" --body-file diff.md
+            else
+              echo "Apro nuova issue."
+              gh issue create --title "$ISSUE_TITLE" --body-file diff.md --label "catalog-alert"
+            fi
+          else
+            echo "Nessuna variazione rilevata."
+          fi
