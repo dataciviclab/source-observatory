@@ -23,12 +23,12 @@ istat_sdmx:
 anac:
   source_kind: catalog
   protocol: ckan
-  observation_mode: catalog-watch
+  observation_mode: radar-only
   base_url: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1
   inventory:
     non_inventoriable: true
-    reason: Fonte osservata in source-observatory, ma non inventariabile con client
-      HTTP standard per via di una risposta WAF 'Request Rejected'.
+    reason: WAF strutturale - restituisce HTML 'Request Rejected' su qualsiasi client
+      HTTP non browser. Confermato 2026-04-16.
   last_probed: '2026-04-16'
   catalog_baseline:
     captured_at: '2026-03-28'
@@ -36,9 +36,10 @@ anac:
     value: 69
     method: package_list
     reliability: low
-    note: Conteggio totale package rilevati via CKAN Action API.
-  verdict: go
-  note: Catalogo CKAN piccolo ma pulito, adatto a segnali leggibili.
+    note: Conteggio rilevato prima del blocco WAF. Non aggiornabile con HTTP standard.
+  verdict: hold
+  note: WAF blocca endpoint CKAN. Declassato a radar-only finche' non disponibile
+    endpoint alternativo o accesso istituzionale.
   datasets_in_use: []
 inps:
   source_kind: catalog
@@ -88,7 +89,7 @@ openbdap:
 dati_salute:
   source_kind: catalog
   protocol: html
-  observation_mode: catalog-watch
+  observation_mode: radar-only
   base_url: https://www.dati.salute.gov.it/
   last_probed: '2026-04-16'
   catalog_baseline:
@@ -97,12 +98,12 @@ dati_salute:
     value: 191
     method: sitemap_dataset_count
     reliability: medium
-    note: Conteggio URL /it/dataset/ dal sitemap-0.xml sul dominio www. Protocollo
-      html non ancora supportato dal builder; watch manuale finche' non aggiunto.
+    note: Conteggio URL /it/dataset/ dal sitemap-0.xml. Protocollo html non supportato
+      dal builder; il radar fallisce per SSL. Watch manuale finche' html non aggiunto.
   verdict: go
-  note: Portale Ministero Salute con sitemap replicabile; usare dominio con www. Separare
-    eventuali superfici ISS/EpiCentro come radar-only. Protocollo html fuori dal builder
-    attuale.
+  note: Portale Ministero Salute con sitemap replicabile. Declassato a radar-only
+    perche' il protocollo html non e' supportato dal builder e il probe SSL fallisce.
+    Riportare a catalog-watch quando html e' supportato.
   datasets_in_use: []
 inail_opendata:
   source_kind: portal
@@ -221,7 +222,7 @@ lavoro_opendata:
   verdict: go
   note: Portale Ministero del Lavoro (SPOD CKAN) con API stabile e catalogo ~159 dataset.
   datasets_in_use: []
-mim_ustat:
+mur_ustat:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
@@ -237,7 +238,7 @@ mim_ustat:
       completi, aggiornamenti recenti.
   verdict: go
   note: Portale MUR USTAT (istruzione superiore/AFAM/DSU) con CKAN stabile e aggiornamenti
-    recenti. Proposto per catalog-watch.
+    recenti. Rinominato da mim_ustat (naming errato).
   datasets_in_use: []
 opencoesione:
   source_kind: catalog
