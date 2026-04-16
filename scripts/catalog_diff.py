@@ -2,15 +2,17 @@
 """
 Compara due report di catalog inventory e genera un sommario markdown delle divergenze.
 """
+
 from __future__ import annotations
 import json
 import argparse
 import sys
-from pathlib import Path
+
 
 def load_report(path: str) -> dict:
-    with open(path, 'r', encoding='utf-8') as f:
+    with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
 
 def is_baseline_empty(report: dict) -> bool:
     """True if the report has no sources — signals a missing baseline (first run)."""
@@ -60,13 +62,17 @@ def generate_diff(old_report: dict, new_report: dict) -> str:
     if regressions:
         lines.append("#### Regressioni (ok → errore)")
         for key, val in regressions:
-            lines.append(f"- `{key}` ({val.get('protocol', 'n/d')}): {val.get('status')} — {val.get('error') or val.get('reason', 'n/d')}")
+            lines.append(
+                f"- `{key}` ({val.get('protocol', 'n/d')}): {val.get('status')} — {val.get('error') or val.get('reason', 'n/d')}"
+            )
         lines.append("")
 
     if added:
         lines.append("#### Nuove fonti rilevate")
         for key, val in added:
-            lines.append(f"- `{key}`: {val.get('rows', 0)} item ({val.get('protocol', 'n/d')})")
+            lines.append(
+                f"- `{key}`: {val.get('rows', 0)} item ({val.get('protocol', 'n/d')})"
+            )
         lines.append("")
 
     if removed:
@@ -88,27 +94,29 @@ def generate_diff(old_report: dict, new_report: dict) -> str:
     lines.append(f"Calcolato il: {new_report.get('captured_at', 'n/d')}")
     return "\n".join(lines)
 
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("old_report", help="Path al report JSON precedente")
     parser.add_argument("new_report", help="Path al report JSON attuale")
     parser.add_argument("--output", help="Path al file markdown di output (opzionale)")
     args = parser.parse_args()
-    
+
     try:
         old_data = load_report(args.old_report)
         new_data = load_report(args.new_report)
     except Exception as e:
         print(f"Errore caricamento report: {e}", file=sys.stderr)
         sys.exit(1)
-        
+
     markdown = generate_diff(old_data, new_data)
-    
+
     if args.output:
-        with open(args.output, 'w', encoding='utf-8') as f:
+        with open(args.output, "w", encoding="utf-8") as f:
             f.write(markdown)
     else:
         print(markdown)
+
 
 if __name__ == "__main__":
     main()
