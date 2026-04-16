@@ -106,7 +106,6 @@ jobs:
 
       - name: Download previous report
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
-        continue-on-error: true
         run: |
           prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
           prefix="${prefix%/}"
@@ -131,7 +130,7 @@ jobs:
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/snapshots/catalog_inventory_report_${stamp}.json"
 
       - name: Generate diff and alert
-        if: ${{ hashFiles('previous_report.json') != '' }}
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

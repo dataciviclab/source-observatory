@@ -29,6 +29,8 @@ def generate_diff(old_report: dict, new_report: dict) -> str:
     removed = []
     changed = []
     regressions = []
+    recoveries = []
+    persistent_errors = []
 
     for key in all_keys:
         old_val = old_sources.get(key)
@@ -41,20 +43,24 @@ def generate_diff(old_report: dict, new_report: dict) -> str:
         else:
             old_status = old_val.get("status", "ok")
             new_status = new_val.get("status", "ok")
-            if old_status == "ok" and new_status != "ok":
+            old_ok = old_status == "ok"
+            new_ok = new_status == "ok"
+            if old_ok and not new_ok:
                 regressions.append((key, new_val))
-            elif old_status != "ok" and new_status == "ok":
-                # recovery — treat as changed (positive)
-                old_rows = old_val.get("rows", 0)
-                new_rows = new_val.get("rows", 0)
-                changed.append((key, old_rows, new_rows))
-            elif old_status == "ok" and new_status == "ok":
+            elif not old_ok and new_ok:
+                recoveries.append((key, new_val))
+            elif not old_ok and not new_ok:
+                # errore → errore: segnala se il messaggio cambia o sempre
+                old_err = old_val.get("error") or old_val.get("reason", "")
+                new_err = new_val.get("error") or new_val.get("reason", "")
+                persistent_errors.append((key, new_val, old_err != new_err))
+            else:
                 old_rows = old_val.get("rows", 0)
                 new_rows = new_val.get("rows", 0)
                 if old_rows != new_rows:
                     changed.append((key, old_rows, new_rows))
 
-    if not added and not removed and not changed and not regressions:
+    if not added and not removed and not changed and not regressions and not recoveries and not persistent_errors:
         return ""
 
     lines = ["### Variazioni nel Catalogo", ""]
@@ -64,6 +70,23 @@ def generate_diff(old_report: dict, new_report: dict) -> str:
         for key, val in regressions:
             lines.append(
                 f"- `{key}` ({val.get('protocol', 'n/d')}): {val.get('status')} — {val.get('error') or val.get('reason', 'n/d')}"
+            )
+        lines.append("")
+
+    if persistent_errors:
+        lines.append("#### Errori persistenti (errore → errore)")
+        for key, val, changed_msg in persistent_errors:
+            suffix = " *(messaggio cambiato)*" if changed_msg else ""
+            lines.append(
+                f"- `{key}` ({val.get('protocol', 'n/d')}): {val.get('error') or val.get('reason', 'n/d')}{suffix}"
+            )
+        lines.append("")
+
+    if recoveries:
+        lines.append("#### Recovery (errore → ok)")
+        for key, val in recoveries:
+            lines.append(
+                f"- `{key}` ({val.get('protocol', 'n/d')}): tornato ok — {val.get('rows', 0)} item"
             )
         lines.append("")
 
