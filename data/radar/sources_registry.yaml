@@ -48,7 +48,7 @@ inps:
   inventory:
     skip_current_list: true
     package_show_sample: true
-    sample_size: 25
+    sample_size: 100
   last_probed: '2026-04-16'
   catalog_baseline:
     captured_at: '2026-04-02'
@@ -70,6 +70,9 @@ openbdap:
   inventory:
     skip_package_search: true
     skip_package_search_reason: timeout sistematico a 60s
+    skip_current_list: true
+    package_show_sample: true
+    sample_size: 50
   last_probed: '2026-04-16'
   catalog_baseline:
     captured_at: '2026-04-02'
@@ -210,6 +213,8 @@ lavoro_opendata:
     skip_package_search: true
     skip_package_search_reason: count inaffidabile
     skip_current_list: true
+    package_show_sample: true
+    sample_size: 50
   last_probed: '2026-04-16'
   catalog_baseline:
     captured_at: '2026-04-11'

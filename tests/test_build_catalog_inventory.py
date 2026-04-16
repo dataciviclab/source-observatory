@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import build_catalog_inventory
+import collectors.ckan
+import collectors.sparql
 
 
 class FakeJsonResponse:
@@ -97,7 +99,7 @@ def test_collect_ckan_inventory_merges_current_list_metadata(monkeypatch) -> Non
         "collect_ckan_inventory_via_current_list",
         fake_current_list,
     )
-    monkeypatch.setattr(build_catalog_inventory.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(collectors.ckan.time, "sleep", lambda _seconds: None)
 
     rows, warning = build_catalog_inventory.collect_ckan_inventory(
         "demo", source_cfg, "2026-04-09T12:00:00+00:00"
@@ -358,7 +360,7 @@ def test_collect_sparql_inventory_groups_distribution_bindings(monkeypatch) -> N
         assert "LIMIT 10" in kwargs["params"]["query"]
         return FakeJsonResponse(payload)
 
-    monkeypatch.setattr(build_catalog_inventory.requests, "get", fake_get)
+    monkeypatch.setattr(collectors.sparql.requests, "get", fake_get)
 
     rows, warning = build_catalog_inventory.collect_sparql_inventory(
         "demo_sparql", source_cfg, "2026-04-11T12:00:00+00:00"
