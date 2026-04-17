@@ -52,7 +52,7 @@ def _classify(
     if status == "error":
         error_msg = info.get("error", "errore sconosciuto")
         prev_status = prev_info.get("status") if prev_info else None
-        if prev_status == "error":
+        if prev_status == "error" and prev_info is not None:
             prev_error = prev_info.get("error", "")
             changed = prev_error != error_msg
             detail = f"Errore persistente: {error_msg}"
