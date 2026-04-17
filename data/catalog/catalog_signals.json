@@ -1,45 +1,40 @@
 {
-  "captured_at": "2026-04-12",
-  "sources_checked": 11,
+  "captured_at": "2026-04-17T22:28:15+00:00",
+  "sources_checked": 9,
   "signals": [
     {
-      "source": "istat_sdmx",
-      "protocol": "sdmx",
+      "source": "opencoesione",
+      "protocol": "rest",
       "signal_type": "no signal",
       "result": "stabile",
-      "detail": "Conteggio dataflow stabile a 4212 rispetto alla baseline.",
+      "detail": "Protocollo rest non ancora supportato dal builder inventory.",
       "suggested_action": "nessuna"
     },
     {
-      "source": "anac",
-      "protocol": "ckan",
+      "source": "istat_sdmx",
+      "protocol": "sdmx",
       "signal_type": "health",
-      "result": "regressione",
-      "detail": "WAF 'Request Rejected' torna attivo. L'endpoint restituisce HTML invece di JSON CKAN. Regressione rispetto al run 2026-04-10 che mostrava JSON valido.",
-      "suggested_action": "monitorare nei prossimi run; valutare declassamento a radar-only se persiste"
+      "result": "recovery",
+      "metric_value": 4821,
+      "detail": "Tornato ok. 4821 item (dataflow_count).",
+      "suggested_action": "nessuna"
     },
     {
       "source": "inps",
       "protocol": "ckan",
       "signal_type": "no signal",
       "result": "stabile",
-      "detail": "Endpoint UP. package_search restituisce payload vuoto (comportamento noto); package_list conferma endpoint funzionante.",
+      "metric_value": 2323,
+      "detail": "2323 item (package_list), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
       "source": "openbdap",
       "protocol": "ckan",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "detail": "Endpoint UP. package_list conferma 3772 items, in linea con la baseline. package_search count=0 e' comportamento noto.",
-      "suggested_action": "nessuna"
-    },
-    {
-      "source": "dati_salute",
-      "protocol": "html",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "detail": "Sitemap raggiungibile, 191 URL /it/dataset/ conteggiati, in linea con la baseline.",
+      "signal_type": "health",
+      "result": "recovery",
+      "metric_value": 3772,
+      "detail": "Tornato ok. 3772 item (package_list).",
       "suggested_action": "nessuna"
     },
     {
@@ -47,7 +42,8 @@
       "protocol": "sparql",
       "signal_type": "no signal",
       "result": "stabile",
-      "detail": "SPARQL endpoint risponde, 104 dataset conteggiati, stabile.",
+      "metric_value": 104,
+      "detail": "104 item (sparql_query), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -55,15 +51,17 @@
       "protocol": "sparql",
       "signal_type": "no signal",
       "result": "stabile",
-      "detail": "SPARQL endpoint risponde, 66 dataset conteggiati, stabile.",
+      "metric_value": 66,
+      "detail": "66 item (sparql_query), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
       "source": "consip_open_data",
       "protocol": "ckan",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "detail": "CKAN package_search restituisce count=17, in linea con la baseline.",
+      "signal_type": "health",
+      "result": "recovery",
+      "metric_value": 17,
+      "detail": "Tornato ok. 17 item (package_list).",
       "suggested_action": "nessuna"
     },
     {
@@ -71,24 +69,17 @@
       "protocol": "ckan",
       "signal_type": "no signal",
       "result": "stabile",
-      "detail": "SPOD CKAN package_search count=0 (noto), package_list conferma 159 items, stabile.",
+      "metric_value": 159,
+      "detail": "159 item (package_list), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
-      "source": "mim_ustat",
+      "source": "mur_ustat",
       "protocol": "ckan",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "detail": "CKAN package_search restituisce count=68, in linea con la baseline.",
-      "suggested_action": "nessuna"
-    },
-    {
-      "source": "opencoesione",
-      "protocol": "rest",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "detail": "API root UP, data_aggiornamento invariata (2025-10-31).",
-      "suggested_action": "nessuna"
+      "signal_type": "health",
+      "result": "regressione",
+      "detail": "Errore: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7fce229b9d60>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=60)'))",
+      "suggested_action": "monitorare nei prossimi run"
     }
   ]
 }
