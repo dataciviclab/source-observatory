@@ -6,7 +6,7 @@ on:
     - cron: "15 3 * * 1"
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
   issues: write
 
@@ -128,6 +128,27 @@ jobs:
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/catalog_inventory_report.json"
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/snapshots/catalog_inventory_${stamp}.parquet"
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/snapshots/catalog_inventory_report_${stamp}.json"
+
+      - name: Build catalog signals
+        run: |
+          python scripts/build_catalog_signals.py \
+            --report data/catalog_inventory/generated/catalog_inventory_report.json \
+            --previous previous_report.json \
+            --out data/catalog/catalog_signals.json
+
+      - name: Commit catalog signals
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/catalog/catalog_signals.json
+          if git diff --cached --quiet; then
+            echo "Nessuna variazione nei segnali."
+          else
+            git commit -m "chore(so): aggiorna catalog_signals.json [ci skip]"
+            git push
+          fi
 
       - name: Generate diff and alert
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
