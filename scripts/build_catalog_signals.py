@@ -96,9 +96,23 @@ def _classify(
                 "suggested_action": "nessuna",
             }
 
-        # Inventory change
+        # Inventory change — solo se il metodo di conteggio coincide (policy comparabilità)
         if prev_info and prev_info.get("status") == "ok":
             prev_rows = prev_info.get("rows", 0)
+            prev_method = prev_info.get("method")
+            if prev_method and prev_method != method:
+                return {
+                    "source": source_id,
+                    "protocol": protocol,
+                    "signal_type": "missing_data",
+                    "result": "missing_data",
+                    "metric_value": rows,
+                    "detail": (
+                        f"Metodo cambiato: precedente '{prev_method}', attuale '{method}'. "
+                        "Delta non confrontabile con la baseline."
+                    ),
+                    "suggested_action": "verificare causa cambio metodo; non usare delta come segnale",
+                }
             if rows != prev_rows:
                 delta = rows - prev_rows
                 delta_str = f"+{delta}" if delta > 0 else str(delta)
