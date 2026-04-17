@@ -1,121 +1,66 @@
-# Policy: Catalog Watch Measurement
+# Policy Catalog-Watch
 
-Data: 2026-03-31
+Scopo: evitare che un delta numerico grezzo diventi automaticamente `inventory_change`.
 
-## Scopo
+## Regola Base
 
-Chiarire come leggere i delta numerici prodotti da `catalog-watch`.
+Un delta è segnale reale solo se il confronto è metodologicamente comparabile.
 
-Un cambiamento di conteggio non va trattato automaticamente come segnale reale del catalogo.
-Prima bisogna distinguere tra:
-
-- segnale del catalogo
-- anomalia di misurazione
-
-## Regola base
-
-Per la v0, la comparabilita' dovrebbe essere leggibile anche nella baseline:
+La baseline dovrebbe dichiarare:
 
 - `metric`
 - `value`
 - `method`
-- opzionale: `reliability`
+- `reliability` opzionale
 
-Un delta numerico è un **segnale reale di catalogo** solo se il confronto è metodologicamente comparabile.
+Se il metodo non è chiaro o non è confrontabile, il delta va trattato come `missing_data`, non come novità.
 
-Se il confronto non è chiaramente comparabile, il delta va classificato come:
+## Comparabilità
 
-- `missing_data`
-- oppure `measurement anomaly`
-
-e non come `inventory_change`.
-
-## Quando un delta è comparabile
-
-Il confronto è comparabile solo se restano stabili:
+Il confronto regge solo se restano stabili:
 
 1. endpoint interrogato
 2. metodo di conteggio
-3. eventuali limiti o paginazione
+3. paginazione o limiti
 4. scope della risposta
-5. formato/parsing della risposta
+5. formato e parsing
 
-Se anche uno solo di questi punti cambia o non è verificato, il delta non è ancora affidabile.
+Se uno di questi cambia o non è verificato, il numero osservato non è affidabile.
 
-## Casi tipici
+## Casi Tipici
 
-### SDMX
-
-Segnali sospetti:
+SDMX:
 
 - conteggi molto inferiori alla baseline
-- numeri “rotondi” o ricorrenti
-- presenza nota di dataflow non inclusi nel conteggio
+- numeri rotondi o ricorrenti
+- dataflow noti non inclusi
 
-Lettura corretta:
+Lettura: probabile limite del tool o paginazione implicita, non crollo reale del catalogo.
 
-- probabile limite del tool
-- probabile paginazione implicita
-- non vero crollo del catalogo
-
-### CKAN
-
-Segnali sospetti:
+CKAN:
 
 - salto improvviso molto ampio
-- `package_list` e `package_search` che sembrano dare universi diversi
-- baseline storica ottenuta con query diversa dalla query attuale
+- `package_list` e `package_search` con universi diversi
+- baseline storica ottenuta con query diversa
 
-Lettura corretta:
+Regola: confrontare `package_list` con `package_list` e `package_search` con `package_search`. Se il metodo non coincide, usare `[DATO MANCANTE]`.
 
-- probabile mismatch di metodo
-- probabile baseline incomparabile
-- non vera espansione editoriale finché non verificata
+## Tassonomia
 
-Regola pratica:
+- `inventory_change`: delta comparabile e difendibile.
+- `structural_drift`: cambia struttura, naming, shape o comportamento.
+- `missing_data`: numero osservato non ancora affidabile.
 
-- se la baseline dichiara `method: package_list`, il confronto numerico va fatto con `package_list`
-- se la baseline dichiara `method: package_search`, il confronto numerico va fatto con `package_search`
-- se il metodo non è dichiarato o non è confrontabile, il delta va trattato come `[DATO MANCANTE]`
+`measurement anomaly` può stare nel dettaglio, ma il tipo esposto resta `missing_data`.
 
-## Tassonomia operativa
+`follow_up_candidate` non sostituisce il segnale: prima si classifica il delta, poi si decide se serve revisione umana.
 
-Usare:
-
-- `inventory_change`
-  - solo per delta comparabili e difendibili
-- `structural_drift`
-  - quando cambia struttura, naming, shape o comportamento del catalogo
-- `missing_data`
-  - quando il numero osservato non è ancora affidabile
-
-`measurement anomaly` può vivere come descrizione nel dettaglio, ma il tipo segnale da esporre nel report dovrebbe restare `missing_data`.
-
-`follow_up_candidate` non dovrebbe invece sostituire il segnale principale:
-
-- se il delta è debole o non confrontabile, resta `missing_data`
-- se il delta è difendibile, può diventare `inventory_change`
-- solo dopo, se serve davvero revisione umana, il report può suggerire un follow-up
-
-## Regola editoriale
+## Regola Editoriale
 
 Nel report:
 
-- non trasformare delta numerici grezzi in narrativa
+- non trasformare delta grezzi in narrativa
 - non usare conteggi sospetti come prova di novità
-- preferire una frase come:
-  - "conteggio non ancora confrontabile con la baseline"
+- preferire formule come "conteggio non ancora confrontabile con la baseline"
 
-## Impatto sulla v0
-
-Per la v0 pubblicabile:
-
-- meglio pochi segnali affidabili
-- peggio numeri impressionanti ma metodologicamente deboli
-
-Questo vale in particolare per:
-
-- `istat_sdmx`
-- `inps`
-
-finché il metodo di conteggio non è stabilizzato.
+Per la v0: pochi segnali affidabili battono numeri impressionanti ma deboli.

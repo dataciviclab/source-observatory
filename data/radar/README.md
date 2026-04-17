@@ -23,5 +23,5 @@ Non e' un inventario di resource e non decide se una fonte merita un candidate.
 ## Strumenti collegati
 
 - script: `scripts/radar_check.py`
-- nota d'uso: `docs/usage.md`
+- runbook: `docs/runbook.md`
 - nota architetturale: `docs/architecture.md`

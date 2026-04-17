@@ -73,5 +73,4 @@ Resta `human-run` nella v0.
 
 - [runbook.md](docs/runbook.md)
 - [architecture.md](docs/architecture.md)
-- [usage.md](docs/usage.md)
 - [catalog_watch_measurement_policy.md](docs/catalog_watch_measurement_policy.md)

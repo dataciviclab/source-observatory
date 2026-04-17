@@ -1,116 +1,43 @@
-# Architettura Intelligence Layer
+# Architettura
 
-- Data: 2026-03-27
-- Stato: architettura v0 attiva
+`source-observatory` è l'intelligence layer leggero del Lab: osserva poche fonti pubbliche ricche e decide se un segnale merita lavoro umano.
 
-## Scopo
+Non è:
 
-Trattare `source-observatory` come un piccolo intelligence layer con confini chiari:
+- una pipeline dataset
+- un sistema di intake automatico
+- monitoraggio diffuso del web
 
-- `radar_check.py` risponde a "la fonte o il catalogo è vivo?"
-- `catalog-watch` risponde a "un inventario noto è cambiato in modo rilevante?"
-- `source-check` risponde a "questa fonte merita lavoro del Lab?"
+## Responsabilità
 
-L'obiettivo non è monitorare tutto il web o "dataset in generale".
-L'obiettivo è seguire una lista molto corta di fonti e cataloghi ricchi che contano già per DataCivicLab e capire se un segnale merita davvero un passo successivo.
+- `radar_check.py`: health check della fonte o del catalogo.
+- `catalog-watch`: cambi inventariali o strutturali di cataloghi noti.
+- `catalog inventory`: snapshot tabulare degli item enumerabili.
+- `source-check`: valutazione umana di una fonte o dataset.
 
-Il repo rende di più se trattato come un intelligence layer leggero tra scouting e lavoro di pipeline.
+Il confine con `toolkit` è netto: `source-observatory` trova e qualifica segnali; `toolkit` costruisce pipeline riproducibili.
 
-## Rapporto con il toolkit
+## Stato Canonico
 
-- `toolkit`
-  - costruisce ed esegue pipeline dataset riproducibili
-- `source-observatory`
-  - osserva portali, cataloghi e resource note per segnali rilevanti
-- `source-check`
-  - decide se un segnale merita un passo successivo del Lab
-
-Quindi l'osservatorio non dovrebbe provare a diventare un secondo sistema di pipeline.
-Dovrebbe aiutare a decidere:
-
-- se una fonte è reale e stabile
-- se un cambiamento conta davvero
-- se un pattern di fonte ricorrente merita supporto nel toolkit
-
-## Struttura raccomandata
-
-### Codice
-
-- `scripts/radar_check.py`
-
-### Stato e output
-
-- `data/radar/sources_registry.yaml`
-- `data/radar/STATUS.md`
-- `data/catalog/CATALOG_WATCH_REPORT.md`
-- `data/catalog/catalog_signals.json`
-
-### Note e decisioni
-
-- `docs/usage.md`
-- `docs/runbook.md`
-- `docs/catalog_watch_measurement_policy.md`
+- Registry: `data/radar/sources_registry.yaml`
+- Radar: `data/radar/STATUS.md`
+- Catalog-watch: `data/catalog/CATALOG_WATCH_REPORT.md`
+- Signals: `data/catalog/catalog_signals.json`
+- Inventory generated: `data/catalog_inventory/generated/`
 
 ## Perimetro
 
-Il set di fonti osservate è definito in `data/radar/sources_registry.yaml`.
+Una fonte entra nel registry solo se produce segnali chiari e difendibili.
 
-Regola: se una fonte non produce segnali chiari e difendibili, resta fuori dal perimetro.
+Stati operativi:
 
-## Intelligence layer: inquadramento
+- `radar-only`: fonte utile da tenere viva, ma non inventariabile.
+- `catalog-watch`: catalogo osservabile a livello inventario.
+- `source-check item-based`: valore in pochi item specifici, non nel catalogo.
 
-L'osservatorio è più utile quando ogni segnale porta a un next step concreto:
+## Tassonomia Segnali
 
-- nessuna azione
-- source-check
-- rerun candidate
-- verifica di un dataset pubblico stabile
-- valutazione di pattern ricorrenti per il toolkit
-
-Se un segnale non implica nessuno di questi follow-up, probabilmente è rumore.
-
-Questo implica tre livelli di segnale:
-
-- `radar`
-  - salute della fonte o del catalogo
-- `catalog-watch`
-  - cambi di inventario e struttura su un catalogo noto
-
-E un piccolo modello di stato per gli oggetti osservati:
-
-- `radar-only`
-- `catalog-watch`
-
-## Cosa sta nel radar
-
-Il radar dovrebbe tenere solo salute della fonte:
-
-- base URL raggiungibile o no
-- problemi di timeout / SSL / DNS
-- metadati di protocollo a grana grossa
-
-Buoni candidati v0:
-
-- ISTAT SDMX
-- ANAC
-- INPS
-- OpenBDAP
-
-## Cosa sta in catalog-watch
-
-`catalog-watch` è il livello intermedio tra radar e monitoraggio file.
-
-Usarlo quando:
-
-- il protocollo è abbastanza stabile da poter essere osservato a livello inventario
-- il segnale può informare source-check o priorità connector del toolkit
-
-Casi tipici v0:
-
-- CKAN package inventories
-- SDMX dataflows
-
-Tassonomia raccomandata dei segnali:
+Usare pochi tipi:
 
 - `health`
 - `inventory_change`
@@ -118,24 +45,17 @@ Tassonomia raccomandata dei segnali:
 - `follow_up_candidate`
 - `missing_data`
 
-Per la v0 questa tassonomia va tenuta stretta: non va espansa facilmente e non dovrebbe mescolare segnale osservato e passo successivo.
+Il segnale osservato non va confuso con il next step. Prima si classifica il segnale, poi si decide se aprire source-check, rerun candidate, watchlist o nessuna azione.
 
-Questa tassonomia serve a evitare che il layer catalogo degeneri in:
+## Guardrail
 
-- scraping rumoroso
-- monitoraggio diffuso di singoli dataset
-- automatismi di intake o issue
+- Tenere piccolo l'universo monitorato.
+- Non trasformare delta numerici non comparabili in novità.
+- Non automatizzare issue o intake finché il rumore non resta basso.
+- Usare `catalog-watch` solo con metodo di misura dichiarato e confrontabile.
 
-## Regola pratica attuale
+## Documenti Collegati
 
-Tenere il set monitorato piccolo:
-
-- radar/catalogo: poche fonti ricche con segnali leggibili
-
-## Direzione
-
-Per la v0 pubblicabile:
-
-1. universe piccolo
-2. segnali leggibili
-4. niente automazione ampia finché il rumore non resta basso
+- [runbook.md](runbook.md): comandi e operatività.
+- [catalog_watch_measurement_policy.md](catalog_watch_measurement_policy.md): regole di comparabilità dei delta.
+- [workflows/](../workflows/): procedure per scout, watch e source-check.
