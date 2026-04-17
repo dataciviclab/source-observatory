@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 
+import pytest
 import radar_check
 
 
@@ -106,35 +107,20 @@ def test_probe_url_ssl_fallback(monkeypatch) -> None:
     assert "SSL verify failed" in (result.note or "")
 
 
-def test_validate_ckan_non_json_is_yellow() -> None:
-    """200 con HTML/WAF deve essere YELLOW, non GREEN — caso ANAC reale."""
-    response = FakeResponse(status_code=200, content_type="text/html", json_payload=None,
-                            headers={"content-type": "text/html"})
+@pytest.mark.parametrize("json_payload,content_type,headers,expected_note", [
+    (None, "text/html", {"content-type": "text/html"}, "non-JSON"),       # WAF/HTML — caso ANAC
+    ({"result": []}, "application/json", None, "missing"),                 # JSON ok ma senza success
+    (None, "application/json", None, "invalid JSON"),                      # body non parsabile
+])
+def test_validate_ckan_200_not_green(json_payload, content_type, headers, expected_note) -> None:
+    """200 da CKAN non è sempre GREEN: WAF, missing success, JSON invalido → YELLOW."""
+    response = FakeResponse(status_code=200, content_type=content_type,
+                            json_payload=json_payload, headers=headers)
     status, note = radar_check.validate_ckan_action_response(
         "https://example.test/api/3/action/package_list", response
     )
     assert status == "YELLOW"
-    assert "non-JSON" in (note or "")
-
-
-def test_validate_ckan_missing_success_is_yellow() -> None:
-    """200 con JSON valido ma senza campo success deve essere YELLOW."""
-    response = FakeResponse(status_code=200, json_payload={"result": []})
-    status, note = radar_check.validate_ckan_action_response(
-        "https://example.test/api/3/action/package_list", response
-    )
-    assert status == "YELLOW"
-    assert "missing" in (note or "").lower()
-
-
-def test_validate_ckan_invalid_json_is_yellow() -> None:
-    """200 con body non parsabile deve essere YELLOW."""
-    response = FakeResponse(status_code=200, json_payload=None)
-    status, note = radar_check.validate_ckan_action_response(
-        "https://example.test/api/3/action/package_list", response
-    )
-    assert status == "YELLOW"
-    assert "invalid JSON" in (note or "")
+    assert expected_note.lower() in (note or "").lower()
 
 
 def test_build_status_report_smoke() -> None:
