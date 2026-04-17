@@ -33,6 +33,11 @@ jobs:
       - name: Run radar
         run: python scripts/radar_check.py
 
+      - name: Validate radar output
+        run: |
+          python -c "import yaml; yaml.safe_load(open('data/radar/sources_registry.yaml'))"
+          test -s data/radar/STATUS.md
+
       - name: Commit updated radar state
         run: |
           git config user.name "github-actions[bot]"

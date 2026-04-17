@@ -1,298 +1,112 @@
 ---
 name: source-check
-description: Workflow canonico del Source Observatory per verificare se una fonte pubblica regge davvero come pista del Lab e merita un passo successivo.
+description: Workflow canonico per verificare se una fonte pubblica merita il funnel del Lab.
 license: MIT
 metadata:
-  version: "1.1"
+  version: "1.2"
   owner: "DataCivicLab"
-  tags: [source-observatory, source-check, scouting, datasets]
 ---
 
 # Workflow: source-check
 
-Workflow canonico del Source Observatory.
-Versione: 1.1 - 2026-04-09
+**Stato: Operativo (Compact Mode)**
+Verifica se una fonte regge davvero come pista del Lab prima di aprire Discussion o pipeline.
 
-## Obiettivo di fase
+## 1. Obiettivo e Boundary
 
-Decidere se una fonte o un dataset pubblico merita davvero un passo successivo del Lab.
+- **SÌ**: Verificare accesso reale e forma minima (formato, granularità, copertura).
+- **SÌ**: Distinguere tra fonte "viva" e fonte "utile" (domanda civica).
+- **SÌ**: Fissare un perimetro v0 e un verdetto unico.
+- **NO**: Fare intake in `dataset-incubator` o monitoraggio ricorrente.
+- **NO**: Sostituire l'health check radar o `catalog-watch`.
 
-Questo workflow serve a rispondere a:
+## 2. Preconditions e Stop Rules
 
-- la fonte è davvero accessibile?
-- formato, granularità e copertura reggono?
-- esiste una domanda civica plausibile?
-- il caso merita un passo successivo oppure no?
+- [ ] Hai una fonte concreta (URL, endpoint o file), non solo un tema.
+- [ ] Esiste un possibile uso civico plausibile.
+- [ ] **STOP**: Se il caso è già maturo per Discussion/PI o se appartiene al monitoraggio.
+- [ ] **STOP**: Se la fonte è totalmente opaca (niente metadata o preview).
 
-Questo workflow serve a:
+## 2b. Soglie go Discussion (checklist binaria)
 
-- verificare accesso reale e forma minima della fonte
-- distinguere tra fonte viva e fonte davvero utile
-- chiudere con un verdict unico e leggibile
-- chiarire un perimetro v0 plausibile quando la fonte regge
-- lasciare una nota locale che permetta al filone di muoversi nel funnel del Lab
+- [ ] Accesso reale confermato (non solo metadato).
+- [ ] ≥1 dimensione analitica utile (geo, temporale, categoriale).
+- [ ] Domanda civica formulabile senza join esterne obbligatorie.
+- [ ] Qualificatore ≠ `too-thin-for-v0`.
+- [ ] Non duplica un filone già aperto in Discussion o `dataset-incubator`.
 
-Non serve a:
+> Serie storica corta o chiusa **non è blocco** se la domanda civica regge da sola.
 
-- aprire automaticamente issue, PR o Discussion
-- fare intake in `dataset-incubator`
-- monitorare ogni risorsa singolarmente (usare `resource-monitor`)
-- sostituire l'health check radar ([docs/runbook.md#radar](../docs/runbook.md#radar)) o `catalog-watch`
+## 3. Passi Canonici (Checklist)
 
-## Quando usarlo
+1. **Accesso Reale**: Verifica raggiungibilità e leggibilità (redirect, login, WAF). Qualifica come `verificato` o `inferito`.
+2. **Shape minima**: Controlla formato, granularità (cosa rappresenta una riga) e copertura.
+3. **Sufficienza Semantica**:
+   - [ ] Il dato è leggibile subito?
+   - [ ] Messaggi/Valori chiave sono autonomi?
+   - [ ] Esite un output minimo senza join esterne?
+4. **Domanda Civica**: Formula in una riga *perché* non è solo un "elenco" ma serve a una domanda reale.
+5. **Perimetro v0**: Fissa geografia e finestra temporale iniziale (preferisci perimetro stretto).
+6. **Deduplica**: Controlla se il filone è già vivo in `Discussion` o `dataset-incubator`.
 
-Usalo quando hai già:
+## 4. Verdict e Output
 
-- una fonte nuova che sembra promettente
-- una URL, pagina o dataset reale da verificare
-- un sospetto ragionevole che possa reggere un filone o un support dataset
+Scegli un solo verdetto:
+- `go Discussion`: La fonte regge come pista autonoma.
+- `watchlist`: Promettente ma non pronta/accessibile ora.
+- `support dataset`: Utile solo come supporto/join.
+- `aggiorna esistente`: Il filone è già vivo, aggiorna l'artefatto esistente.
+- `no-go`: Accesso, formato o valore non reggono.
 
-Usalo anche quando:
+**Output richiesto**: nota o commento sull'issue SO con verdetto, accesso reale (stato + URL), shape, domanda civica, qualificatore e next step esplicito.
 
-- `catalog-watch` segnala un caso che merita verifica umana
-- `catalog-inventory-scout` produce una shortlist di item promettenti
-- un portale è vivo ma non è ancora chiaro se il dato valga davvero
+Schema commento:
+```
+**Verdict**: [verdetto]
 
-Non usarlo quando:
+**Accesso**: [verificato/inferito] — [URL]
+**Shape**: [formato, granularità, copertura]
+**Qualificatore**: [self-contained / usable-with-enrichment / too-thin-for-v0]
+**Domanda civica**: [1 riga]
+**Perimetro v0**: [geo + periodo + metrica]
 
-- la fonte è già stata verificata e devi solo lavorare il passo successivo
-- sei già in intake o pipeline
-- stai facendo solo un health check del portale
-- il lavoro vero è monitoraggio ricorrente e non valutazione della fonte
+**Next step**: [azione esplicita]
+```
 
-## Preconditions minime
+## 5. Se verdict = go Discussion
 
-Prima di fare un source-check dovrebbe esserci almeno:
+Il verdetto `go Discussion` significa: la fonte merita una Discussion. Il workflow deve almeno preparare il testo; pubblicarlo è un passo separato, consentito solo se il maintainer conferma o se il task lo richiede esplicitamente.
 
-- una fonte o pagina concreta, non solo un tema generico
-- un possibile uso o domanda, anche ancora grezzo
-- un next step plausibile se il caso regge
+Prepara una discussion in `dataciviclab` categoria **Datasets** con questo schema compatto:
 
-Nel dubbio:
+**Titolo**: `[fonte breve] — [domanda civica in max 8 parole]`
 
-- se non hai ancora una fonte concreta, non sei in source-check ma ancora in scouting generico
+**Body** (max 15 righe):
+```
+## Fonte ufficiale
+[ente + link/endpoint principale — 1-2 righe]
 
-## Stop rules
+## Domanda civica
+[1 domanda, max 2 righe]
 
-Fermati e non forzare source-check quando:
+## Perimetro v0
+- [geografia]
+- [periodo]
+- [metrica principale]
 
-- hai solo un tema astratto ma non una fonte reale
-- il caso appartiene ancora all'health check radar ([docs/runbook.md#radar](../docs/runbook.md#radar)) o `catalog-watch`
-- il caso è già abbastanza maturo da richiedere direttamente un workflow successivo
-- stai per aprire automaticamente artifact pubblici senza aver chiuso il verdetto
-- la fonte è così opaca che non riesci a verificare neppure il minimo accesso reale
+→ Source-check completo: [link issue SO]
+```
 
-## Passi canonici
+Poi:
+- Se pubblicata, aggiungi label `go-discussion` e commento con link alla discussion.
+- Se non pubblicata, lascia come next step `preparare/pubblicare Discussion Datasets`.
+- **Non chiudere** l'issue SO solo per il source-check: resta audit trail finché il maintainer non decide.
 
-### 1. Parti dalla fonte reale
+## 6. Qualificatori Semantici (da annotare)
 
-Usa come base:
+- `self-contained`: Pronto all'uso.
+- `usable-with-enrichment`: Serve join/mapping per valore reale.
+- `too-thin-for-v0`: Troppo scarno per il funnel attuale.
 
-- pagina ufficiale
-- file diretto
-- endpoint
-- catalogo
-
-Non partire da descrizioni di terzi se puoi verificare la fonte primaria.
-
-### 2. Verifica l'accesso reale
-
-Controlla con strumenti reali:
-
-- URL o endpoint raggiungibile
-- file o metadata leggibili davvero
-- redirect, login, JavaScript o WAF, se presenti
-- eventuale opacita' dichiarata in modo esplicito
-
-Distinguere sempre tra:
-
-- `verificato`
-- `inferito`
-
-Se il file non è accessibile ma il pattern sembra plausibile, dillo chiaramente. Non fingere accesso pieno.
-
-### 3. Verifica la shape minima del dato
-
-Controlla almeno:
-
-- formato
-- granularità
-- copertura temporale o geografica
-- una riga rappresenta cosa
-- misura o struttura principale
-
-Se il dato è abbastanza strutturato, prova anche a estrarre:
-
-- campi principali
-- dimensioni confermate
-- rischio semantico principale
-
-### 3b. Verifica la sufficienza semantica per un v0
-
-Prima di procedere, rispondi in modo esplicito:
-
-1. il dato è leggibile direttamente?
-2. le variabili chiave sono interpretabili standalone?
-3. esiste un output minimo utile senza join o metadata esterni obbligatori?
-
-Usa queste domande per distinguere tra:
-
-- fonte autosufficiente per un `v0`
-- fonte accessibile ma utile solo con enrichment
-- fonte troppo opaca o troppo scarna per reggere DI
-
-Qualificatore da annotare nella nota locale:
-
-- `self-contained`
-- `usable-with-enrichment`
-- `too-thin-for-v0`
-
-### 4. Formula la domanda civica
-
-Scrivi in una riga:
-
-- quale domanda civica la fonte potrebbe sostenere
-- perche' non è solo descrittiva o inventariale
-
-Se non riesci a formulare una domanda leggibile, è spesso un segnale che il caso apre male.
-
-### 5. Fissa un perimetro v0 plausibile
-
-Se la fonte regge, indica:
-
-- geografia o universo iniziale consigliato
-- anni o finestra temporale iniziale
-- dimensioni da tenere nel v0
-- dimensioni da lasciare fuori all'inizio
-
-Regola pratica:
-
-- meglio un v0 più stretto ma difendibile che una fonte ampia con perimetro confuso
-
-### 6. Controlla se il filone è già vivo
-
-Prima di chiudere il verdetto, verifica se esiste già un artefatto rilevante del Lab sullo stesso caso.
-
-Controlla almeno se esiste già:
-
-- una `Discussion Datasets`
-- una `Discussion Domande`
-- una `Discussion Analisi`
-- un candidate DI chiaramente aperto
-
-Se il filone è già vivo, non aprire un doppione concettuale.
-
-In quel caso il verdetto tipico non è:
-
-- `go Discussion`
-
-ma:
-
-- `aggiorna artefatto esistente`
-
-### 7. Chiudi con un solo verdict
-
-Scegli un solo verdetto finale:
-
-- `go Discussion`
-- `watchlist`
-- `support dataset`
-- `aggiorna artefatto esistente`
-- `no-go`
-
-Usa:
-
-- `go Discussion` se la fonte regge davvero come pista autonoma
-- `watchlist` se è promettente ma non ancora pronta
-- `support dataset` se serve soprattutto come join o supporto
-- `aggiorna artefatto esistente` se il filone è già vivo e il passo giusto è aggiornare, non aprire
-- `no-go` se accesso, formato o valore civico non reggono
-
-### 8. Produci sempre una nota locale
-
-Il source-check non è chiuso bene se resta solo come giudizio orale o mentale.
-
-Lascia sempre una nota locale con almeno:
-
-- fonte e link principali
-- cosa è stato verificato davvero
-- cosa è solo inferito
-- shape minima del dato
-- domanda civica plausibile
-- perimetro v0 consigliato, se esiste
-- rischio o caveat principale
-- verdetto finale
-- prossimo passo
-
-### 9. Lascia un next step esplicito
-
-Il workflow si ferma al verdetto, ma il next step va comunque scritto in modo leggibile.
-
-Pattern tipici:
-
-- `go Discussion`
-  - next step normale: preparare o aprire una `Discussion Datasets`
-- `aggiorna artefatto esistente`
-  - next step normale: aggiornare il filone già vivo, non aprirne uno nuovo
-- `watchlist`
-  - next step normale: lasciare un trigger di riapertura
-- `support dataset`
-  - next step normale: tenerlo come supporto, non come filone autonomo
-- `no-go`
-  - next step normale: fermarsi
-
-## Errori tipici
-
-- confondere una fonte viva con una fonte utile
-- fermarsi alla home page senza verificare il file o endpoint reale
-- non distinguere tra accesso verificato e accesso inferito
-- formulare una domanda troppo generica
-- allargare troppo presto il perimetro v0
-- usare `go Discussion` per entusiasmo anche quando sarebbe meglio `watchlist`
-- non controllare se il filone è già vivo prima di dire `go Discussion`
-
-## Output minimo atteso
-
-Un source-check buono lascia:
-
-- fonte reale verificata o limite di accesso dichiarato
-- shape minima del dato
-- domanda civica plausibile
-- perimetro v0 iniziale, se il caso regge
-- un verdict unico e leggibile
-- un qualificatore di sufficienza semantica
-- una nota locale riusabile
-- un next step esplicito
-
-## Definition of done
-
-Il workflow è chiuso bene quando:
-
-- il check non confonde fonte viva e fonte utile
-- il livello di accesso è dichiarato in modo onesto
-- la sufficienza semantica del `v0` è resa esplicita
-- il verdetto finale è unico e coerente
-- esiste un next step plausibile se il verdetto è positivo
-- esiste una nota locale che permette di riprendere il caso
-- non sono stati aperti automaticamente artifact pubblici o pipeline
-
-## Stati finali ammessi
-
-- `go Discussion`
-- `watchlist`
-- `support dataset`
-- `aggiorna artefatto esistente`
-- `no-go`
-
-Qualificatori ammessi da annotare accanto al verdetto:
-
-- `self-contained`
-- `usable-with-enrichment`
-- `too-thin-for-v0`
-
-## Dove orientarsi
-
-- [README.md](../README.md)
-- [workflows/README.md](./README.md)
-- [docs/usage.md](../docs/usage.md)
-- [docs/architecture.md](../docs/architecture.md)
+---
+**Done**: Fonte verificata, verdetto unico espresso, next step scritto in nota o issue.
