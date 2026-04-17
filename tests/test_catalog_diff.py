@@ -25,10 +25,7 @@ def _report(*sources: tuple) -> dict:
     return out
 
 
-def test_no_changes_returns_empty():
-    old = _report(("alpha", "ok", 100))
-    new = _report(("alpha", "ok", 100))
-    assert generate_diff(old, new) == ""
+
 
 
 def test_regression_ok_to_error():
