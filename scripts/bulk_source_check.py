@@ -587,6 +587,8 @@ def parse_args() -> argparse.Namespace:
                    help="Non ri-controllare item con check_timestamp più recente di N giorni (default: 7)")
     p.add_argument("--include-no-url", dest="only_with_url", action="store_false", default=True,
                    help="Includi anche item senza URL nel catalogo (verranno comunque arricchiti via API)")
+    p.add_argument("--only-with-title", action="store_true", default=False,
+                   help="Salta item senza title nel catalogo (tipicamente righe non-sample senza metadati)")
     return p.parse_args()
 
 
@@ -605,6 +607,10 @@ def main() -> None:
         has_url = df["landing_page"].notna() | df["distribution_url"].notna()
         df = df[has_url]
         print(f"  filtro URL presenti nel catalogo: {len(df)} item")
+
+    if args.only_with_title:
+        df = df[df["title"].notna()]
+        print(f"  filtro title non nullo: {len(df)} item")
 
     if args.limit:
         df = df.head(args.limit)

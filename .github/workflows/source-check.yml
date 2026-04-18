@@ -1,0 +1,128 @@
+name: source-check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * 2"  # martedì mattina, dopo il build inventory del lunedì
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      CATALOG_INVENTORY_GCS_PREFIX: ${{ secrets.CATALOG_INVENTORY_GCS_PREFIX }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Authenticate to Google Cloud
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Download catalog inventory from GCS
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        run: |
+          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
+          prefix="${prefix%/}"
+          mkdir -p data/catalog_inventory/generated
+          gcloud storage cp "$prefix/catalog_inventory_latest.parquet" \
+            data/catalog_inventory/generated/catalog_inventory_latest.parquet
+
+      - name: Build catalog inventory (fallback se GCS non disponibile)
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT == '' || env.CATALOG_INVENTORY_GCS_PREFIX == '' }}
+        run: |
+          python scripts/build_catalog_inventory.py \
+            --out-dir data/catalog_inventory/generated \
+            --workers 4
+
+      - name: Download previous source-check results from GCS
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        run: |
+          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
+          prefix="${prefix%/}"
+          gcloud storage cp "$prefix/source-check/source_check_results.parquet" \
+            data/catalog_inventory/generated/source_check_results.parquet || true
+
+      - name: Run bulk source-check
+        run: |
+          python scripts/bulk_source_check.py \
+            --only-with-title \
+            --include-no-url \
+            --max-age-days 7 \
+            --workers 8
+
+      - name: Upload source-check results to GCS
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        run: |
+          stamp=$(python -c "from datetime import datetime, timezone; print(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S'))")
+          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
+          prefix="${prefix%/}"
+          gcloud storage cp data/catalog_inventory/generated/source_check_results.parquet \
+            "$prefix/source-check/source_check_results.parquet"
+          gcloud storage cp data/catalog_inventory/generated/source_check_results.parquet \
+            "$prefix/source-check/snapshots/source_check_${stamp}.parquet"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: source-check-results
+          path: data/catalog_inventory/generated/source_check_results.parquet
+
+      - name: Publish summary
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          from pathlib import Path
+
+          df = pd.read_parquet("data/catalog_inventory/generated/source_check_results.parquet")
+          candidates = int(df["intake_candidate"].sum()) if "intake_candidate" in df.columns else 0
+          reachable = int(df["reachable"].sum()) if "reachable" in df.columns else 0
+          total = len(df)
+          avg_score = df["intake_score"].mean() if "intake_score" in df.columns else 0
+
+          lines = [
+              "## Source check results", "",
+              f"- Item controllati: {total}",
+              f"- Raggiungibili: {reachable} ({reachable/total*100:.0f}%)" if total else "- Raggiungibili: n/d",
+              f"- Intake candidates (score ≥ 40): {candidates}",
+              f"- Score medio: {avg_score:.0f}",
+              "",
+          ]
+
+          if "granularity" in df.columns:
+              lines.append("**Granularità:**")
+              for gran, n in df["granularity"].value_counts().items():
+                  lines.append(f"- {gran}: {n}")
+
+          Path("source_check_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+          cat source_check_summary.md >> "$GITHUB_STEP_SUMMARY"
