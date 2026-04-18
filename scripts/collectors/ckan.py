@@ -15,6 +15,25 @@ CKAN_ACTION_NAMES = {
 }
 
 
+def _ckan_api_base(url: str) -> str | None:
+    if not url:
+        return None
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    path = parsed.path
+    if "/api/3/action/" in path:
+        root = path[: path.index("/api/3/action/")]
+        return f"{parsed.scheme}://{parsed.netloc}{root}/api/3/action"
+    # endpoint non-standard (es. INPS /odapi): usa il path fino all'ultima action nota
+    for action in ("package_list", "package_search", "package_show", "current_package_list_with_resources"):
+        if f"/{action}" in path:
+            root = path[: path.index(f"/{action}")]
+            return f"{parsed.scheme}://{parsed.netloc}{root}"
+    # fallback: usa host + path senza query
+    root = path.rstrip("/").rsplit("/", 1)[0] if "/" in path.rstrip("/") else path
+    return f"{parsed.scheme}://{parsed.netloc}{root}"
+
+
 def ckan_action_endpoint(base_url: str, action: str) -> str:
     endpoint = strip_query(base_url)
     if endpoint.endswith("/"):
@@ -90,11 +109,13 @@ def extract_ckan_inventory_row(
         "item_kind": "dataset",
         "item_id": item.get("id") or item.get("name"),
         "item_name": item.get("name") or item.get("id"),
+        "item_slug": item.get("name") or None,
         "title": item.get("title"),
         "organization": organization,
         "tags": ", ".join(tags) if tags else None,
         "notes_excerpt": notes[:300] if notes else None,
         "source_url": endpoint,
+        "api_base_url": _ckan_api_base(source_cfg.get("base_url") or endpoint),
         "ordinal": ordinal,
     }
 
@@ -288,11 +309,15 @@ def collect_ckan_inventory_via_package_list(
                 "item_kind": "dataset",
                 "item_id": str(item_name),
                 "item_name": str(item_name),
+                # per fonti non-standard (es. INPS) package_list restituisce ID numerici,
+                # non slug testuali — lo slug reale è disponibile solo dopo package_show_sample
+                "item_slug": str(item_name),
                 "title": None,
                 "organization": None,
                 "tags": None,
                 "notes_excerpt": None,
                 "source_url": endpoint,
+                "api_base_url": _ckan_api_base(source_cfg.get("base_url") or endpoint),
                 "ordinal": idx,
             }
         )

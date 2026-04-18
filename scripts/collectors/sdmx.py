@@ -16,6 +16,15 @@ def parse_sdmx_name(name_elem: ET.Element | None) -> str | None:
     return text or None
 
 
+def _sdmx_api_base(url: str) -> str | None:
+    if not url:
+        return None
+    base = url.split("?")[0].rstrip("/")
+    if "/dataflow/" in base:
+        return base[: base.index("/dataflow/")]
+    return base
+
+
 def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> CollectorResult:
     attempts = len(SDMX_RETRY_DELAYS_SECONDS) + 1
     endpoint = source_cfg["base_url"]
@@ -87,6 +96,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 "tags": None,
                 "notes_excerpt": None,
                 "source_url": source_cfg["base_url"],
+                "api_base_url": _sdmx_api_base(source_cfg.get("base_url") or endpoint),
                 "ordinal": idx,
             }
         )
