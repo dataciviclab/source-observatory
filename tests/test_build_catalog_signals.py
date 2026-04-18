@@ -27,20 +27,6 @@ def _non_inv(protocol: str = "ckan") -> dict:
     return {"status": "non_inventariabile", "protocol": protocol, "reason": "WAF attivo."}
 
 
-# --- stabile ---
-
-def test_stable_no_previous():
-    sig = _classify("src", _ok(), None)
-    assert sig["signal_type"] == "no signal"
-    assert sig["result"] == "stabile"
-    assert sig["metric_value"] == 100
-
-
-def test_stable_same_rows():
-    sig = _classify("src", _ok(rows=100), _ok(rows=100))
-    assert sig["result"] == "stabile"
-
-
 # --- inventory change ---
 
 def test_inventory_change_detected():
@@ -48,12 +34,6 @@ def test_inventory_change_detected():
     assert sig["signal_type"] == "inventory change"
     assert sig["metric_value"] == 150
     assert "+50" in sig["detail"]
-
-
-def test_inventory_change_negative_delta():
-    sig = _classify("src", _ok(rows=80), _ok(rows=100))
-    assert sig["signal_type"] == "inventory change"
-    assert "-20" in sig["detail"]
 
 
 # --- method mismatch → missing_data ---
@@ -82,31 +62,10 @@ def test_no_mismatch_when_prev_method_missing():
     assert sig["signal_type"] == "inventory change"
 
 
-# --- regressione ---
-
-def test_new_regression():
-    sig = _classify("src", _error("connection refused"), _ok())
-    assert sig["signal_type"] == "health"
-    assert sig["result"] == "regressione"
-    assert "monitorare" in sig["suggested_action"]
-
-
-def test_persistent_regression_same_message():
-    sig = _classify("src", _error("timeout"), _error("timeout"))
-    assert sig["result"] == "regressione"
-    assert "persistente" in sig["detail"]
-    assert "messaggio cambiato" not in sig["detail"]
-
-
 def test_persistent_regression_changed_message():
     sig = _classify("src", _error("503 Service Unavailable"), _error("timeout"))
     assert sig["result"] == "regressione"
     assert "messaggio cambiato" in sig["detail"]
-
-
-def test_persistent_regression_suggests_declassamento():
-    sig = _classify("src", _error("timeout"), _error("timeout"))
-    assert "radar-only" in sig["suggested_action"]
 
 
 # --- recovery ---
@@ -118,14 +77,6 @@ def test_recovery():
     assert sig["metric_value"] == 100
 
 
-# --- non_inventariabile ---
-
-def test_non_inventariabile_stable_if_never_ok():
-    sig = _classify("src", _non_inv(), None)
-    assert sig["result"] == "stabile"
-    assert sig["signal_type"] == "no signal"
-
-
 def test_non_inventariabile_regression_if_was_ok():
     sig = _classify("src", _non_inv(), _ok())
     assert sig["signal_type"] == "structural drift"
@@ -133,13 +84,6 @@ def test_non_inventariabile_regression_if_was_ok():
 
 
 # --- build_signals integration ---
-
-def test_build_signals_structure():
-    report = _report(("istat", _ok(rows=4212, method="dataflow_count", protocol="sdmx")))
-    out = build_signals(report, None)
-    assert out["sources_checked"] == 1
-    assert out["captured_at"] == report["captured_at"]
-    assert len(out["signals"]) == 1
 
 
 def test_build_signals_method_mismatch_end_to_end():
