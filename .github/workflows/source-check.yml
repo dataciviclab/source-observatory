@@ -55,10 +55,10 @@ jobs:
           prefix="${prefix%/}"
           mkdir -p data/catalog_inventory/generated
           gcloud storage cp "$prefix/catalog_inventory_latest.parquet" \
-            data/catalog_inventory/generated/catalog_inventory_latest.parquet
+            data/catalog_inventory/generated/catalog_inventory_latest.parquet || true
 
-      - name: Build catalog inventory (fallback se GCS non disponibile)
-        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT == '' || env.CATALOG_INVENTORY_GCS_PREFIX == '' }}
+      - name: Build catalog inventory (fallback se parquet non disponibile)
+        if: ${{ hashFiles('data/catalog_inventory/generated/catalog_inventory_latest.parquet') == '' }}
         run: |
           python scripts/build_catalog_inventory.py \
             --out-dir data/catalog_inventory/generated \
