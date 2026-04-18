@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-04-17T22:28:15+00:00",
+  "captured_at": "2026-04-18T10:39:20+00:00",
   "sources_checked": 9,
   "signals": [
     {
@@ -14,10 +14,9 @@
       "source": "istat_sdmx",
       "protocol": "sdmx",
       "signal_type": "health",
-      "result": "recovery",
-      "metric_value": 4821,
-      "detail": "Tornato ok. 4821 item (dataflow_count).",
-      "suggested_action": "nessuna"
+      "result": "regressione",
+      "detail": "Errore: SDMX fetch failed after 3 attempts for istat_sdmx on https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1: tentativo 1: ConnectTimeout (https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1), tentativo 2: ConnectTimeout (https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1), tentativo 3: ConnectTimeout (https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1)",
+      "suggested_action": "monitorare nei prossimi run"
     },
     {
       "source": "inps",
@@ -32,10 +31,9 @@
       "source": "openbdap",
       "protocol": "ckan",
       "signal_type": "health",
-      "result": "recovery",
-      "metric_value": 3772,
-      "detail": "Tornato ok. 3772 item (package_list).",
-      "suggested_action": "nessuna"
+      "result": "regressione",
+      "detail": "Errore: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Max retries exceeded with url: /SpodCkanApi/api/3/action/package_list (Caused by ConnectTimeoutError(<HTTPSConnection(host='bdap-opendata.rgs.mef.gov.it', port=443) at 0x7f658ce00d10>, 'Connection to bdap-opendata.rgs.mef.gov.it timed out. (connect timeout=60)'))",
+      "suggested_action": "monitorare nei prossimi run"
     },
     {
       "source": "dati_camera",
@@ -59,10 +57,9 @@
       "source": "consip_open_data",
       "protocol": "ckan",
       "signal_type": "health",
-      "result": "recovery",
-      "metric_value": 17,
-      "detail": "Tornato ok. 17 item (package_list).",
-      "suggested_action": "nessuna"
+      "result": "regressione",
+      "detail": "Errore: HTTPSConnectionPool(host='dati.consip.it', port=443): Max retries exceeded with url: /api/3/action/package_list (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati.consip.it', port=443) at 0x7f658cd450d0>, 'Connection to dati.consip.it timed out. (connect timeout=60)'))",
+      "suggested_action": "monitorare nei prossimi run"
     },
     {
       "source": "lavoro_opendata",
@@ -78,8 +75,8 @@
       "protocol": "ckan",
       "signal_type": "health",
       "result": "regressione",
-      "detail": "Errore: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7fce229b9d60>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=60)'))",
-      "suggested_action": "monitorare nei prossimi run"
+      "detail": "Errore persistente: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7f658cd48470>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=60)')) (messaggio cambiato rispetto al run precedente)",
+      "suggested_action": "valutare declassamento a radar-only se persiste"
     }
   ]
 }
