@@ -37,6 +37,7 @@ jobs:
         run: |
           python -c "import yaml; yaml.safe_load(open('data/radar/sources_registry.yaml'))"
           test -s data/radar/STATUS.md
+          test -f data/radar/radar_summary.json
           python -c "import json; json.load(open('data/radar/radar_summary.json'))"
 
       - name: Commit updated radar state

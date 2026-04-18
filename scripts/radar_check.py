@@ -354,11 +354,13 @@ def build_radar_summary(
         ]
     }
     """
+    generated_at = datetime.now(timezone.utc).isoformat()
+    _missing = ProbeResult(status="RED", http_code="-", note="probe result missing")
     status_counts = Counter(result.status for result in results.values())
     sources_list = []
 
     for source_id, meta in registry.items():
-        result = results[source_id]
+        result = results.get(source_id) or _missing
         sources_list.append({
             "id": source_id,
             "status": result.status,
@@ -370,7 +372,7 @@ def build_radar_summary(
         })
 
     return {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": generated_at,
         "probe_date": probe_date,
         "sources_total": len(registry),
         "status_counts": {
