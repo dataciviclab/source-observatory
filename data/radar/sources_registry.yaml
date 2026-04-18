@@ -3,7 +3,7 @@ istat_sdmx:
   protocol: sdmx
   observation_mode: catalog-watch
   base_url: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: dataflow_count
@@ -29,7 +29,7 @@ anac:
     non_inventoriable: true
     reason: WAF strutturale - restituisce HTML 'Request Rejected' su qualsiasi client
       HTTP non browser. Confermato 2026-04-16.
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-03-28'
     metric: package_count
@@ -50,7 +50,7 @@ inps:
     skip_current_list: true
     package_show_sample: true
     sample_size: 100
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -74,7 +74,7 @@ openbdap:
     skip_current_list: true
     package_show_sample: true
     sample_size: 50
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -94,7 +94,7 @@ dati_salute:
   protocol: html
   observation_mode: radar-only
   base_url: https://www.dati.salute.gov.it/
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-07'
     metric: dataset_url_count
@@ -113,7 +113,7 @@ inail_opendata:
   protocol: aem
   observation_mode: radar-only
   base_url: https://dati.inail.it/
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   verdict: go
   note: Portale AEM con Open API documentate. Superficie operativa reale = catalogo
     AEM + Open API, non CKAN standard (logo nel footer fuorviante). Baseline inventariale
@@ -124,7 +124,7 @@ mim_opendata:
   protocol: html
   observation_mode: radar-only
   base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   verdict: go
   note: Portale HTML custom senza API catalog (CKAN/SDMX). Download CSV diretti nel
     markup ma nessuna superficie inventariale strutturata osservabile via probe semplice.
@@ -136,7 +136,7 @@ dati_camera:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.camera.it/sparql
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -167,7 +167,7 @@ ispra_linked_data:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.isprambiente.it/sparql
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -190,7 +190,7 @@ consip_open_data:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.consip.it/api/3/action/package_list?limit=1
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: package_count
@@ -216,7 +216,7 @@ lavoro_opendata:
     skip_current_list: true
     package_show_sample: true
     sample_size: 50
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: package_count
@@ -232,7 +232,7 @@ mur_ustat:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati-ustat.mur.gov.it/api/3/action/package_list?limit=1
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-09'
     metric: package_count
@@ -250,7 +250,7 @@ opencoesione:
   protocol: rest
   observation_mode: catalog-watch
   base_url: https://opencoesione.gov.it/it/api/
-  last_probed: '2026-04-17'
+  last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-09'
     metric: data_aggiornamento
