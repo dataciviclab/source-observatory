@@ -4,8 +4,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from bulk_source_check import (
@@ -75,7 +73,6 @@ class TestInferYears:
 class TestIntakeScore:
     def test_nan_format_does_not_crash(self):
         # bug già visto: float('nan') passato come resource_format crashava
-        import math
         score, candidate = _intake_score(
             granularity="comune",
             year_min=2015,
