@@ -52,6 +52,25 @@ def observatory_get(
     return response
 
 
+def observatory_head(
+    url: str,
+    *,
+    timeout: int | float = DEFAULT_TIMEOUT_SECONDS,
+    headers: dict[str, str] | None = None,
+    **kwargs: Any,
+) -> requests.Response:
+    request_headers = dict(headers or {})
+    with get_observatory_session() as session:
+        response = session.head(
+            url,
+            timeout=timeout,
+            headers=request_headers or None,
+            allow_redirects=True,
+            **kwargs,
+        )
+    return response
+
+
 def strip_query(url: str) -> str:
     parts = urlsplit(url)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))

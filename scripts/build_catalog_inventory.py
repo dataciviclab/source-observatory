@@ -85,6 +85,12 @@ def parse_args() -> argparse.Namespace:
         metavar="N (1-8)",
         help="Thread per la raccolta parallela (default: 1 = seriale).",
     )
+    parser.add_argument(
+        "--source-ids",
+        nargs="+",
+        metavar="SOURCE_ID",
+        help="Limita il build a queste source_id (spazio-separato).",
+    )
     return parser.parse_args()
 
 
@@ -105,8 +111,12 @@ def main() -> None:
         "sources": {},
     }
 
+    source_id_filter = set(args.source_ids) if args.source_ids else None
+
     inventoriable: list[tuple[str, dict[str, Any]]] = []
     for source_id, source_cfg in registry.items():
+        if source_id_filter and source_id not in source_id_filter:
+            continue
         if source_cfg.get("source_kind") != "catalog":
             continue
         if source_cfg.get("observation_mode") != "catalog-watch":
@@ -172,6 +182,20 @@ def main() -> None:
         raise RuntimeError("No catalog inventory rows collected.")
 
     df = pd.DataFrame(all_rows)
+
+    if source_id_filter and out_parquet.exists():
+        existing = pd.read_parquet(out_parquet)
+        existing = existing[~existing["source_id"].isin(source_id_filter)]
+        df = pd.concat([existing, df], ignore_index=True)
+
+        # merge report: mantieni le entry precedenti per le fonti non ri-buildate
+        if out_report.exists():
+            with out_report.open(encoding="utf-8") as fh:
+                prev_report = json.load(fh)
+            for sid, info in prev_report.get("sources", {}).items():
+                if sid not in report["sources"]:
+                    report["sources"][sid] = info
+
     con = duckdb.connect()
     con.register("inventory_df", df)
     con.execute("CREATE TABLE inventory AS SELECT * FROM inventory_df")

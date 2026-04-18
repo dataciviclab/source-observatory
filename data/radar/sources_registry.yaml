@@ -29,6 +29,8 @@ anac:
     non_inventoriable: true
     reason: WAF strutturale - restituisce HTML 'Request Rejected' su qualsiasi client
       HTTP non browser. Confermato 2026-04-16.
+    scraping_blocked: true
+    scraping_blocked_reason: "reCAPTCHA / WAF blocca richieste HTTP non-browser"
   last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-03-28'
@@ -49,7 +51,7 @@ inps:
   inventory:
     skip_current_list: true
     package_show_sample: true
-    sample_size: 100
+    sample_size: 500
   last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-02'
@@ -73,7 +75,7 @@ openbdap:
     skip_package_search_reason: timeout sistematico a 60s
     skip_current_list: true
     package_show_sample: true
-    sample_size: 50
+    sample_size: 200
   last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-02'
@@ -136,6 +138,8 @@ dati_camera:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.camera.it/sparql
+  scraping_blocked: true
+  scraping_blocked_reason: "reCAPTCHA / WAF blocca richieste HTTP non-browser"
   last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-11'
@@ -215,7 +219,7 @@ lavoro_opendata:
     skip_package_search_reason: count inaffidabile
     skip_current_list: true
     package_show_sample: true
-    sample_size: 50
+    sample_size: 100
   last_probed: '2026-04-18'
   catalog_baseline:
     captured_at: '2026-04-11'
