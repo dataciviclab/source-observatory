@@ -223,3 +223,71 @@ def test_build_status_report_basic() -> None:
     assert "| istat_sdmx |" in report
     assert "## Note" in report
     assert "istat_sdmx" in report
+
+
+def test_build_radar_summary_schema() -> None:
+    """Test che build_radar_summary produce un JSON consumabile da ACB."""
+    registry = {
+        "demo_ckan": {
+            "base_url": "https://demo.test/api/3/action/package_list",
+            "source_kind": "catalog",
+            "protocol": "ckan",
+            "observation_mode": "catalog-watch",
+            "datasets_in_use": ["dataset1", "dataset2"],
+        },
+        "istat_sdmx": {
+            "base_url": "https://sdmx.istat.it/rest/",
+            "source_kind": "catalog",
+            "protocol": "sdmx",
+            "observation_mode": "radar-only",
+            "datasets_in_use": [],
+        },
+    }
+    results = {
+        "demo_ckan": radar_check.ProbeResult(
+            status="GREEN", http_code="200", content_type="application/json"
+        ),
+        "istat_sdmx": radar_check.ProbeResult(
+            status="YELLOW", http_code="-", note="Timeout"
+        ),
+    }
+
+    summary = radar_check.build_radar_summary(registry, results, "2026-04-18")
+
+    # Verifica struttura top-level
+    assert "generated_at" in summary
+    assert "probe_date" in summary
+    assert "sources_total" in summary
+    assert "status_counts" in summary
+    assert "sources" in summary
+
+    # Verifica conteggi
+    assert summary["probe_date"] == "2026-04-18"
+    assert summary["sources_total"] == 2
+    assert summary["status_counts"]["GREEN"] == 1
+    assert summary["status_counts"]["YELLOW"] == 1
+    assert summary["status_counts"]["RED"] == 0
+
+    # Verifica entry fonte
+    sources_by_id = {s["id"]: s for s in summary["sources"]}
+    assert "demo_ckan" in sources_by_id
+    assert "istat_sdmx" in sources_by_id
+
+    demo = sources_by_id["demo_ckan"]
+    assert demo["status"] == "GREEN"
+    assert demo["protocol"] == "ckan"
+    assert demo["observation_mode"] == "catalog-watch"
+    assert demo["http_code"] == "200"
+    assert demo["last_check"] == "2026-04-18"
+    assert demo["datasets_in_use"] == ["dataset1", "dataset2"]
+
+    istat = sources_by_id["istat_sdmx"]
+    assert istat["status"] == "YELLOW"
+    assert istat["http_code"] == "-"
+    assert istat["datasets_in_use"] == []
+
+    # Verifica JSON-serializable
+    json_str = json.dumps(summary)
+    assert isinstance(json_str, str)
+    reparsed = json.loads(json_str)
+    assert reparsed == summary

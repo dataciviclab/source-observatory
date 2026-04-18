@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timezone
 import json
 import time
 from pathlib import Path
@@ -20,6 +20,7 @@ from _constants import SDMX_RETRYABLE_STATUS_CODES, SDMX_RETRY_DELAYS_SECONDS
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = WORKSPACE_ROOT / "data" / "radar" / "sources_registry.yaml"
 STATUS_PATH = WORKSPACE_ROOT / "data" / "radar" / "STATUS.md"
+SUMMARY_PATH = WORKSPACE_ROOT / "data" / "radar" / "radar_summary.json"
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 TIMEOUT_SECONDS = 10
 
@@ -327,6 +328,60 @@ def update_last_probed(registry: dict[str, dict[str, Any]], probe_date: str) -> 
         meta["last_probed"] = probe_date
 
 
+def build_radar_summary(
+    registry: dict[str, dict[str, Any]],
+    results: dict[str, ProbeResult],
+    probe_date: str,
+) -> dict[str, Any]:
+    """Build compact radar summary JSON consumable by agent-context-builder.
+
+    Schema:
+    {
+        "generated_at": ISO8601 timestamp,
+        "probe_date": YYYY-MM-DD,
+        "sources_total": N,
+        "status_counts": { "GREEN": N, "YELLOW": N, "RED": N },
+        "sources": [
+            {
+                "id": source_id,
+                "status": GREEN|YELLOW|RED,
+                "protocol": protocol,
+                "observation_mode": radar-only|catalog-watch|monitor-active,
+                "http_code": "200" | "-",
+                "last_check": YYYY-MM-DD,
+                "datasets_in_use": [...]
+            }
+        ]
+    }
+    """
+    status_counts = Counter(result.status for result in results.values())
+    sources_list = []
+
+    for source_id, meta in registry.items():
+        result = results[source_id]
+        sources_list.append({
+            "id": source_id,
+            "status": result.status,
+            "protocol": meta.get("protocol", "-"),
+            "observation_mode": meta.get("observation_mode", "radar-only"),
+            "http_code": result.http_code,
+            "last_check": probe_date,
+            "datasets_in_use": meta.get("datasets_in_use") or [],
+        })
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "probe_date": probe_date,
+        "sources_total": len(registry),
+        "status_counts": {
+            "GREEN": status_counts.get("GREEN", 0),
+            "YELLOW": status_counts.get("YELLOW", 0),
+            "RED": status_counts.get("RED", 0),
+        },
+        "sources": sources_list,
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Probe radar source portals and build STATUS.md."
@@ -357,16 +412,22 @@ def main() -> int:
         results[portal] = probe_url(str(base_url))
 
     report = build_status_report(registry, results, probe_date)
+    summary = build_radar_summary(registry, results, probe_date)
 
     if args.dry_run:
         print(report)
+        print("\n--- SUMMARY JSON ---")
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
         return 0
 
     update_last_probed(registry, probe_date)
     STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
     STATUS_PATH.write_text(report, encoding="utf-8")
+    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SUMMARY_PATH.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     save_registry(REGISTRY_PATH, registry)
     print(f"Wrote {STATUS_PATH}")
+    print(f"Wrote {SUMMARY_PATH}")
     print(f"Updated {REGISTRY_PATH}")
     return 0
 
