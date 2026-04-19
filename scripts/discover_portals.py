@@ -25,20 +25,20 @@ from collectors.base import observatory_get
 
 OUT_DEFAULT = Path(__file__).resolve().parents[1] / "data" / "portal_scout" / "discovered_portals.parquet"
 
-# Query generiche (sempre usate)
+# Query generiche (sempre usate) — orientate a portali nazionali con dati comunali
 SEARCH_QUERIES_BASE = [
-    '"open data" site:gov.it',
-    '"opendata" site:gov.it',
-    '"dati aperti" site:gov.it',
-    '"catalogo dati" site:gov.it',
+    '"open data" "comuni" site:gov.it',
+    '"dati comunali" "ministero" site:gov.it',
+    '"granularità comunale" "open data" site:gov.it',
+    '"codice comune" dataset site:gov.it',
     '"API" "open data" ministero site:gov.it',
 ]
 
 # Query specifiche per protocollo
 SEARCH_QUERIES_BY_PROTOCOL: dict[str, list[str]] = {
-    "ckan":   ['"CKAN" "open data" site:gov.it'],
-    "sdmx":   ['"SDMX" site:gov.it'],
-    "sparql": ['"SPARQL" endpoint site:gov.it', '"linked open data" site:gov.it'],
+    "ckan":   ['"CKAN" "comuni" site:gov.it', '"CKAN" "open data" ministero site:gov.it'],
+    "sdmx":   ['"SDMX" "dataflow" site:gov.it', '"SDMX" ISTAT site:gov.it'],
+    "sparql": ['"SPARQL" endpoint "linked data" site:gov.it', '"SPARQL" "dati.gov.it"'],
 }
 
 # Endpoint probe per protocol detection
@@ -53,6 +53,26 @@ SKIP_DOMAINS = {
     "github.com", "medium.com", "agid.gov.it", "developers.italia.it",
     "docs.italia.it", "forum.italia.it", "innovazione.gov.it",
     "agea.gov.it",  # falso positivo SDMX — redirect a SPA React
+}
+
+# Pattern di sottodomini da scartare: portali locali/singoli comune o regione
+# (interesse basso vs portali nazionali con granularità comunale)
+SKIP_DOMAIN_PATTERNS = [
+    ".comune.",
+    ".regione.",
+    "città metropolitana",
+]
+
+# Portali nazionali tier-1 da includere sempre nel probe, indipendentemente dalla DDG
+TIER1_DOMAINS: dict[str, str] = {
+    "esploradati.istat.it": "sdmx",
+    "bdap-opendata.rgs.mef.gov.it": "ckan",
+    "serviziweb2.inps.it": "sparql",
+    "dati.anticorruzione.it": "ckan",
+    "dati.isprambiente.it": "ckan",
+    "dati.camera.it": "sparql",
+    "opencoesione.gov.it": "ckan",
+    "dati-ustat.mur.gov.it": "ckan",
 }
 
 # Domini già noti nel registry — usati per marcare i candidati come nuovi vs noti
@@ -108,7 +128,9 @@ def extract_domains(results: list[dict]) -> dict[str, set[str]]:
             continue
         if any(skip in domain for skip in SKIP_DOMAINS):
             continue
-        # Tieni solo domini che sembrano portali PA (.gov.it, .regione.*, .comune.*, .it)
+        if any(pat in domain for pat in SKIP_DOMAIN_PATTERNS):
+            continue
+        # Tieni solo portali nazionali PA (.gov.it)
         if not domain.endswith(".gov.it"):
             continue
         if domain not in domains:
@@ -184,7 +206,11 @@ def main() -> int:
     print(f"  {len(results)} risultati grezzi")
 
     domains = extract_domains(results)
-    print(f"  {len(domains)} domini unici estratti")
+    # Aggiungi sempre i portali nazionali tier-1
+    for tier1_domain in TIER1_DOMAINS:
+        if tier1_domain not in domains:
+            domains[tier1_domain] = {"tier1-allowlist"}
+    print(f"  {len(domains)} domini unici estratti (inclusi {len(TIER1_DOMAINS)} tier-1)")
 
     def _probe_domain(domain: str, sources: set[str]) -> dict:
         if args.no_probe:
