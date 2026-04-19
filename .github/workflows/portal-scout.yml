@@ -165,15 +165,13 @@ jobs:
             data/portal_scout/scout_results/
 
       - name: Commit summary artifacts
-        env:
-          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/portal_scout/discovered_portals_summary.json data/portal_scout/portal_scout_shortlist.md
           git diff --cached --quiet && exit 0
           git commit -m "chore: refresh portal scout summary"
-          git push https://x-access-token:${PROJECTS_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
+          git push
 
       - name: Publish summary
         run: |
