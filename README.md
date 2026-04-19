@@ -1,73 +1,74 @@
 # Source Observatory
 
-Intelligence layer leggero per fonti pubbliche italiane.
+Intelligence layer leggero per fonti pubbliche italiane — parte dell'ecosistema [DataCivicLab](https://github.com/dataciviclab).
 
-Fa parte dell'ecosistema [DataCivicLab](https://github.com/dataciviclab).
+Risponde a una domanda sola: **questa fonte vale il tempo del Lab?**
 
-Tre pezzi principali:
+## Il funnel
 
-1. **catalog inventory** - enumera cosa esiste nei cataloghi osservati e produce un parquet interrogabile
-2. **radar** - verifica se una fonte risponde prima di investirci tempo
-3. **source-check / portal-scout** - workflow disciplinati per decidere se una fonte merita lavoro del Lab
+```
+discover_portals  →  portal-scout  →  gate
+                                        ├─ catalog-watch   (catalogo osservabile)
+                                        ├─ radar-only      (monitoraggio passivo)
+                                        └─ source-check    (valutazione manuale)
+                                              ↓
+                                        catalog-inventory  (snapshot interrogabile)
+```
 
-Non è:
+1. **Discover** — trova portali PA nazionali via DDG, proba il protocollo (CKAN/SDMX/SPARQL)
+2. **Portal-scout** — classifica la superficie tecnica, assegna un verdict
+3. **Gate** — decide il regime di osservazione
+4. **Catalog-inventory** — enumera gli item dei cataloghi ammessi
 
-- una pipeline dataset
-- un sistema di intake candidate
-- una piattaforma di monitoraggio diffuso
+## Script
 
-## Catalog inventory
-
-`scripts/build_catalog_inventory.py` entra nei cataloghi CKAN, SDMX e SPARQL del registry e produce uno snapshot tabulare di tutti gli item enumerabili.
-
-Output:
-
-- `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
-- `data/catalog_inventory/generated/catalog_inventory_report.json`
-
-Il parquet contiene oggi oltre 6000 item da fonti come INPS, OpenBDAP, MIM USTAT, Lavoro, Consip, Camera, ISPRA. È il punto di partenza per lo scouting: invece di navigare portali ostili manualmente, si interroga il parquet in DuckDB e si shortlista.
-
-Questi file **non sono versionati nel repo**. Per ottenerli: artifact del workflow `catalog-inventory` su GitHub Actions, oppure GCS se configurato. Per generarli localmente usare il comando sotto.
+| Script | Cosa fa |
+|---|---|
+| `scripts/discover_portals.py` | Discovery DDG + protocol probe → parquet candidati |
+| `scripts/portal_scout.py` | Sonda copertura metadata su campione → JSON per portale |
+| `scripts/radar_check.py` | Health check giornaliero delle fonti nel registry |
+| `scripts/build_catalog_inventory.py` | Snapshot tabulare di tutti gli item enumerabili |
 
 ```bash
+# Discovery mirata per protocollo
+python scripts/discover_portals.py --protocols ckan --only-matched
+
+# Scout su candidati
+python scripts/portal_scout.py --registry-path /tmp/candidate.yaml --dry-run
+
+# Radar
+python scripts/radar_check.py
+
+# Catalog inventory
 python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/generated
 ```
 
-## Radar
+## Workflow
 
-`scripts/radar_check.py` fa un health check economico di tutte le fonti nel registry: risponde, ha problemi SSL, è fragile?
+I workflow sono istruzioni per agenti — non pipeline CI/CD. Seguire in ordine per ogni portale nuovo.
 
-Output: [`data/radar/STATUS.md`](data/radar/STATUS.md) - un artefatto leggibile usabile come pre-flight prima di un source-check o di un run DI.
+- [`workflows/portal-scout.md`](workflows/portal-scout.md) — classifica un portale e assegna verdict
+- [`workflows/source-check.md`](workflows/source-check.md) — valuta se una fonte regge come pista del Lab
+- [`workflows/catalog-watch.md`](workflows/catalog-watch.md) — osserva cambi inventariali del catalogo
+- [`workflows/catalog-inventory-scout.md`](workflows/catalog-inventory-scout.md) — triage degli item in un catalogo noto
 
-```bash
-python scripts/radar_check.py
+## Output e artefatti
+
+Gli artifact generati (`parquet`, `json`, `STATUS.md`) non sono versionati nel repo. Si ottengono da GitHub Actions o GCS se configurato.
+
+- `data/radar/STATUS.md` — stato corrente delle fonti nel registry
+- `data/portal_scout/discovered_portals.parquet` — candidati discovery
+- `data/portal_scout/discovered_portals_summary.json` — sommario leggibile per agenti
+- `data/catalog_inventory/generated/catalog_inventory_latest.parquet` — oltre 6000 item da INPS, OpenBDAP, ISPRA, Camera e altri
+
+## Struttura
+
 ```
-
-Schedulato giornalmente via GitHub Actions. Il registry è in [`data/radar/sources_registry.yaml`](data/radar/sources_registry.yaml).
-
-## Source-check e portal-scout
-
-Non sono script, sono workflow disciplinati documentati in `workflows/`.
-
-- [`portal-scout.md`](workflows/portal-scout.md) - classifica un portale prima che entri nel registry: è un catalogo reale? è inventariabile? quale modalità di osservazione ha senso?
-- [`source-check.md`](workflows/source-check.md) - verifica se una fonte o un dataset regge davvero come pista del Lab. Entra con una fonte opaca, esce con un verdetto esplicito e un next step.
-
-Il valore è nel processo: impedisce di portare in `dataset-incubator` candidate non ancora maturi.
-
-## Catalog-watch
-
-Osserva i cataloghi del registry per segnali di cambiamento inventariale. Non enumera cosa c'è dentro (quello è catalog inventory), risponde a "il catalogo è cambiato?".
-
-Output: [`data/catalog/CATALOG_WATCH_REPORT.md`](data/catalog/CATALOG_WATCH_REPORT.md)
-
-Resta `human-run` nella v0.
-
-## Struttura del repo
-
-- `scripts/` - codice runtime canonico
-- `data/` - stato generato e report
-- `docs/` - architettura, runbook, policy di misura
-- `workflows/` - workflow operativi documentati
+scripts/    codice runtime
+data/       stato generato e report
+workflows/  istruzioni operative per agenti
+docs/       architettura, runbook, policy
+```
 
 ## Documentazione
 

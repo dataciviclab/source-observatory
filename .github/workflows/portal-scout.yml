@@ -1,0 +1,171 @@
+name: portal-scout
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_results:
+        description: "Risultati DDG per query (default: 20)"
+        required: false
+        default: "20"
+      skip_discovery:
+        description: "Salta discovery, usa parquet esistente in GCS"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portal-scout:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      PORTAL_SCOUT_GCS_PREFIX: ${{ secrets.PORTAL_SCOUT_GCS_PREFIX }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Authenticate to Google Cloud
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.PORTAL_SCOUT_GCS_PREFIX != '' }}
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up gcloud
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.PORTAL_SCOUT_GCS_PREFIX != '' }}
+        uses: google-github-actions/setup-gcloud@v3
+
+      # --- Fase 1: Discovery ---
+
+      - name: Download discovered_portals from GCS (se skip_discovery)
+        if: ${{ inputs.skip_discovery == 'true' && env.PORTAL_SCOUT_GCS_PREFIX != '' }}
+        run: |
+          prefix='${{ env.PORTAL_SCOUT_GCS_PREFIX }}'
+          prefix="${prefix%/}"
+          mkdir -p data/portal_scout
+          gcloud storage cp "$prefix/discovered_portals.parquet" data/portal_scout/discovered_portals.parquet
+
+      - name: Discover portals (DDG + protocol probe)
+        if: ${{ inputs.skip_discovery != 'true' }}
+        run: |
+          python scripts/discover_portals.py \
+            --max-results ${{ inputs.max_results }} \
+            --out data/portal_scout/discovered_portals.parquet
+
+      # --- Fase 2: Scout strutturale sui candidati CKAN/SDMX/SPARQL ---
+
+      - name: Run portal_scout on structured candidates
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          import subprocess, sys, yaml, tempfile
+          from pathlib import Path
+
+          df = pd.read_parquet("data/portal_scout/discovered_portals.parquet")
+          candidates = df[
+              (df["in_registry"] == "no") &
+              (df["protocol"].isin(["ckan", "sdmx", "sparql"]))
+          ]
+
+          if candidates.empty:
+              print("Nessun candidato strutturato da sondare.")
+              sys.exit(0)
+
+          print(f"Candidati da sondare: {len(candidates)}")
+
+          # Costruisce registry temporaneo con tutti i candidati
+          cfg = {}
+          for _, row in candidates.iterrows():
+              entry = {"protocol": row["protocol"], "base_url": row["base_url"]}
+              if row["protocol"] == "sparql" and row.get("probe_url"):
+                  entry["sparql"] = {"endpoint_url": row["probe_url"]}
+              cfg[row["domain"]] = entry
+
+          with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as f:
+              yaml.dump(cfg, f)
+              tmp = f.name
+
+          result = subprocess.run([sys.executable, "scripts/portal_scout.py",
+                                   "--registry-path", tmp,
+                                   "--out-dir", "data/portal_scout/scout_results"],
+                                  check=False)
+          if result.returncode != 0:
+              print(f"[warn] portal_scout.py exited with code {result.returncode}", file=sys.stderr)
+          PY
+
+      # --- Upload su GCS ---
+
+      - name: Upload artifacts to GCS
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.PORTAL_SCOUT_GCS_PREFIX != '' }}
+        run: |
+          stamp=$(python -c "from datetime import datetime, timezone; print(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S'))")
+          prefix='${{ env.PORTAL_SCOUT_GCS_PREFIX }}'
+          prefix="${prefix%/}"
+
+          gcloud storage cp data/portal_scout/discovered_portals.parquet \
+            "$prefix/discovered_portals.parquet"
+          gcloud storage cp data/portal_scout/discovered_portals.parquet \
+            "$prefix/snapshots/discovered_portals_${stamp}.parquet"
+
+          if [ -f data/portal_scout/discovered_portals_summary.json ]; then
+            gcloud storage cp data/portal_scout/discovered_portals_summary.json \
+              "$prefix/discovered_portals_summary.json"
+          fi
+
+          if compgen -G "data/portal_scout/scout_results/*.json" > /dev/null; then
+            gcloud storage cp data/portal_scout/scout_results/*.json \
+              "$prefix/scout_results/"
+          fi
+
+      - name: Upload workflow artifact (Actions)
+        uses: actions/upload-artifact@v7
+        with:
+          name: portal-scout
+          path: |
+            data/portal_scout/discovered_portals.parquet
+            data/portal_scout/discovered_portals_summary.json
+            data/portal_scout/scout_results/
+
+      - name: Publish summary
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          from pathlib import Path
+
+          df = pd.read_parquet("data/portal_scout/discovered_portals.parquet")
+          lines = ["## Portal Scout", ""]
+          lines.append(f"- Domini totali rilevati: **{len(df)}**")
+          lines.append(f"- Nuovi candidati (non nel registry): **{len(df[df['in_registry'] == 'no'])}**")
+          lines.append("")
+          lines.append("### Protocolli strutturati rilevati")
+          structured = df[df["protocol"].isin(["ckan", "sdmx", "sparql"])]
+          for _, row in structured.iterrows():
+            tag = "✓ già nel registry" if row["in_registry"] == "yes" else "⚡ nuovo"
+            lines.append(f"- `{row['domain']}` — {row['protocol'].upper()} ({tag})")
+
+          Path("summary.md").write_text("\n".join(lines) + "\n")
+          PY
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"

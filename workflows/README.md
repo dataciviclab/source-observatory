@@ -45,24 +45,24 @@ Se la domanda è:
 
 Sequenza canonica minima per un nuovo portale:
 
-1. `portal-scout`
-2. decision gate
-3. eventuale ingresso nel registry
-4. eventuale baseline o inventory
-5. eventuale `source-check` su item specifici
+1. `discover_portals.py` (opzionale, per discovery batch) → parquet candidati
+2. `portal-scout` → verdict + soglie minime
+3. decision gate
+4. eventuale ingresso nel registry
+5. eventuale baseline o inventory
+6. eventuale `source-check` su item specifici
 
-Esiti canonici del gate:
+Esiti canonici del gate e soglie minime:
 
-- `GO catalog-watch`
-- `GO radar-only`
-- `GO source-check item-based`
-- `NO per ora`
+| Esito | Condizioni minime |
+|---|---|
+| `GO catalog-watch` | Probe reale · enumerabile · temporale ≥ 80% · ≥ 20 dataset strutturati · non duplicato |
+| `GO radar-only` | Raggiungibile · PA nazionale · non automatizzabile ora |
+| `GO source-check item-based` | Strutturato ma < 20 dataset o > 50% PDF |
+| `NO per ora` | Falso positivo · WAF · fuori scope · duplicato |
 
-Regola di orientamento:
-
-- se il metodo di enumerazione degli item è stabile e riproducibile -> `catalog-watch`
-- se il portale è utile ma non inventariabile in modo affidabile -> `radar-only`
-- se il valore sta in pochi item noti e non nel portale come catalogo -> `source-check item-based`
+`GO catalog-watch` → proponi YAML per registry + apri issue SO (`portal-scout`).
+`GO radar-only` → aggiorna registry direttamente, nessuna issue.
 
 ## Nota: catalog inventory
 
