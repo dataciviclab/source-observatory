@@ -127,7 +127,7 @@ def search_ddg(queries: list[str], max_per_query: int) -> list[dict]:
 
 
 def extract_domains(results: list[dict]) -> dict[str, set[str]]:
-    """Ritorna {domain: set_of_source_queries}."""
+    """Ritorna {domain: set_of_source_queries}. Salva path DDG per CKAN path-based probe."""
     domains: dict[str, set[str]] = {}
     for r in results:
         url = r.get("href") or r.get("url") or ""
@@ -153,33 +153,68 @@ def extract_domains(results: list[dict]) -> dict[str, set[str]]:
         if domain not in domains:
             domains[domain] = set()
         domains[domain].add(query or url)
+        # Salva il path DDG per probe CKAN path-based
+        if parsed.path and parsed.path != "/":
+            _DDG_PATHS.setdefault(domain, set()).add(parsed.path)
     return domains
+
+
+# Path DDG per probe CKAN path-based (popolato da extract_domains)
+_DDG_PATHS: dict[str, set[str]] = {}
 
 
 # ---------------------------------------------------------------------------
 # Protocol detection
 # ---------------------------------------------------------------------------
 
+def _probe_ckan(base: str, extra_prefixes: list[str] | None = None) -> str | None:
+    """Torna l'URL funzionante CKAN o None. Prova path standard + path-based da DDG."""
+    suffixes = ["/api/3/action/package_list", "/api/action/package_list"]
+    prefixes = [""] + (extra_prefixes or [])
+    for prefix in prefixes:
+        for suffix in suffixes:
+            url = base + prefix + suffix
+            try:
+                r = observatory_get(url, timeout=TIMEOUT)
+                if r.status_code == 200:
+                    ct = r.headers.get("content-type", "").lower()
+                    if "json" in ct or r.text.strip().startswith("{"):
+                        data = r.json()
+                        if isinstance(data, dict) and "result" in data:
+                            return url
+            except Exception:
+                pass
+    return None
+
+
 def detect_protocol(domain: str, probe_paths: dict | None = None) -> tuple[str, str | None]:
     """Torna (protocol, working_url) o ('html', None)."""
     base = f"https://{domain}"
+
+    # CKAN: probe standard + path-based da URL DDG (es. /opendata, /catalogo)
+    ddg_paths = _DDG_PATHS.get(domain, set())
+    ckan_prefixes = sorted({
+        "/" + p.strip("/").split("/")[0]
+        for p in ddg_paths
+        if p.strip("/")
+    })
+    if "ckan" in (probe_paths or PROBE_PATHS):
+        url = _probe_ckan(base, ckan_prefixes)
+        if url:
+            return "ckan", url
+
+    # SDMX e SPARQL: probe standard
     for protocol, paths in (probe_paths or PROBE_PATHS).items():
+        if protocol == "ckan":
+            continue
         for path in paths:
             url = base + path
             try:
                 r = observatory_get(url, timeout=TIMEOUT)
                 if r.status_code == 200:
                     ct = r.headers.get("content-type", "").lower()
-                    if protocol == "ckan" and ("json" in ct or r.text.strip().startswith("{")):
-                        try:
-                            data = r.json()
-                            if isinstance(data, dict) and "result" in data:
-                                return "ckan", url
-                        except Exception:
-                            pass
-                    elif protocol == "sdmx":
+                    if protocol == "sdmx":
                         text = r.text[:5000]
-                        # Richiede namespace SDMX reale — scarta SPA/HTML che iniziano con <
                         if "sdmx.org" in text and text.strip().startswith("<") and "<!DOCTYPE" not in text[:100] and "<html" not in text[:200]:
                             return "sdmx", url
                     elif protocol == "sparql" and ("json" in ct or "xml" in ct or "sparql" in ct):
@@ -269,25 +304,69 @@ def main() -> int:
 
     df.to_parquet(args.out, index=False)
 
+    known = df[df["in_registry"] == "yes"]
     new_candidates = df[df["in_registry"] == "no"]
     print(f"  di cui {len(new_candidates)} nuovi candidati (non nel registry)")
 
     # JSON summary per ACB e lettura rapida
     confirmed_protocols = ["ckan", "sdmx", "sparql"]
     new_confirmed = new_candidates[new_candidates["protocol"].isin(confirmed_protocols)]
+    known_confirmed = known[known["protocol"].isin(confirmed_protocols)]
     summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "total_portals": len(df),
         "new_candidates": len(new_candidates),
         "new_confirmed_protocol": len(new_confirmed),
+        "known_registry_seen": len(known),
         "by_protocol": df["protocol"].value_counts().to_dict(),
-        "top_candidates": [
+        "new_structured": [
             {"domain": r["domain"], "protocol": r["protocol"], "probe_url": r["probe_url"]}
             for _, r in new_confirmed.iterrows()
+        ],
+        "known_registry_healthcheck": [
+            {"domain": r["domain"], "protocol": r["protocol"], "status": "seen"}
+            for _, r in known_confirmed.iterrows()
         ],
     }
     summary_path = args.out.with_name("discovered_portals_summary.json")
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    # Shortlist Markdown per review umana rapida
+    shortlist_lines = [
+        "# Portal Scout — Shortlist",
+        f"\n_Generato: {summary['generated_at']}_\n",
+        "## Nuovi candidati strutturati",
+        "",
+    ]
+    if new_confirmed.empty:
+        shortlist_lines.append("_Nessun nuovo candidato con protocollo confermato._")
+    else:
+        for _, r in new_confirmed.iterrows():
+            shortlist_lines.append(f"- **{r['domain']}** — {r['protocol'].upper()}")
+            shortlist_lines.append(f"  - Probe: `{r['probe_url']}`")
+            shortlist_lines.append(f"  - Next: portal-scout approfondito + proposta registry")
+
+    shortlist_lines += [
+        "",
+        "## Registry esistente — visti in questo run",
+        "",
+    ]
+    if known_confirmed.empty:
+        shortlist_lines.append("_Nessun portale noto rilevato._")
+    else:
+        for _, r in known_confirmed.iterrows():
+            shortlist_lines.append(f"- **{r['domain']}** — {r['protocol'].upper()} ✓ già nel registry")
+
+    shortlist_lines += [
+        "",
+        "## Portali HTML (non strutturati)",
+        "",
+        f"_{len(df[df['protocol'] == 'html'])} domini classificati HTML — nessuna API strutturata rilevata._",
+    ]
+
+    shortlist_path = args.out.with_name("portal_scout_shortlist.md")
+    shortlist_path.write_text("\n".join(shortlist_lines) + "\n", encoding="utf-8")
+    print(f"Shortlist scritta in {shortlist_path}")
     print(f"Summary scritto in {summary_path}")
 
     print(f"\nScritti {len(rows)} portali in {args.out}")

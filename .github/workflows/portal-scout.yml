@@ -161,6 +161,7 @@ jobs:
           path: |
             data/portal_scout/discovered_portals.parquet
             data/portal_scout/discovered_portals_summary.json
+            data/portal_scout/portal_scout_shortlist.md
             data/portal_scout/scout_results/
 
       - name: Publish summary
