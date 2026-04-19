@@ -17,7 +17,6 @@ on:
 permissions:
   contents: write
   id-token: write
-  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -167,21 +166,14 @@ jobs:
 
       - name: Commit summary artifacts
         env:
-          GH_TOKEN: ${{ github.token }}
+          PROJECTS_TOKEN: ${{ secrets.PROJECTS_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/portal_scout/discovered_portals_summary.json data/portal_scout/portal_scout_shortlist.md
           git diff --cached --quiet && exit 0
           git commit -m "chore: refresh portal scout summary"
-          branch="bot/portal-scout-summary"
-          git fetch origin "${branch}:refs/remotes/origin/${branch}" || true
-          git push --force-with-lease origin "HEAD:${branch}"
-          gh pr view "${branch}" >/dev/null 2>&1 || gh pr create \
-            --base main \
-            --head "${branch}" \
-            --title "chore: refresh portal scout summary" \
-            --body "Aggiorna gli artifact summary generati da portal-scout."
+          git push https://x-access-token:${PROJECTS_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
 
       - name: Publish summary
         run: |
@@ -211,3 +203,4 @@ jobs:
           Path("summary.md").write_text("\n".join(lines) + "\n")
           PY
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
+
