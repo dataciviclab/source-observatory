@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-04-19T17:28:50.591176+00:00",
+  "total_portals": 47,
+  "new_candidates": 32,
+  "new_confirmed_protocol": 5,
+  "known_registry_seen": 15,
+  "by_protocol": {
+    "html": 42,
+    "ckan": 5
+  },
+  "new_structured": [
+    {
+      "domain": "dati.lazio.it",
+      "protocol": "ckan",
+      "probe_url": "https://dati.lazio.it/api/3/action/package_list"
+    },
+    {
+      "domain": "dati.toscana.it",
+      "protocol": "ckan",
+      "probe_url": "https://dati.toscana.it/api/3/action/package_list"
+    },
+    {
+      "domain": "dati.mit.gov.it",
+      "protocol": "ckan",
+      "probe_url": "https://dati.mit.gov.it/catalog/api/3/action/package_list"
+    },
+    {
+      "domain": "indicepa.gov.it",
+      "protocol": "ckan",
+      "probe_url": "https://indicepa.gov.it/ipa-dati/api/3/action/package_list"
+    },
+    {
+      "domain": "opendata-ercolano.cultura.gov.it",
+      "protocol": "ckan",
+      "probe_url": "https://opendata-ercolano.cultura.gov.it/api/3/action/package_list"
+    }
+  ],
+  "known_registry_healthcheck": []
+}
