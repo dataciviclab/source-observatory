@@ -112,8 +112,14 @@ jobs:
                                    "--registry-path", tmp,
                                    "--out-dir", "data/portal_scout/scout_results"],
                                   check=False)
-          if result.returncode != 0:
+          scout_ok = result.returncode == 0
+          if not scout_ok:
               print(f"[warn] portal_scout.py exited with code {result.returncode}", file=sys.stderr)
+
+          # Scrive stato scout per il summary finale
+          Path("data/portal_scout/.scout_status").write_text(
+              "ok" if scout_ok else f"partial (exit {result.returncode})"
+          )
           PY
 
       # --- Upload su GCS ---
@@ -156,9 +162,17 @@ jobs:
           from pathlib import Path
 
           df = pd.read_parquet("data/portal_scout/discovered_portals.parquet")
+
+          scout_status_file = Path("data/portal_scout/.scout_status")
+          scout_status = scout_status_file.read_text().strip() if scout_status_file.exists() else "skipped (nessun candidato strutturato)"
+
           lines = ["## Portal Scout", ""]
           lines.append(f"- Domini totali rilevati: **{len(df)}**")
           lines.append(f"- Nuovi candidati (non nel registry): **{len(df[df['in_registry'] == 'no'])}**")
+          lines.append(f"- Scout strutturale: **{scout_status}**")
+          if scout_status.startswith("partial"):
+              lines.append("")
+              lines.append("> ⚠️ Lo scout strutturale ha avuto errori — `scout_results` potrebbero essere incompleti o assenti.")
           lines.append("")
           lines.append("### Protocolli strutturati rilevati")
           structured = df[df["protocol"].isin(["ckan", "sdmx", "sparql"])]
