@@ -80,7 +80,7 @@ TIMEOUT = 8
 # ---------------------------------------------------------------------------
 
 def search_ddg(queries: list[str], max_per_query: int) -> list[dict]:
-    from ddgs import DDGS
+    from ddgs import DDGS  # type: ignore[import-not-found]
     results = []
     with DDGS() as ddgs:
         for query in queries:

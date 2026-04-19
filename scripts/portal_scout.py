@@ -235,7 +235,9 @@ def scout_sdmx(source_id: str, source_cfg: dict[str, Any]) -> dict[str, Any]:
 
 def scout_sparql(source_id: str, source_cfg: dict[str, Any]) -> dict[str, Any]:
     sparql_cfg = source_cfg.get("sparql") or {}
-    endpoint = sparql_cfg.get("endpoint_url") or source_cfg.get("base_url")
+    endpoint: str | None = sparql_cfg.get("endpoint_url") or source_cfg.get("base_url")
+    if not endpoint:
+        return {"protocol": "sparql", "error": "endpoint mancante nella configurazione"}
     query = SPARQL_QUERY_TEMPLATES["dcat_datasets"].replace("{limit}", str(SPARQL_SAMPLE_SIZE))
     errors: list[str] = []
 
