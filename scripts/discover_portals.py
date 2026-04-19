@@ -29,9 +29,16 @@ OUT_DEFAULT = Path(__file__).resolve().parents[1] / "data" / "portal_scout" / "d
 SEARCH_QUERIES_BASE = [
     '"open data" "comuni" site:gov.it',
     '"dati comunali" "ministero" site:gov.it',
-    '"granularità comunale" "open data" site:gov.it',
     '"codice comune" dataset site:gov.it',
     '"API" "open data" ministero site:gov.it',
+]
+
+# Query mirate .it — pescano portali CKAN/SDMX regionali/utility con API strutturata
+SEARCH_QUERIES_IT = [
+    '"api/3/action" "open data" site:.it',
+    '"CKAN" "dati aperti" site:.it',
+    '"SDMX" "dataflow" "open data" site:.it',
+    '"SPARQL" endpoint "dati aperti" site:.it',
 ]
 
 # Query specifiche per protocollo
@@ -40,6 +47,12 @@ SEARCH_QUERIES_BY_PROTOCOL: dict[str, list[str]] = {
     "sdmx":   ['"SDMX" "dataflow" site:gov.it', '"SDMX" ISTAT site:gov.it'],
     "sparql": ['"SPARQL" endpoint "linked data" site:gov.it', '"SPARQL" "dati.gov.it"'],
 }
+
+# Pattern che identificano portali open data istituzionali su .it generico
+IT_OPENDATA_PATTERNS = [
+    "opendata.", "open-data.", "dati.", "portale-dati.", "datiaperiti.",
+    ".comune.", ".regione.", ".provincia.", ".cm.",  # enti locali con portale dati
+]
 
 # Endpoint probe per protocol detection
 PROBE_PATHS = {
@@ -55,12 +68,11 @@ SKIP_DOMAINS = {
     "agea.gov.it",  # falso positivo SDMX — redirect a SPA React
 }
 
-# Pattern di sottodomini da scartare: portali locali/singoli comune o regione
-# (interesse basso vs portali nazionali con granularità comunale)
+# Pattern da scartare sempre (siti non-dati, falsi positivi)
 SKIP_DOMAIN_PATTERNS = [
-    ".comune.",
-    ".regione.",
     "città metropolitana",
+    "artbonus.",
+    ".camcom.",  # camere di commercio locali — dati frammentati
 ]
 
 # Portali nazionali tier-1 da includere sempre nel probe, indipendentemente dalla DDG
@@ -130,8 +142,13 @@ def extract_domains(results: list[dict]) -> dict[str, set[str]]:
             continue
         if any(pat in domain for pat in SKIP_DOMAIN_PATTERNS):
             continue
-        # Tieni solo portali nazionali PA (.gov.it)
-        if not domain.endswith(".gov.it"):
+        # Accetta .gov.it sempre; accetta .it generico solo se il dominio
+        # ha pattern che indicano un portale open data istituzionale
+        if domain.endswith(".gov.it"):
+            pass
+        elif domain.endswith(".it") and any(pat in domain for pat in IT_OPENDATA_PATTERNS):
+            pass
+        else:
             continue
         if domain not in domains:
             domains[domain] = set()
@@ -193,7 +210,7 @@ def main() -> int:
 
     # Seleziona query in base ai protocolli richiesti
     protocols = set(args.protocols) if args.protocols else set(PROBE_PATHS.keys())
-    queries = list(SEARCH_QUERIES_BASE)
+    queries = list(SEARCH_QUERIES_BASE) + list(SEARCH_QUERIES_IT)
     for proto in sorted(protocols):
         queries.extend(SEARCH_QUERIES_BY_PROTOCOL.get(proto, []))
 

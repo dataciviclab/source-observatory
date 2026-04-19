@@ -60,8 +60,16 @@ jobs:
 
       # --- Fase 1: Discovery ---
 
+      - name: Verifica gate skip_discovery + GCS
+        if: ${{ inputs.skip_discovery == 'true' }}
+        run: |
+          if [[ -z '${{ env.PORTAL_SCOUT_GCS_PREFIX }}' ]]; then
+            echo "::error::skip_discovery=true richiede PORTAL_SCOUT_GCS_PREFIX configurato. Imposta il secret o lancia con skip_discovery=false."
+            exit 1
+          fi
+
       - name: Download discovered_portals from GCS (se skip_discovery)
-        if: ${{ inputs.skip_discovery == 'true' && env.PORTAL_SCOUT_GCS_PREFIX != '' }}
+        if: ${{ inputs.skip_discovery == 'true' }}
         run: |
           prefix='${{ env.PORTAL_SCOUT_GCS_PREFIX }}'
           prefix="${prefix%/}"
