@@ -57,9 +57,14 @@ I workflow sono istruzioni per agenti — non pipeline CI/CD. Seguire in ordine 
 Gli artifact generati (`parquet`, `json`, `STATUS.md`) non sono versionati nel repo. Si ottengono da GitHub Actions o GCS se configurato.
 
 - `data/radar/STATUS.md` — stato corrente delle fonti nel registry
-- `data/portal_scout/discovered_portals.parquet` — candidati discovery
-- `data/portal_scout/discovered_portals_summary.json` — sommario leggibile per agenti
+- `data/radar/radar_summary.json` — health complessivo (GREEN/YELLOW/RED per fonte)
+- `data/catalog/catalog_signals.json` — segnali di regressione per singola fonte
+- `data/portal_scout/discovered_portals.parquet` — candidati discovery (parquet completo)
+- `data/portal_scout/discovered_portals_summary.json` — sommario nuovi portali strutturati
+- `data/portal_scout/portal_scout_shortlist.md` — shortlist leggibile per review umana
 - `data/catalog_inventory/generated/catalog_inventory_latest.parquet` — oltre 6000 item da INPS, OpenBDAP, ISPRA, Camera e altri
+
+I tre JSON (`radar_summary`, `catalog_signals`, `discovered_portals_summary`) sono consumati da **agent-context-builder** per includere lo stato delle fonti nel contesto operativo degli agenti AI.
 
 ## Struttura
 
