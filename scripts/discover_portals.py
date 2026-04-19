@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -185,27 +186,31 @@ def main() -> int:
     domains = extract_domains(results)
     print(f"  {len(domains)} domini unici estratti")
 
-    rows = []
-    for domain, sources in sorted(domains.items()):
+    def _probe_domain(domain: str, sources: set[str]) -> dict:
         if args.no_probe:
             protocol, probe_url = "unknown", None
         else:
-            print(f"  probe {domain} ...", end=" ", flush=True)
             protocol, probe_url = detect_protocol(domain, active_probe_paths)
-            print(protocol)
-
+            print(f"  probe {domain} ... {protocol}", flush=True)
         in_registry = domain in KNOWN_REGISTRY_DOMAINS or any(
             domain.endswith("." + kd) or kd.endswith("." + domain)
             for kd in KNOWN_REGISTRY_DOMAINS
         )
-        rows.append({
+        return {
             "domain": domain,
             "protocol": protocol,
             "probe_url": probe_url or "",
             "base_url": f"https://{domain}",
             "in_registry": "yes" if in_registry else "no",
             "source_queries": " | ".join(sorted(sources)),
-        })
+        }
+
+    rows = []
+    workers = 1 if args.no_probe else 10
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {executor.submit(_probe_domain, d, s): d for d, s in sorted(domains.items())}
+        for future in as_completed(futures):
+            rows.append(future.result())
 
     import json
     import pandas as pd
