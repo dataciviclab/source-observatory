@@ -1,0 +1,142 @@
+{
+  "generated_at": "2026-04-19T09:31:22.303291+00:00",
+  "probe_date": "2026-04-19",
+  "sources_total": 13,
+  "status_counts": {
+    "GREEN": 9,
+    "YELLOW": 3,
+    "RED": 1
+  },
+  "sources": [
+    {
+      "id": "istat_sdmx",
+      "status": "GREEN",
+      "protocol": "sdmx",
+      "observation_mode": "catalog-watch",
+      "http_code": "200",
+      "last_check": "2026-04-19",
+      "datasets_in_use": [
+        "istat-gini-regionale",
+        "istat-housing-crowding",
+        "istat-ipab-aree"
+      ]
+    },
+    {
+      "id": "anac",
+      "status": "YELLOW",
+      "protocol": "ckan",
+      "observation_mode": "radar-only",
+      "http_code": "403",
+      "last_check": "2026-04-19",
+      "datasets_in_use": []
+    },
+    {
+      "id": "inps",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "observation_mode": "catalog-watch",
+      "http_code": "200",
+      "last_check": "2026-04-19",
+      "datasets_in_use": [
+        "inps-pensioni"
+      ]
+    },
+    {
+      "id": "openbdap",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "observation_mode": "catalog-watch",
+      "http_code": "200",
+      "last_check": "2026-04-19",
+      "datasets_in_use": [
+        "dipendenti-pubblici",
+        "bdap-lea"
+      ]
+    },
+    {
+      "id": "dati_salute",
+      "status": "RED",
+      "protocol": "html",
+      "observation_mode": "radar-only",
+      "http_code": "-",
+      "last_check": "2026-04-19",
+      "datasets_in_use": []
+    },
+    {
+      "id": "inail_opendata",
+      "status": "GREEN",
+      "protocol": "aem",
+      "observation_mode": "radar-only",
+      "http_code": "200",
+      "last_check": "2026-04-19",
+      "datasets_in_use": []
+    },
+    {
+      "id": "mim_opendata",
+      "status": "GREEN",
+      "protocol": "html",
+      "observation_mode": "radar-only",
+      "http_code": "200",
+      "last_check": "2026-04-19",
+      "datasets_in_use": [
+        "mim-alunni-corso-eta"
+      ]
+    },
+    {
+      "id": "dati_camera",
+      "status": "GREEN",
+      "protocol": "sparql",
+      "observation_mode": "catalog-watch",
+      "http_code": "200",
+      "last_check": "2026-04-19",
+      "datasets_in_use": []
+    },
+    {
+      "id": "ispra_linked_data",
+      "status": "GREEN",
+      "protocol": "sparql",
+      "observation_mode": "catalog-watch",
+      "http_code": "200",
+      "last_check": "2026-04-19",
+      "datasets_in_use": []
+    },
+    {
+      "id": "consip_open_data",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "observation_mode": "catalog-watch",
+      "http_code": "200",
+      "last_check": "2026-04-19",
+      "datasets_in_use": []
+    },
+    {
+      "id": "lavoro_opendata",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "observation_mode": "catalog-watch",
+      "http_code": "200",
+      "last_check": "2026-04-19",
+      "datasets_in_use": []
+    },
+    {
+      "id": "mur_ustat",
+      "status": "YELLOW",
+      "protocol": "ckan",
+      "observation_mode": "catalog-watch",
+      "http_code": "-",
+      "last_check": "2026-04-19",
+      "datasets_in_use": []
+    },
+    {
+      "id": "opencoesione",
+      "status": "YELLOW",
+      "protocol": "rest",
+      "observation_mode": "catalog-watch",
+      "http_code": "403",
+      "last_check": "2026-04-19",
+      "datasets_in_use": [
+        "opencoesione-pagamenti-ue-2014-2020"
+      ]
+    }
+  ]
+}
