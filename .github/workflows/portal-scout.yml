@@ -15,7 +15,7 @@ on:
         options: ["false", "true"]
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 concurrency:
@@ -164,6 +164,15 @@ jobs:
             data/portal_scout/portal_scout_shortlist.md
             data/portal_scout/scout_results/
 
+      - name: Commit summary artifacts
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/portal_scout/discovered_portals_summary.json data/portal_scout/portal_scout_shortlist.md
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: refresh portal scout summary"
+          git push
+
       - name: Publish summary
         run: |
           python - <<'PY'
@@ -192,3 +201,4 @@ jobs:
           Path("summary.md").write_text("\n".join(lines) + "\n")
           PY
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
+
