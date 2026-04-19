@@ -22,4 +22,5 @@ data/monitor/reports/diff_summary.json
 
 # Local artifacts (parquet, reports)
 data/catalog_inventory/generated/
+data/portal_scout/
 

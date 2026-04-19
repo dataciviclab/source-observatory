@@ -47,7 +47,8 @@ def ckan_action_endpoint(base_url: str, action: str) -> str:
     if last_segment in CKAN_ACTION_NAMES:
         root = endpoint.rsplit("/", 1)[0]
         return f"{root}/{action}"
-    return endpoint
+    # Nessun path API rilevato — aggiunge il path standard CKAN
+    return f"{endpoint}/api/3/action/{action}"
 
 
 def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
