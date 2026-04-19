@@ -344,7 +344,7 @@ def main() -> int:
         for _, r in new_confirmed.iterrows():
             shortlist_lines.append(f"- **{r['domain']}** — {r['protocol'].upper()}")
             shortlist_lines.append(f"  - Probe: `{r['probe_url']}`")
-            shortlist_lines.append(f"  - Next: portal-scout approfondito + proposta registry")
+            shortlist_lines.append("  - Next: portal-scout approfondito + proposta registry")
 
     shortlist_lines += [
         "",
