@@ -16,21 +16,16 @@ Indice minimo dei workflow canonici di `source-observatory`.
   - verifica se una fonte o un dataset pubblico regge davvero come pista del Lab
   - esce con un verdetto singolo e un next step esplicito
 
-- [catalog-watch.md](./catalog-watch.md)
-  - osserva pochi cataloghi in modalità inventariale
-  - cerca segnali di cambiamento sul catalogo, non sul singolo file
-
-
 ## Boundary rapido
 
 - `portal-scout`
   - classificazione iniziale del portale
 - `catalog-inventory-scout`
   - triage di una lista di item di un catalogo
-- `catalog-watch`
-  - cambi inventariali o strutturali del catalogo
 - `source-check`
   - valutazione umana della fonte come possibile pista del Lab
+
+> I segnali di drift/inventory change del catalogo sono prodotti automaticamente dalla CI (`catalog-inventory.yml`) e leggibili in `data/catalog/CATALOG_WATCH_REPORT.md` e `data/catalog/catalog_signals.json`.
 
 ## Regola pratica
 
@@ -38,7 +33,7 @@ Se la domanda è:
 
 - "cosa c'è in questo catalogo e cosa vale la pena approfondire?" -> `catalog-inventory-scout`
 - "questo portale è davvero un catalogo osservabile?" -> `portal-scout`
-- "il catalogo ha cambiato inventario o struttura?" -> `catalog-watch`
+- "il catalogo ha cambiato inventario o struttura?" -> leggi `data/catalog/CATALOG_WATCH_REPORT.md`
 - "questa fonte regge davvero come pista del Lab?" -> `source-check`
 
 ## Onboarding portali
@@ -61,7 +56,7 @@ Esiti canonici del gate e soglie minime:
 | `GO source-check item-based` | Strutturato ma < 20 dataset o > 50% PDF |
 | `NO per ora` | Falso positivo · WAF · fuori scope · duplicato |
 
-`GO catalog-watch` → proponi YAML per registry + apri issue SO (`portal-scout`).
+`GO catalog-watch` → proponi YAML per registry + apri issue SO (`portal-scout`). Il monitoraggio differenziale avviene via CI automatica.
 `GO radar-only` → aggiorna registry direttamente, nessuna issue.
 
 ## Nota: catalog inventory
@@ -69,13 +64,8 @@ Esiti canonici del gate e soglie minime:
 `catalog inventory` non è un workflow. È un artifact derivato:
 uno snapshot tabulare di tutti gli item in un catalogo noto, prodotto da `scripts/build_catalog_inventory.py`.
 
-La distinzione rispetto a `catalog-watch`:
-
-- `catalog-watch` osserva se il catalogo è cambiato
-- `catalog inventory` enumera cosa c'è dentro
-
 Il catalog inventory serve per scouting e triage di item promettenti, non per rilevare cambiamenti.
-Se nasce un dubbio su quale dei due usare: `catalog-watch` risponde a "è cambiato qualcosa?", `catalog inventory` risponde a "cosa c'è in questo catalogo?"
+I segnali di cambiamento inventariale sono prodotti automaticamente dalla CI in `data/catalog/catalog_signals.json` e `data/catalog/CATALOG_WATCH_REPORT.md`.
 
 L'inventory nasce solo dopo un esito `GO catalog-watch` e solo se esiste un metodo di enumerazione verificato.
 Se il portale è `radar-only` o `source-check item-based`, l'inventory non è il passo giusto.
