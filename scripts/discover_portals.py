@@ -105,7 +105,8 @@ KNOWN_REGISTRY_DOMAINS = {
     "openbdap.rgs.mef.gov.it",
 }
 
-TIMEOUT = 8
+# Probe aggressivo: se un host non risponde, non vogliamo bloccare il run.
+PROBE_TIMEOUT_SECONDS = (3, 5)
 
 
 # ---------------------------------------------------------------------------
@@ -175,7 +176,7 @@ def _probe_ckan(base: str, extra_prefixes: list[str] | None = None) -> str | Non
         for suffix in suffixes:
             url = base + prefix + suffix
             try:
-                r = observatory_get(url, timeout=TIMEOUT)
+                r = observatory_get(url, timeout=PROBE_TIMEOUT_SECONDS)
                 if r.status_code == 200:
                     ct = r.headers.get("content-type", "").lower()
                     if "json" in ct or r.text.strip().startswith("{"):
@@ -210,7 +211,7 @@ def detect_protocol(domain: str, probe_paths: dict | None = None) -> tuple[str, 
         for path in paths:
             url = base + path
             try:
-                r = observatory_get(url, timeout=TIMEOUT)
+                r = observatory_get(url, timeout=PROBE_TIMEOUT_SECONDS)
                 if r.status_code == 200:
                     ct = r.headers.get("content-type", "").lower()
                     if protocol == "sdmx":
