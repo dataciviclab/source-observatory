@@ -14,6 +14,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -225,6 +226,75 @@ def detect_protocol(domain: str, probe_paths: dict | None = None) -> tuple[str, 
     return "html", None
 
 
+def _build_summary_artifacts(df, scouted_at: str) -> tuple[dict, list[str]]:
+    """Build JSON summary payload and markdown shortlist from the discovery table."""
+    known = df[df["in_registry"] == "yes"]
+    new_candidates = df[df["in_registry"] == "no"]
+    confirmed_protocols = ["ckan", "sdmx", "sparql"]
+    new_confirmed = new_candidates[new_candidates["protocol"].isin(confirmed_protocols)]
+    known_confirmed = known[known["protocol"].isin(confirmed_protocols)]
+
+    summary = {
+        "generated_at": scouted_at,
+        "total_portals": len(df),
+        "new_candidates": len(new_candidates),
+        "new_confirmed_protocol": len(new_confirmed),
+        "known_registry_seen": len(known),
+        "by_protocol": df["protocol"].value_counts().to_dict(),
+        "new_structured": [
+            {"domain": r["domain"], "protocol": r["protocol"], "probe_url": r["probe_url"]}
+            for _, r in new_confirmed.iterrows()
+        ],
+        "known_registry_healthcheck": [
+            {"domain": r["domain"], "protocol": r["protocol"], "status": "seen"}
+            for _, r in known_confirmed.iterrows()
+        ],
+    }
+
+    shortlist_lines = [
+        "# Portal Scout — Shortlist",
+        f"\n_Generato: {summary['generated_at']}_\n",
+        "## Nuovi candidati strutturati",
+        "",
+    ]
+    if new_confirmed.empty:
+        shortlist_lines.append("_Nessun nuovo candidato con protocollo confermato._")
+    else:
+        for _, r in new_confirmed.iterrows():
+            shortlist_lines.append(f"- **{r['domain']}** — {r['protocol'].upper()}")
+            shortlist_lines.append(f"  - Probe: `{r['probe_url']}`")
+            shortlist_lines.append("  - Next: portal-scout approfondito + proposta registry")
+
+    shortlist_lines += [
+        "",
+        "## Registry esistente — visti in questo run",
+        "",
+    ]
+    if known_confirmed.empty:
+        shortlist_lines.append("_Nessun portale noto rilevato._")
+    else:
+        for _, r in known_confirmed.iterrows():
+            shortlist_lines.append(f"- **{r['domain']}** — {r['protocol'].upper()} ✓ già nel registry")
+
+    shortlist_lines += [
+        "",
+        "## Portali HTML (non strutturati)",
+        "",
+        f"_{len(df[df['protocol'] == 'html'])} domini classificati HTML — nessuna API strutturata rilevata._",
+    ]
+
+    return summary, shortlist_lines
+
+
+def _write_summary_artifacts(df, out_path: Path, scouted_at: str) -> tuple[Path, Path]:
+    summary, shortlist_lines = _build_summary_artifacts(df, scouted_at)
+    summary_path = out_path.with_name("discovered_portals_summary.json")
+    summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    shortlist_path = out_path.with_name("portal_scout_shortlist.md")
+    shortlist_path.write_text("\n".join(shortlist_lines) + "\n", encoding="utf-8")
+    return summary_path, shortlist_path
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -237,12 +307,29 @@ def parse_args() -> argparse.Namespace:
                    help="Filtra per protocollo: usa solo query e probe mirati (es. --protocols sdmx ckan).")
     p.add_argument("--only-matched", action="store_true",
                    help="Output solo portali dove il probe ha confermato il protocollo (esclude html).")
+    p.add_argument(
+        "--refresh-summary",
+        action="store_true",
+        help="Rigenera summary e shortlist da un parquet già esistente in --out.",
+    )
     p.add_argument("--out", type=Path, default=OUT_DEFAULT, help="Path parquet output.")
     return p.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+
+    if args.refresh_summary:
+        import pandas as pd
+        from datetime import datetime, timezone
+
+        df = pd.read_parquet(args.out)
+        summary_path, shortlist_path = _write_summary_artifacts(
+            df, args.out, datetime.now(timezone.utc).isoformat()
+        )
+        print(f"Shortlist scritta in {shortlist_path}")
+        print(f"Summary scritto in {summary_path}")
+        return 0
 
     # Seleziona query in base ai protocolli richiesti
     protocols = set(args.protocols) if args.protocols else set(PROBE_PATHS.keys())
@@ -291,7 +378,6 @@ def main() -> int:
         for future in as_completed(futures):
             rows.append(future.result())
 
-    import json
     import pandas as pd
     from datetime import datetime, timezone
 
@@ -305,68 +391,12 @@ def main() -> int:
 
     df.to_parquet(args.out, index=False)
 
-    known = df[df["in_registry"] == "yes"]
     new_candidates = df[df["in_registry"] == "no"]
     print(f"  di cui {len(new_candidates)} nuovi candidati (non nel registry)")
 
-    # JSON summary per ACB e lettura rapida
-    confirmed_protocols = ["ckan", "sdmx", "sparql"]
-    new_confirmed = new_candidates[new_candidates["protocol"].isin(confirmed_protocols)]
-    known_confirmed = known[known["protocol"].isin(confirmed_protocols)]
-    summary = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "total_portals": len(df),
-        "new_candidates": len(new_candidates),
-        "new_confirmed_protocol": len(new_confirmed),
-        "known_registry_seen": len(known),
-        "by_protocol": df["protocol"].value_counts().to_dict(),
-        "new_structured": [
-            {"domain": r["domain"], "protocol": r["protocol"], "probe_url": r["probe_url"]}
-            for _, r in new_confirmed.iterrows()
-        ],
-        "known_registry_healthcheck": [
-            {"domain": r["domain"], "protocol": r["protocol"], "status": "seen"}
-            for _, r in known_confirmed.iterrows()
-        ],
-    }
-    summary_path = args.out.with_name("discovered_portals_summary.json")
-    summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
-
-    # Shortlist Markdown per review umana rapida
-    shortlist_lines = [
-        "# Portal Scout — Shortlist",
-        f"\n_Generato: {summary['generated_at']}_\n",
-        "## Nuovi candidati strutturati",
-        "",
-    ]
-    if new_confirmed.empty:
-        shortlist_lines.append("_Nessun nuovo candidato con protocollo confermato._")
-    else:
-        for _, r in new_confirmed.iterrows():
-            shortlist_lines.append(f"- **{r['domain']}** — {r['protocol'].upper()}")
-            shortlist_lines.append(f"  - Probe: `{r['probe_url']}`")
-            shortlist_lines.append("  - Next: portal-scout approfondito + proposta registry")
-
-    shortlist_lines += [
-        "",
-        "## Registry esistente — visti in questo run",
-        "",
-    ]
-    if known_confirmed.empty:
-        shortlist_lines.append("_Nessun portale noto rilevato._")
-    else:
-        for _, r in known_confirmed.iterrows():
-            shortlist_lines.append(f"- **{r['domain']}** — {r['protocol'].upper()} ✓ già nel registry")
-
-    shortlist_lines += [
-        "",
-        "## Portali HTML (non strutturati)",
-        "",
-        f"_{len(df[df['protocol'] == 'html'])} domini classificati HTML — nessuna API strutturata rilevata._",
-    ]
-
-    shortlist_path = args.out.with_name("portal_scout_shortlist.md")
-    shortlist_path.write_text("\n".join(shortlist_lines) + "\n", encoding="utf-8")
+    summary_path, shortlist_path = _write_summary_artifacts(
+        df, args.out, datetime.now(timezone.utc).isoformat()
+    )
     print(f"Shortlist scritta in {shortlist_path}")
     print(f"Summary scritto in {summary_path}")
 
