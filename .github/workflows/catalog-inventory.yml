@@ -142,11 +142,11 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/catalog/catalog_signals.json
+          git add data/catalog/catalog_signals.json data/catalog/CATALOG_WATCH_REPORT.md
           if git diff --cached --quiet; then
             echo "Nessuna variazione nei segnali."
           else
-            git commit -m "chore(so): aggiorna catalog_signals.json [ci skip]"
+            git commit -m "chore(so): aggiorna catalog_signals e watch report [ci skip]"
             git push
           fi
 

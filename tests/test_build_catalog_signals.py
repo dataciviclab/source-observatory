@@ -87,14 +87,14 @@ def test_no_mismatch_when_prev_method_missing():
 def test_error_delegated_to_radar_summary():
     sig = _classify("src", _error("connection refused"), _ok())
     assert sig["signal_type"] == "no signal"
-    assert sig["result"] == "stabile"
+    assert sig["result"] == "skipped"
     assert "radar_summary" in sig["detail"]
 
 
 def test_repeated_error_stays_silent_for_catalog_signals():
     sig = _classify("src", _error("timeout"), _error("timeout"))
     assert sig["signal_type"] == "no signal"
-    assert sig["result"] == "stabile"
+    assert sig["result"] == "skipped"
     assert "radar_summary" in sig["detail"]
 
 
@@ -141,4 +141,31 @@ def test_build_signals_suppresses_health_regressions():
     previous = _report(("anac", _ok(rows=100)))
     out = build_signals(current, previous)
     assert out["signals"][0]["signal_type"] == "no signal"
-    assert out["signals"][0]["result"] == "stabile"
+    assert out["signals"][0]["result"] == "skipped"
+
+
+# --- build_watch_report ---
+
+def test_watch_report_no_signals():
+    from scripts.build_catalog_signals import build_watch_report
+    signals = {"captured_at": "2026-04-20", "sources_checked": 3, "signals": [
+        {"source": "istat", "protocol": "sdmx", "signal_type": "no signal", "result": "stabile", "detail": "ok", "suggested_action": "nessuna"},
+    ]}
+    report = build_watch_report(signals)
+    assert "Catalog Watch Report" in report
+    assert "Nessun segnale" in report
+    assert "radar_summary" in report
+
+
+def test_watch_report_with_inventory_change():
+    from scripts.build_catalog_signals import build_watch_report
+    signals = {"captured_at": "2026-04-20", "sources_checked": 2, "signals": [
+        {"source": "inps", "protocol": "ckan", "signal_type": "inventory change", "result": "inventory change",
+         "detail": "delta +12", "suggested_action": "verificare", "metric_value": 2335},
+        {"source": "istat", "protocol": "sdmx", "signal_type": "no signal", "result": "stabile", "detail": "ok", "suggested_action": "nessuna"},
+    ]}
+    report = build_watch_report(signals)
+    assert "inps" in report
+    assert "inventory change" in report
+    assert "verificare" in report
+    assert "2335" in report
