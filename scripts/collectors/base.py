@@ -37,7 +37,7 @@ def get_observatory_session() -> requests.Session:
 def observatory_get(
     url: str,
     *,
-    timeout: int | float = DEFAULT_TIMEOUT_SECONDS,
+    timeout: int | float | tuple[float, float] = DEFAULT_TIMEOUT_SECONDS,
     headers: dict[str, str] | None = None,
     **kwargs: Any,
 ) -> requests.Response:
@@ -55,7 +55,7 @@ def observatory_get(
 def observatory_head(
     url: str,
     *,
-    timeout: int | float = DEFAULT_TIMEOUT_SECONDS,
+    timeout: int | float | tuple[float, float] = DEFAULT_TIMEOUT_SECONDS,
     headers: dict[str, str] | None = None,
     **kwargs: Any,
 ) -> requests.Response:
