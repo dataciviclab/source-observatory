@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from build_catalog_signals import build_signals, _classify
+from build_catalog_signals import build_signals, build_watch_report, _classify
 
 
 def _report(*sources: tuple) -> dict:
@@ -147,7 +147,6 @@ def test_build_signals_suppresses_health_regressions():
 # --- build_watch_report ---
 
 def test_watch_report_no_signals():
-    from scripts.build_catalog_signals import build_watch_report
     signals = {"captured_at": "2026-04-20", "sources_checked": 3, "signals": [
         {"source": "istat", "protocol": "sdmx", "signal_type": "no signal", "result": "stabile", "detail": "ok", "suggested_action": "nessuna"},
     ]}
@@ -158,7 +157,6 @@ def test_watch_report_no_signals():
 
 
 def test_watch_report_with_inventory_change():
-    from scripts.build_catalog_signals import build_watch_report
     signals = {"captured_at": "2026-04-20", "sources_checked": 2, "signals": [
         {"source": "inps", "protocol": "ckan", "signal_type": "inventory change", "result": "inventory change",
          "detail": "delta +12", "suggested_action": "verificare", "metric_value": 2335},
