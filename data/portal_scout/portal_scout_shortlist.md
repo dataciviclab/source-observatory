@@ -1,20 +1,17 @@
 # Portal Scout — Shortlist
 
-_Generato: 2026-04-19T17:28:50.591176+00:00_
+_Generato: 2026-04-20T17:53:47.088520+00:00_
 
 ## Nuovi candidati strutturati
 
-- **dati.lazio.it** — CKAN
-  - Probe: `https://dati.lazio.it/api/3/action/package_list`
-  - Next: portal-scout approfondito + proposta registry
-- **dati.toscana.it** — CKAN
-  - Probe: `https://dati.toscana.it/api/3/action/package_list`
-  - Next: portal-scout approfondito + proposta registry
-- **dati.mit.gov.it** — CKAN
-  - Probe: `https://dati.mit.gov.it/catalog/api/3/action/package_list`
+- **dati-coll.dfp.gov.it** — CKAN
+  - Probe: `https://dati-coll.dfp.gov.it/api/3/action/package_list`
   - Next: portal-scout approfondito + proposta registry
 - **indicepa.gov.it** — CKAN
   - Probe: `https://indicepa.gov.it/ipa-dati/api/3/action/package_list`
+  - Next: portal-scout approfondito + proposta registry
+- **dati.mit.gov.it** — CKAN
+  - Probe: `https://dati.mit.gov.it/catalog/api/3/action/package_list`
   - Next: portal-scout approfondito + proposta registry
 - **opendata-ercolano.cultura.gov.it** — CKAN
   - Probe: `https://opendata-ercolano.cultura.gov.it/api/3/action/package_list`
@@ -22,7 +19,7 @@ _Generato: 2026-04-19T17:28:50.591176+00:00_
 
 ## Registry esistente — visti in questo run
 
-_Nessun portale noto rilevato._
+- **esploradati.istat.it** — SDMX ✓ già nel registry
 
 ## Portali HTML (non strutturati)
 

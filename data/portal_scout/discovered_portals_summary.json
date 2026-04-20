@@ -1,28 +1,19 @@
 {
-  "generated_at": "2026-04-19T17:28:50.591176+00:00",
+  "generated_at": "2026-04-20T17:53:47.088520+00:00",
   "total_portals": 47,
-  "new_candidates": 32,
-  "new_confirmed_protocol": 5,
-  "known_registry_seen": 15,
+  "new_candidates": 33,
+  "new_confirmed_protocol": 4,
+  "known_registry_seen": 14,
   "by_protocol": {
     "html": 42,
-    "ckan": 5
+    "ckan": 4,
+    "sdmx": 1
   },
   "new_structured": [
     {
-      "domain": "dati.lazio.it",
+      "domain": "dati-coll.dfp.gov.it",
       "protocol": "ckan",
-      "probe_url": "https://dati.lazio.it/api/3/action/package_list"
-    },
-    {
-      "domain": "dati.toscana.it",
-      "protocol": "ckan",
-      "probe_url": "https://dati.toscana.it/api/3/action/package_list"
-    },
-    {
-      "domain": "dati.mit.gov.it",
-      "protocol": "ckan",
-      "probe_url": "https://dati.mit.gov.it/catalog/api/3/action/package_list"
+      "probe_url": "https://dati-coll.dfp.gov.it/api/3/action/package_list"
     },
     {
       "domain": "indicepa.gov.it",
@@ -30,10 +21,21 @@
       "probe_url": "https://indicepa.gov.it/ipa-dati/api/3/action/package_list"
     },
     {
+      "domain": "dati.mit.gov.it",
+      "protocol": "ckan",
+      "probe_url": "https://dati.mit.gov.it/catalog/api/3/action/package_list"
+    },
+    {
       "domain": "opendata-ercolano.cultura.gov.it",
       "protocol": "ckan",
       "probe_url": "https://opendata-ercolano.cultura.gov.it/api/3/action/package_list"
     }
   ],
-  "known_registry_healthcheck": []
+  "known_registry_healthcheck": [
+    {
+      "domain": "esploradati.istat.it",
+      "protocol": "sdmx",
+      "status": "seen"
+    }
+  ]
 }
