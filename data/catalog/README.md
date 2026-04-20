@@ -18,8 +18,8 @@ Quest'area serve per intelligence su cataloghi e inventari:
 - drift strutturale
 - segnali di follow-up
 
-Nel report `CATALOG_WATCH_REPORT.md` vanno esplicitate anche le fonti
-`catalog-watch` non inventariabili dal builder corrente (es. protocollo non supportato).
+Nel report `CATALOG_WATCH_REPORT.md` vanno esplicitate anche le fonti con
+`observation_mode: catalog-watch` non inventariabili dal builder corrente (es. protocollo non supportato).
 
 Non e' il posto per:
 

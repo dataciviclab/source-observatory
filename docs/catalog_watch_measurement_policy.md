@@ -1,4 +1,4 @@
-# Policy Catalog-Watch
+# Policy Segnali Inventariali
 
 Scopo: evitare che un delta numerico grezzo diventi automaticamente `inventory_change`.
 
