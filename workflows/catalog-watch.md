@@ -35,7 +35,7 @@ Monitora inventario e struttura dei cataloghi nel registry. Produce report di in
    - `ckan`: Package search/list -> confronto solo se i metodi di conteggio coincidono.
    - `rest_json/html`: Verifica raggiungibilità e struttura link/schema.
 3. **Comparabilità**: Confronta `catalog_baseline.method` col metodo osservato. Se non coincidono, usa `[DATO MANCANTE]`, non `inventory change`.
-4. **Classifica Segnale**: Usa un solo segnale primario (`no signal`, `health`, `inventory change`, `structural drift`, `follow-up candidate`).
+4. **Classifica Segnale**: Usa un solo segnale primario per il drift (`no signal`, `inventory change`, `structural drift`, `follow-up candidate`, `[DATO MANCANTE]`). La salute pura della connessione resta nel radar.
 5. **Report**: Scrivi `data/catalog/CATALOG_WATCH_REPORT.md` e aggiorna `data/catalog/catalog_signals.json`.
 6. **Update Registry**: Aggiorna `last_probed`. **NON** toccare baseline, method o reliability senza autorizzazione.
 
@@ -44,8 +44,9 @@ Monitora inventario e struttura dei cataloghi nel registry. Produce report di in
 - `inventory change`: Nuovi dataset rilevati. Seleziona [catalog-inventory-scout.md](./catalog-inventory-scout.md) per triage.
 - `structural drift`: Cambio schema o endpoint (non rottura totale).
 - `follow-up candidate`: Suggerimento esplicito di intervento umano.
-- `health`: Problemi di rete o timeout (prevale su inventory).
 - `[DATO MANCANTE]`: Mismatch di metodo o baseline non comparabile.
+
+Per problemi di rete o timeout usa `radar_summary.json`, non `catalog_signals.json`.
 
 ## 5. Integrazione CI
 

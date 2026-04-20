@@ -10,7 +10,7 @@ scripts/
     sdmx.py            # collector SDMX
     sparql.py          # collector SPARQL
   build_catalog_inventory.py   # entry point: enumera fonti → parquet
-  build_catalog_signals.py     # entry point: segnali di cambiamento
+  build_catalog_signals.py     # entry point: drift/inventory del catalogo
   bulk_source_check.py         # entry point: enrichment e scoring per intake
   _constants.py                # costanti condivise tra script
 ```
@@ -70,6 +70,12 @@ if __name__ == "__main__":
 - **Nessuna eccezione silenziata senza motivo.** Se catturi `Exception`, logga o restituisci un valore sentinel esplicito (es. `None`, `enrich_method: "error"`).
 - **Tipi espliciti** sulle firme delle funzioni pubbliche.
 - **No dipendenze nuove** senza discussione — il progetto usa `requests`, `pandas`, `pyyaml`, `duckdb`. Per parsing XML usa `xml.etree.ElementTree` stdlib.
+
+## Boundary segnali: radar vs catalog
+
+- `radar_summary.json` presidia health/availability, timeout, SSL, DNS e HTTP.
+- `catalog_signals.json` presidia drift, inventory change, mismatch di metodo e follow-up strutturali.
+- Se un problema è solo connettività, non va rilanciato come regressione catalogo.
 
 ## Aggiungere un nuovo enricher a bulk_source_check
 

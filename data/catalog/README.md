@@ -26,3 +26,5 @@ Non e' il posto per:
 - salute del portale
 - monitoraggio file-level
 - decisioni di source-check
+
+La salute di connettivita' e HTTP vive in `data/radar/radar_summary.json`; qui restano solo segnali legati a inventario e drift.

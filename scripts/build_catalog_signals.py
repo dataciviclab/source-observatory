@@ -3,7 +3,7 @@
 Genera catalog_signals.json da catalog_inventory_report.json.
 
 Confronta con il report precedente (se disponibile) per rilevare
-regressioni, recovery e variazioni di inventory.
+solo drift e inventory: la salute pura della connessione è delegata a radar_summary.
 """
 
 from __future__ import annotations
@@ -48,34 +48,20 @@ def _classify(
             "suggested_action": "nessuna",
         }
 
-    # Errore
+    # Errori/recovery di connettività sono coperti da radar_summary.
+    # Il catalog_signals mantiene solo segnali inventariali e strutturali.
     if status == "error":
-        error_msg = info.get("error", "errore sconosciuto")
-        prev_status = prev_info.get("status") if prev_info else None
-        if prev_status == "error" and prev_info is not None:
-            prev_error = prev_info.get("error", "")
-            changed = prev_error != error_msg
-            detail = f"Errore persistente: {error_msg}"
-            if changed:
-                detail += " (messaggio cambiato rispetto al run precedente)"
-            return {
-                "source": source_id,
-                "protocol": protocol,
-                "signal_type": "health",
-                "result": "regressione",
-                "metric_value": None,
-                "detail": detail,
-                "suggested_action": "valutare declassamento a radar-only se persiste",
-            }
-        # Nuova regressione
         return {
             "source": source_id,
             "protocol": protocol,
-            "signal_type": "health",
-            "result": "regressione",
+            "signal_type": "no signal",
+            "result": "stabile",
             "metric_value": None,
-            "detail": f"Errore: {error_msg}",
-            "suggested_action": "monitorare nei prossimi run",
+            "detail": (
+                "Connessione/endpoint coperti da radar_summary; "
+                "nessun segnale inventariale affidabile in questo run."
+            ),
+            "suggested_action": "nessuna",
         }
 
     # Ok
@@ -84,15 +70,15 @@ def _classify(
         method = info.get("method", "n/d")
         prev_status = prev_info.get("status") if prev_info else None
 
-        # Recovery
+        # Recovery di connettività ignorata: il radar la presidia.
         if prev_status == "error":
             return {
                 "source": source_id,
                 "protocol": protocol,
-                "signal_type": "health",
-                "result": "recovery",
+                "signal_type": "no signal",
+                "result": "stabile",
                 "metric_value": rows,
-                "detail": f"Tornato ok. {rows} item ({method}).",
+                "detail": f"{rows} item ({method}), connettività presidiata da radar_summary.",
                 "suggested_action": "nessuna",
             }
 
@@ -137,7 +123,7 @@ def _classify(
             "suggested_action": "nessuna",
         }
 
-    # Fallback
+    # Fallback: nessun segnale inventariale utile.
     return {
         "source": source_id,
         "protocol": protocol,
@@ -172,7 +158,7 @@ def build_signals(report: dict, prev_report: dict | None) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Genera catalog_signals.json da catalog_inventory_report.json."
+        description="Genera catalog_signals.json da catalog_inventory_report.json (drift/inventory only)."
     )
     parser.add_argument(
         "--report",

@@ -82,39 +82,26 @@ def test_no_mismatch_when_prev_method_missing():
     assert sig["signal_type"] == "inventory change"
 
 
-# --- regressione ---
+# --- health delegated to radar ---
 
-def test_new_regression():
+def test_error_delegated_to_radar_summary():
     sig = _classify("src", _error("connection refused"), _ok())
-    assert sig["signal_type"] == "health"
-    assert sig["result"] == "regressione"
-    assert "monitorare" in sig["suggested_action"]
+    assert sig["signal_type"] == "no signal"
+    assert sig["result"] == "stabile"
+    assert "radar_summary" in sig["detail"]
 
 
-def test_persistent_regression_same_message():
+def test_repeated_error_stays_silent_for_catalog_signals():
     sig = _classify("src", _error("timeout"), _error("timeout"))
-    assert sig["result"] == "regressione"
-    assert "persistente" in sig["detail"]
-    assert "messaggio cambiato" not in sig["detail"]
+    assert sig["signal_type"] == "no signal"
+    assert sig["result"] == "stabile"
+    assert "radar_summary" in sig["detail"]
 
 
-def test_persistent_regression_changed_message():
-    sig = _classify("src", _error("503 Service Unavailable"), _error("timeout"))
-    assert sig["result"] == "regressione"
-    assert "messaggio cambiato" in sig["detail"]
-
-
-def test_persistent_regression_suggests_declassamento():
-    sig = _classify("src", _error("timeout"), _error("timeout"))
-    assert "radar-only" in sig["suggested_action"]
-
-
-# --- recovery ---
-
-def test_recovery():
+def test_recovery_is_not_reported_as_catalog_signal():
     sig = _classify("src", _ok(rows=100), _error("timeout"))
-    assert sig["signal_type"] == "health"
-    assert sig["result"] == "recovery"
+    assert sig["signal_type"] == "no signal"
+    assert sig["result"] == "stabile"
     assert sig["metric_value"] == 100
 
 
@@ -147,3 +134,11 @@ def test_build_signals_method_mismatch_end_to_end():
     previous = _report(("anac", _ok(rows=100, method="package_search")))
     out = build_signals(current, previous)
     assert out["signals"][0]["signal_type"] == "missing_data"
+
+
+def test_build_signals_suppresses_health_regressions():
+    current = _report(("anac", _error("timeout")))
+    previous = _report(("anac", _ok(rows=100)))
+    out = build_signals(current, previous)
+    assert out["signals"][0]["signal_type"] == "no signal"
+    assert out["signals"][0]["result"] == "stabile"

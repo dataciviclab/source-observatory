@@ -28,6 +28,7 @@ discover_portals  →  portal-scout  →  gate
 | `scripts/portal_scout.py` | Sonda copertura metadata su campione → JSON per portale |
 | `scripts/radar_check.py` | Health check giornaliero delle fonti nel registry |
 | `scripts/build_catalog_inventory.py` | Snapshot tabulare di tutti gli item enumerabili |
+| `scripts/build_catalog_signals.py` | Segnali drift/inventory del catalogo; health delegata a radar |
 
 ```bash
 # Discovery mirata per protocollo
@@ -58,13 +59,13 @@ Gli artifact generati (`parquet`, `json`, `STATUS.md`) non sono versionati nel r
 
 - `data/radar/STATUS.md` — stato corrente delle fonti nel registry
 - `data/radar/radar_summary.json` — health complessivo (GREEN/YELLOW/RED per fonte)
-- `data/catalog/catalog_signals.json` — segnali di regressione per singola fonte
+- `data/catalog/catalog_signals.json` — segnali drift/inventory per singola fonte
 - `data/portal_scout/discovered_portals.parquet` — candidati discovery (parquet completo)
 - `data/portal_scout/discovered_portals_summary.json` — sommario nuovi portali strutturati
 - `data/portal_scout/portal_scout_shortlist.md` — shortlist leggibile per review umana
 - `data/catalog_inventory/generated/catalog_inventory_latest.parquet` — oltre 6000 item da INPS, OpenBDAP, ISPRA, Camera e altri
 
-I tre JSON (`radar_summary`, `catalog_signals`, `discovered_portals_summary`) sono consumati da **agent-context-builder** per includere lo stato delle fonti nel contesto operativo degli agenti AI.
+I tre JSON (`radar_summary`, `catalog_signals`, `discovered_portals_summary`) sono consumati da **agent-context-builder** per includere lo stato delle fonti nel contesto operativo degli agenti AI. `radar_summary` presidia la salute di rete/HTTP; `catalog_signals` resta solo sul drift inventariale.
 
 ## Struttura
 

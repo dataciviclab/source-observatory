@@ -1,67 +1,14 @@
 {
-  "captured_at": "2026-04-20T05:49:12+00:00",
-  "sources_checked": 9,
+  "captured_at": "2026-04-18T09:30:24+00:00",
+  "sources_checked": 3,
   "signals": [
-    {
-      "source": "opencoesione",
-      "protocol": "rest",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "detail": "Protocollo rest non ancora supportato dal builder inventory.",
-      "suggested_action": "nessuna"
-    },
-    {
-      "source": "istat_sdmx",
-      "protocol": "sdmx",
-      "signal_type": "health",
-      "result": "recovery",
-      "metric_value": 4821,
-      "detail": "Tornato ok. 4821 item (dataflow_count).",
-      "suggested_action": "nessuna"
-    },
-    {
-      "source": "inps",
-      "protocol": "ckan",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 2323,
-      "detail": "2323 item (package_list), in linea con la baseline.",
-      "suggested_action": "nessuna"
-    },
     {
       "source": "openbdap",
       "protocol": "ckan",
-      "signal_type": "health",
-      "result": "recovery",
+      "signal_type": "no signal",
+      "result": "stabile",
       "metric_value": 3772,
-      "detail": "Tornato ok. 3772 item (package_list).",
-      "suggested_action": "nessuna"
-    },
-    {
-      "source": "dati_camera",
-      "protocol": "sparql",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 104,
-      "detail": "104 item (sparql_query), in linea con la baseline.",
-      "suggested_action": "nessuna"
-    },
-    {
-      "source": "ispra_linked_data",
-      "protocol": "sparql",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 66,
-      "detail": "66 item (sparql_query), in linea con la baseline.",
-      "suggested_action": "nessuna"
-    },
-    {
-      "source": "consip_open_data",
-      "protocol": "ckan",
-      "signal_type": "health",
-      "result": "recovery",
-      "metric_value": 17,
-      "detail": "Tornato ok. 17 item (package_list).",
+      "detail": "3772 item (package_list), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -74,12 +21,13 @@
       "suggested_action": "nessuna"
     },
     {
-      "source": "mur_ustat",
+      "source": "inps",
       "protocol": "ckan",
-      "signal_type": "health",
-      "result": "regressione",
-      "detail": "Errore persistente: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7f3efd10b620>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=60)')) (messaggio cambiato rispetto al run precedente)",
-      "suggested_action": "valutare declassamento a radar-only se persiste"
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 2323,
+      "detail": "2323 item (package_list), in linea con la baseline.",
+      "suggested_action": "nessuna"
     }
   ]
 }
