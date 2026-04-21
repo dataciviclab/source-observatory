@@ -1,23 +1,22 @@
 {
-  "captured_at": "2026-04-18T09:30:24+00:00",
-  "sources_checked": 3,
+  "captured_at": "2026-04-21T10:18:46+00:00",
+  "sources_checked": 9,
   "signals": [
     {
-      "source": "openbdap",
-      "protocol": "ckan",
+      "source": "opencoesione",
+      "protocol": "rest",
       "signal_type": "no signal",
       "result": "stabile",
-      "metric_value": 3772,
-      "detail": "3772 item (package_list), in linea con la baseline.",
+      "detail": "Protocollo rest non ancora supportato dal builder inventory.",
       "suggested_action": "nessuna"
     },
     {
-      "source": "lavoro_opendata",
-      "protocol": "ckan",
+      "source": "istat_sdmx",
+      "protocol": "sdmx",
       "signal_type": "no signal",
       "result": "stabile",
-      "metric_value": 159,
-      "detail": "159 item (package_list), in linea con la baseline.",
+      "metric_value": 4821,
+      "detail": "4821 item (dataflow_count), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -27,6 +26,58 @@
       "result": "stabile",
       "metric_value": 2323,
       "detail": "2323 item (package_list), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "openbdap",
+      "protocol": "ckan",
+      "signal_type": "inventory change",
+      "result": "inventory change",
+      "metric_value": 3773,
+      "detail": "3773 item (package_list), delta +1 rispetto al run precedente (3772).",
+      "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset"
+    },
+    {
+      "source": "dati_camera",
+      "protocol": "sparql",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 104,
+      "detail": "104 item (sparql_query), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "ispra_linked_data",
+      "protocol": "sparql",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 66,
+      "detail": "66 item (sparql_query), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "consip_open_data",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 17,
+      "detail": "17 item (package_list), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "lavoro_opendata",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "mur_ustat",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     }
   ]
