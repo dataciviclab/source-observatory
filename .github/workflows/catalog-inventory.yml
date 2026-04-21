@@ -39,6 +39,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Initialize previous report baseline
+        run: |
+          echo "{}" > previous_report.json
+
       - name: Build catalog inventory
         run: |
           python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/generated --workers=4

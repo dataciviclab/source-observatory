@@ -46,17 +46,20 @@ python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/gener
 
 ## Workflow
 
-I workflow sono istruzioni per agenti — non pipeline CI/CD. Seguire in ordine per ogni portale nuovo.
+I workflow in `workflows/` sono istruzioni operative per agenti e review umana. In parallelo, alcuni workflow GitHub Actions schedulati producono artifact e report di osservazione.
 
 - [`workflows/portal-scout.md`](workflows/portal-scout.md) — classifica un portale e assegna verdict
 - [`workflows/source-check.md`](workflows/source-check.md) — valuta se una fonte regge come pista del Lab
 - [`workflows/catalog-inventory-scout.md`](workflows/catalog-inventory-scout.md) — triage degli item in un catalogo noto
 
 > I segnali di drift/inventory change sono prodotti automaticamente ogni lunedì dalla CI (`catalog-inventory.yml`) e leggibili in `data/catalog/CATALOG_WATCH_REPORT.md`.
+> Il workflow `portal-scout.yml` può chiudere lo scout strutturale come `ok`, `degraded` o `failed`, a seconda della qualità dell'output prodotto.
 
 ## Output e artefatti
 
 Gli artifact generati (`parquet`, `json`, `STATUS.md`) non sono versionati nel repo. Si ottengono da GitHub Actions o GCS se configurato.
+
+Se GCS non è configurato, i workflow restano eseguibili: usano artifact Actions e saltano i passaggi opzionali di storage remoto.
 
 - `data/radar/STATUS.md` — stato corrente delle fonti nel registry
 - `data/radar/radar_summary.json` — health complessivo (GREEN/YELLOW/RED per fonte)

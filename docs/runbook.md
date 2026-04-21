@@ -35,7 +35,7 @@ Manutenzione del Registry:
 Boundary:
 
 - Se il problema è di contenuto (non infrastrutturale) -> [source-check.md](../workflows/source-check.md)
-- Se il catalogo è cambiato ma la fonte è viva -> [catalog-watch.md](../workflows/catalog-watch.md)
+- Se il catalogo è cambiato ma la fonte è viva -> [catalog-inventory-scout.md](../workflows/catalog-inventory-scout.md)
 
 ## Catalog-watch
 
@@ -52,9 +52,9 @@ Usa `catalog-watch` quando la domanda è:
 
 Modello v0:
 
-- `catalog-watch` resta `human-run`
-- nessuno scheduler dedicato in questa fase
-- il run va usato quando serve un check metodologicamente difendibile, non come polling continuo
+- i segnali vengono prodotti automaticamente dal workflow schedulato `catalog-inventory.yml`
+- il follow-up resta `human-run`: il report non sostituisce la review umana sui cambi rilevanti
+- il run manuale va usato quando serve un check metodologicamente difendibile fuori schedule
 - gli output canonici restano `CATALOG_WATCH_REPORT.md` e `catalog_signals.json`
 - problemi di connessione/HTTP vanno letti in `radar_summary.json`, non in `catalog_signals.json`
 
@@ -84,7 +84,18 @@ Disciplina:
 - una fonte può restare osservata in SO ma non essere inventariabile
 - `anac` oggi resta escluso dall'inventory automatico per vincoli WAF
 - l'upload su GCS è opzionale e richiede secret espliciti
+- in assenza di GCS il workflow resta valido: usa baseline locale vuota e salta i passaggi opzionali di storage/diff
 - il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`
+
+## Portal scout
+
+Il workflow `portal-scout.yml` ha tre esiti operativi per lo scout strutturale:
+
+- `ok` se `portal_scout.py` completa il run
+- `degraded` se lo script esce con errore ma produce comunque JSON utilizzabili in `scout_results/`
+- `failed` se lo script non produce output utilizzabile; in questo caso il job fallisce
+
+`skip_discovery=true` richiede GCS configurato, perché il parquet di discovery viene recuperato da storage invece di essere ricostruito via DDG.
 
 ## Ordine consigliato
 

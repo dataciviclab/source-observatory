@@ -158,6 +158,7 @@ jobs:
 
           if candidates.empty:
               print("Nessun candidato strutturato da sondare.")
+              Path("data/portal_scout/.scout_status").write_text("skipped")
               sys.exit(0)
 
           print(f"Candidati da sondare: {len(candidates)}")
@@ -177,14 +178,28 @@ jobs:
               [sys.executable, "scripts/portal_scout.py", "--registry-path", tmp, "--out-dir", "data/portal_scout/scout_results"],
               check=False,
           )
-          scout_ok = result.returncode == 0
-          if not scout_ok:
+          if result.returncode == 0:
+              scout_status = "ok"
+          elif Path("data/portal_scout/scout_results").exists() and any(
+              Path("data/portal_scout/scout_results").glob("*.json")
+          ):
+              scout_status = f"degraded (exit {result.returncode})"
+          else:
+              scout_status = f"failed (exit {result.returncode})"
+
+          if scout_status != "ok":
               print(f"[warn] portal_scout.py exited with code {result.returncode}", file=sys.stderr)
 
-          Path("data/portal_scout/.scout_status").write_text(
-              "ok" if scout_ok else f"partial (exit {result.returncode})"
-          )
+          Path("data/portal_scout/.scout_status").write_text(scout_status)
           PY
+
+      - name: Fail if portal scout produced no usable output
+        run: |
+          status=$(cat data/portal_scout/.scout_status)
+          if [[ "$status" == failed* ]]; then
+            echo "::error::portal_scout non ha prodotto output utilizzabile ($status)."
+            exit 1
+          fi
 
       - name: Upload artifacts to GCS
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.PORTAL_SCOUT_GCS_PREFIX != '' }}
@@ -235,15 +250,23 @@ jobs:
           df = pd.read_parquet("data/portal_scout/discovered_portals.parquet")
 
           scout_status_file = Path("data/portal_scout/.scout_status")
-          scout_status = scout_status_file.read_text().strip() if scout_status_file.exists() else "skipped (nessun candidato strutturato)"
+          scout_status = scout_status_file.read_text().strip() if scout_status_file.exists() else "skipped"
 
           lines = ["## Portal Scout", ""]
           lines.append(f"- Domini totali rilevati: **{len(df)}**")
           lines.append(f"- Nuovi candidati (non nel registry): **{len(df[df['in_registry'] == 'no'])}**")
           lines.append(f"- Scout strutturale: **{scout_status}**")
-          if scout_status.startswith("partial"):
+          if scout_status.startswith("degraded"):
               lines.append("")
-              lines.append("> ⚠️ Lo scout strutturale ha avuto errori — `scout_results` potrebbero essere incompleti o assenti.")
+              lines.append("> [!WARNING]")
+              lines.append("> Lo scout strutturale ha avuto errori parziali; `scout_results` possono essere incompleti.")
+          elif scout_status.startswith("failed"):
+              lines.append("")
+              lines.append("> [!CAUTION]")
+              lines.append("> Lo scout strutturale non ha prodotto output utilizzabile.")
+          elif scout_status == "skipped":
+              lines.append("")
+              lines.append("_Nessun candidato strutturato da sondare in questo run._")
           lines.append("")
           lines.append("### Protocolli strutturati rilevati")
           structured = df[df["protocol"].isin(["ckan", "sdmx", "sparql"])]
