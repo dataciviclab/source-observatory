@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Genera catalog_signals.json da catalog_inventory_report.json.
+Genera catalog_signals.json e CATALOG_WATCH_REPORT.md da catalog_inventory_report.json.
 
 Confronta con il report precedente (se disponibile) per rilevare
-regressioni, recovery e variazioni di inventory.
+solo drift e inventory: la salute pura della connessione è delegata a radar_summary.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORT = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_report.json"
 DEFAULT_OUT = REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
+DEFAULT_REPORT_OUT = REPO_ROOT / "data" / "catalog" / "CATALOG_WATCH_REPORT.md"
 
 
 def _classify(
@@ -48,34 +49,20 @@ def _classify(
             "suggested_action": "nessuna",
         }
 
-    # Errore
+    # Errori/recovery di connettività sono coperti da radar_summary.
+    # Il catalog_signals mantiene solo segnali inventariali e strutturali.
     if status == "error":
-        error_msg = info.get("error", "errore sconosciuto")
-        prev_status = prev_info.get("status") if prev_info else None
-        if prev_status == "error" and prev_info is not None:
-            prev_error = prev_info.get("error", "")
-            changed = prev_error != error_msg
-            detail = f"Errore persistente: {error_msg}"
-            if changed:
-                detail += " (messaggio cambiato rispetto al run precedente)"
-            return {
-                "source": source_id,
-                "protocol": protocol,
-                "signal_type": "health",
-                "result": "regressione",
-                "metric_value": None,
-                "detail": detail,
-                "suggested_action": "valutare declassamento a radar-only se persiste",
-            }
-        # Nuova regressione
         return {
             "source": source_id,
             "protocol": protocol,
-            "signal_type": "health",
-            "result": "regressione",
+            "signal_type": "no signal",
+            "result": "skipped",
             "metric_value": None,
-            "detail": f"Errore: {error_msg}",
-            "suggested_action": "monitorare nei prossimi run",
+            "detail": (
+                "Connessione/endpoint coperti da radar_summary; "
+                "nessun segnale inventariale affidabile in questo run."
+            ),
+            "suggested_action": "nessuna",
         }
 
     # Ok
@@ -84,15 +71,15 @@ def _classify(
         method = info.get("method", "n/d")
         prev_status = prev_info.get("status") if prev_info else None
 
-        # Recovery
+        # Recovery di connettività ignorata: il radar la presidia.
         if prev_status == "error":
             return {
                 "source": source_id,
                 "protocol": protocol,
-                "signal_type": "health",
-                "result": "recovery",
+                "signal_type": "no signal",
+                "result": "stabile",
                 "metric_value": rows,
-                "detail": f"Tornato ok. {rows} item ({method}).",
+                "detail": f"{rows} item ({method}), connettività presidiata da radar_summary.",
                 "suggested_action": "nessuna",
             }
 
@@ -137,7 +124,7 @@ def _classify(
             "suggested_action": "nessuna",
         }
 
-    # Fallback
+    # Fallback: nessun segnale inventariale utile.
     return {
         "source": source_id,
         "protocol": protocol,
@@ -170,9 +157,62 @@ def build_signals(report: dict, prev_report: dict | None) -> dict:
     }
 
 
+_SIGNAL_EMOJI = {
+    "inventory change": "📦",
+    "structural drift": "⚠️",
+    "missing_data": "❓",
+    "follow-up candidate": "🔍",
+    "no signal": "✅",
+}
+
+
+def build_watch_report(signals: dict) -> str:
+    captured_at = signals.get("captured_at", "n/d")
+    sources_checked = signals.get("sources_checked", 0)
+    signal_list = signals.get("signals", [])
+
+    actionable = [s for s in signal_list if s.get("signal_type") not in ("no signal", "")]
+    stable = [s for s in signal_list if s.get("signal_type") in ("no signal", "")]
+
+    lines = [
+        "# Catalog Watch Report",
+        "",
+        f"_Generato: {captured_at} — {sources_checked} fonti controllate_",
+        "",
+    ]
+
+    if actionable:
+        lines += ["## Segnali attivi", ""]
+        for s in actionable:
+            emoji = _SIGNAL_EMOJI.get(s.get("signal_type", ""), "•")
+            lines.append(f"### {emoji} `{s['source']}` — {s.get('signal_type', 'n/d')}")
+            lines.append("")
+            lines.append(f"- **Protocollo**: {s.get('protocol', 'n/d')}")
+            lines.append(f"- **Dettaglio**: {s.get('detail', '')}")
+            if s.get("metric_value") is not None:
+                lines.append(f"- **Item**: {s['metric_value']}")
+            action = s.get("suggested_action", "nessuna")
+            if action and action != "nessuna":
+                lines.append(f"- **Azione**: {action}")
+            lines.append("")
+    else:
+        lines += ["## Segnali attivi", "", "_Nessun segnale di drift o inventory change._", ""]
+
+    lines += [
+        "## Fonti stabili / skipped",
+        "",
+        f"_{len(stable)} fonti senza segnali inventariali in questo run._",
+        "",
+        "Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.",
+        "",
+    ]
+
+    return "\n".join(lines)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Genera catalog_signals.json da catalog_inventory_report.json."
+        description="Genera catalog_signals.json e CATALOG_WATCH_REPORT.md da catalog_inventory_report.json (drift/inventory only)."
     )
     parser.add_argument(
         "--report",
@@ -192,6 +232,12 @@ def main() -> None:
         default=DEFAULT_OUT,
         help="Path di output per catalog_signals.json.",
     )
+    parser.add_argument(
+        "--report-out",
+        type=Path,
+        default=DEFAULT_REPORT_OUT,
+        help="Path di output per CATALOG_WATCH_REPORT.md.",
+    )
     args = parser.parse_args()
 
     report = json.loads(args.report.read_text(encoding="utf-8"))
@@ -206,6 +252,11 @@ def main() -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(signals, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Wrote {len(signals['signals'])} signals to {args.out}")
+
+    watch_report = build_watch_report(signals)
+    args.report_out.parent.mkdir(parents=True, exist_ok=True)
+    args.report_out.write_text(watch_report, encoding="utf-8")
+    print(f"Wrote watch report to {args.report_out}")
 
 
 if __name__ == "__main__":

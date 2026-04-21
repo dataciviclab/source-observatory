@@ -30,7 +30,7 @@ Usalo soprattutto se devi capire rapidamente cosa vale la pena approfondire e co
 ## Non usarlo quando
 
 - Devi verificare davvero una singola fonte: in quel caso fai [source-check.md](./source-check.md).
-- Devi confrontare un portale con una baseline per vedere cambiamenti strutturali: in quel caso fai [catalog-watch.md](./catalog-watch.md).
+- Devi vedere se il catalogo ha cambiato inventario o struttura: leggi `data/catalog/CATALOG_WATCH_REPORT.md` (prodotto dalla CI ogni lunedì).
 - L'inventory non è leggibile o non hai abbastanza metadati minimi per triagiarlo.
 
 ## Preconditions minime
@@ -64,7 +64,7 @@ Usa il template [Catalog inventory scout](../.github/ISSUE_TEMPLATE/catalog-inve
 
 - `catalog-inventory-scout` -> prepara il terreno via triage di una lista.
 - [source-check.md](./source-check.md) -> verifica una fonte specifica.
-- [catalog-watch.md](./catalog-watch.md) -> osserva un portale in modalità differenziale.
+- `CATALOG_WATCH_REPORT.md` / `catalog_signals.json` -> segnali differenziali prodotti automaticamente dalla CI.
 
 ## Output atteso
 

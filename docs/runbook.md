@@ -56,6 +56,7 @@ Modello v0:
 - nessuno scheduler dedicato in questa fase
 - il run va usato quando serve un check metodologicamente difendibile, non come polling continuo
 - gli output canonici restano `CATALOG_WATCH_REPORT.md` e `catalog_signals.json`
+- problemi di connessione/HTTP vanno letti in `radar_summary.json`, non in `catalog_signals.json`
 
 ## Catalog inventory
 

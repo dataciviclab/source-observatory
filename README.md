@@ -28,6 +28,7 @@ discover_portals  →  portal-scout  →  gate
 | `scripts/portal_scout.py` | Sonda copertura metadata su campione → JSON per portale |
 | `scripts/radar_check.py` | Health check giornaliero delle fonti nel registry |
 | `scripts/build_catalog_inventory.py` | Snapshot tabulare di tutti gli item enumerabili |
+| `scripts/build_catalog_signals.py` | Segnali drift/inventory del catalogo; health delegata a radar |
 
 ```bash
 # Discovery mirata per protocollo
@@ -49,8 +50,9 @@ I workflow sono istruzioni per agenti — non pipeline CI/CD. Seguire in ordine 
 
 - [`workflows/portal-scout.md`](workflows/portal-scout.md) — classifica un portale e assegna verdict
 - [`workflows/source-check.md`](workflows/source-check.md) — valuta se una fonte regge come pista del Lab
-- [`workflows/catalog-watch.md`](workflows/catalog-watch.md) — osserva cambi inventariali del catalogo
 - [`workflows/catalog-inventory-scout.md`](workflows/catalog-inventory-scout.md) — triage degli item in un catalogo noto
+
+> I segnali di drift/inventory change sono prodotti automaticamente ogni lunedì dalla CI (`catalog-inventory.yml`) e leggibili in `data/catalog/CATALOG_WATCH_REPORT.md`.
 
 ## Output e artefatti
 
@@ -58,13 +60,14 @@ Gli artifact generati (`parquet`, `json`, `STATUS.md`) non sono versionati nel r
 
 - `data/radar/STATUS.md` — stato corrente delle fonti nel registry
 - `data/radar/radar_summary.json` — health complessivo (GREEN/YELLOW/RED per fonte)
-- `data/catalog/catalog_signals.json` — segnali di regressione per singola fonte
+- `data/catalog/catalog_signals.json` — segnali drift/inventory per singola fonte
+- `data/catalog/CATALOG_WATCH_REPORT.md` — report leggibile prodotto dalla CI ogni lunedì
 - `data/portal_scout/discovered_portals.parquet` — candidati discovery (parquet completo)
 - `data/portal_scout/discovered_portals_summary.json` — sommario nuovi portali strutturati
 - `data/portal_scout/portal_scout_shortlist.md` — shortlist leggibile per review umana
 - `data/catalog_inventory/generated/catalog_inventory_latest.parquet` — oltre 6000 item da INPS, OpenBDAP, ISPRA, Camera e altri
 
-I tre JSON (`radar_summary`, `catalog_signals`, `discovered_portals_summary`) sono consumati da **agent-context-builder** per includere lo stato delle fonti nel contesto operativo degli agenti AI.
+I tre JSON (`radar_summary`, `catalog_signals`, `discovered_portals_summary`) sono consumati da **agent-context-builder** per includere lo stato delle fonti nel contesto operativo degli agenti AI. `radar_summary` presidia la salute di rete/HTTP; `catalog_signals` resta solo sul drift inventariale.
 
 ## Struttura
 
