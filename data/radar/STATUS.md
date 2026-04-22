@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-04-21
+Ultimo run: 2026-04-22
 
 ## Sommario
 
 - Fonti controllate: 13
-- GREEN: 7
-- YELLOW: 5
-- RED: 1
+- GREEN: 5
+- YELLOW: 8
+- RED: 0
 
 ## Tipi sorgente
 
@@ -34,22 +34,24 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat-gini-regionale, istat-housing-crowding, istat-ipab-aree |
 | anac | catalog | ckan | radar-only | YELLOW | 403 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps-pensioni |
-| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | dipendenti-pubblici, bdap-lea |
-| dati_salute | catalog | html | radar-only | RED | - | - |
+| openbdap | catalog | ckan | catalog-watch | YELLOW | - | dipendenti-pubblici, bdap-lea |
+| dati_salute | catalog | html | radar-only | YELLOW | - | - |
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
 | mim_opendata | portal | html | radar-only | GREEN | 200 | mim-alunni-corso-eta |
 | dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | - |
-| consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| consip_open_data | catalog | ckan | catalog-watch | YELLOW | - | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | YELLOW | 200 | - |
 | mur_ustat | catalog | ckan | catalog-watch | YELLOW | - | - |
 | opencoesione | catalog | rest | catalog-watch | YELLOW | 403 | opencoesione-pagamenti-ue-2014-2020 |
 
 ## Note
 
-- `istat_sdmx`: Timeout (ReadTimeout)
+- `istat_sdmx`: Timeout (ConnectTimeout)
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | WAF blocca endpoint CKAN. Declassato a radar-only finche' non disponibile endpoint alternativo o accesso istituzionale.
-- `dati_salute`: SSL verify failed; fallback connection error (SSLError)
+- `openbdap`: Timeout (ConnectTimeout)
+- `dati_salute`: Timeout (ConnectTimeout)
+- `consip_open_data`: Timeout (ConnectTimeout)
 - `lavoro_opendata`: HTTP 200 | content-type: text/html | url finale: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1 | CKAN API returned non-JSON content
 - `mur_ustat`: Timeout (ConnectTimeout)
 - `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/api/ | API REST custom con endpoint aggregati e data_aggiornamento. Usare per change detection e trigger re-run del candidate DI.
