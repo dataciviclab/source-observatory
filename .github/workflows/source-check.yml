@@ -65,14 +65,6 @@ jobs:
             --out-dir data/catalog_inventory/generated \
             --workers 4
 
-      - name: Download previous source-check results from GCS
-        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
-        run: |
-          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
-          prefix="${prefix%/}"
-          gcloud storage cp "$prefix/source-check/source_check_results.parquet" \
-            data/catalog_inventory/generated/source_check_results.parquet || true
-
       - name: Run bulk source-check
         run: |
           python scripts/bulk_source_check.py \
