@@ -75,6 +75,30 @@ def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
         ) from exc
 
 
+def _resource_format(item: dict) -> str | None:
+    resources = item.get("resources") or []
+    if not resources:
+        return None
+    formats: list[str] = []
+    for r in resources:
+        fmt = str(r.get("format") or "").strip().lower()
+        if fmt:
+            formats.append(fmt)
+    if not formats:
+        return None
+    unique = list(dict.fromkeys(formats))
+    return ",".join(unique)
+
+
+def _has_datastore_active(item: dict) -> bool:
+    resources = item.get("resources") or []
+    return any(str(r.get("datastore_active") or "").lower() == "true" for r in resources)
+
+
+def _resource_count(item: dict) -> int:
+    return len(item.get("resources") or [])
+
+
 def extract_ckan_inventory_row(
     source_id: str,
     source_cfg: dict[str, Any],
@@ -118,6 +142,9 @@ def extract_ckan_inventory_row(
         "source_url": endpoint,
         "api_base_url": _ckan_api_base(source_cfg.get("base_url") or endpoint),
         "ordinal": ordinal,
+        "format": _resource_format(item),
+        "datastore_active": _has_datastore_active(item),
+        "resource_count": _resource_count(item),
     }
 
 
