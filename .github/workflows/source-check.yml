@@ -56,7 +56,7 @@ jobs:
           prefix="${prefix%/}"
           mkdir -p data/catalog_inventory/generated
           gcloud storage cp "$prefix/catalog_inventory_latest.parquet" \
-            data/catalog_inventory/generated/catalog_inventory_latest.parquet || true
+            data/catalog_inventory/generated/catalog_inventory_latest.parquet
 
       - name: Build catalog inventory (fallback se parquet non disponibile)
         if: ${{ hashFiles('data/catalog_inventory/generated/catalog_inventory_latest.parquet') == '' }}
