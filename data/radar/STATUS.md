@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-04-23
+Ultimo run: 2026-04-24
 
 ## Sommario
 
 - Fonti controllate: 13
-- GREEN: 8
-- YELLOW: 4
-- RED: 1
+- GREEN: 6
+- YELLOW: 5
+- RED: 2
 
 ## Tipi sorgente
 
@@ -31,14 +31,14 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat-gini-regionale, istat-housing-crowding, istat-ipab-aree |
+| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat-gini-regionale, istat-housing-crowding, istat-ipab-aree |
 | anac | catalog | ckan | radar-only | YELLOW | 403 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps-pensioni |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | dipendenti-pubblici, bdap-lea |
 | dati_salute | catalog | html | radar-only | RED | - | - |
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
 | mim_opendata | portal | html | radar-only | GREEN | 200 | mim-alunni-corso-eta |
-| dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | - |
+| dati_camera | catalog | sparql | catalog-watch | RED | 503 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | YELLOW | 200 | - |
@@ -47,8 +47,10 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
+- `istat_sdmx`: Timeout (ReadTimeout)
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | WAF blocca endpoint CKAN. Declassato a radar-only finche' non disponibile endpoint alternativo o accesso istituzionale.
 - `dati_salute`: SSL verify failed; fallback connection error (SSLError)
+- `dati_camera`: HTTP 503 | content-type: text/html; charset=UTF-8 | url finale: https://dati.camera.it/sparql | Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.
 - `lavoro_opendata`: HTTP 200 | content-type: text/html | url finale: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1 | CKAN API returned non-JSON content
 - `mur_ustat`: Timeout (ConnectTimeout)
 - `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/api/ | API REST custom con endpoint aggregati e data_aggiornamento. Usare per change detection e trigger re-run del candidate DI.
