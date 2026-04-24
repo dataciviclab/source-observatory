@@ -345,6 +345,18 @@ def main() -> int:
         status = "error" if "error" in result else "ok"
         print(status)
 
+    ok_count = sum(1 for r in results.values() if "error" not in r and "skipped" not in r)
+    error_count = sum(1 for r in results.values() if "error" in r)
+    skipped_count = sum(1 for r in results.values() if r.get("skipped"))
+
+    summary = {
+        "scouted_at": scouted_at,
+        "total": len(results),
+        "ok": ok_count,
+        "error": error_count,
+        "skipped": skipped_count,
+    }
+
     output = {"scouted_at": scouted_at, "sources": results}
 
     if args.dry_run:
@@ -356,7 +368,12 @@ def main() -> int:
         out_path = args.out_dir / f"{source_id}_scout.json"
         out_path.write_text(json.dumps({"scouted_at": scouted_at, "source_id": source_id, **result}, indent=2, ensure_ascii=False))
 
+    # Write machine-readable summary
+    summary_path = args.out_dir / "_scout_summary.json"
+    summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False))
+
     print(f"\nScritti {len(results)} report in {args.out_dir}")
+    print(f"Summary: {ok_count} ok, {error_count} error, {skipped_count} skipped")
     return 0
 
 

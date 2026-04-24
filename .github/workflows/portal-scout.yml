@@ -143,55 +143,11 @@ jobs:
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.PORTAL_SCOUT_GCS_PREFIX != '' }}
         uses: google-github-actions/setup-gcloud@v3
 
-      - name: Run portal_scout on structured candidates
+      - name: Run portal_scout batch
         run: |
-          python - <<'PY'
-          import pandas as pd
-          import subprocess, sys, yaml, tempfile
-          from pathlib import Path
-
-          df = pd.read_parquet("data/portal_scout/discovered_portals.parquet")
-          candidates = df[
-              (df["in_registry"] == "no") &
-              (df["protocol"].isin(["ckan", "sdmx", "sparql"]))
-          ]
-
-          if candidates.empty:
-              print("Nessun candidato strutturato da sondare.")
-              Path("data/portal_scout/.scout_status").write_text("skipped")
-              sys.exit(0)
-
-          print(f"Candidati da sondare: {len(candidates)}")
-
-          cfg = {}
-          for _, row in candidates.iterrows():
-              entry = {"protocol": row["protocol"], "base_url": row["base_url"]}
-              if row["protocol"] == "sparql" and row.get("probe_url"):
-                  entry["sparql"] = {"endpoint_url": row["probe_url"]}
-              cfg[row["domain"]] = entry
-
-          with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as f:
-              yaml.dump(cfg, f)
-              tmp = f.name
-
-          result = subprocess.run(
-              [sys.executable, "scripts/portal_scout.py", "--registry-path", tmp, "--out-dir", "data/portal_scout/scout_results"],
-              check=False,
-          )
-          if result.returncode == 0:
-              scout_status = "ok"
-          elif Path("data/portal_scout/scout_results").exists() and any(
-              Path("data/portal_scout/scout_results").glob("*.json")
-          ):
-              scout_status = f"degraded (exit {result.returncode})"
-          else:
-              scout_status = f"failed (exit {result.returncode})"
-
-          if scout_status != "ok":
-              print(f"[warn] portal_scout.py exited with code {result.returncode}", file=sys.stderr)
-
-          Path("data/portal_scout/.scout_status").write_text(scout_status)
-          PY
+          python scripts/run_portal_scout_batch.py \
+            --portals data/portal_scout/discovered_portals.parquet \
+            --out-dir data/portal_scout/scout_results
 
       - name: Fail if portal scout produced no usable output
         run: |
