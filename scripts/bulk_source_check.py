@@ -160,6 +160,15 @@ def _parse_ckan_package(pkg: dict) -> dict:
     temporal_start = extras.get("temporal_coverage_from") or extras.get("issued")
     temporal_end = extras.get("temporal_coverage_to") or extras.get("modified")
 
+    # fallback DCAT-IT: "Periodo di riferimento: YYYY - YYYY"
+    # presente in molti CKAN italiani (MEF/Consip, Regioni, etc.)
+    if temporal_start is None and temporal_end is None:
+        periodo = extras.get("Periodo di riferimento") or extras.get("periodo di riferimento")
+        if periodo:
+            years = _YEAR_RE.findall(str(periodo))
+            if len(years) >= 2:
+                temporal_start, temporal_end = years[0], years[-1]
+
     notes = (pkg.get("notes") or "").strip()
     title = pkg.get("title") or None
 
