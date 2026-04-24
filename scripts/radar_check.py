@@ -347,15 +347,17 @@ def build_radar_summary(
 
     for source_id, meta in registry.items():
         result = results.get(source_id) or _missing
-        sources_list.append({
-            "id": source_id,
-            "status": result.status,
-            "protocol": meta.get("protocol", "-"),
-            "observation_mode": meta.get("observation_mode", "radar-only"),
-            "http_code": result.http_code,
-            "last_check": probe_date,
-            "datasets_in_use": meta.get("datasets_in_use") or [],
-        })
+        sources_list.append(
+            {
+                "id": source_id,
+                "status": result.status,
+                "protocol": meta.get("protocol", "-"),
+                "observation_mode": meta.get("observation_mode", "radar-only"),
+                "http_code": result.http_code,
+                "last_check": probe_date,
+                "datasets_in_use": meta.get("datasets_in_use") or [],
+            }
+        )
 
     return {
         "generated_at": generated_at,
@@ -412,7 +414,9 @@ def main() -> int:
     STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
     STATUS_PATH.write_text(report, encoding="utf-8")
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    SUMMARY_PATH.write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     save_registry(REGISTRY_PATH, registry)
     print(f"Wrote {STATUS_PATH}")
     print(f"Wrote {SUMMARY_PATH}")
