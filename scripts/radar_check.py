@@ -4,7 +4,6 @@ import argparse
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
-from typing import TYPE_CHECKING
 import json
 import time
 from pathlib import Path
@@ -15,9 +14,6 @@ import yaml
 
 from _constants import SDMX_RETRYABLE_STATUS_CODES, SDMX_RETRY_DELAYS_SECONDS
 from collectors.base import SslFallbackFailed, observatory_ssl_fallback_get
-
-if TYPE_CHECKING:
-    from requests.exceptions import RequestException
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
@@ -164,16 +160,20 @@ def _probe_once(base_url: str) -> ProbeResult:
         ssl_failure = exc if isinstance(exc, requests.exceptions.SSLError) else None
         return _build_probe_result(base_url, response, ssl_failure=ssl_failure)
     # exc is not None — both attempts failed
+    if exc is None:
+        raise RuntimeError("Expected exception when response is None from observatory_ssl_fallback_get")
     ssl_failure = None
-    error_exc: RequestException
+    error_exc: requests.exceptions.RequestException
     if isinstance(exc, SslFallbackFailed):
         ssl_failure = exc.ssl_error
         error_exc = exc.fallback_error
     elif isinstance(exc, requests.exceptions.SSLError):
         ssl_failure = exc
         error_exc = exc
-    else:
+    elif isinstance(exc, requests.exceptions.RequestException):
         error_exc = exc
+    else:
+        raise RuntimeError(f"Unexpected exception type in _probe_once: {type(exc)}")
     return _make_error_result(
         error_exc,
         ssl_fallback_used=ssl_failure is not None,
