@@ -10,11 +10,10 @@ from pathlib import Path
 from typing import Any
 
 import requests
-import urllib3
 import yaml
-from urllib3.exceptions import InsecureRequestWarning
 
 from _constants import SDMX_RETRYABLE_STATUS_CODES, SDMX_RETRY_DELAYS_SECONDS
+from collectors.base import observatory_ssl_fallback_get
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
@@ -149,38 +148,25 @@ def _build_probe_result(
 
 
 def _probe_once(base_url: str) -> ProbeResult:
-    """Single probe attempt (no retry)."""
-    headers = {"User-Agent": USER_AGENT}
-    try:
-        with requests.get(
-            base_url,
-            timeout=TIMEOUT_SECONDS,
-            headers=headers,
-            allow_redirects=True,
-            stream=True,
-        ) as response:
-            return _build_probe_result(base_url, response)
-    except requests.exceptions.SSLError as exc:
-        try:
-            with requests.Session() as session:
-                urllib3.disable_warnings(category=InsecureRequestWarning)
-                with session.get(
-                    base_url,
-                    timeout=TIMEOUT_SECONDS,
-                    headers=headers,
-                    allow_redirects=True,
-                    verify=False,
-                    stream=True,
-                ) as response:
-                    return _build_probe_result(base_url, response, ssl_failure=exc)
-        except requests.exceptions.RequestException as fallback_exc:
-            return _make_error_result(
-                fallback_exc,
-                ssl_fallback_used=True,
-                ssl_failure=exc,
-            )
-    except requests.exceptions.RequestException as exc:
-        return _make_error_result(exc)
+    """Single probe attempt (no retry). Uses shared SSL fallback from base.py."""
+    response, exc = observatory_ssl_fallback_get(
+        base_url,
+        timeout=TIMEOUT_SECONDS,
+        allow_redirects=True,
+        stream=True,
+    )
+    if response is not None:
+        # If exc is not None, we had an SSLError first then fallback succeeded
+        ssl_failure = exc if isinstance(exc, requests.exceptions.SSLError) else None
+        return _build_probe_result(base_url, response, ssl_failure=ssl_failure)
+    # exc is not None — original SSLError, fallback also failed
+    ssl_failure = exc if isinstance(exc, requests.exceptions.SSLError) else None
+    fallback_exc = exc if not ssl_failure else None
+    return _make_error_result(
+        fallback_exc or exc,
+        ssl_fallback_used=ssl_failure is not None,
+        ssl_failure=ssl_failure,
+    )
 
 
 def probe_url(base_url: str) -> ProbeResult:

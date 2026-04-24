@@ -123,13 +123,13 @@ def test_is_sdmx_url() -> None:
 
 
 def test_probe_url_success(monkeypatch) -> None:
-    def fake_get(*args, **kwargs):
+    def fake_ssl_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
         return FakeResponse(
             status_code=200,
             json_payload={"success": True, "result": []},
-        )
+        ), None
 
-    monkeypatch.setattr(radar_check.requests, "get", fake_get)
+    monkeypatch.setattr(radar_check, "observatory_ssl_fallback_get", fake_ssl_get)
     result = radar_check.probe_url("https://demo.test/api/3/action/package_list")
     assert result.status == "GREEN"
     assert result.http_code == "200"
@@ -139,10 +139,10 @@ def test_probe_url_success(monkeypatch) -> None:
 def test_probe_url_timeout(monkeypatch) -> None:
     import requests as real_requests
 
-    def fake_get(*args, **kwargs):
-        raise real_requests.exceptions.Timeout("Connection timed out")
+    def fake_ssl_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
+        return None, real_requests.exceptions.Timeout("Connection timed out")
 
-    monkeypatch.setattr(radar_check.requests, "get", fake_get)
+    monkeypatch.setattr(radar_check, "observatory_ssl_fallback_get", fake_ssl_get)
     result = radar_check.probe_url("https://slow.test/api/3/action")
     assert result.status == "YELLOW"
     assert "Timeout" in (result.note or "")
@@ -151,10 +151,10 @@ def test_probe_url_timeout(monkeypatch) -> None:
 def test_probe_url_connection_error(monkeypatch) -> None:
     import requests as real_requests
 
-    def fake_get(*args, **kwargs):
-        raise real_requests.exceptions.ConnectionError("Connection refused")
+    def fake_ssl_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
+        return None, real_requests.exceptions.ConnectionError("Connection refused")
 
-    monkeypatch.setattr(radar_check.requests, "get", fake_get)
+    monkeypatch.setattr(radar_check, "observatory_ssl_fallback_get", fake_ssl_get)
     result = radar_check.probe_url("https://dead.test/api/3/action")
     assert result.status == "RED"
     assert "Connection error" in (result.note or "")
@@ -165,17 +165,18 @@ def test_probe_url_ssl_fallback(monkeypatch) -> None:
 
     call_count = {"n": 0}
 
-    def fake_get(*args, **kwargs):
+    def fake_ssl_fallback_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
         call_count["n"] += 1
         if call_count["n"] == 1:
-            raise real_requests.exceptions.SSLError("SSL certificate verify failed")
-        return FakeResponse(
-            status_code=200,
-            json_payload={"success": True},
-        )
+            # Normal get raises SSLError → fallback succeeds
+            response = FakeResponse(status_code=200, json_payload={"success": True})
+            return response, real_requests.exceptions.SSLError("SSL certificate verify failed")
+        # fallback also failed
+        return None, real_requests.exceptions.ConnectionError("SSL fallback failed")
 
-    monkeypatch.setattr(radar_check.requests, "get", fake_get)
-    # Disable actual urllib3 warning suppression for test safety
+    monkeypatch.setattr(
+        radar_check, "observatory_ssl_fallback_get", fake_ssl_fallback_get
+    )
     monkeypatch.setattr(
         radar_check.requests.packages.urllib3,
         "disable_warnings",
