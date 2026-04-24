@@ -10,7 +10,6 @@ Uso:
     python scripts/run_portal_scout_batch.py  # usa paths di default
     python scripts/run_portal_scout_batch.py \
         --portals data/portal_scout/discovered_portals.parquet \
-        --registry data/radar/sources_registry.yaml \
         --out-dir data/portal_scout/scout_results
 """
 
@@ -18,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -30,7 +30,6 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PORTALS = REPO_ROOT / "data" / "portal_scout" / "discovered_portals.parquet"
-DEFAULT_REGISTRY = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 DEFAULT_OUT = REPO_ROOT / "data" / "portal_scout" / "scout_results"
 
 
@@ -76,7 +75,6 @@ def main(argv: list[str] | None = None) -> int:
         tmp_registry = Path(f.name)
 
     try:
-        import subprocess
         result = subprocess.run(
             [sys.executable, str(args.portal_scout), "--registry-path", str(tmp_registry), "--out-dir", str(args.out_dir)],
             check=False,
@@ -99,7 +97,8 @@ def main(argv: list[str] | None = None) -> int:
             status = f"failed ({error} errors)"
         _write_status(args.out_dir, status, ok, error, skipped)
         print(f"Scout completed: {status}")
-        return 0
+        # failed significa nessuno scout ok — propaghiamo exit code != 0
+        return 0 if status != "failed" else 1
     else:
         # fallback: use exit code
         if result.returncode == 0:
@@ -114,13 +113,6 @@ def main(argv: list[str] | None = None) -> int:
 def _write_status(out_dir: Path, status: str, ok: int, error: int, skipped: int) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / ".scout_status").write_text(status)
-    summary = {
-        "status": status,
-        "ok": ok,
-        "error": error,
-        "skipped": skipped,
-    }
-    (out_dir / "_batch_status.json").write_text(json.dumps(summary, indent=2))
 
 
 if __name__ == "__main__":
