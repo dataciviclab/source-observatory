@@ -13,7 +13,7 @@ import requests
 import yaml
 
 from _constants import SDMX_RETRYABLE_STATUS_CODES, SDMX_RETRY_DELAYS_SECONDS
-from collectors.base import observatory_ssl_fallback_get
+from collectors.base import SslFallbackFailed, observatory_ssl_fallback_get
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
@@ -159,12 +159,19 @@ def _probe_once(base_url: str) -> ProbeResult:
         # If exc is not None, we had an SSLError first then fallback succeeded
         ssl_failure = exc if isinstance(exc, requests.exceptions.SSLError) else None
         return _build_probe_result(base_url, response, ssl_failure=ssl_failure)
-    # exc is not None — original SSLError, fallback also failed
-    if exc is None:
-        raise RuntimeError("Expected exception when response is None from observatory_ssl_fallback_get")
-    ssl_failure = exc if isinstance(exc, requests.exceptions.SSLError) else None
+    # exc is not None — both attempts failed
+    ssl_failure = None
+    error_exc: requests.exceptions.RequestException
+    if isinstance(exc, SslFallbackFailed):
+        ssl_failure = exc.ssl_error
+        error_exc = exc.fallback_error
+    elif isinstance(exc, requests.exceptions.SSLError):
+        ssl_failure = exc
+        error_exc = exc
+    else:
+        error_exc = exc
     return _make_error_result(
-        exc,
+        error_exc,
         ssl_fallback_used=ssl_failure is not None,
         ssl_failure=ssl_failure,
     )

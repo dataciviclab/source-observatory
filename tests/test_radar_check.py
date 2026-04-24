@@ -162,18 +162,38 @@ def test_probe_url_connection_error(monkeypatch) -> None:
 
 
 def test_probe_url_ssl_fallback(monkeypatch) -> None:
+    """SSL error first, fallback succeeds — ssl_fallback_used=True."""
     import requests as real_requests
 
-    call_count = {"n": 0}
+    def fake_ssl_fallback_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
+        # Normal get raises SSLError → fallback succeeds
+        response = FakeResponse(status_code=200, json_payload={"success": True})
+        ssl_exc = real_requests.exceptions.SSLError("SSL certificate verify failed")
+        return response, ssl_exc
+
+    monkeypatch.setattr(
+        radar_check, "observatory_ssl_fallback_get", fake_ssl_fallback_get
+    )
+    monkeypatch.setattr(
+        radar_check.requests.packages.urllib3,
+        "disable_warnings",
+        lambda *args, **kwargs: None,
+    )
+
+    result = radar_check._probe_once("https://ssl-broken.test/api/3/action")
+    assert result.ssl_fallback_used is True
+    assert "SSL verify failed" in (result.note or "")
+
+
+def test_probe_url_ssl_fallback_double_failure(monkeypatch) -> None:
+    """SSL error first, fallback also fails — ssl_fallback_used=True, both errors preserved."""
+    import requests as real_requests
+    from collectors.base import SslFallbackFailed
 
     def fake_ssl_fallback_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
-        call_count["n"] += 1
-        if call_count["n"] == 1:
-            # Normal get raises SSLError → fallback succeeds
-            response = FakeResponse(status_code=200, json_payload={"success": True})
-            return response, real_requests.exceptions.SSLError("SSL certificate verify failed")
-        # fallback also failed
-        return None, real_requests.exceptions.ConnectionError("SSL fallback failed")
+        ssl_exc = real_requests.exceptions.SSLError("SSL cert verify failed")
+        fallback_exc = real_requests.exceptions.ConnectionError("Connection refused after fallback")
+        return None, SslFallbackFailed(ssl_error=ssl_exc, fallback_error=fallback_exc)
 
     monkeypatch.setattr(
         radar_check, "observatory_ssl_fallback_get", fake_ssl_fallback_get

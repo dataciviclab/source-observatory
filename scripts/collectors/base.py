@@ -14,6 +14,15 @@ USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 DEFAULT_TIMEOUT_SECONDS = 60
 
 
+class SslFallbackFailed(Exception):
+    """Raised when both the SSL attempt and the fallback (verify=False) fail."""
+
+    def __init__(self, ssl_error: requests.exceptions.SSLError, fallback_error: requests.exceptions.RequestException):
+        self.ssl_error = ssl_error
+        self.fallback_error = fallback_error
+        super().__init__(f"SSL failed ({ssl_error}) then fallback failed ({fallback_error})")
+
+
 @dataclass
 class CollectorResult:
     rows: list[dict[str, Any]]
@@ -64,7 +73,8 @@ def observatory_ssl_fallback_get(
     """Get with SSL fallback: tries verify=True first, falls back to verify=False on SSLError.
 
     Returns (response, exc). If response is not None, exc is None.
-    If exc is not None, response is None and exc is the original SSLError.
+    If exc is not None, response is None and exc carries both the original
+    SSLError and the fallback failure (SslFallbackFailed).
     """
     request_headers = dict(headers or {})
     try:
@@ -80,6 +90,7 @@ def observatory_ssl_fallback_get(
         urllib3.disable_warnings(category=InsecureRequestWarning)
         try:
             with requests.Session() as session:
+                session.headers.update({"User-Agent": USER_AGENT})
                 response = session.get(
                     url,
                     timeout=timeout,
@@ -89,7 +100,7 @@ def observatory_ssl_fallback_get(
                 )
             return response, exc
         except requests.exceptions.RequestException as fallback_exc:
-            return None, fallback_exc
+            return None, SslFallbackFailed(ssl_error=exc, fallback_error=fallback_exc)
 
 
 def observatory_head(
