@@ -160,10 +160,11 @@ def _probe_once(base_url: str) -> ProbeResult:
         ssl_failure = exc if isinstance(exc, requests.exceptions.SSLError) else None
         return _build_probe_result(base_url, response, ssl_failure=ssl_failure)
     # exc is not None — original SSLError, fallback also failed
+    if exc is None:
+        raise RuntimeError("Expected exception when response is None from observatory_ssl_fallback_get")
     ssl_failure = exc if isinstance(exc, requests.exceptions.SSLError) else None
-    fallback_exc = exc if not ssl_failure else None
     return _make_error_result(
-        fallback_exc or exc,
+        exc,
         ssl_fallback_used=ssl_failure is not None,
         ssl_failure=ssl_failure,
     )
