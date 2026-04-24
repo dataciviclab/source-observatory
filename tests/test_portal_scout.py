@@ -360,7 +360,7 @@ def test_scout_ckan_error_when_both_package_search_and_package_list_fail(monkeyp
 
     assert result["protocol"] == "ckan"
     assert "error" in result
-    assert "sample_size" not in result  # no results when everything fails
+    assert result.get("sample_size", 0) == 0  # no results when everything fails
 
 
 def test_scout_sdmx_error_on_connection_failure(monkeypatch) -> None:
@@ -402,11 +402,21 @@ def test_scout_source_skips_html_and_aem_returns_skipped_true(monkeypatch) -> No
 # ── Test 8: _coverage helper edge cases ─────────────────────────────────────
 
 def test_coverage_with_mixed_values() -> None:
+    # None, "", [], {} are treated as unpopulated; only non-empty scalars count.
     r = portal_scout._coverage(["a", "b", None, "", []])
     assert r["total_sampled"] == 5
     assert r["populated"] == 2          # "a" and "b"
     assert r["coverage_pct"] == 40
-    assert r["samples"] == ["a", "b"]   # first 3 populated, capped at 3
+    assert r["samples"] == ["a", "b"]
+
+
+def test_coverage_cap_at_three_samples() -> None:
+    # Verifies that samples is capped at 3 even when more values are populated.
+    r = portal_scout._coverage(["a", "b", "c", "d", "e"])
+    assert r["total_sampled"] == 5
+    assert r["populated"] == 5
+    assert r["coverage_pct"] == 100
+    assert r["samples"] == ["a", "b", "c"]
 
 
 def test_coverage_all_empty() -> None:
