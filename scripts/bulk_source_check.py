@@ -100,10 +100,6 @@ def _infer_years(text: str) -> tuple[Optional[int], Optional[int]]:
 def _http_head(url: str) -> tuple[Optional[int], bool, str]:
     if not isinstance(url, str) or not url.startswith("http"):
         return None, False, "url_missing_or_invalid"
-    # codifica spazi e caratteri non ASCII nell'URL preservando la struttura
-    from urllib.parse import urlsplit, urlunsplit, quote
-    parts = urlsplit(url)
-    url = urlunsplit(parts._replace(path=quote(parts.path, safe="/:@!$&'()*+,;=")))
     try:
         resp = observatory_head(url, timeout=HTTP_TIMEOUT)
         reachable = resp.status_code < 400
