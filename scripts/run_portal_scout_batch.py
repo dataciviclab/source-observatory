@@ -39,7 +39,6 @@ DEFAULT_OUT = REPO_ROOT / "data" / "portal_scout" / "scout_results"
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Batch runner per portal_scout.")
     parser.add_argument("--portals", type=Path, default=DEFAULT_PORTALS, help="Parquet con portali scoperti.")
-    parser.add_argument("--registry", type=Path, default=DEFAULT_REGISTRY, help="Registry YAML esistente (per escludere gia' scoutati).")
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT, help="Directory output scout results.")
     parser.add_argument("--portal-scout", type=Path, default=REPO_ROOT / "scripts" / "portal_scout.py", help="Path a portal_scout.py.")
     args = parser.parse_args(argv)
@@ -53,7 +52,8 @@ def main(argv: list[str] | None = None) -> int:
 
     # ── filter structured candidates not in registry ───────────────────────
     candidates = df[
-        df["protocol"].isin(["ckan", "sdmx", "sparql"])
+        (df["in_registry"] == "no") &
+        (df["protocol"].isin(["ckan", "sdmx", "sparql"]))
     ]
     if candidates.empty:
         print("Nessun candidato strutturato da sondare.")
