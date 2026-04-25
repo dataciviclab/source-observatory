@@ -20,6 +20,7 @@ import time
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -310,7 +311,7 @@ def _probe_sparql(base: str) -> str | None:
 
 def _sample_portal(protocol: str, probe_url: str) -> dict:
     """Campiona un portale: count + titoli campione + data coverage."""
-    result = {"sample_count": None, "sample_titles": [], "year_min": None, "year_max": None}
+    result: dict[str, Any] = {"sample_count": None, "sample_titles": [], "year_min": None, "year_max": None}
 
     if not probe_url:
         result["sample_error"] = "no_probe_url"
@@ -361,7 +362,8 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
                     items = root.findall(".//s:Dataflow", ns) or root.findall(".//Dataflow")
                     result["sample_count"] = len(items)
                     for item in items[:3]:
-                        name = item.get("id") or (item.find("Name") or item.find("Name xml:lang")).text if item else ""
+                        name_elem = item.find("Name") or item.find("Name xml:lang")
+                        name = name_elem.text if name_elem is not None else ""
                         if name:
                             result["sample_titles"].append(name)
                 except Exception:
@@ -595,10 +597,10 @@ def main() -> int:
         # Sampling per portali strutturati confermati
         if not args.no_probe and protocol in ("ckan", "sdmx", "sparql") and probe_url:
             sample = _sample_portal(protocol, probe_url)
-            row["sample_count"] = sample.get("sample_count")
-            row["sample_titles"] = " | ".join(sample.get("sample_titles", []))
-            row["year_min"] = sample.get("year_min")
-            row["sample_error"] = sample.get("sample_error", "")
+            row["sample_count"] = str(sample.get("sample_count") or "")
+            row["sample_titles"] = " | ".join(sample.get("sample_titles") or [])
+            row["year_min"] = str(sample.get("year_min") or "")
+            row["sample_error"] = sample.get("sample_error") or ""
 
         return row
 
