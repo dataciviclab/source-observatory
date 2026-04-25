@@ -101,7 +101,7 @@ def _resource_first_url(item: dict) -> str | None:
     return None
 
 
-def _resource_urls(item: dict) -> list[str]:
+def _resource_urls(item: dict) -> str | None:
     """Return all non-empty resource URLs as a comma-joined string."""
     resources = item.get("resources") or []
     urls = []
