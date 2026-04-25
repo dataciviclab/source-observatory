@@ -237,13 +237,14 @@ def main() -> None:
     if df.empty:
         raise RuntimeError("No catalog inventory rows collected (no sources succeeded and no preserved rows).")
 
-        # merge report: mantieni le entry precedenti per le fonti non ri-buildate
-        if out_report.exists():
-            with out_report.open(encoding="utf-8") as fh:
-                prev_report = json.load(fh)
-            for sid, info in prev_report.get("sources", {}).items():
-                if sid not in report["sources"]:
-                    report["sources"][sid] = info
+    # merge report: mantieni le entry precedenti per le fonti non ri-buildate in questo run
+    # (le rows sono già preservate nel DataFrame; il report JSON tiene traccia storica)
+    if out_report.exists():
+        with out_report.open(encoding="utf-8") as fh:
+            prev_report = json.load(fh)
+        for sid, info in prev_report.get("sources", {}).items():
+            if sid not in report["sources"]:
+                report["sources"][sid] = info
 
     con = duckdb.connect()
     con.register("inventory_df", df)
