@@ -105,9 +105,9 @@ def _error_to_stale_reason(exc: Exception) -> str:
         return "timeout"
     if "ssl_error" in msg or "sslv3" in msg or "tls" in msg:
         return "ssl_error"
-    if "connection error" in msg:
+    if "connection error" in msg or "connectionerror" in msg:
         return "connection_error"
-    if "resolution error" in msg or "name or service not known" in msg:
+    if "resolution error" in msg or "resolutionerror" in msg or "name or service not known" in msg:
         return "dns_error"
     return "unknown"
 
@@ -179,6 +179,17 @@ def main() -> None:
             existing_df = pd.read_parquet(out_parquet)
         except Exception:
             existing_df = None
+
+    # Check if existing_df has source_status column — if not, a full re-run is needed
+    # to populate the new fields consistently across all sources
+    if existing_df is not None:
+        if "source_status" not in existing_df.columns:
+            print(
+                "WARNING: existing inventory lacks 'source_status' column. "
+                "A full re-run is recommended to populate stale/active semantics consistently. "
+                "(New fields added in this PR: source_status, stale_reason, last_successful_fetch)",
+                file=sys.stderr,
+            )
 
     for source_id, source_cfg in inventoriable:
         rows, warning, summary, exc = collected[source_id]

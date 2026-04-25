@@ -516,3 +516,55 @@ def test_extract_ckan_inventory_row_phantom_item_has_none_for_urls():
     assert row["landing_page"] is None
     assert row["distribution_url"] is None
     assert row["title"] is None
+
+
+class TestErrorToStaleReason:
+    """Unit tests per _error_to_stale_reason — funzione pura di mapping exception → tag."""
+
+    @staticmethod
+    def _call(exc: Exception) -> str:
+        return build_catalog_inventory._error_to_stale_reason(exc)
+
+    def test_500_internal_error(self):
+        exc = Exception("HTTP 500 Internal Server Error at /api/dataflow")
+        assert self._call(exc) == "source_500"
+
+    def test_500_just_code(self):
+        exc = Exception("500 Server Error")
+        assert self._call(exc) == "source_500"
+
+    def test_503_unavailable(self):
+        exc = Exception("HTTP 503 Service Unavailable")
+        assert self._call(exc) == "source_503"
+
+    def test_timeout_connect(self):
+        exc = Exception("ConnectTimeoutError: Connection timed out after 30s")
+        assert self._call(exc) == "timeout"
+
+    def test_timeout_read(self):
+        exc = Exception("ReadTimeout: Connection timed out")
+        assert self._call(exc) == "timeout"
+
+    def test_ssl_error(self):
+        exc = Exception("SSLError: [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE]")
+        assert self._call(exc) == "ssl_error"
+
+    def test_ssl_tls_error(self):
+        exc = Exception("TLS negotiation failed")
+        assert self._call(exc) == "ssl_error"
+
+    def test_connection_error(self):
+        exc = Exception("ConnectionError: Failed to establish connection")
+        assert self._call(exc) == "connection_error"
+
+    def test_dns_resolution_error(self):
+        exc = Exception("Name or service not known: dati.example.gov.it")
+        assert self._call(exc) == "dns_error"
+
+    def test_dns_resolution(self):
+        exc = Exception("ResolutionError: Could not resolve host")
+        assert self._call(exc) == "dns_error"
+
+    def test_unknown_fallback(self):
+        exc = Exception("Something completely unexpected")
+        assert self._call(exc) == "unknown"
