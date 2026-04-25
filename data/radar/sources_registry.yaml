@@ -166,6 +166,30 @@ dati_camera:
     DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title
     e dc:description.
   datasets_in_use: []
+dati_cultura:
+  source_kind: catalog
+  protocol: sparql
+  observation_mode: catalog-watch
+  base_url: https://dati.cultura.gov.it/sparql
+  last_probed: '2026-04-11'
+  catalog_baseline:
+    captured_at: '2026-04-11'
+    metric: dataset_count
+    value: 150
+    method: sparql_query
+    query_name: dcat_datasets
+    reliability: medium
+    note: Catalogo linked-data MiC (ArCo) con metadati DCAT interrogabili via SPARQL.
+      ~150 dataset/thesaurus nel catalogo. Pilot per inventory SPARQL oltre ISPRA.
+  sparql:
+    endpoint_url: https://dati.cultura.gov.it/sparql
+    query_name: dcat_datasets
+    limit: 5000
+    timeout_seconds: 90
+  verdict: go
+  note: Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check e portal-scout
+    completati con verdict watchlist/catalog-watch.
+  datasets_in_use: []
 ispra_linked_data:
   source_kind: catalog
   protocol: sparql
