@@ -57,7 +57,13 @@ IT_OPENDATA_PATTERNS = [
 
 # Endpoint probe per protocol detection
 PROBE_PATHS = {
-    "ckan":   ["/api/3/action/package_list", "/api/action/package_list"],
+    "ckan": [
+        "/api/3/action/package_list",
+        "/api/action/package_list",
+        # Non-standard CKAN paths from known PA portals
+        "/SpodCkanApi/api/3/action/package_list",
+        "/odapi/api/3/action/package_list",
+    ],
     "sdmx":   ["/SDMXWS/rest/dataflow", "/sdmx/rest/dataflow", "/rest/dataflow"],
     "sparql": ["/sparql", "/sparql/query", "/endpoint/sparql", "/lod/sparql", "/opendata/sparql"],
 }
@@ -76,35 +82,57 @@ SKIP_DOMAIN_PATTERNS = [
     ".camcom.",  # camere di commercio locali — dati frammentati
 ]
 
-# Portali nazionali tier-1 da includere sempre nel probe, indipendentemente dalla DDG
-TIER1_DOMAINS: dict[str, str] = {
-    "esploradati.istat.it": "sdmx",
-    "bdap-opendata.rgs.mef.gov.it": "ckan",
-    "serviziweb2.inps.it": "sparql",
-    "dati.anticorruzione.it": "ckan",
-    "dati.isprambiente.it": "ckan",
-    "dati.camera.it": "sparql",
-    "opencoesione.gov.it": "ckan",
-    "dati-ustat.mur.gov.it": "ckan",
-}
+# Portali nazionali tier-1 da includere sempre nel probe, indipendentemente dalla DDG.
+# Derivati dinamicamente da sources_registry.yaml.
+TIER1_DOMAINS: dict[str, str] = {}
+# Domini già noti nel registry — usati per marcare i candidati come nuovi vs noti.
+KNOWN_REGISTRY_DOMAINS: set[str] = set()
 
-# Domini già noti nel registry — usati per marcare i candidati come nuovi vs noti
-KNOWN_REGISTRY_DOMAINS = {
-    "esploradati.istat.it",
-    "dati.anticorruzione.it",
-    "serviziweb2.inps.it",
-    "bdap-opendata.rgs.mef.gov.it",
-    "www.dati.salute.gov.it",
-    "dati.inail.it",
-    "dati.istruzione.it",
-    "dati.camera.it",
-    "dati.isprambiente.it",
-    "dati.consip.it",
-    "dati.lavoro.gov.it",
-    "dati-ustat.mur.gov.it",
-    "opencoesione.gov.it",
-    "openbdap.rgs.mef.gov.it",
-}
+# ---------------------------------------------------------------------------
+# Registry sync
+# ---------------------------------------------------------------------------
+
+def _sync_from_registry(registry_path: Path | None = None) -> None:
+    """Popola TIER1_DOMAINS e KNOWN_REGISTRY_DOMAINS dal sources_registry.yaml."""
+    global TIER1_DOMAINS, KNOWN_REGISTRY_DOMAINS
+    if registry_path is None:
+        registry_path = Path(__file__).resolve().parents[1] / "data" / "radar" / "sources_registry.yaml"
+
+    if not registry_path.exists():
+        return
+
+    import yaml
+    try:
+        with open(registry_path, encoding="utf-8") as f:
+            registry = yaml.safe_load(f)
+    except Exception:
+        return
+
+    tier1: dict[str, str] = {}
+    known: set[str] = set()
+
+    for source_id, meta in (registry or {}).items():
+        base_url = meta.get("base_url", "")
+        protocol = meta.get("protocol", "")
+        if base_url and protocol:
+            # Estrai dominio dalla base_url
+            try:
+                from urllib.parse import urlparse
+                parsed = urlparse(base_url)
+                domain = parsed.netloc.lower().lstrip("www.")
+                if domain:
+                    known.add(domain)
+                    # Solo i catalog con protocollo noto vanno in tier1
+                    if protocol in ("ckan", "sdmx", "sparql"):
+                        tier1[domain] = protocol
+            except Exception:
+                pass
+
+    TIER1_DOMAINS = tier1
+    KNOWN_REGISTRY_DOMAINS = known
+
+
+_sync_from_registry()
 
 # Probe aggressivo: se un host non risponde, non vogliamo bloccare il run.
 PROBE_TIMEOUT_SECONDS = (3, 5)
@@ -171,7 +199,7 @@ _DDG_PATHS: dict[str, set[str]] = {}
 
 def _probe_ckan(base: str, extra_prefixes: list[str] | None = None) -> str | None:
     """Torna l'URL funzionante CKAN o None. Prova path standard + path-based da DDG."""
-    suffixes = ["/api/3/action/package_list", "/api/action/package_list"]
+    suffixes = PROBE_PATHS["ckan"]
     prefixes = [""] + (extra_prefixes or [])
     for prefix in prefixes:
         for suffix in suffixes:
