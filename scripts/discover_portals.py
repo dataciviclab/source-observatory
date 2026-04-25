@@ -247,6 +247,135 @@ def _probe_ckan(base: str, extra_prefixes: list[str] | None = None) -> str | Non
     return None
 
 
+def _probe_sdmx(base: str) -> str | None:
+    """Torna l'URL funzionante SDMX o None."""
+    for path in PROBE_PATHS["sdmx"]:
+        url = base + path
+        try:
+            r = observatory_get(url, timeout=PROBE_TIMEOUT_SECONDS)
+            if r.status_code == 200 and _is_sdmx_xml(r.text[:5000]):
+                return url
+        except Exception:
+            pass
+    return None
+
+
+def _probe_sparql(base: str) -> str | None:
+    """Torna l'URL funzionante SPARQL o None."""
+    for path in PROBE_PATHS["sparql"]:
+        url = base + path
+        try:
+            r = observatory_get(url, timeout=PROBE_TIMEOUT_SECONDS)
+            if r.status_code == 200:
+                ct = r.headers.get("content-type", "").lower()
+                if "json" in ct or "xml" in ct or "sparql" in ct:
+                    return url
+        except Exception:
+            pass
+    return None
+
+
+def _sample_portal(protocol: str, probe_url: str) -> dict:
+    """Campiona un portale: count + titoli campione + data coverage."""
+    result = {"sample_count": None, "sample_titles": [], "year_min": None, "year_max": None}
+
+    if not probe_url:
+        result["sample_error"] = "no_probe_url"
+        return result
+
+    try:
+        if protocol == "ckan":
+            # Raccogli count + titoli da package_list e package_show campione
+            list_url = probe_url.rstrip("/").rsplit("/", 1)[0] + "/package_list"
+            r = observatory_get(list_url, timeout=PROBE_TIMEOUT_SECONDS)
+            if r.status_code == 200:
+                data = r.json()
+                if isinstance(data, dict) and "result" in data and isinstance(data["result"], list):
+                    result["sample_count"] = len(data["result"])
+                    # Primi 3 titoli da package_show campione
+                    sample_ids = data["result"][:3]
+                    for pid in sample_ids:
+                        show_url = list_url.rsplit("/", 1)[0] + f"/package_show?id={pid}"
+                        try:
+                            sr = observatory_get(show_url, timeout=PROBE_TIMEOUT_SECONDS)
+                            if sr.status_code == 200:
+                                sdata = sr.json()
+                                title = (
+                                    sdata.get("result", {}).get("title")
+                                    or sdata.get("result", {}).get("name", "")
+                                )
+                                if title:
+                                    result["sample_titles"].append(title)
+                        except Exception:
+                            pass
+            # Estrai anno da first_resource metadata se presente
+            if result["sample_titles"]:
+                show_url = list_url.rsplit("/", 1)[0] + f"/package_show?id={sample_ids[0]}"
+                try:
+                    sr = observatory_get(show_url, timeout=PROBE_TIMEOUT_SECONDS)
+                    if sr.status_code == 200:
+                        resources = sr.json().get("result", {}).get("resources", [])
+                        for res in resources:
+                            created = res.get("created", "")
+                            if created:
+                                result["year_min"] = int(created[:4])
+                                break
+                except Exception:
+                    pass
+
+        elif protocol == "sdmx":
+            # Count da dataflow list
+            flow_url = probe_url.rsplit("/", 1)[0] + "/dataflow"
+            r = observatory_get(flow_url, timeout=PROBE_TIMEOUT_SECONDS)
+            if r.status_code == 200 and _is_sdmx_xml(r.text[:5000]):
+                import xml.etree.ElementTree as ET
+                try:
+                    root = ET.fromstring(r.text[:100000])
+                    ns = {"s": "http://www.sdmx.org/2009/message"}
+                    items = root.findall(".//s:Dataflow", ns) or root.findall(".//Dataflow")
+                    result["sample_count"] = len(items)
+                    for item in items[:3]:
+                        name = item.get("id") or (item.find("Name") or item.find("Name xml:lang")).text if item else ""
+                        if name:
+                            result["sample_titles"].append(name)
+                except Exception:
+                    pass
+
+        elif protocol == "sparql":
+            # Count via SELECT COUNT su graph default
+            count_query = "SELECT COUNT(*) WHERE { ?s a ?type } LIMIT 1"
+            sparql_url = probe_url if "?" in probe_url else probe_url + "?query="
+            r = observatory_get(sparql_url + count_query, timeout=PROBE_TIMEOUT_SECONDS)
+            if r.status_code == 200:
+                try:
+                    data = r.json()
+                    bindings = data.get("results", {}).get("bindings", [])
+                    if bindings:
+                        result["sample_count"] = int(bindings[0].get("callret-0", {}).get("value", 0))
+                except Exception:
+                    pass
+                # Titoli campione da dataset titling query
+                title_query = (
+                    "SELECT DISTINCT ?title WHERE { ?s a <http://www.w3.org/ns/dcat#Dataset> . "
+                    "OPTIONAL { ?s <http://purl.org/dc/elements/1.1/title> ?title } } LIMIT 3"
+                )
+                try:
+                    tr = observatory_get(sparql_url + title_query, timeout=PROBE_TIMEOUT_SECONDS)
+                    if tr.status_code == 200:
+                        tdata = tr.json()
+                        for b in tdata.get("results", {}).get("bindings", []):
+                            t = b.get("title", {}).get("value", "")
+                            if t:
+                                result["sample_titles"].append(t)
+                except Exception:
+                    pass
+
+    except Exception as exc:
+        result["sample_error"] = str(exc)[:80]
+
+    return result
+
+
 def detect_protocol(domain: str, probe_paths: dict | None = None) -> tuple[str, str | None]:
     """Torna (protocol, working_url) o ('html', None)."""
     base = f"https://{domain}"
@@ -322,6 +451,11 @@ def _build_summary_artifacts(df, scouted_at: str) -> tuple[dict, list[str]]:
         for _, r in new_confirmed.iterrows():
             shortlist_lines.append(f"- **{r['domain']}** — {r['protocol'].upper()}")
             shortlist_lines.append(f"  - Probe: `{r['probe_url']}`")
+            if r.get("sample_count") is not None:
+                shortlist_lines.append(f"  - Dataset count: {r['sample_count']}")
+            if r.get("sample_titles"):
+                for t in r["sample_titles"].split(" | "):
+                    shortlist_lines.append(f"    • {t}")
             shortlist_lines.append("  - Next: portal-scout approfondito + proposta registry")
 
     shortlist_lines += [
@@ -417,11 +551,13 @@ def main() -> int:
         else:
             protocol, probe_url = detect_protocol(domain, active_probe_paths)
             print(f"  probe {domain} ... {protocol}", flush=True)
+
         in_registry = domain in KNOWN_REGISTRY_DOMAINS or any(
             domain.endswith("." + kd) or kd.endswith("." + domain)
             for kd in KNOWN_REGISTRY_DOMAINS
         )
-        return {
+
+        row = {
             "domain": domain,
             "protocol": protocol,
             "probe_url": probe_url or "",
@@ -429,6 +565,16 @@ def main() -> int:
             "in_registry": "yes" if in_registry else "no",
             "source_queries": " | ".join(sorted(sources)),
         }
+
+        # Sampling per portali strutturati confermati
+        if not args.no_probe and protocol in ("ckan", "sdmx", "sparql") and probe_url:
+            sample = _sample_portal(protocol, probe_url)
+            row["sample_count"] = sample.get("sample_count")
+            row["sample_titles"] = " | ".join(sample.get("sample_titles", []))
+            row["year_min"] = sample.get("year_min")
+            row["sample_error"] = sample.get("sample_error", "")
+
+        return row
 
     rows = []
     workers = 1 if args.no_probe else 10
@@ -441,7 +587,7 @@ def main() -> int:
     from datetime import datetime, timezone
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    df = pd.DataFrame(rows, columns=["domain", "protocol", "probe_url", "base_url", "in_registry", "source_queries"])
+    df = pd.DataFrame(rows, columns=["domain", "protocol", "probe_url", "base_url", "in_registry", "source_queries", "sample_count", "sample_titles", "year_min", "sample_error"])
 
     if args.only_matched:
         confirmed = args.protocols if args.protocols else list(PROBE_PATHS.keys())
