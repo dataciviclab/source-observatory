@@ -17,6 +17,7 @@ import argparse
 import json
 import sys
 import time
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from urllib.parse import urlparse
@@ -65,7 +66,18 @@ PROBE_PATHS = {
         "/odapi/api/3/action/package_list",
     ],
     "sdmx":   ["/SDMXWS/rest/dataflow", "/sdmx/rest/dataflow", "/rest/dataflow"],
-    "sparql": ["/sparql", "/sparql/query", "/endpoint/sparql", "/lod/sparql", "/opendata/sparql"],
+    "sparql": [
+        "/sparql",
+        "/sparql/query",
+        "/endpoint/sparql",
+        "/lod/sparql",
+        "/opendata/sparql",
+        # Extra paths from known PA SPARQL endpoints
+        "/api/sparql",
+        "/api/endpoint/sparql",
+        "/sparql/default",
+        "/data/sparql",
+    ],
 }
 
 SKIP_DOMAINS = {
@@ -139,6 +151,22 @@ PROBE_TIMEOUT_SECONDS = (3, 5)
 
 
 # ---------------------------------------------------------------------------
+# Protocol detection helpers
+# ---------------------------------------------------------------------------
+
+def _is_sdmx_xml(text: str) -> bool:
+    """Validazione strutturale: questo testo è XML SDMX, non HTML o altro."""
+    if not text.strip().startswith("<"):
+        return False
+    if "<!DOCTYPE" in text[:100] or "<html" in text[:200]:
+        return False
+    # SDMX namespace o prefisso nel root element
+    return "sdmx.org" in text or (
+        text.lstrip().startswith("<") and ":" in text[:500] and "message" in text[:1000].lower()
+    )
+
+
+# ---------------------------------------------------------------------------
 # Search
 # ---------------------------------------------------------------------------
 
@@ -183,14 +211,16 @@ def extract_domains(results: list[dict]) -> dict[str, set[str]]:
         if domain not in domains:
             domains[domain] = set()
         domains[domain].add(query or url)
-        # Salva il path DDG per probe CKAN path-based
+        # Salva il path DDG per probe CKAN path-based (thread-safe)
         if parsed.path and parsed.path != "/":
-            _DDG_PATHS.setdefault(domain, set()).add(parsed.path)
+            with _DDG_PATHS_LOCK:
+                _DDG_PATHS.setdefault(domain, set()).add(parsed.path)
     return domains
 
 
-# Path DDG per probe CKAN path-based (popolato da extract_domains)
+# Path DDG per probe CKAN path-based — protetto da lock per thread-safety
 _DDG_PATHS: dict[str, set[str]] = {}
+_DDG_PATHS_LOCK = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
@@ -222,7 +252,8 @@ def detect_protocol(domain: str, probe_paths: dict | None = None) -> tuple[str, 
     base = f"https://{domain}"
 
     # CKAN: probe standard + path-based da URL DDG (es. /opendata, /catalogo)
-    ddg_paths = _DDG_PATHS.get(domain, set())
+    with _DDG_PATHS_LOCK:
+        ddg_paths = _DDG_PATHS.get(domain, set())
     ckan_prefixes = sorted({
         "/" + p.strip("/").split("/")[0]
         for p in ddg_paths
@@ -245,7 +276,7 @@ def detect_protocol(domain: str, probe_paths: dict | None = None) -> tuple[str, 
                     ct = r.headers.get("content-type", "").lower()
                     if protocol == "sdmx":
                         text = r.text[:5000]
-                        if "sdmx.org" in text and text.strip().startswith("<") and "<!DOCTYPE" not in text[:100] and "<html" not in text[:200]:
+                        if _is_sdmx_xml(text):
                             return "sdmx", url
                     elif protocol == "sparql" and ("json" in ct or "xml" in ct or "sparql" in ct):
                         return "sparql", url
