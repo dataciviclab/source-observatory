@@ -10,11 +10,10 @@ from pathlib import Path
 from typing import Any
 
 import requests
-import urllib3
 import yaml
-from urllib3.exceptions import InsecureRequestWarning
 
 from _constants import SDMX_RETRYABLE_STATUS_CODES, SDMX_RETRY_DELAYS_SECONDS
+from collectors.base import SslFallbackFailed, observatory_ssl_fallback_get
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
@@ -149,38 +148,37 @@ def _build_probe_result(
 
 
 def _probe_once(base_url: str) -> ProbeResult:
-    """Single probe attempt (no retry)."""
-    headers = {"User-Agent": USER_AGENT}
-    try:
-        with requests.get(
-            base_url,
-            timeout=TIMEOUT_SECONDS,
-            headers=headers,
-            allow_redirects=True,
-            stream=True,
-        ) as response:
-            return _build_probe_result(base_url, response)
-    except requests.exceptions.SSLError as exc:
-        try:
-            with requests.Session() as session:
-                urllib3.disable_warnings(category=InsecureRequestWarning)
-                with session.get(
-                    base_url,
-                    timeout=TIMEOUT_SECONDS,
-                    headers=headers,
-                    allow_redirects=True,
-                    verify=False,
-                    stream=True,
-                ) as response:
-                    return _build_probe_result(base_url, response, ssl_failure=exc)
-        except requests.exceptions.RequestException as fallback_exc:
-            return _make_error_result(
-                fallback_exc,
-                ssl_fallback_used=True,
-                ssl_failure=exc,
-            )
-    except requests.exceptions.RequestException as exc:
-        return _make_error_result(exc)
+    """Single probe attempt (no retry). Uses shared SSL fallback from base.py."""
+    response, exc = observatory_ssl_fallback_get(
+        base_url,
+        timeout=TIMEOUT_SECONDS,
+        allow_redirects=True,
+        stream=True,
+    )
+    if response is not None:
+        # If exc is not None, we had an SSLError first then fallback succeeded
+        ssl_failure = exc if isinstance(exc, requests.exceptions.SSLError) else None
+        return _build_probe_result(base_url, response, ssl_failure=ssl_failure)
+    # exc is not None — both attempts failed
+    if exc is None:
+        raise RuntimeError("Expected exception when response is None from observatory_ssl_fallback_get")
+    ssl_failure = None
+    error_exc: requests.exceptions.RequestException
+    if isinstance(exc, SslFallbackFailed):
+        ssl_failure = exc.ssl_error
+        error_exc = exc.fallback_error
+    elif isinstance(exc, requests.exceptions.SSLError):
+        ssl_failure = exc
+        error_exc = exc
+    elif isinstance(exc, requests.exceptions.RequestException):
+        error_exc = exc
+    else:
+        raise RuntimeError(f"Unexpected exception type in _probe_once: {type(exc)}")
+    return _make_error_result(
+        error_exc,
+        ssl_fallback_used=ssl_failure is not None,
+        ssl_failure=ssl_failure,
+    )
 
 
 def probe_url(base_url: str) -> ProbeResult:
@@ -361,15 +359,17 @@ def build_radar_summary(
 
     for source_id, meta in registry.items():
         result = results.get(source_id) or _missing
-        sources_list.append({
-            "id": source_id,
-            "status": result.status,
-            "protocol": meta.get("protocol", "-"),
-            "observation_mode": meta.get("observation_mode", "radar-only"),
-            "http_code": result.http_code,
-            "last_check": probe_date,
-            "datasets_in_use": meta.get("datasets_in_use") or [],
-        })
+        sources_list.append(
+            {
+                "id": source_id,
+                "status": result.status,
+                "protocol": meta.get("protocol", "-"),
+                "observation_mode": meta.get("observation_mode", "radar-only"),
+                "http_code": result.http_code,
+                "last_check": probe_date,
+                "datasets_in_use": meta.get("datasets_in_use") or [],
+            }
+        )
 
     return {
         "generated_at": generated_at,
@@ -426,7 +426,9 @@ def main() -> int:
     STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
     STATUS_PATH.write_text(report, encoding="utf-8")
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
+    SUMMARY_PATH.write_text(
+        json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     save_registry(REGISTRY_PATH, registry)
     print(f"Wrote {STATUS_PATH}")
     print(f"Wrote {SUMMARY_PATH}")
