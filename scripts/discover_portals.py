@@ -171,6 +171,8 @@ _DEDUP_SAME_AS_LOCK = threading.Lock()
 
 # Probe aggressivo: se un host non risponde, non vogliamo bloccare il run.
 PROBE_TIMEOUT_SECONDS = (3, 5)
+# Timeout piu' brevi per _sample_portal (gia' confermato reachable, solo conteggio)
+SAMPLE_TIMEOUT_SECONDS = (2, 3)
 
 
 # ---------------------------------------------------------------------------
@@ -321,7 +323,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
         if protocol == "ckan":
             # Raccogli count + titoli da package_list e package_show campione
             list_url = probe_url.rstrip("/").rsplit("/", 1)[0] + "/package_list"
-            r = observatory_get(list_url, timeout=PROBE_TIMEOUT_SECONDS)
+            r = observatory_get(list_url, timeout=SAMPLE_TIMEOUT_SECONDS)
             if r.status_code == 200:
                 data = r.json()
                 if isinstance(data, dict) and "result" in data and isinstance(data["result"], list):
@@ -331,7 +333,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
                     for pid in sample_ids:
                         show_url = list_url.rsplit("/", 1)[0] + f"/package_show?id={pid}"
                         try:
-                            sr = observatory_get(show_url, timeout=PROBE_TIMEOUT_SECONDS)
+                            sr = observatory_get(show_url, timeout=SAMPLE_TIMEOUT_SECONDS)
                             if sr.status_code == 200:
                                 sdata = sr.json()
                                 title = (
@@ -353,7 +355,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
         elif protocol == "sdmx":
             # Count da dataflow list
             flow_url = probe_url.rsplit("/", 1)[0] + "/dataflow"
-            r = observatory_get(flow_url, timeout=PROBE_TIMEOUT_SECONDS)
+            r = observatory_get(flow_url, timeout=SAMPLE_TIMEOUT_SECONDS)
             if r.status_code == 200 and _is_sdmx_xml(r.text[:5000]):
                 import xml.etree.ElementTree as ET
                 try:
@@ -373,7 +375,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
             # Count via SELECT COUNT su graph default
             count_query = "SELECT COUNT(*) WHERE { ?s a ?type } LIMIT 1"
             sparql_url = probe_url if "?" in probe_url else probe_url + "?query="
-            r = observatory_get(sparql_url + count_query, timeout=PROBE_TIMEOUT_SECONDS)
+            r = observatory_get(sparql_url + count_query, timeout=SAMPLE_TIMEOUT_SECONDS)
             if r.status_code == 200:
                 try:
                     data = r.json()
@@ -388,7 +390,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
                     "OPTIONAL { ?s <http://purl.org/dc/elements/1.1/title> ?title } } LIMIT 3"
                 )
                 try:
-                    tr = observatory_get(sparql_url + title_query, timeout=PROBE_TIMEOUT_SECONDS)
+                    tr = observatory_get(sparql_url + title_query, timeout=SAMPLE_TIMEOUT_SECONDS)
                     if tr.status_code == 200:
                         tdata = tr.json()
                         for b in tdata.get("results", {}).get("bindings", []):
@@ -524,6 +526,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Scopre portali open data PA via ricerca web.")
     p.add_argument("--max-results", type=int, default=20, help="Risultati max per query DDG (default: 20).")
     p.add_argument("--no-probe", action="store_true", help="Salta protocol detection.")
+    p.add_argument("--no-sample", action="store_true", help="Salta campionamento HTTP (probe + sampling ultra-fast).")
     p.add_argument("--protocols", nargs="+", choices=["ckan", "sdmx", "sparql"],
                    help="Filtra per protocollo: usa solo query e probe mirati (es. --protocols sdmx ckan).")
     p.add_argument("--only-matched", action="store_true",
@@ -594,8 +597,8 @@ def main() -> int:
             "source_queries": " | ".join(sorted(sources)),
         }
 
-        # Sampling per portali strutturati confermati
-        if not args.no_probe and protocol in ("ckan", "sdmx", "sparql") and probe_url:
+        # Sampling per portali strutturati confermati (skip con --no-sample)
+        if not args.no_probe and not args.no_sample and protocol in ("ckan", "sdmx", "sparql") and probe_url:
             sample = _sample_portal(protocol, probe_url)
             row["sample_count"] = str(sample.get("sample_count") or "")
             row["sample_titles"] = " | ".join(sample.get("sample_titles") or [])
