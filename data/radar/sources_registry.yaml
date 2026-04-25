@@ -51,7 +51,7 @@ inps:
   inventory:
     skip_current_list: true
     package_show_sample: true
-    sample_size: 500
+    sample_size: 1000
   last_probed: '2026-04-24'
   catalog_baseline:
     captured_at: '2026-04-02'
