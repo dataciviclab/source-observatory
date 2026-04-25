@@ -146,6 +146,28 @@ def _sync_from_registry(registry_path: Path | None = None) -> None:
 
 _sync_from_registry()
 
+# Normalizza dominio: rimuove www, sottodomini non significativi.
+# Ritorna (canonical, is_subdomain_of_known) dove known è il registry domain.
+def _normalize_domain(domain: str) -> tuple[str, str | None]:
+    """Normalizza dominio per dedup. Rimuove www, ricerca superset noto nel registry."""
+    # Togli www
+    normalized = domain.lstrip("www.")
+    # Cerca se è subdomain di un dominio noto nel registry
+    known_superset = None
+    for known in KNOWN_REGISTRY_DOMAINS:
+        if normalized.endswith("." + known) or normalized == known:
+            known_superset = known
+            break
+    return normalized, known_superset
+
+
+# Mappatura domini -> same-as registry per dedup logico
+_DEDUP_SAME_AS: dict[str, str] = {
+    # Domini che sono la stessa cosa di un source nel registry
+    "openbdap.rgs.mef.gov.it": "bdap-opendata.rgs.mef.gov.it",
+}
+_DEDUP_SAME_AS_LOCK = threading.Lock()
+
 # Probe aggressivo: se un host non risponde, non vogliamo bloccare il run.
 PROBE_TIMEOUT_SECONDS = (3, 5)
 
@@ -185,7 +207,9 @@ def search_ddg(queries: list[str], max_per_query: int) -> list[dict]:
 
 
 def extract_domains(results: list[dict]) -> dict[str, set[str]]:
-    """Ritorna {domain: set_of_source_queries}. Salva path DDG per CKAN path-based probe."""
+    """Ritorna {domain: set_of_source_queries}. Salva path DDG per CKAN path-based probe.
+
+    Applica dedup logico: normalizza sottodomini e mappa same-as noti."""
     domains: dict[str, set[str]] = {}
     for r in results:
         url = r.get("href") or r.get("url") or ""
@@ -208,13 +232,22 @@ def extract_domains(results: list[dict]) -> dict[str, set[str]]:
             pass
         else:
             continue
-        if domain not in domains:
-            domains[domain] = set()
-        domains[domain].add(query or url)
+
+        # Dedup: normalizza e verifica same-as registry
+        normalized, known_superset = _normalize_domain(domain)
+        with _DEDUP_SAME_AS_LOCK:
+            canonical = _DEDUP_SAME_AS.get(normalized, normalized)
+        # Skip se è un sottodominio di un source già noto (a meno che sia same-as)
+        if known_superset and canonical == normalized:
+            continue
+
+        if canonical not in domains:
+            domains[canonical] = set()
+        domains[canonical].add(query or url)
         # Salva il path DDG per probe CKAN path-based (thread-safe)
         if parsed.path and parsed.path != "/":
             with _DDG_PATHS_LOCK:
-                _DDG_PATHS.setdefault(domain, set()).add(parsed.path)
+                _DDG_PATHS.setdefault(canonical, set()).add(parsed.path)
     return domains
 
 
@@ -306,22 +339,15 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
                                 )
                                 if title:
                                     result["sample_titles"].append(title)
+                                # Estrai anno da first_resource metadata
+                                resources = sdata.get("result", {}).get("resources", [])
+                                for res in resources:
+                                    created = res.get("created", "")
+                                    if created:
+                                        result["year_min"] = int(created[:4])
+                                        break
                         except Exception:
                             pass
-            # Estrai anno da first_resource metadata se presente
-            if result["sample_titles"]:
-                show_url = list_url.rsplit("/", 1)[0] + f"/package_show?id={sample_ids[0]}"
-                try:
-                    sr = observatory_get(show_url, timeout=PROBE_TIMEOUT_SECONDS)
-                    if sr.status_code == 200:
-                        resources = sr.json().get("result", {}).get("resources", [])
-                        for res in resources:
-                            created = res.get("created", "")
-                            if created:
-                                result["year_min"] = int(created[:4])
-                                break
-                except Exception:
-                    pass
 
         elif protocol == "sdmx":
             # Count da dataflow list
