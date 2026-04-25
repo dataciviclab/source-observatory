@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from typing import Any
 
@@ -409,12 +410,44 @@ def _sample_indexes(total: int, sample_size: int) -> list[int]:
     return sorted(indexes)
 
 
+def _fetch_package_show(
+    package_id: str,
+    endpoint: str,
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
+    ordinal: int,
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Fetch and process a single package_show. Returns (row_dict, error_str)."""
+    try:
+        payload = ckan_get_json(endpoint, params={"id": package_id}, timeout=30)
+        if not payload.get("success"):
+            return None, f"{package_id}: success=false"
+        item = payload.get("result")
+        if not isinstance(item, dict):
+            return None, f"{package_id}: result non-dict"
+        enriched = extract_ckan_inventory_row(
+            source_id=source_id,
+            source_cfg=source_cfg,
+            captured_at=captured_at,
+            item=item,
+            endpoint=endpoint,
+            ordinal=ordinal,
+            inventory_method="package_show_sample",
+        )
+        enriched["item_id"] = package_id
+        return enriched, None
+    except Exception as exc:
+        return None, f"{package_id}: {exc}"
+
+
 def collect_ckan_inventory_via_package_show_sample(
     source_id: str,
     source_cfg: dict[str, Any],
     captured_at: str,
     package_list_rows: list[dict[str, Any]],
     sample_size: int = 25,
+    max_workers: int = 16,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_show")
     sampled_idx = _sample_indexes(len(package_list_rows), sample_size)
@@ -424,32 +457,26 @@ def collect_ckan_inventory_via_package_show_sample(
     enriched_rows: list[dict[str, Any]] = []
     errors: list[str] = []
 
-    for idx in sampled_idx:
-        base_row = package_list_rows[idx]
-        package_id = str(base_row["item_id"])
-        try:
-            payload = ckan_get_json(endpoint, params={"id": package_id}, timeout=30)
-            if not payload.get("success"):
-                errors.append(f"{package_id}: package_show success=false")
-                continue
-            item = payload.get("result")
-            if not isinstance(item, dict):
-                errors.append(f"{package_id}: package_show result non-dict")
-                continue
-            enriched = extract_ckan_inventory_row(
-                source_id=source_id,
-                source_cfg=source_cfg,
-                captured_at=captured_at,
-                item=item,
-                endpoint=endpoint,
-                ordinal=base_row["ordinal"],
-                inventory_method="package_show_sample",
-            )
-            # Keep package_list key for deterministic merge against base rows.
-            enriched["item_id"] = package_id
-            enriched_rows.append(enriched)
-        except Exception as exc:
-            errors.append(f"{package_id}: {exc}")
+    # Parallel fetch — saturare la rete, non la CPU
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {
+            pool.submit(
+                _fetch_package_show,
+                str(package_list_rows[idx]["item_id"]),
+                endpoint,
+                source_id,
+                source_cfg,
+                captured_at,
+                package_list_rows[idx]["ordinal"],
+            ): idx
+            for idx in sampled_idx
+        }
+        for future in as_completed(futures):
+            row, err = future.result()
+            if row is not None:
+                enriched_rows.append(row)
+            if err:
+                errors.append(err)
 
     warning: dict[str, Any] | None = None
     if errors:
