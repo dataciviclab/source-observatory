@@ -46,7 +46,7 @@ SEARCH_QUERIES_IT = [
 
 # Query specifiche per protocollo
 SEARCH_QUERIES_BY_PROTOCOL: dict[str, list[str]] = {
-    "ckan":   ['"CKAN" "comuni" site:gov.it', '"CKAN" "open data" ministero site:gov.it'],
+    "ckan":   ['"CKAN" "open data" ministero site:gov.it', '"CKAN" "open data" agenzia site:gov.it'],
     "sdmx":   ['"SDMX" "dataflow" site:gov.it', '"SDMX" ISTAT site:gov.it'],
     "sparql": ['"SPARQL" endpoint "linked data" site:gov.it', '"SPARQL" "dati.gov.it"'],
 }
@@ -536,6 +536,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Rigenera summary e shortlist da un parquet già esistente in --out.",
     )
+    p.add_argument("--min-datasets", type=int, default=5, help="Skip portali con meno di N dataset (default: 5).")
     p.add_argument("--out", type=Path, default=OUT_DEFAULT, help="Path parquet output.")
     return p.parse_args()
 
@@ -625,9 +626,23 @@ def main() -> int:
         df = df[df["protocol"].isin(confirmed)]
         print(f"  filtrati a {len(df)} portali con protocollo confermato ({', '.join(confirmed)})")
 
+    # Filtra per soglia minima dataset (solo per portali con sample_count noto)
+    if args.min_datasets > 0:
+        mask = (df["sample_count"].isna()) | (df["sample_count"].astype(str).replace("", "0").astype(int) >= args.min_datasets)
+        below = (~mask).sum()
+        df = df[mask]
+        if below > 0:
+            print(f"  rimossi {below} portali con < {args.min_datasets} dataset")
+
     df.to_parquet(args.out, index=False)
 
+    # Artifact separato per i soli nuovi candidati (incrementale)
     new_candidates = df[df["in_registry"] == "no"]
+    if not new_candidates.empty:
+        new_candidates_path = args.out.with_name("new_candidates.parquet")
+        new_candidates.to_parquet(new_candidates_path, index=False)
+        print(f"  {len(new_candidates)} nuovi candidati -> {new_candidates_path}")
+
     print(f"  di cui {len(new_candidates)} nuovi candidati (non nel registry)")
 
     summary_path, shortlist_path = _write_summary_artifacts(
