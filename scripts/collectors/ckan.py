@@ -101,17 +101,6 @@ def _resource_first_url(item: dict) -> str | None:
     return None
 
 
-def _resource_urls(item: dict) -> str | None:
-    """Return all non-empty resource URLs as a comma-joined string."""
-    resources = item.get("resources") or []
-    urls = []
-    for r in resources:
-        url = r.get("url")
-        if url and isinstance(url, str) and url.strip():
-            urls.append(url.strip())
-    return ", ".join(urls) if urls else None
-
-
 def _landing_page(item: dict) -> str | None:
     """Return the dataset landing page URL (CKAN 'url' field or first resource landing)."""
     # CKAN standard: 'url' is the dataset's own landing page (not a resource)

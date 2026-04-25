@@ -440,19 +440,6 @@ class TestResourceUrlExtraction:
         assert collectors.ckan._resource_first_url({}) is None
         assert collectors.ckan._resource_first_url({"resources": []}) is None
 
-    def test_resource_urls_returns_all_urls(self):
-        item = {
-            "resources": [
-                {"url": "http://ex.com/a.csv", "format": "csv"},
-                {"url": "http://ex.com/b.xlsx", "format": "xlsx"},
-            ]
-        }
-        assert collectors.ckan._resource_urls(item) == "http://ex.com/a.csv, http://ex.com/b.xlsx"
-
-    def test_resource_urls_returns_none_when_empty(self):
-        assert collectors.ckan._resource_urls({}) is None
-        assert collectors.ckan._resource_urls({"resources": [{"url": ""}, {"url": None}]}) is None
-
     def test_landing_page_prefers_item_url_over_resource(self):
         item = {
             "url": "https://dati.it/dataset/123",
