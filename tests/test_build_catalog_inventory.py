@@ -417,3 +417,115 @@ def test_collect_sparql_inventory_groups_distribution_bindings(monkeypatch) -> N
     assert warning["query_name"] == "dcat_datasets"
     assert warning["bindings"] == 3
     assert warning["datasets"] == 2
+
+
+class TestResourceUrlExtraction:
+    """Tests for _resource_first_url, _landing_page, _distribution_url helpers."""
+
+    def test_resource_first_url_returns_first_valid(self):
+        item = {
+            "resources": [
+                {"url": None, "format": "xls"},
+                {"url": "  http://example.com/file1.csv  ", "format": "csv"},
+                {"url": "http://example.com/file2.pdf", "format": "pdf"},
+            ]
+        }
+        assert collectors.ckan._resource_first_url(item) == "http://example.com/file1.csv"
+
+    def test_resource_first_url_skips_empty_and_none(self):
+        item = {"resources": [{"url": ""}, {"url": None}, {"url": "  "}, {"url": "http://valid.it/file.xls"}]}
+        assert collectors.ckan._resource_first_url(item) == "http://valid.it/file.xls"
+
+    def test_resource_first_url_returns_none_when_no_resources(self):
+        assert collectors.ckan._resource_first_url({}) is None
+        assert collectors.ckan._resource_first_url({"resources": []}) is None
+
+    def test_resource_urls_returns_all_urls(self):
+        item = {
+            "resources": [
+                {"url": "http://ex.com/a.csv", "format": "csv"},
+                {"url": "http://ex.com/b.xlsx", "format": "xlsx"},
+            ]
+        }
+        assert collectors.ckan._resource_urls(item) == "http://ex.com/a.csv, http://ex.com/b.xlsx"
+
+    def test_resource_urls_returns_none_when_empty(self):
+        assert collectors.ckan._resource_urls({}) is None
+        assert collectors.ckan._resource_urls({"resources": [{"url": ""}, {"url": None}]}) is None
+
+    def test_landing_page_prefers_item_url_over_resource(self):
+        item = {
+            "url": "https://dati.it/dataset/123",
+            "resources": [{"url": "http://download.it/file.csv"}],
+        }
+        assert collectors.ckan._landing_page(item) == "https://dati.it/dataset/123"
+
+    def test_landing_page_falls_back_to_first_resource_url(self):
+        item = {"resources": [{"url": "http://download.it/file.csv", "format": "csv"}]}
+        assert collectors.ckan._landing_page(item) == "http://download.it/file.csv"
+
+    def test_landing_page_returns_none_when_no_url_anywhere(self):
+        assert collectors.ckan._landing_page({}) is None
+        assert collectors.ckan._landing_page({"resources": []}) is None
+
+    def test_distribution_url_returns_first_resource_url(self):
+        item = {
+            "url": "https://dati.it/dataset/123",
+            "resources": [
+                {"url": "http://download.it/file1.xls", "format": "xls"},
+                {"url": "http://download.it/file2.csv", "format": "csv"},
+            ],
+        }
+        assert collectors.ckan._distribution_url(item) == "http://download.it/file1.xls"
+
+    def test_distribution_url_returns_none_when_no_resources(self):
+        assert collectors.ckan._distribution_url({}) is None
+        assert collectors.ckan._distribution_url({"resources": []}) is None
+
+
+def test_extract_ckan_inventory_row_includes_landing_page_and_distribution_url():
+    """extract_ckan_inventory_row should populate landing_page and distribution_url from resources."""
+    item = {
+        "id": "pkg-1",
+        "name": "pkg-one",
+        "title": "Test Dataset",
+        "organization": {"title": "Test Org"},
+        "tags": [{"name": "test"}],
+        "notes": "Description",
+        "url": "https://example.it/dataset/pkg-one",
+        "resources": [
+            {"url": "http://example.it/data.csv", "format": "csv"},
+            {"url": "http://example.it/data.json", "format": "json"},
+        ],
+    }
+    source_cfg = {"source_kind": "catalog", "protocol": "ckan", "base_url": "https://example.it/api"}
+    row = collectors.ckan.extract_ckan_inventory_row(
+        source_id="test_src",
+        source_cfg=source_cfg,
+        captured_at="2026-04-25T12:00:00+00:00",
+        item=item,
+        endpoint="https://example.it/api/package_show",
+        ordinal=1,
+        inventory_method="package_search",
+    )
+    assert row["landing_page"] == "https://example.it/dataset/pkg-one"
+    assert row["distribution_url"] == "http://example.it/data.csv"
+    assert row["format"] == "csv,json"
+
+
+def test_extract_ckan_inventory_row_phantom_item_has_none_for_urls():
+    """A phantom item (from package_list without enrichment) should have None for landing_page and distribution_url."""
+    item = {"id": "123", "name": "123"}  # no title, no resources
+    source_cfg = {"source_kind": "catalog", "protocol": "ckan", "base_url": "https://example.it/api"}
+    row = collectors.ckan.extract_ckan_inventory_row(
+        source_id="test_src",
+        source_cfg=source_cfg,
+        captured_at="2026-04-25T12:00:00+00:00",
+        item=item,
+        endpoint="https://example.it/api/package_list",
+        ordinal=1,
+        inventory_method="package_list",
+    )
+    assert row["landing_page"] is None
+    assert row["distribution_url"] is None
+    assert row["title"] is None

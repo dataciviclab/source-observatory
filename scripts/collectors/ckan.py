@@ -90,6 +90,46 @@ def _resource_format(item: dict) -> str | None:
     return ",".join(unique)
 
 
+def _resource_first_url(item: dict) -> str | None:
+    """Return the URL of the first resource with a valid url field."""
+    resources = item.get("resources") or []
+    for r in resources:
+        url = r.get("url")
+        if url and isinstance(url, str) and url.strip():
+            return url.strip()
+    return None
+
+
+def _resource_urls(item: dict) -> list[str]:
+    """Return all non-empty resource URLs as a comma-joined string."""
+    resources = item.get("resources") or []
+    urls = []
+    for r in resources:
+        url = r.get("url")
+        if url and isinstance(url, str) and url.strip():
+            urls.append(url.strip())
+    return ", ".join(urls) if urls else None
+
+
+def _landing_page(item: dict) -> str | None:
+    """Return the dataset landing page URL (CKAN 'url' field or first resource landing)."""
+    # CKAN standard: 'url' is the dataset's own landing page (not a resource)
+    url = item.get("url")
+    if url and isinstance(url, str) and url.strip():
+        return url.strip()
+    # Fallback: use first resource with a valid url as de-facto landing
+    return _resource_first_url(item)
+
+
+def _distribution_url(item: dict) -> str | None:
+    """Return the primary download/访问URL for this dataset.
+
+    Priority: first resource with url > item url field.
+    The distribution URL should be a direct link to download or access the data.
+    """
+    return _resource_first_url(item)
+
+
 def _has_datastore_active(item: dict) -> bool:
     resources = item.get("resources") or []
     return any(str(r.get("datastore_active") or "").lower() == "true" for r in resources)
@@ -143,6 +183,8 @@ def extract_ckan_inventory_row(
         "api_base_url": _ckan_api_base(source_cfg.get("base_url") or endpoint),
         "ordinal": ordinal,
         "format": _resource_format(item),
+        "landing_page": _landing_page(item),
+        "distribution_url": _distribution_url(item),
         "datastore_active": _has_datastore_active(item),
         "resource_count": _resource_count(item),
     }
