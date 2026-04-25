@@ -396,13 +396,18 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
     if isinstance(_slug, str) and _slug.strip():
         item_name = _slug.strip()
 
+    has_valid_slug = False  # default; set True inside CKAN block if slug is usable
     if protocol == "ckan" and base_url and item_name:
-        # usa api_base_url pre-calcolata dal layer 1 (gestisce endpoint non-standard come INPS /odapi/)
-        api_base_url = row.get("api_base_url")
-        base_api = api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http") else base_url
-        pkg = _fetch_ckan_package(base_api, item_name)
-        if pkg:
-            return _parse_ckan_package(pkg)
+        _slug = row.get("item_slug")
+        has_valid_slug = isinstance(_slug, str) and _slug.strip() and _slug.strip() != "dataset"
+        if has_valid_slug:
+            # usa api_base_url pre-calcolata dal layer 1 (gestisce endpoint non-standard come INPS /odapi/)
+            api_base_url = row.get("api_base_url")
+            base_api = api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http") else base_url
+            pkg = _fetch_ckan_package(base_api, item_name)
+            if pkg:
+                return _parse_ckan_package(pkg)
+        # CKAN senza slug valido → skip package_show, passa a HTML fallback sotto
 
     if protocol == "sdmx" and base_url and item_name:
         sdmx_base = base_url
@@ -414,11 +419,14 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
         if xml_root is not None:
             return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
 
-    # HTML fallback per fonti con solo landing_page (es. dati_camera)
+    # HTML fallback: per tutti i source con landing_page raggiungibile
+    # dati_camera ha scraping_blocked=true → salta HTML se CKAN package_show già provato
+    # CKAN senza slug valido = package_show già saltato → proviamo comunque l'HTML
     landing = row.get("landing_page")
     if isinstance(landing, str) and landing.startswith("http"):
-        # salta se la fonte è nota per bloccare lo scraping
-        if source_cfg.get("scraping_blocked"):
+        # skip solo se scraping_blocked AND CKAN con slug già provato (no slug valido = non provato)
+        ck_an_no_slug = protocol == "ckan" and not has_valid_slug
+        if source_cfg.get("scraping_blocked") and not ck_an_no_slug:
             result = _EMPTY_ENRICH.copy()
             result["enrich_method"] = "scraping_blocked"
             return result
@@ -452,6 +460,7 @@ def _intake_score(
     resource_format: Optional[str],
     enrich_method: str,
     needs_review: bool,
+    source_status: Optional[str] = None,
 ) -> tuple[int, bool]:
     """Restituisce (score 0-100, intake_candidate)."""
     score = 0
@@ -482,6 +491,11 @@ def _intake_score(
         score += 5
     if needs_review:
         score -= 5
+
+    # penalità per source stale — fonte down, dati potrebbero essere outdated
+    if source_status == "stale":
+        score -= 10
+        needs_review = True  # force review per stale
 
     score = max(0, min(100, score))
     candidate = score >= 40 and not needs_review
@@ -535,6 +549,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "year_max": year_max,
         "resource_format": enrich["resource_format"] or row.get("format"),
         "enrich_method": enrich["enrich_method"],
+        "source_status": row.get("source_status", "unknown"),
         "needs_review": (granularity == "non_determinato") or (year_min is None),
         "intake_score": None,  # placeholder, calcolato sotto
         "intake_candidate": None,
@@ -550,6 +565,7 @@ def _finalize_scores(result: dict) -> dict:
         resource_format=result.get("resource_format"),
         enrich_method=result.get("enrich_method", "none"),
         needs_review=result.get("needs_review", True),
+        source_status=result.get("source_status"),
     )
     result["intake_score"] = score
     result["intake_candidate"] = candidate
