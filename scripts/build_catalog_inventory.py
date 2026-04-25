@@ -5,7 +5,7 @@ import json
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import duckdb
 import pandas as pd
@@ -207,7 +207,7 @@ def main() -> None:
                 if not stale_rows.empty:
                     stale_rows["source_status"] = "stale"
                     stale_rows["stale_reason"] = _error_to_stale_reason(exc)
-                    all_rows.extend(stale_rows.to_dict(orient="records"))
+                    all_rows.extend(cast(list[dict[str, Any]], stale_rows.to_dict(orient="records")))
             continue
 
         # Source succeeded: add rows with active status

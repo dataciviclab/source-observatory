@@ -399,7 +399,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
     has_valid_slug = False  # default; set True inside CKAN block if slug is usable
     if protocol == "ckan" and base_url and item_name:
         # _slug già letto sopra (linea 395) — non riletto
-        has_valid_slug = isinstance(_slug, str) and _slug.strip() and _slug.strip() != "dataset"
+        has_valid_slug = bool(isinstance(_slug, str) and _slug.strip() and _slug.strip() != "dataset")
         if has_valid_slug:
             # usa api_base_url pre-calcolata dal layer 1 (gestisce endpoint non-standard come INPS /odapi/)
             api_base_url = row.get("api_base_url")
