@@ -21,7 +21,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from collectors.base import observatory_get
@@ -130,7 +130,6 @@ def _sync_from_registry(registry_path: Path | None = None) -> None:
         if base_url and protocol:
             # Estrai dominio dalla base_url
             try:
-                from urllib.parse import urlparse
                 parsed = urlparse(base_url)
                 domain = parsed.netloc.lower().lstrip("www.")
                 if domain:
@@ -151,8 +150,8 @@ _sync_from_registry()
 # Ritorna (canonical, is_subdomain_of_known) dove known è il registry domain.
 def _normalize_domain(domain: str) -> tuple[str, str | None]:
     """Normalizza dominio per dedup. Rimuove www, ricerca superset noto nel registry."""
-    # Togli www
-    normalized = domain.lstrip("www.")
+    # Togli www come prefisso (non lstrip che rimuove tutti i caratteri 'w' e '.')
+    normalized = domain.removeprefix("www.") if domain.startswith("www.") else domain
     # Cerca se è subdomain di un dominio noto nel registry
     known_superset = None
     for known in KNOWN_REGISTRY_DOMAINS:
@@ -283,34 +282,6 @@ def _probe_ckan(base: str, extra_prefixes: list[str] | None = None) -> str | Non
     return None
 
 
-def _probe_sdmx(base: str) -> str | None:
-    """Torna l'URL funzionante SDMX o None."""
-    for path in PROBE_PATHS["sdmx"]:
-        url = base + path
-        try:
-            r = observatory_get(url, timeout=PROBE_TIMEOUT_SECONDS)
-            if r.status_code == 200 and _is_sdmx_xml(r.text[:5000]):
-                return url
-        except Exception:
-            pass
-    return None
-
-
-def _probe_sparql(base: str) -> str | None:
-    """Torna l'URL funzionante SPARQL o None."""
-    for path in PROBE_PATHS["sparql"]:
-        url = base + path
-        try:
-            r = observatory_get(url, timeout=PROBE_TIMEOUT_SECONDS)
-            if r.status_code == 200:
-                ct = r.headers.get("content-type", "").lower()
-                if "json" in ct or "xml" in ct or "sparql" in ct:
-                    return url
-        except Exception:
-            pass
-    return None
-
-
 def _sample_portal(protocol: str, probe_url: str) -> dict:
     """Campiona un portale: count + titoli campione + data coverage."""
     result: dict[str, Any] = {"sample_count": None, "sample_titles": [], "year_min": None, "year_max": None}
@@ -375,7 +346,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
             # Count via SELECT COUNT su graph default
             count_query = "SELECT COUNT(*) WHERE { ?s a ?type } LIMIT 1"
             sparql_url = probe_url if "?" in probe_url else probe_url + "?query="
-            r = observatory_get(sparql_url + count_query, timeout=SAMPLE_TIMEOUT_SECONDS)
+            r = observatory_get(sparql_url + quote(count_query, safe=""), timeout=SAMPLE_TIMEOUT_SECONDS)
             if r.status_code == 200:
                 try:
                     data = r.json()
@@ -390,7 +361,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
                     "OPTIONAL { ?s <http://purl.org/dc/elements/1.1/title> ?title } } LIMIT 3"
                 )
                 try:
-                    tr = observatory_get(sparql_url + title_query, timeout=SAMPLE_TIMEOUT_SECONDS)
+                    tr = observatory_get(sparql_url + quote(title_query, safe=""), timeout=SAMPLE_TIMEOUT_SECONDS)
                     if tr.status_code == 200:
                         tdata = tr.json()
                         for b in tdata.get("results", {}).get("bindings", []):
