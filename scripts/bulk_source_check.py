@@ -398,7 +398,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
 
     has_valid_slug = False  # default; set True inside CKAN block if slug is usable
     if protocol == "ckan" and base_url and item_name:
-        _slug = row.get("item_slug")
+        # _slug già letto sopra (linea 395) — non riletto
         has_valid_slug = isinstance(_slug, str) and _slug.strip() and _slug.strip() != "dataset"
         if has_valid_slug:
             # usa api_base_url pre-calcolata dal layer 1 (gestisce endpoint non-standard come INPS /odapi/)
@@ -424,9 +424,9 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
     # CKAN senza slug valido = package_show già saltato → proviamo comunque l'HTML
     landing = row.get("landing_page")
     if isinstance(landing, str) and landing.startswith("http"):
-        # skip solo se scraping_blocked AND CKAN con slug già provato (no slug valido = non provato)
-        ck_an_no_slug = protocol == "ckan" and not has_valid_slug
-        if source_cfg.get("scraping_blocked") and not ck_an_no_slug:
+        # skip scraping_blocked sources only if CKAN package_show already attempted
+        ckan_skipped_package_show = protocol == "ckan" and not has_valid_slug
+        if source_cfg.get("scraping_blocked") and not ckan_skipped_package_show:
             result = _EMPTY_ENRICH.copy()
             result["enrich_method"] = "scraping_blocked"
             return result
