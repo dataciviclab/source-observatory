@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from typing import Any
 
@@ -90,6 +91,35 @@ def _resource_format(item: dict) -> str | None:
     return ",".join(unique)
 
 
+def _resource_first_url(item: dict) -> str | None:
+    """Return the URL of the first resource with a valid url field."""
+    resources = item.get("resources") or []
+    for r in resources:
+        url = r.get("url")
+        if url and isinstance(url, str) and url.strip():
+            return url.strip()
+    return None
+
+
+def _landing_page(item: dict) -> str | None:
+    """Return the dataset landing page URL (CKAN 'url' field or first resource landing)."""
+    # CKAN standard: 'url' is the dataset's own landing page (not a resource)
+    url = item.get("url")
+    if url and isinstance(url, str) and url.strip():
+        return url.strip()
+    # Fallback: use first resource with a valid url as de-facto landing
+    return _resource_first_url(item)
+
+
+def _distribution_url(item: dict) -> str | None:
+    """Return the primary download/访问URL for this dataset.
+
+    Priority: first resource with url > item url field.
+    The distribution URL should be a direct link to download or access the data.
+    """
+    return _resource_first_url(item)
+
+
 def _has_datastore_active(item: dict) -> bool:
     resources = item.get("resources") or []
     return any(str(r.get("datastore_active") or "").lower() == "true" for r in resources)
@@ -143,6 +173,8 @@ def extract_ckan_inventory_row(
         "api_base_url": _ckan_api_base(source_cfg.get("base_url") or endpoint),
         "ordinal": ordinal,
         "format": _resource_format(item),
+        "landing_page": _landing_page(item),
+        "distribution_url": _distribution_url(item),
         "datastore_active": _has_datastore_active(item),
         "resource_count": _resource_count(item),
     }
@@ -367,12 +399,44 @@ def _sample_indexes(total: int, sample_size: int) -> list[int]:
     return sorted(indexes)
 
 
+def _fetch_package_show(
+    package_id: str,
+    endpoint: str,
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
+    ordinal: int,
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Fetch and process a single package_show. Returns (row_dict, error_str)."""
+    try:
+        payload = ckan_get_json(endpoint, params={"id": package_id}, timeout=30)
+        if not payload.get("success"):
+            return None, f"{package_id}: success=false"
+        item = payload.get("result")
+        if not isinstance(item, dict):
+            return None, f"{package_id}: result non-dict"
+        enriched = extract_ckan_inventory_row(
+            source_id=source_id,
+            source_cfg=source_cfg,
+            captured_at=captured_at,
+            item=item,
+            endpoint=endpoint,
+            ordinal=ordinal,
+            inventory_method="package_show_sample",
+        )
+        enriched["item_id"] = package_id
+        return enriched, None
+    except Exception as exc:
+        return None, f"{package_id}: {exc}"
+
+
 def collect_ckan_inventory_via_package_show_sample(
     source_id: str,
     source_cfg: dict[str, Any],
     captured_at: str,
     package_list_rows: list[dict[str, Any]],
     sample_size: int = 25,
+    max_workers: int = 16,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_show")
     sampled_idx = _sample_indexes(len(package_list_rows), sample_size)
@@ -382,32 +446,26 @@ def collect_ckan_inventory_via_package_show_sample(
     enriched_rows: list[dict[str, Any]] = []
     errors: list[str] = []
 
-    for idx in sampled_idx:
-        base_row = package_list_rows[idx]
-        package_id = str(base_row["item_id"])
-        try:
-            payload = ckan_get_json(endpoint, params={"id": package_id}, timeout=30)
-            if not payload.get("success"):
-                errors.append(f"{package_id}: package_show success=false")
-                continue
-            item = payload.get("result")
-            if not isinstance(item, dict):
-                errors.append(f"{package_id}: package_show result non-dict")
-                continue
-            enriched = extract_ckan_inventory_row(
-                source_id=source_id,
-                source_cfg=source_cfg,
-                captured_at=captured_at,
-                item=item,
-                endpoint=endpoint,
-                ordinal=base_row["ordinal"],
-                inventory_method="package_show_sample",
-            )
-            # Keep package_list key for deterministic merge against base rows.
-            enriched["item_id"] = package_id
-            enriched_rows.append(enriched)
-        except Exception as exc:
-            errors.append(f"{package_id}: {exc}")
+    # Parallel fetch — saturare la rete, non la CPU
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {
+            pool.submit(
+                _fetch_package_show,
+                str(package_list_rows[idx]["item_id"]),
+                endpoint,
+                source_id,
+                source_cfg,
+                captured_at,
+                package_list_rows[idx]["ordinal"],
+            ): idx
+            for idx in sampled_idx
+        }
+        for future in as_completed(futures):
+            row, err = future.result()
+            if row is not None:
+                enriched_rows.append(row)
+            if err:
+                errors.append(err)
 
     warning: dict[str, Any] | None = None
     if errors:
