@@ -22,6 +22,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import logging
 import re
 import sys
 import time
@@ -37,6 +38,8 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from collectors.base import observatory_get, observatory_head
+
+logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_IN = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_latest.parquet"
@@ -578,17 +581,19 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
     results = []
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(_check_row, row, check_ts, registry): i for i, row in df.iterrows()}
+        future_to_idx = {pool.submit(_check_row, row, check_ts, registry): i for i, row in df.iterrows()}
         done = 0
-        total = len(futures)
-        for future in as_completed(futures):
+        total = len(future_to_idx)
+        for future in as_completed(future_to_idx):
+            i = future_to_idx[future]
             try:
                 results.append(_finalize_scores(future.result()))
-            except Exception as exc:
-                results.append({"check_notes": str(exc)[:200], "enrich_method": "error"})
+            except Exception:
+                logger.exception("Row check failed for index %d", i)
+                results.append({"check_notes": "check failed", "enrich_method": "error"})
             done += 1
             if done % 50 == 0 or done == total:
-                print(f"  {done}/{total} completati")
+                logger.info("  %d/%d completed", done, total)
 
     return pd.DataFrame(results)
 
@@ -614,44 +619,45 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    logging.basicConfig(format="%(levelname)s %(message)s", level=logging.INFO)
     args = parse_args()
 
-    print(f"Carico catalogo: {args.input}")
+    logger.info("Loading catalog: %s", args.input)
     df = pd.read_parquet(args.input)
-    print(f"  {len(df)} item totali")
+    logger.info("  %d total items", len(df))
 
     if args.source_ids:
         df = df[df["source_id"].isin(args.source_ids)]
-        print(f"  filtro source_ids {args.source_ids}: {len(df)} item")
+        logger.info("  source_ids filter %s: %d items", args.source_ids, len(df))
 
     if args.only_with_url:
         has_url = df["landing_page"].notna() | df["distribution_url"].notna()
         df = df[has_url]
-        print(f"  filtro URL presenti nel catalogo: {len(df)} item")
+        logger.info("  URL present in catalog filter: %d items", len(df))
 
     if args.only_with_title:
         df = df[df["title"].notna()]
-        print(f"  filtro title non nullo: {len(df)} item")
+        logger.info("  non-null title filter: %d items", len(df))
 
     if args.limit:
         df = df.head(args.limit)
-        print(f"  limit {args.limit}: {len(df)} item")
+        logger.info("  limit %d: %d items", args.limit, len(df))
 
     if args.limit_per_source:
         df = df.groupby("source_id", group_keys=False).head(args.limit_per_source)
-        print(f"  limit-per-source {args.limit_per_source}: {len(df)} item")
+        logger.info("  limit-per-source %d: %d items", args.limit_per_source, len(df))
 
     if df.empty:
-        print("Nessun item da controllare. Uscita.")
+        logger.info("No items to check. Exiting.")
         return
 
     # ── Logica incrementale ──────────────────────────────────────────────────────
     existing = None
     skipped = 0
     if args.out.exists():
-        print(f"\nCarico risultati precedenti: {args.out}")
+        logger.info("Loading previous results: %s", args.out)
         existing = pd.read_parquet(args.out)
-        print(f"  {len(existing)} risultati precedenti")
+        logger.info("  %d previous results", len(existing))
 
         # Parsare check_timestamp come datetime se presente
         if "check_timestamp" in existing.columns:
@@ -695,28 +701,28 @@ def main() -> None:
                 reinspected = len(recent_ids & updated_ids)
                 if reinspected > 0:
                     recent_ids = recent_ids - updated_ids
-                    print(f"  {reinspected} item ri-aggiunti perché la fonte ha aggiornato modified")
+                    logger.info("  %d items re-added because source updated modified", reinspected)
 
             # Filtra catalogo escludendo item recenti
             df_to_check = df[~df["item_id"].astype(str).isin(recent_ids)].copy()
             skipped = len(df) - len(df_to_check)
 
             if skipped > 0:
-                print(f"  Saltati {skipped} item controllati negli ultimi {args.max_age_days} giorni")
-            print(f"  {len(df_to_check)} item da controllare")
+                logger.info("  Skipped %d items checked in last %d days", skipped, args.max_age_days)
+            logger.info("  %d items to check", len(df_to_check))
             df = df_to_check
         else:
-            print("  Attenzione: existing non ha colonna 'item_id', saltando dedup")
+            logger.warning("  existing has no 'item_id' column, skipping dedup")
 
     if df.empty:
-        print("Nessun item nuovo da controllare. Uscita.")
+        logger.info("No new items to check. Exiting.")
         return
 
-    print(f"\nAvvio check su {len(df)} item ({args.workers} workers)...")
+    logger.info("Starting check on %d items (%d workers)...", len(df), args.workers)
     t0 = time.time()
     results = run_bulk_check(df, workers=args.workers)
     elapsed = time.time() - t0
-    print(f"Completato in {elapsed:.1f}s")
+    logger.info("Completed in %.1fs", elapsed)
 
     # ── Upsert ───────────────────────────────────────────────────────────────────
     if existing is not None and not existing.empty and "item_id" in existing.columns:
@@ -729,26 +735,26 @@ def main() -> None:
         # Deduplica su item_id tenendo la riga con check_timestamp più recente
         results["check_timestamp"] = pd.to_datetime(results["check_timestamp"], utc=True)
         results = results.sort_values("check_timestamp", ascending=False).drop_duplicates(subset=["item_id"], keep="first").reset_index(drop=True)
-        print(f"  Unificati {len(results)} risultati (nuovi + precedenti non ri-controllati)")
+        logger.info("  Unified %d results (new + previous not re-checked)", len(results))
 
     enrich_counts = results["enrich_method"].value_counts()
     reachable_n = results["reachable"].sum() if "reachable" in results.columns else 0
     reachable_pct = results["reachable"].mean() * 100 if "reachable" in results.columns else 0
-    print(f"\nArricchimento:\n{enrich_counts.to_string()}")
-    print(f"Raggiungibili: {reachable_pct:.0f}% ({reachable_n}/{len(results)})")
-    print(f"Granularità:\n{results['granularity'].value_counts().to_string()}")
-    print(f"Needs review: {results['needs_review'].sum()}")
+    logger.info("Enrichment:\n%s", enrich_counts.to_string())
+    logger.info("Reachable: %.0f%% (%d/%d)", reachable_pct, reachable_n, len(results))
+    logger.info("Granularity:\n%s", results["granularity"].value_counts().to_string())
+    logger.info("Needs review: %d", results["needs_review"].sum())
     if "intake_score" in results.columns:
         candidates = results["intake_candidate"].sum()
         avg_score = results["intake_score"].mean()
-        print(f"Intake candidates: {candidates}/{len(results)} (score medio: {avg_score:.0f})")
+        logger.info("Intake candidates: %d/%d (avg score: %.0f)", candidates, len(results), avg_score)
         top = results[results["intake_candidate"].fillna(False)].nlargest(5, "intake_score")[["title","granularity","year_min","year_max","intake_score"]]
         if not top.empty:
-            print(f"\nTop candidati:\n{top.to_string(index=False)}")
+            logger.info("Top candidates:\n%s", top.to_string(index=False))
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     results.to_parquet(args.out, index=False)
-    print(f"\nRisultati: {args.out}")
+    logger.info("Results: %s", args.out)
 
 
 if __name__ == "__main__":
