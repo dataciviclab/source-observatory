@@ -599,7 +599,8 @@ def main() -> int:
 
     # Filtra per soglia minima dataset (solo per portali con sample_count noto)
     if args.min_datasets > 0:
-        mask = (df["sample_count"].isna()) | (df["sample_count"].astype(str).replace("", "0").astype(int) >= args.min_datasets)
+        sample_numeric = pd.to_numeric(df["sample_count"], errors="coerce").fillna(0).astype(int)
+        mask = df["sample_count"].isna() | (sample_numeric >= args.min_datasets)
         below = (~mask).sum()
         df = df[mask]
         if below > 0:
