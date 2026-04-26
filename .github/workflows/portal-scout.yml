@@ -151,7 +151,7 @@ jobs:
 
       - name: Fail if portal scout produced no usable output
         run: |
-          status=$(cat data/portal_scout/.scout_status)
+          status=$(cat data/portal_scout/scout_results/.scout_status)
           if [[ "$status" == failed* ]]; then
             echo "::error::portal_scout non ha prodotto output utilizzabile ($status)."
             exit 1
