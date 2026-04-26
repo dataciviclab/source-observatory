@@ -26,6 +26,11 @@ Scheduling v0:
 - il modello v0 è `report-only`: aggiorna `STATUS.md` e `sources_registry.yaml`
 - nessuna issue automatica o alerting complesso in questa fase
 
+Comportamento probe:
+
+- non-SDMX portals con timeout/connection error (http_code="-", status YELLOW): retry automatico 1x. Se il retry è GREEN, lo usa; altrimenti annota "Retry timeout/connection: ..." e mantiene YELLOW.
+- exception isolation: un portal che esplode non ferma il loop — ritorna ProbeResult(RED) e il probe continua con le fonti successive.
+
 Manutenzione del Registry:
 
 - Se una fonte è stabilmente giù, verificare manualmente l'URL.

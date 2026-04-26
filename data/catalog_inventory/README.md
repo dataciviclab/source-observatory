@@ -12,23 +12,23 @@ Non è:
 - una promessa di copertura completa di tutte le fonti nel registry
 - un sostituto del radar o del catalog-watch
 
-## Perimetro attuale
+## Perimetro dinamico
 
-Sorgenti oggi inventariate in modo riproducibile:
-- `istat_sdmx`
-- `inps`
-- `openbdap`
-- `ispra_linked_data`
+L'inventario **non è un snapshot dell'ultimo run**: è uno stato cumulativo che preserva tutte le fonti che sono state inventariate con successo almeno una volta.
 
-Sorgenti osservate ma non inventariate automaticamente:
-- `anac`
+**Comportamento**:
+- Fonte **UP** → righe aggiunte con `source_status=active`
+- Fonte **DOWN** → righe precedenti preservate con `source_status=stale`, `stale_reason=<codice errore>`, `last_successful_fetch=<timestamp>`
+- Una fonte può uscire e rientrare nei run successivi senza perdere lo storico
 
-Motivo dell'esclusione di `anac`:
-- la fonte resta nel registry ed e' osservata lato `catalog-watch`
-- ma risponde ai client HTTP standard con pagina WAF `Request Rejected`
-- non introduciamo bypass o workaround anti-bot poco difendibili solo per forzare il conteggio
+**`source_status`** (colonna nel parquet):
+- `active` — dati raccolti nell'ultimo run riuscito
+- `stale` — dati da un run precedente, fonte non raggiunta nell'ultimo tentativo
+- `unknown` — righe preesistenti senza il campo popolato (vecchi run)
 
-## Output attesi
+Il parquet può quindi contenere righe di una fonte anche se l'ultimo run l'ha trovata down — il dato non è perso.
+
+## Schema minimo del parquet
 
 Il workflow manuale produce due file:
 - `catalog_inventory_latest.parquet`
@@ -58,6 +58,8 @@ Colonne chiave:
 - `notes_excerpt`: estratto breve delle note, se disponibile
 - `source_url`: endpoint usato per l'inventory
 - `ordinal`: posizione del record nell'enumerazione della fonte
+
+**Nota su ANAC**: la fonte è nel registry come `catalog-watch` ma non è inventariabile automaticamente — risponde con WAF `Request Rejected` ai client HTTP standard. Non introduciamo bypass anti-bot per forzare il conteggio.
 
 Nota operativa:
 - per cataloghi CKAN il builder prova in ordine `package_search`, `current_package_list_with_resources`, `package_list`
