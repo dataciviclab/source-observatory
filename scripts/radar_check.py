@@ -161,7 +161,12 @@ def _probe_once(base_url: str) -> ProbeResult:
         return _build_probe_result(base_url, response, ssl_failure=ssl_failure)
     # exc is not None — both attempts failed
     if exc is None:
-        raise RuntimeError("Expected exception when response is None from observatory_ssl_fallback_get")
+        # response=None with no exception — should not happen, treat as hard error
+        return ProbeResult(
+            status="RED",
+            http_code="-",
+            note="Unexpected: response=None without exception from observatory_ssl_fallback_get",
+        )
     ssl_failure = None
     error_exc: requests.exceptions.RequestException
     if isinstance(exc, SslFallbackFailed):
@@ -173,7 +178,12 @@ def _probe_once(base_url: str) -> ProbeResult:
     elif isinstance(exc, requests.exceptions.RequestException):
         error_exc = exc
     else:
-        raise RuntimeError(f"Unexpected exception type in _probe_once: {type(exc)}")
+        # Non-RequestException escaped observatory_ssl_fallback_get — treat as RED
+        return ProbeResult(
+            status="RED",
+            http_code="-",
+            note=f"Unexpected exception type in _probe_once: {type(exc).__name__}: {exc}",
+        )
     return _make_error_result(
         error_exc,
         ssl_fallback_used=ssl_failure is not None,
@@ -184,7 +194,24 @@ def _probe_once(base_url: str) -> ProbeResult:
 def probe_url(base_url: str) -> ProbeResult:
     """Probe URL with retry/backoff for SDMX endpoints known to be intermittent."""
     if not _is_sdmx_url(base_url):
-        return _probe_once(base_url)
+        result = _probe_once(base_url)
+        # Retry once with shorter timeout on transient failures (timeout / connection error)
+        if result.http_code == "-" and result.status == "YELLOW":
+            result2 = _probe_once(base_url)
+            # Only upgrade if second attempt succeeds — otherwise keep original note
+            if result2.status == "GREEN":
+                return result2
+            # Annotate with retry info, but keep original status (don't compound)
+            retry_note = f"Retry timeout/connection: {result2.note or result2.status}"
+            return ProbeResult(
+                status=result.status,
+                http_code=result2.http_code,
+                note=retry_note,
+                ssl_fallback_used=result.ssl_fallback_used or result2.ssl_fallback_used,
+                final_url=result2.final_url or result.final_url,
+                content_type=result2.content_type or result.content_type,
+            )
+        return result
 
     # SDMX: retry on known intermittent status codes
     last_result = None
@@ -411,7 +438,14 @@ def main() -> int:
                 note="Missing base_url in registry entry",
             )
             continue
-        results[portal] = probe_url(str(base_url))
+        try:
+            results[portal] = probe_url(str(base_url))
+        except Exception as exc:
+            results[portal] = ProbeResult(
+                status="RED",
+                http_code="-",
+                note=f"Probe exception non gestita: {exc.__class__.__name__}: {exc}",
+            )
 
     report = build_status_report(registry, results, probe_date)
     summary = build_radar_summary(registry, results, probe_date)
