@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import duckdb
 import pandas as pd
@@ -94,6 +95,24 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _error_to_stale_reason(exc: Exception) -> str:
+    """Map exception to stale_reason tag."""
+    msg = str(exc).lower()
+    if "500" in msg or "internal server error" in msg:
+        return "source_500"
+    if "503" in msg or "service unavailable" in msg:
+        return "source_503"
+    if "connecttimeout" in msg or "connection timed out" in msg:
+        return "timeout"
+    if "ssl_error" in msg or "sslv3" in msg or "tls" in msg:
+        return "ssl_error"
+    if "connection error" in msg or "connectionerror" in msg:
+        return "connection_error"
+    if "resolution error" in msg or "resolutionerror" in msg or "name or service not known" in msg:
+        return "dns_error"
+    return "unknown"
+
+
 def main() -> None:
     args = parse_args()
     out_dir = args.out_dir
@@ -154,18 +173,50 @@ def main() -> None:
             sid, rows, warning, summary, exc = future.result()
             collected[sid] = (rows, warning, summary, exc)
 
+    # Load existing inventory for merge (always, not just with --source-ids filter)
+    existing_df: pd.DataFrame | None = None
+    if out_parquet.exists():
+        try:
+            existing_df = pd.read_parquet(out_parquet)
+        except Exception:
+            existing_df = None
+
+    # Check if existing_df has source_status column — if not, a full re-run is needed
+    # to populate the new fields consistently across all sources
+    if existing_df is not None:
+        if "source_status" not in existing_df.columns:
+            print(
+                "WARNING: existing inventory lacks 'source_status' column. "
+                "A full re-run is recommended to populate stale/active semantics consistently. "
+                "(New fields added in this PR: source_status, stale_reason, last_successful_fetch)",
+                file=sys.stderr,
+            )
+
     for source_id, source_cfg in inventoriable:
         rows, warning, summary, exc = collected[source_id]
         if exc is not None:
+            # Source failed: preserve existing rows as stale
             report["sources"][source_id] = {
                 "status": "error",
                 "protocol": source_cfg.get("protocol"),
                 "error": str(exc),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
             }
+            if existing_df is not None:
+                stale_rows = existing_df[existing_df["source_id"] == source_id].copy()
+                if not stale_rows.empty:
+                    stale_rows["source_status"] = "stale"
+                    stale_rows["stale_reason"] = _error_to_stale_reason(exc)
+                    all_rows.extend(cast(list[dict[str, Any]], stale_rows.to_dict(orient="records")))
             continue
 
+        # Source succeeded: add rows with active status
+        for row in rows:
+            row["source_status"] = "active"
+            row["stale_reason"] = None
+            row["last_successful_fetch"] = captured_at
         all_rows.extend(rows)
+
         source_report: dict[str, Any] = {
             "status": "ok",
             "protocol": source_cfg.get("protocol"),
@@ -178,23 +229,34 @@ def main() -> None:
             source_report["summary"] = summary
         report["sources"][source_id] = source_report
 
-    if not all_rows:
-        raise RuntimeError("No catalog inventory rows collected.")
-
     df = pd.DataFrame(all_rows)
 
-    if source_id_filter and out_parquet.exists():
-        existing = pd.read_parquet(out_parquet)
-        existing = existing[~existing["source_id"].isin(source_id_filter)]
-        df = pd.concat([existing, df], ignore_index=True)
+    # Merge with existing inventory (preserves sources not in this run)
+    if out_parquet.exists() and existing_df is not None:
+        # Sources not in this run at all → keep as-is
+        this_run_sources = {sid for sid, _ in inventoriable}
+        preserved = existing_df[~existing_df["source_id"].isin(this_run_sources)]
+        if not preserved.empty:
+            # Mark as stale if older than last successful fetch
+            preserved = preserved.copy()
+            if "source_status" in preserved.columns:
+                preserved["source_status"] = preserved["source_status"].fillna("unknown")
+            else:
+                preserved["source_status"] = "unknown"
+            df = pd.concat([df, preserved], ignore_index=True)
 
-        # merge report: mantieni le entry precedenti per le fonti non ri-buildate
-        if out_report.exists():
-            with out_report.open(encoding="utf-8") as fh:
-                prev_report = json.load(fh)
-            for sid, info in prev_report.get("sources", {}).items():
-                if sid not in report["sources"]:
-                    report["sources"][sid] = info
+    # After merge, if still no rows → nothing worked
+    if df.empty:
+        raise RuntimeError("No catalog inventory rows collected (no sources succeeded and no preserved rows).")
+
+    # merge report: mantieni le entry precedenti per le fonti non ri-buildate in questo run
+    # (le rows sono già preservate nel DataFrame; il report JSON tiene traccia storica)
+    if out_report.exists():
+        with out_report.open(encoding="utf-8") as fh:
+            prev_report = json.load(fh)
+        for sid, info in prev_report.get("sources", {}).items():
+            if sid not in report["sources"]:
+                report["sources"][sid] = info
 
     con = duckdb.connect()
     con.register("inventory_df", df)
