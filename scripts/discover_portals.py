@@ -123,6 +123,7 @@ def _sync_from_registry(registry_path: Path | None = None) -> None:
         with open(registry_path, encoding="utf-8") as f:
             registry = yaml.safe_load(f)
     except Exception:
+        logger.debug("bootstrap: registry load failed, skipping tier1")
         return
 
     tier1: dict[str, str] = {}
@@ -142,7 +143,7 @@ def _sync_from_registry(registry_path: Path | None = None) -> None:
                     if protocol in ("ckan", "sdmx", "sparql"):
                         tier1[domain] = protocol
             except Exception:
-                pass
+                logger.debug("bootstrap: skipping domain with parse error")
 
     TIER1_DOMAINS = tier1
     KNOWN_REGISTRY_DOMAINS = known
@@ -195,6 +196,7 @@ def _retry_get(url: str, timeout: tuple[float, float]) -> requests.Response | No
         except Exception:
             if attempt < _PROBE_MAX_RETRIES:
                 time.sleep(_PROBE_BASE_DELAY * (2 ** attempt))
+    logger.debug("probe: all retries exhausted")
     return None
 
 
@@ -346,7 +348,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
                                         result["year_min"] = int(created[:4])
                                         break
                         except Exception:
-                            pass
+                            logger.debug("ckan sample: skip, year parse error")
 
         elif protocol == "sdmx":
             # Count da dataflow list
@@ -365,7 +367,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
                         if name:
                             result["sample_titles"].append(name)
                 except Exception:
-                    pass
+                    logger.debug("sdmx sample: skip, year parse error")
 
         elif protocol == "sparql":
             # Count via SELECT COUNT su graph default
@@ -379,7 +381,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
                     if bindings:
                         result["sample_count"] = int(bindings[0].get("callret-0", {}).get("value", 0))
                 except Exception:
-                    pass
+                    logger.debug("sparql sample: skip, count parse error")
                 # Titoli campione da dataset titling query
                 title_query = (
                     "SELECT DISTINCT ?title WHERE { ?s a <http://www.w3.org/ns/dcat#Dataset> . "
@@ -394,7 +396,7 @@ def _sample_portal(protocol: str, probe_url: str) -> dict:
                             if t:
                                 result["sample_titles"].append(t)
                 except Exception:
-                    pass
+                    logger.debug("sparql sample: skip, title parse error")
 
     except Exception as exc:
         result["sample_error"] = str(exc)[:80]
