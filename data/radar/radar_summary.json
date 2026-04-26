@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-04-24T08:25:00.911400+00:00",
-  "probe_date": "2026-04-24",
-  "sources_total": 13,
+  "generated_at": "2026-04-26T08:19:00.419191+00:00",
+  "probe_date": "2026-04-26",
+  "sources_total": 14,
   "status_counts": {
-    "GREEN": 6,
-    "YELLOW": 5,
-    "RED": 2
+    "GREEN": 7,
+    "YELLOW": 3,
+    "RED": 4
   },
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "YELLOW",
+      "status": "RED",
       "protocol": "sdmx",
       "observation_mode": "catalog-watch",
       "http_code": "-",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": [
         "istat-gini-regionale",
         "istat-housing-crowding",
@@ -27,7 +27,7 @@
       "protocol": "ckan",
       "observation_mode": "radar-only",
       "http_code": "403",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": []
     },
     {
@@ -36,7 +36,7 @@
       "protocol": "ckan",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": [
         "inps-pensioni"
       ]
@@ -47,7 +47,7 @@
       "protocol": "ckan",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": [
         "dipendenti-pubblici",
         "bdap-lea"
@@ -59,7 +59,7 @@
       "protocol": "html",
       "observation_mode": "radar-only",
       "http_code": "-",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": []
     },
     {
@@ -68,7 +68,7 @@
       "protocol": "aem",
       "observation_mode": "radar-only",
       "http_code": "200",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": []
     },
     {
@@ -77,7 +77,7 @@
       "protocol": "html",
       "observation_mode": "radar-only",
       "http_code": "200",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": [
         "mim-alunni-corso-eta"
       ]
@@ -88,7 +88,16 @@
       "protocol": "sparql",
       "observation_mode": "catalog-watch",
       "http_code": "503",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
+      "datasets_in_use": []
+    },
+    {
+      "id": "dati_cultura",
+      "status": "GREEN",
+      "protocol": "sparql",
+      "observation_mode": "catalog-watch",
+      "http_code": "200",
+      "last_check": "2026-04-26",
       "datasets_in_use": []
     },
     {
@@ -97,7 +106,7 @@
       "protocol": "sparql",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": []
     },
     {
@@ -106,7 +115,7 @@
       "protocol": "ckan",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": []
     },
     {
@@ -115,16 +124,16 @@
       "protocol": "ckan",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": []
     },
     {
       "id": "mur_ustat",
-      "status": "YELLOW",
+      "status": "RED",
       "protocol": "ckan",
       "observation_mode": "catalog-watch",
       "http_code": "-",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": []
     },
     {
@@ -133,7 +142,7 @@
       "protocol": "rest",
       "observation_mode": "catalog-watch",
       "http_code": "403",
-      "last_check": "2026-04-24",
+      "last_check": "2026-04-26",
       "datasets_in_use": [
         "opencoesione-pagamenti-ue-2014-2020"
       ]
