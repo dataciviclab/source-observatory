@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 import xml.etree.ElementTree as ET
 from collections import defaultdict
@@ -28,11 +29,13 @@ from typing import Any
 
 import yaml
 
+logger = logging.getLogger(__name__)
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from collectors.base import observatory_get, now_utc_iso, sparql_binding_value
-from collectors.ckan import ckan_action_endpoint, ckan_get_json
-from collectors.sdmx import parse_sdmx_name, _sdmx_api_base
-from collectors.sparql import SPARQL_QUERY_TEMPLATES
+from collectors.base import observatory_get, now_utc_iso, sparql_binding_value  # noqa: E402
+from collectors.ckan import ckan_action_endpoint, ckan_get_json  # noqa: E402
+from collectors.sdmx import parse_sdmx_name, _sdmx_api_base  # noqa: E402
+from collectors.sparql import SPARQL_QUERY_TEMPLATES  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
@@ -102,7 +105,7 @@ def scout_ckan(source_id: str, source_cfg: dict[str, Any]) -> dict[str, Any]:
                     if item:
                         items.append(item)
                 except Exception:
-                    pass
+                    logger.debug("ckan fallback: skip package_show error")
         except Exception as exc:
             errors.append(f"package_list fallback failed: {exc}")
 
@@ -319,6 +322,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    logging.basicConfig(format="%(levelname)s %(message)s", level=logging.WARNING)
     args = parse_args()
     with args.registry_path.open(encoding="utf-8") as fh:
         registry: dict[str, dict] = yaml.safe_load(fh) or {}
