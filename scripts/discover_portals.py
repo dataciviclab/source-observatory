@@ -196,18 +196,22 @@ def _retry_get(url: str, timeout: tuple[float, float]) -> requests.Response | No
 
 
 def _is_sdmx_xml(text: str) -> bool:
-    """Validazione strutturale SDMX: cerca elementi strutturali nel primo KB, non solo stringhe."""
+    """Validazione strutturale SDMX: cerca elementi strutturali con namespace SDMX."""
     if not text.strip().startswith("<"):
         return False
     if "<!DOCTYPE" in text[:100] or "<html" in text[:200]:
         return False
-    # Cerca elementi strutturali SDMX: DataStructureDefinition, Dataflow, KeyFamily, message
+    # Cerca elementi strutturali SDMX con namespace: message:, oppure elementi
+    # con prefisso sdmx (es. <sdmx:Structure>) — più specifico di <Structure> nudo.
+    first_kb = text[:2000].lower()
     return (
-        "<message:" in text
-        or "<Structure" in text[:2000]
-        or "<DataStructureDefinition" in text[:2000]
-        or "<Dataflow" in text[:2000]
-        or "<KeyFamily" in text[:2000]
+        "<message:" in first_kb
+        or "<sdmx:" in first_kb
+        or ("sdmx.org" in first_kb and (
+            "<structure" in first_kb
+            or "<dataflow" in first_kb
+            or "<keyfamily" in first_kb
+        ))
     )
 
 

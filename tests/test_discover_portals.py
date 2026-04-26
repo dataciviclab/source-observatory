@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pandas as pd
 
@@ -30,8 +31,7 @@ def test_probe_ckan_uses_retry(monkeypatch) -> None:
         call_count += 1
         if call_count == 1:
             raise RuntimeError("transient error")
-        from unittest.mock import MagicMixin
-        resp = MagicMixin()
+        resp = MagicMock()
         resp.status_code = 200
         resp.headers = {"content-type": "application/json"}
         resp.text = '{"success": true, "result": ["a", "b"]}'
@@ -39,6 +39,7 @@ def test_probe_ckan_uses_retry(monkeypatch) -> None:
         return resp
 
     monkeypatch.setattr(discover_portals, "observatory_get", fake_get)
+    monkeypatch.setattr(discover_portals.time, "sleep", lambda _: None)
     discover_portals._DDG_PATHS.clear()
 
     url = discover_portals._probe_ckan("https://example.gov.it")
@@ -72,6 +73,7 @@ def test_probe_ckan_uses_aggressive_timeout(monkeypatch) -> None:
         return FakeResponse()
 
     monkeypatch.setattr(discover_portals, "observatory_get", fake_get)
+    monkeypatch.setattr(discover_portals.time, "sleep", lambda _: None)
     monkeypatch.setattr(discover_portals, "_retry_get", lambda url, timeout: fake_get(url, timeout))
     discover_portals._DDG_PATHS.clear()
 
