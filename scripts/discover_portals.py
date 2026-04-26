@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import requests
 import sys
 import time
 import threading
@@ -178,15 +179,39 @@ SAMPLE_TIMEOUT_SECONDS = (2, 3)
 # Protocol detection helpers
 # ---------------------------------------------------------------------------
 
+# Retry configuration for probe calls
+_PROBE_MAX_RETRIES = 1
+_PROBE_BASE_DELAY = 0.5  # seconds, exponential backoff
+
+
+def _retry_get(url: str, timeout: tuple[float, float]) -> requests.Response | None:
+    """GET with exponential backoff retry. Returns response or None on final failure."""
+    for attempt in range(_PROBE_MAX_RETRIES + 1):
+        try:
+            return observatory_get(url, timeout=timeout)
+        except Exception:
+            if attempt < _PROBE_MAX_RETRIES:
+                time.sleep(_PROBE_BASE_DELAY * (2 ** attempt))
+    return None
+
+
 def _is_sdmx_xml(text: str) -> bool:
-    """Validazione strutturale: questo testo è XML SDMX, non HTML o altro."""
+    """Validazione strutturale SDMX: cerca elementi strutturali con namespace SDMX."""
     if not text.strip().startswith("<"):
         return False
     if "<!DOCTYPE" in text[:100] or "<html" in text[:200]:
         return False
-    # SDMX namespace o prefisso nel root element
-    return "sdmx.org" in text or (
-        text.lstrip().startswith("<") and ":" in text[:500] and "message" in text[:1000].lower()
+    # Cerca elementi strutturali SDMX con namespace: message:, oppure elementi
+    # con prefisso sdmx (es. <sdmx:Structure>) — più specifico di <Structure> nudo.
+    first_kb = text[:2000].lower()
+    return (
+        "<message:" in first_kb
+        or "<sdmx:" in first_kb
+        or ("sdmx.org" in first_kb and (
+            "<structure" in first_kb
+            or "<dataflow" in first_kb
+            or "<keyfamily" in first_kb
+        ))
     )
 
 
@@ -269,16 +294,13 @@ def _probe_ckan(base: str, extra_prefixes: list[str] | None = None) -> str | Non
     for prefix in prefixes:
         for suffix in suffixes:
             url = base + prefix + suffix
-            try:
-                r = observatory_get(url, timeout=PROBE_TIMEOUT_SECONDS)
-                if r.status_code == 200:
-                    ct = r.headers.get("content-type", "").lower()
-                    if "json" in ct or r.text.strip().startswith("{"):
-                        data = r.json()
-                        if isinstance(data, dict) and "result" in data:
-                            return url
-            except Exception:
-                pass
+            r = _retry_get(url, timeout=PROBE_TIMEOUT_SECONDS)
+            if r is not None and r.status_code == 200:
+                ct = r.headers.get("content-type", "").lower()
+                if "json" in ct or r.text.strip().startswith("{"):
+                    data = r.json()
+                    if isinstance(data, dict) and "result" in data:
+                        return url
     return None
 
 
@@ -394,24 +416,21 @@ def detect_protocol(domain: str, probe_paths: dict | None = None) -> tuple[str, 
         if url:
             return "ckan", url
 
-    # SDMX e SPARQL: probe standard
+    # SDMX e SPARQL: probe standard con retry
     for protocol, paths in (probe_paths or PROBE_PATHS).items():
         if protocol == "ckan":
             continue
         for path in paths:
             url = base + path
-            try:
-                r = observatory_get(url, timeout=PROBE_TIMEOUT_SECONDS)
-                if r.status_code == 200:
-                    ct = r.headers.get("content-type", "").lower()
-                    if protocol == "sdmx":
-                        text = r.text[:5000]
-                        if _is_sdmx_xml(text):
-                            return "sdmx", url
-                    elif protocol == "sparql" and ("json" in ct or "xml" in ct or "sparql" in ct):
-                        return "sparql", url
-            except Exception:
-                pass
+            r = _retry_get(url, timeout=PROBE_TIMEOUT_SECONDS)
+            if r is not None and r.status_code == 200:
+                ct = r.headers.get("content-type", "").lower()
+                if protocol == "sdmx":
+                    text = r.text[:5000]
+                    if _is_sdmx_xml(text):
+                        return "sdmx", url
+                elif protocol == "sparql" and ("json" in ct or "xml" in ct or "sparql" in ct):
+                    return "sparql", url
     return "html", None
 
 
