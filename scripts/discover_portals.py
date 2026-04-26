@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import requests
 import sys
 import time
@@ -24,8 +25,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urlparse
 
+logger = logging.getLogger(__name__)
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from collectors.base import observatory_get
+from collectors.base import observatory_get  # noqa: E402
 
 OUT_DEFAULT = Path(__file__).resolve().parents[1] / "data" / "portal_scout" / "discovered_portals.parquet"
 
@@ -229,7 +232,7 @@ def search_ddg(queries: list[str], max_per_query: int) -> list[dict]:
                 results.extend(hits)
                 time.sleep(1.5)  # rate limit
             except Exception as exc:
-                print(f"  [warn] query '{query}': {exc}", file=sys.stderr)
+                logger.warning("query '%s' failed: %s", query, exc)
     return results
 
 
@@ -532,6 +535,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    logging.basicConfig(format="%(levelname)s %(message)s", level=logging.INFO)
     args = parse_args()
 
     if args.refresh_summary:
@@ -542,8 +546,8 @@ def main() -> int:
         summary_path, shortlist_path = _write_summary_artifacts(
             df, args.out, datetime.now(timezone.utc).isoformat()
         )
-        print(f"Shortlist scritta in {shortlist_path}")
-        print(f"Summary scritto in {summary_path}")
+        logger.info("Shortlist written to %s", shortlist_path)
+        logger.info("Summary written to %s", summary_path)
         return 0
 
     # Seleziona query in base ai protocolli richiesti
@@ -555,24 +559,25 @@ def main() -> int:
     # Limita i probe ai protocolli richiesti
     active_probe_paths = {k: v for k, v in PROBE_PATHS.items() if k in protocols}
 
-    print(f"Ricerca su {len(queries)} query DDG (max {args.max_results} risultati ciascuna)"
-          + (f" — protocolli: {', '.join(sorted(protocols))}" if args.protocols else "") + "...")
+    logger.info("Searching %d DDG queries (max %d results each)%s",
+                len(queries), args.max_results,
+                (f" — protocols: {', '.join(sorted(protocols))}" if args.protocols else ""))
     results = search_ddg(queries, args.max_results)
-    print(f"  {len(results)} risultati grezzi")
+    logger.info("  %d raw results", len(results))
 
     domains = extract_domains(results)
     # Aggiungi sempre i portali nazionali tier-1
     for tier1_domain in TIER1_DOMAINS:
         if tier1_domain not in domains:
             domains[tier1_domain] = {"tier1-allowlist"}
-    print(f"  {len(domains)} domini unici estratti (inclusi {len(TIER1_DOMAINS)} tier-1)")
+    logger.info("  %d unique domains extracted (including %d tier-1)", len(domains), len(TIER1_DOMAINS))
 
     def _probe_domain(domain: str, sources: set[str]) -> dict:
         if args.no_probe:
             protocol, probe_url = "unknown", None
         else:
             protocol, probe_url = detect_protocol(domain, active_probe_paths)
-            print(f"  probe {domain} ... {protocol}", flush=True)
+            logger.debug("probe %s ... %s", domain, protocol)
 
         in_registry = domain in KNOWN_REGISTRY_DOMAINS or any(
             domain.endswith("." + kd) or kd.endswith("." + domain)
@@ -614,7 +619,7 @@ def main() -> int:
     if args.only_matched:
         confirmed = args.protocols if args.protocols else list(PROBE_PATHS.keys())
         df = df[df["protocol"].isin(confirmed)]
-        print(f"  filtrati a {len(df)} portali con protocollo confermato ({', '.join(confirmed)})")
+        logger.info("  filtered to %d portals with confirmed protocol (%s)", len(df), ", ".join(confirmed))
 
     # Filtra per soglia minima dataset (solo per portali con sample_count noto)
     if args.min_datasets > 0:
@@ -623,7 +628,7 @@ def main() -> int:
         below = (~mask).sum()
         df = df[mask]
         if below > 0:
-            print(f"  rimossi {below} portali con < {args.min_datasets} dataset")
+            logger.info("  removed %d portals with < %d datasets", below, args.min_datasets)
 
     df.to_parquet(args.out, index=False)
 
@@ -632,17 +637,16 @@ def main() -> int:
     if not new_candidates.empty:
         new_candidates_path = args.out.with_name("new_candidates.parquet")
         new_candidates.to_parquet(new_candidates_path, index=False)
-        print(f"  {len(new_candidates)} nuovi candidati -> {new_candidates_path}")
+        logger.info("  %d new candidates -> %s", len(new_candidates), new_candidates_path)
 
-    print(f"  di cui {len(new_candidates)} nuovi candidati (non nel registry)")
+    logger.info("  of which %d new candidates (not in registry)", len(new_candidates))
 
     summary_path, shortlist_path = _write_summary_artifacts(
         df, args.out, datetime.now(timezone.utc).isoformat()
     )
-    print(f"Shortlist scritta in {shortlist_path}")
-    print(f"Summary scritto in {summary_path}")
-
-    print(f"\nScritti {len(rows)} portali in {args.out}")
+    logger.info("Shortlist written to %s", shortlist_path)
+    logger.info("Summary written to %s", summary_path)
+    logger.info("Wrote %d portals to %s", len(rows), args.out)
     return 0
 
 
