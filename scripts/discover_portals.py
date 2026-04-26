@@ -17,6 +17,7 @@ import argparse
 import json
 import logging
 import requests
+import sys
 import time
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -24,9 +25,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urlparse
 
-from collectors.base import observatory_get
-
 logger = logging.getLogger(__name__)
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from collectors.base import observatory_get  # noqa: E402
 
 OUT_DEFAULT = Path(__file__).resolve().parents[1] / "data" / "portal_scout" / "discovered_portals.parquet"
 
