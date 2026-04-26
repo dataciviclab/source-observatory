@@ -17,9 +17,11 @@ import argparse
 import json
 import sys
 import time
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from urllib.parse import urlparse
+from typing import Any
+from urllib.parse import quote, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from collectors.base import observatory_get
@@ -44,7 +46,7 @@ SEARCH_QUERIES_IT = [
 
 # Query specifiche per protocollo
 SEARCH_QUERIES_BY_PROTOCOL: dict[str, list[str]] = {
-    "ckan":   ['"CKAN" "comuni" site:gov.it', '"CKAN" "open data" ministero site:gov.it'],
+    "ckan":   ['"CKAN" "open data" ministero site:gov.it', '"CKAN" "open data" agenzia site:gov.it'],
     "sdmx":   ['"SDMX" "dataflow" site:gov.it', '"SDMX" ISTAT site:gov.it'],
     "sparql": ['"SPARQL" endpoint "linked data" site:gov.it', '"SPARQL" "dati.gov.it"'],
 }
@@ -57,9 +59,26 @@ IT_OPENDATA_PATTERNS = [
 
 # Endpoint probe per protocol detection
 PROBE_PATHS = {
-    "ckan":   ["/api/3/action/package_list", "/api/action/package_list"],
+    "ckan": [
+        "/api/3/action/package_list",
+        "/api/action/package_list",
+        # Non-standard CKAN paths from known PA portals
+        "/SpodCkanApi/api/3/action/package_list",
+        "/odapi/api/3/action/package_list",
+    ],
     "sdmx":   ["/SDMXWS/rest/dataflow", "/sdmx/rest/dataflow", "/rest/dataflow"],
-    "sparql": ["/sparql", "/sparql/query", "/endpoint/sparql", "/lod/sparql", "/opendata/sparql"],
+    "sparql": [
+        "/sparql",
+        "/sparql/query",
+        "/endpoint/sparql",
+        "/lod/sparql",
+        "/opendata/sparql",
+        # Extra paths from known PA SPARQL endpoints
+        "/api/sparql",
+        "/api/endpoint/sparql",
+        "/sparql/default",
+        "/data/sparql",
+    ],
 }
 
 SKIP_DOMAINS = {
@@ -76,38 +95,99 @@ SKIP_DOMAIN_PATTERNS = [
     ".camcom.",  # camere di commercio locali — dati frammentati
 ]
 
-# Portali nazionali tier-1 da includere sempre nel probe, indipendentemente dalla DDG
-TIER1_DOMAINS: dict[str, str] = {
-    "esploradati.istat.it": "sdmx",
-    "bdap-opendata.rgs.mef.gov.it": "ckan",
-    "serviziweb2.inps.it": "sparql",
-    "dati.anticorruzione.it": "ckan",
-    "dati.isprambiente.it": "ckan",
-    "dati.camera.it": "sparql",
-    "opencoesione.gov.it": "ckan",
-    "dati-ustat.mur.gov.it": "ckan",
-}
+# Portali nazionali tier-1 da includere sempre nel probe, indipendentemente dalla DDG.
+# Derivati dinamicamente da sources_registry.yaml.
+TIER1_DOMAINS: dict[str, str] = {}
+# Domini già noti nel registry — usati per marcare i candidati come nuovi vs noti.
+KNOWN_REGISTRY_DOMAINS: set[str] = set()
 
-# Domini già noti nel registry — usati per marcare i candidati come nuovi vs noti
-KNOWN_REGISTRY_DOMAINS = {
-    "esploradati.istat.it",
-    "dati.anticorruzione.it",
-    "serviziweb2.inps.it",
-    "bdap-opendata.rgs.mef.gov.it",
-    "www.dati.salute.gov.it",
-    "dati.inail.it",
-    "dati.istruzione.it",
-    "dati.camera.it",
-    "dati.isprambiente.it",
-    "dati.consip.it",
-    "dati.lavoro.gov.it",
-    "dati-ustat.mur.gov.it",
-    "opencoesione.gov.it",
-    "openbdap.rgs.mef.gov.it",
+# ---------------------------------------------------------------------------
+# Registry sync
+# ---------------------------------------------------------------------------
+
+def _sync_from_registry(registry_path: Path | None = None) -> None:
+    """Popola TIER1_DOMAINS e KNOWN_REGISTRY_DOMAINS dal sources_registry.yaml."""
+    global TIER1_DOMAINS, KNOWN_REGISTRY_DOMAINS
+    if registry_path is None:
+        registry_path = Path(__file__).resolve().parents[1] / "data" / "radar" / "sources_registry.yaml"
+
+    if not registry_path.exists():
+        return
+
+    import yaml
+    try:
+        with open(registry_path, encoding="utf-8") as f:
+            registry = yaml.safe_load(f)
+    except Exception:
+        return
+
+    tier1: dict[str, str] = {}
+    known: set[str] = set()
+
+    for source_id, meta in (registry or {}).items():
+        base_url = meta.get("base_url", "")
+        protocol = meta.get("protocol", "")
+        if base_url and protocol:
+            # Estrai dominio dalla base_url
+            try:
+                parsed = urlparse(base_url)
+                domain = parsed.netloc.lower().lstrip("www.")
+                if domain:
+                    known.add(domain)
+                    # Solo i catalog con protocollo noto vanno in tier1
+                    if protocol in ("ckan", "sdmx", "sparql"):
+                        tier1[domain] = protocol
+            except Exception:
+                pass
+
+    TIER1_DOMAINS = tier1
+    KNOWN_REGISTRY_DOMAINS = known
+
+
+_sync_from_registry()
+
+# Normalizza dominio: rimuove www, sottodomini non significativi.
+# Ritorna (canonical, is_subdomain_of_known) dove known è il registry domain.
+def _normalize_domain(domain: str) -> tuple[str, str | None]:
+    """Normalizza dominio per dedup. Rimuove www, ricerca superset noto nel registry."""
+    # Togli www come prefisso (non lstrip che rimuove tutti i caratteri 'w' e '.')
+    normalized = domain.removeprefix("www.") if domain.startswith("www.") else domain
+    # Cerca se è subdomain di un dominio noto nel registry
+    known_superset = None
+    for known in KNOWN_REGISTRY_DOMAINS:
+        if normalized.endswith("." + known) or normalized == known:
+            known_superset = known
+            break
+    return normalized, known_superset
+
+
+# Mappatura domini -> same-as registry per dedup logico
+_DEDUP_SAME_AS: dict[str, str] = {
+    # Domini che sono la stessa cosa di un source nel registry
+    "openbdap.rgs.mef.gov.it": "bdap-opendata.rgs.mef.gov.it",
 }
+_DEDUP_SAME_AS_LOCK = threading.Lock()
 
 # Probe aggressivo: se un host non risponde, non vogliamo bloccare il run.
 PROBE_TIMEOUT_SECONDS = (3, 5)
+# Timeout piu' brevi per _sample_portal (gia' confermato reachable, solo conteggio)
+SAMPLE_TIMEOUT_SECONDS = (2, 3)
+
+
+# ---------------------------------------------------------------------------
+# Protocol detection helpers
+# ---------------------------------------------------------------------------
+
+def _is_sdmx_xml(text: str) -> bool:
+    """Validazione strutturale: questo testo è XML SDMX, non HTML o altro."""
+    if not text.strip().startswith("<"):
+        return False
+    if "<!DOCTYPE" in text[:100] or "<html" in text[:200]:
+        return False
+    # SDMX namespace o prefisso nel root element
+    return "sdmx.org" in text or (
+        text.lstrip().startswith("<") and ":" in text[:500] and "message" in text[:1000].lower()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -129,7 +209,9 @@ def search_ddg(queries: list[str], max_per_query: int) -> list[dict]:
 
 
 def extract_domains(results: list[dict]) -> dict[str, set[str]]:
-    """Ritorna {domain: set_of_source_queries}. Salva path DDG per CKAN path-based probe."""
+    """Ritorna {domain: set_of_source_queries}. Salva path DDG per CKAN path-based probe.
+
+    Applica dedup logico: normalizza sottodomini e mappa same-as noti."""
     domains: dict[str, set[str]] = {}
     for r in results:
         url = r.get("href") or r.get("url") or ""
@@ -152,17 +234,28 @@ def extract_domains(results: list[dict]) -> dict[str, set[str]]:
             pass
         else:
             continue
-        if domain not in domains:
-            domains[domain] = set()
-        domains[domain].add(query or url)
-        # Salva il path DDG per probe CKAN path-based
+
+        # Dedup: normalizza e verifica same-as registry
+        normalized, known_superset = _normalize_domain(domain)
+        with _DEDUP_SAME_AS_LOCK:
+            canonical = _DEDUP_SAME_AS.get(normalized, normalized)
+        # Skip se è un sottodominio di un source già noto (a meno che sia same-as)
+        if known_superset and canonical == normalized:
+            continue
+
+        if canonical not in domains:
+            domains[canonical] = set()
+        domains[canonical].add(query or url)
+        # Salva il path DDG per probe CKAN path-based (thread-safe)
         if parsed.path and parsed.path != "/":
-            _DDG_PATHS.setdefault(domain, set()).add(parsed.path)
+            with _DDG_PATHS_LOCK:
+                _DDG_PATHS.setdefault(canonical, set()).add(parsed.path)
     return domains
 
 
-# Path DDG per probe CKAN path-based (popolato da extract_domains)
+# Path DDG per probe CKAN path-based — protetto da lock per thread-safety
 _DDG_PATHS: dict[str, set[str]] = {}
+_DDG_PATHS_LOCK = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
@@ -171,7 +264,7 @@ _DDG_PATHS: dict[str, set[str]] = {}
 
 def _probe_ckan(base: str, extra_prefixes: list[str] | None = None) -> str | None:
     """Torna l'URL funzionante CKAN o None. Prova path standard + path-based da DDG."""
-    suffixes = ["/api/3/action/package_list", "/api/action/package_list"]
+    suffixes = PROBE_PATHS["ckan"]
     prefixes = [""] + (extra_prefixes or [])
     for prefix in prefixes:
         for suffix in suffixes:
@@ -189,12 +282,108 @@ def _probe_ckan(base: str, extra_prefixes: list[str] | None = None) -> str | Non
     return None
 
 
+def _sample_portal(protocol: str, probe_url: str) -> dict:
+    """Campiona un portale: count + titoli campione + data coverage."""
+    result: dict[str, Any] = {"sample_count": None, "sample_titles": [], "year_min": None, "year_max": None}
+
+    if not probe_url:
+        result["sample_error"] = "no_probe_url"
+        return result
+
+    try:
+        if protocol == "ckan":
+            # Raccogli count + titoli da package_list e package_show campione
+            list_url = probe_url.rstrip("/").rsplit("/", 1)[0] + "/package_list"
+            r = observatory_get(list_url, timeout=SAMPLE_TIMEOUT_SECONDS)
+            if r.status_code == 200:
+                data = r.json()
+                if isinstance(data, dict) and "result" in data and isinstance(data["result"], list):
+                    result["sample_count"] = len(data["result"])
+                    # Primi 3 titoli da package_show campione
+                    sample_ids = data["result"][:3]
+                    for pid in sample_ids:
+                        show_url = list_url.rsplit("/", 1)[0] + f"/package_show?id={pid}"
+                        try:
+                            sr = observatory_get(show_url, timeout=SAMPLE_TIMEOUT_SECONDS)
+                            if sr.status_code == 200:
+                                sdata = sr.json()
+                                title = (
+                                    sdata.get("result", {}).get("title")
+                                    or sdata.get("result", {}).get("name", "")
+                                )
+                                if title:
+                                    result["sample_titles"].append(title)
+                                # Estrai anno da first_resource metadata
+                                resources = sdata.get("result", {}).get("resources", [])
+                                for res in resources:
+                                    created = res.get("created", "")
+                                    if created:
+                                        result["year_min"] = int(created[:4])
+                                        break
+                        except Exception:
+                            pass
+
+        elif protocol == "sdmx":
+            # Count da dataflow list
+            flow_url = probe_url.rsplit("/", 1)[0] + "/dataflow"
+            r = observatory_get(flow_url, timeout=SAMPLE_TIMEOUT_SECONDS)
+            if r.status_code == 200 and _is_sdmx_xml(r.text[:5000]):
+                import xml.etree.ElementTree as ET
+                try:
+                    root = ET.fromstring(r.text[:100000])
+                    ns = {"s": "http://www.sdmx.org/2009/message"}
+                    items = root.findall(".//s:Dataflow", ns) or root.findall(".//Dataflow")
+                    result["sample_count"] = len(items)
+                    for item in items[:3]:
+                        name_elem = item.find("Name") or item.find("Name xml:lang")
+                        name = name_elem.text if name_elem is not None else ""
+                        if name:
+                            result["sample_titles"].append(name)
+                except Exception:
+                    pass
+
+        elif protocol == "sparql":
+            # Count via SELECT COUNT su graph default
+            count_query = "SELECT COUNT(*) WHERE { ?s a ?type } LIMIT 1"
+            sparql_url = probe_url if "?" in probe_url else probe_url + "?query="
+            r = observatory_get(sparql_url + quote(count_query, safe=""), timeout=SAMPLE_TIMEOUT_SECONDS)
+            if r.status_code == 200:
+                try:
+                    data = r.json()
+                    bindings = data.get("results", {}).get("bindings", [])
+                    if bindings:
+                        result["sample_count"] = int(bindings[0].get("callret-0", {}).get("value", 0))
+                except Exception:
+                    pass
+                # Titoli campione da dataset titling query
+                title_query = (
+                    "SELECT DISTINCT ?title WHERE { ?s a <http://www.w3.org/ns/dcat#Dataset> . "
+                    "OPTIONAL { ?s <http://purl.org/dc/elements/1.1/title> ?title } } LIMIT 3"
+                )
+                try:
+                    tr = observatory_get(sparql_url + quote(title_query, safe=""), timeout=SAMPLE_TIMEOUT_SECONDS)
+                    if tr.status_code == 200:
+                        tdata = tr.json()
+                        for b in tdata.get("results", {}).get("bindings", []):
+                            t = b.get("title", {}).get("value", "")
+                            if t:
+                                result["sample_titles"].append(t)
+                except Exception:
+                    pass
+
+    except Exception as exc:
+        result["sample_error"] = str(exc)[:80]
+
+    return result
+
+
 def detect_protocol(domain: str, probe_paths: dict | None = None) -> tuple[str, str | None]:
     """Torna (protocol, working_url) o ('html', None)."""
     base = f"https://{domain}"
 
     # CKAN: probe standard + path-based da URL DDG (es. /opendata, /catalogo)
-    ddg_paths = _DDG_PATHS.get(domain, set())
+    with _DDG_PATHS_LOCK:
+        ddg_paths = _DDG_PATHS.get(domain, set())
     ckan_prefixes = sorted({
         "/" + p.strip("/").split("/")[0]
         for p in ddg_paths
@@ -217,7 +406,7 @@ def detect_protocol(domain: str, probe_paths: dict | None = None) -> tuple[str, 
                     ct = r.headers.get("content-type", "").lower()
                     if protocol == "sdmx":
                         text = r.text[:5000]
-                        if "sdmx.org" in text and text.strip().startswith("<") and "<!DOCTYPE" not in text[:100] and "<html" not in text[:200]:
+                        if _is_sdmx_xml(text):
                             return "sdmx", url
                     elif protocol == "sparql" and ("json" in ct or "xml" in ct or "sparql" in ct):
                         return "sparql", url
@@ -263,6 +452,11 @@ def _build_summary_artifacts(df, scouted_at: str) -> tuple[dict, list[str]]:
         for _, r in new_confirmed.iterrows():
             shortlist_lines.append(f"- **{r['domain']}** — {r['protocol'].upper()}")
             shortlist_lines.append(f"  - Probe: `{r['probe_url']}`")
+            if r.get("sample_count") is not None:
+                shortlist_lines.append(f"  - Dataset count: {r['sample_count']}")
+            if r.get("sample_titles"):
+                for t in r["sample_titles"].split(" | "):
+                    shortlist_lines.append(f"    • {t}")
             shortlist_lines.append("  - Next: portal-scout approfondito + proposta registry")
 
     shortlist_lines += [
@@ -303,6 +497,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Scopre portali open data PA via ricerca web.")
     p.add_argument("--max-results", type=int, default=20, help="Risultati max per query DDG (default: 20).")
     p.add_argument("--no-probe", action="store_true", help="Salta protocol detection.")
+    p.add_argument("--no-sample", action="store_true", help="Salta campionamento HTTP (probe + sampling ultra-fast).")
     p.add_argument("--protocols", nargs="+", choices=["ckan", "sdmx", "sparql"],
                    help="Filtra per protocollo: usa solo query e probe mirati (es. --protocols sdmx ckan).")
     p.add_argument("--only-matched", action="store_true",
@@ -312,6 +507,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Rigenera summary e shortlist da un parquet già esistente in --out.",
     )
+    p.add_argument("--min-datasets", type=int, default=5, help="Skip portali con meno di N dataset (default: 5).")
     p.add_argument("--out", type=Path, default=OUT_DEFAULT, help="Path parquet output.")
     return p.parse_args()
 
@@ -358,11 +554,13 @@ def main() -> int:
         else:
             protocol, probe_url = detect_protocol(domain, active_probe_paths)
             print(f"  probe {domain} ... {protocol}", flush=True)
+
         in_registry = domain in KNOWN_REGISTRY_DOMAINS or any(
             domain.endswith("." + kd) or kd.endswith("." + domain)
             for kd in KNOWN_REGISTRY_DOMAINS
         )
-        return {
+
+        row = {
             "domain": domain,
             "protocol": protocol,
             "probe_url": probe_url or "",
@@ -370,6 +568,16 @@ def main() -> int:
             "in_registry": "yes" if in_registry else "no",
             "source_queries": " | ".join(sorted(sources)),
         }
+
+        # Sampling per portali strutturati confermati (skip con --no-sample)
+        if not args.no_probe and not args.no_sample and protocol in ("ckan", "sdmx", "sparql") and probe_url:
+            sample = _sample_portal(protocol, probe_url)
+            row["sample_count"] = str(sample.get("sample_count") or "")
+            row["sample_titles"] = " | ".join(sample.get("sample_titles") or [])
+            row["year_min"] = str(sample.get("year_min") or "")
+            row["sample_error"] = sample.get("sample_error") or ""
+
+        return row
 
     rows = []
     workers = 1 if args.no_probe else 10
@@ -382,16 +590,30 @@ def main() -> int:
     from datetime import datetime, timezone
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    df = pd.DataFrame(rows, columns=["domain", "protocol", "probe_url", "base_url", "in_registry", "source_queries"])
+    df = pd.DataFrame(rows, columns=["domain", "protocol", "probe_url", "base_url", "in_registry", "source_queries", "sample_count", "sample_titles", "year_min", "sample_error"])
 
     if args.only_matched:
         confirmed = args.protocols if args.protocols else list(PROBE_PATHS.keys())
         df = df[df["protocol"].isin(confirmed)]
         print(f"  filtrati a {len(df)} portali con protocollo confermato ({', '.join(confirmed)})")
 
+    # Filtra per soglia minima dataset (solo per portali con sample_count noto)
+    if args.min_datasets > 0:
+        mask = (df["sample_count"].isna()) | (df["sample_count"].astype(str).replace("", "0").astype(int) >= args.min_datasets)
+        below = (~mask).sum()
+        df = df[mask]
+        if below > 0:
+            print(f"  rimossi {below} portali con < {args.min_datasets} dataset")
+
     df.to_parquet(args.out, index=False)
 
+    # Artifact separato per i soli nuovi candidati (incrementale)
     new_candidates = df[df["in_registry"] == "no"]
+    if not new_candidates.empty:
+        new_candidates_path = args.out.with_name("new_candidates.parquet")
+        new_candidates.to_parquet(new_candidates_path, index=False)
+        print(f"  {len(new_candidates)} nuovi candidati -> {new_candidates_path}")
+
     print(f"  di cui {len(new_candidates)} nuovi candidati (non nel registry)")
 
     summary_path, shortlist_path = _write_summary_artifacts(
