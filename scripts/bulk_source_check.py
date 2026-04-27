@@ -406,7 +406,7 @@ def _fetch_html_metadata(url: str) -> dict:
 # ── CSV/JSON/XLS content preview ───────────────────────────────────────────────
 
 YEAR_COLUMNS = ["anno", "year", "data", "date", "periodo", "period", "mese", "month"]
-REGION_COLUMNS = ["regione", "region", "provincia", "province", "comune", " comune", "area", "territorio"]
+REGION_COLUMNS = ["regione", "region", "provincia", "province", "area", "territorio"]
 COMUNE_COLUMNS = ["comune", "municip", "localita", "citta", "city"]
 
 
@@ -478,6 +478,7 @@ def _fetch_data_preview(url: str) -> dict:
         year_min: Optional[int] = None
         year_max: Optional[int] = None
         granularity = "non_determinato"
+        year_values: list[int] = []  # defined outside if/elif so JSON branch can use it
 
         if fmt == "csv":
             try:
@@ -500,7 +501,6 @@ def _fetch_data_preview(url: str) -> dict:
                         year_col_idx = i
                         break
 
-                year_values: list[int] = []
                 for row in rows[1:6]:
                     if year_col_idx is not None and year_col_idx < len(row):
                         found = _YEAR_RE.findall(row[year_col_idx])
