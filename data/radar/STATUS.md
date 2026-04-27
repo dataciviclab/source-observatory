@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-04-26
+Ultimo run: 2026-04-27
 
 ## Sommario
 
 - Fonti controllate: 14
-- GREEN: 7
+- GREEN: 8
 - YELLOW: 3
-- RED: 4
+- RED: 3
 
 ## Tipi sorgente
 
@@ -38,7 +38,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | dati_salute | catalog | html | radar-only | RED | - | - |
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
 | mim_opendata | portal | html | radar-only | GREEN | 200 | mim-alunni-corso-eta |
-| dati_camera | catalog | sparql | catalog-watch | RED | 503 | - |
+| dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | dati_cultura | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
@@ -51,7 +51,6 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 - `istat_sdmx`: Probe exception non gestita: ReadTimeout: HTTPSConnectionPool(host='esploradati.istat.it', port=443): Read timed out. (read timeout=10)
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | WAF blocca endpoint CKAN. Declassato a radar-only finche' non disponibile endpoint alternativo o accesso istituzionale.
 - `dati_salute`: SSL verify failed; fallback connection error (SSLError)
-- `dati_camera`: HTTP 503 | content-type: text/html; charset=UTF-8 | url finale: https://dati.camera.it/sparql | Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.
 - `lavoro_opendata`: HTTP 200 | content-type: text/html | url finale: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1 | CKAN API returned non-JSON content
-- `mur_ustat`: Probe exception non gestita: ConnectTimeout: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list?limit=1 (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7f497d411af0>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=10)'))
+- `mur_ustat`: Probe exception non gestita: ConnectTimeout: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list?limit=1 (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7f8dbe9218e0>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=10)'))
 - `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/api/ | API REST custom con endpoint aggregati e data_aggiornamento. Usare per change detection e trigger re-run del candidate DI.
