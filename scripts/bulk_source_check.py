@@ -439,21 +439,18 @@ def _fetch_data_preview(url: str) -> dict:
         # Fetch ~5 KB (enough for headers + a few rows)
         # Retry once on timeout (transient network issues)
         resp = None
-        last_exc = None
         for attempt in range(2):
             try:
                 resp = observatory_get(url, timeout=HTTP_TIMEOUT)
                 break
-            except requests.exceptions.Timeout as exc:
-                last_exc = exc
+            except requests.exceptions.Timeout:
                 if attempt == 0:
                     continue  # retry once
                 else:
                     result = _EMPTY_ENRICH.copy()
                     result["enrich_method"] = "csv_preview_timeout"
                     return result
-            except requests.exceptions.ConnectionError as exc:
-                last_exc = exc
+            except requests.exceptions.ConnectionError:
                 if attempt == 0:
                     continue  # retry once
                 else:
