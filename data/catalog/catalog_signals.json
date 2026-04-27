@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-04-25T17:03:18+00:00",
+  "captured_at": "2026-04-27T06:09:57+00:00",
   "sources_checked": 10,
   "signals": [
     {
@@ -14,8 +14,9 @@
       "source": "istat_sdmx",
       "protocol": "sdmx",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 4828,
+      "detail": "4828 item (dataflow_count), connettività presidiata da radar_summary.",
       "suggested_action": "nessuna"
     },
     {
