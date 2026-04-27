@@ -22,10 +22,13 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import csv
+import io
 import logging
 import re
 import sys
 import time
+import urllib.parse
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
@@ -89,10 +92,38 @@ def _infer_granularity(text: str) -> str:
 
 # ── euristica anni ────────────────────────────────────────────────────────────
 
+# Anni isolati classici: boundary non-digit su entrambi i lati
 _YEAR_RE = re.compile(r"(?<!\d)(19\d{2}|20[012]\d)(?!\d)")
+# Anni in blocchi compatti: boundary non-digit solo a sinistra (202122 → cattura 2021)
+_YEAR_START_RE = re.compile(r"(?:^|(?<!\d))(20[012]\d)")
+# Per year pair: 4 cifre 20XX seguite da 2 cifre YY che sembrano anno (202122 → 2021+2022)
+# Prova a scomporre quando le due cifre finale < 30 (anno 20YY)
+_COMPACT_YEAR_PAIR_RE = re.compile(r"(20[012]\d)(\d{2})(?=20|$|\D)")
+
 
 def _infer_years(text: str) -> tuple[Optional[int], Optional[int]]:
-    years = [int(y) for y in _YEAR_RE.findall(text)]
+    years: set[int] = set()
+
+    # Anni isolati classici: boundary non-digit su entrambi i lati
+    for y in _YEAR_RE.findall(text):
+        years.add(int(y))
+
+    # Anni in blocchi compatti: in "202122" cattura 2021 anche se seguito da cifre
+    # (ma solo 2000-2029 per evitare 2030+)
+    for y in _YEAR_START_RE.findall(text):
+        years.add(int(y))
+
+    # Prova a scomporre pattern compatto AABBCC = 20XX + YY: 202122 → 2021 + 2022
+    # 2 cifre finali < 30 → probabile anno 20YY
+    for first_str, second_str in _COMPACT_YEAR_PAIR_RE.findall(text):
+        y1 = int(first_str)
+        y2_2digit = int(second_str)
+        if y2_2digit <= 30:  # anno 20YY
+            y2 = 2000 + y2_2digit
+            if y2 > y1 and y2 - y1 <= 10:  # solo coppie adiacenti (2021+2022, 2025+2026)
+                years.add(y1)
+                years.add(y2)
+
     if not years:
         return None, None
     return min(years), max(years)
@@ -372,6 +403,167 @@ def _fetch_html_metadata(url: str) -> dict:
         return result
 
 
+# ── CSV/JSON/XLS content preview ───────────────────────────────────────────────
+
+YEAR_COLUMNS = ["anno", "year", "data", "date", "periodo", "period", "mese", "month"]
+REGION_COLUMNS = ["regione", "region", "provincia", "province", "area", "territorio"]
+COMUNE_COLUMNS = ["comune", "municip", "localita", "citta", "city"]
+
+
+def _fetch_data_preview(url: str) -> dict:
+    """Fetch e parse content preview da un URL CSV/JSON/XLS.
+
+    Estrae: column names, year_min/year_max (da colonna anno),
+    granularity (da column names + sample data).
+
+    Returns dict in formato _EMPTY_ENRICH con campi aggiuntivi:
+    - columns: list[str]
+    - year_min, year_max
+    - granularity
+    - enrich_method: "csv_preview"
+    """
+    if not isinstance(url, str) or not url.startswith("http"):
+        result = _EMPTY_ENRICH.copy()
+        result["enrich_method"] = "csv_preview_failed"
+        return result
+
+    parsed = urllib.parse.urlparse(url)
+    path = parsed.path or ""
+    fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
+    if fmt not in ("csv", "json", "xlsx", "xls"):
+        result = _EMPTY_ENRICH.copy()
+        result["enrich_method"] = "csv_preview_skipped"
+        return result
+
+    try:
+        # Fetch ~5 KB (enough for headers + a few rows)
+        # Retry once on timeout (transient network issues)
+        resp = None
+        for attempt in range(2):
+            try:
+                resp = observatory_get(url, timeout=HTTP_TIMEOUT)
+                break
+            except requests.exceptions.Timeout:
+                if attempt == 0:
+                    continue  # retry once
+                else:
+                    result = _EMPTY_ENRICH.copy()
+                    result["enrich_method"] = "csv_preview_timeout"
+                    return result
+            except requests.exceptions.ConnectionError:
+                if attempt == 0:
+                    continue  # retry once
+                else:
+                    result = _EMPTY_ENRICH.copy()
+                    result["enrich_method"] = "csv_preview_connection_error"
+                    return result
+        if resp is None:
+            result = _EMPTY_ENRICH.copy()
+            result["enrich_method"] = "csv_preview_failed"
+            return result
+        if resp.status_code >= 400:
+            result = _EMPTY_ENRICH.copy()
+            result["enrich_method"] = "csv_preview_http_error"
+            return result
+
+        content = resp.content
+        if len(content) > 100 * 1024:
+            content = content[:100 * 1024]
+        text = content.decode("utf-8", errors="replace")
+
+        columns: list[str] = []
+        year_min: Optional[int] = None
+        year_max: Optional[int] = None
+        granularity = "non_determinato"
+        year_values: list[int] = []  # defined outside if/elif so JSON branch can use it
+
+        if fmt == "csv":
+            try:
+                lines = text.splitlines()[:10]
+                if not lines:
+                    raise ValueError("Empty CSV")
+                sample_text = "\n".join(lines)
+                reader = csv.reader(io.StringIO(sample_text))
+                rows = list(reader)
+                if not rows:
+                    raise ValueError("No rows parsed")
+                headers = [h.strip() for h in rows[0]]
+                columns = [h for h in headers if h]
+
+                # Find year column
+                year_col_idx = None
+                for i, h in enumerate(columns):
+                    h_lower = h.lower()
+                    if any(y in h_lower for y in YEAR_COLUMNS):
+                        year_col_idx = i
+                        break
+
+                for row in rows[1:6]:
+                    if year_col_idx is not None and year_col_idx < len(row):
+                        found = _YEAR_RE.findall(row[year_col_idx])
+                        year_values.extend(int(y) for y in found)
+                    # Also scan all cells
+                    for cell in row:
+                        found = _YEAR_RE.findall(cell)
+                        year_values.extend(int(y) for y in found)
+
+                if year_values:
+                    year_min = min(year_values)
+                    year_max = max(year_values)
+            except Exception:
+                # CSV parse failed — try raw text scan
+                found = _YEAR_RE.findall(text[:5000])
+                years = [int(y) for y in found]
+                if years:
+                    year_min, year_max = min(years), max(years)
+
+        elif fmt == "json":
+            try:
+                import json
+                data = json.loads(text)
+                if isinstance(data, list):
+                    rows_sample = data[:5]
+                    if rows_sample and isinstance(rows_sample[0], dict):
+                        columns = [str(k) for k in rows_sample[0].keys()]
+                        for row in rows_sample:
+                            for v in row.values() if isinstance(row, dict) else []:
+                                found = _YEAR_RE.findall(str(v))
+                                year_values.extend(int(y) for y in found)
+                elif isinstance(data, dict):
+                    columns = [str(k) for k in data.keys()]
+            except Exception:
+                found = _YEAR_RE.findall(text[:5000])
+                years = [int(y) for y in found]
+                if years:
+                    year_min, year_max = min(years), max(years)
+
+        # Infer granularity from column names
+        columns_lower = [c.lower() for c in columns]
+        if any(c in " ".join(columns_lower) for c in COMUNE_COLUMNS):
+            granularity = "comune"
+        elif any(c in " ".join(columns_lower) for c in REGION_COLUMNS):
+            granularity = "regione"
+        elif year_min is not None and year_max is not None:
+            # If we have temporal but no geographic granularity, non_determinato
+            granularity = "non_determinato"
+
+        return {
+            "enriched_title": None,
+            "enriched_tags": None,
+            "enriched_notes": None,
+            "resource_url": url,
+            "resource_format": fmt.upper(),
+            "granularity": granularity,
+            "year_min": year_min,
+            "year_max": year_max,
+            "enrich_method": "csv_preview",
+        }
+    except Exception:
+        result = _EMPTY_ENRICH.copy()
+        result["enrich_method"] = "csv_preview_failed"
+        return result
+
+
 # ── dispatcher per protocollo ─────────────────────────────────────────────────
 
 _EMPTY_ENRICH = {
@@ -421,6 +613,16 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
         xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name)
         if xml_root is not None:
             return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
+
+    # HTML protocol: direct data URL (CSV/JSON/XLS) — fetch content preview
+    if protocol == "html":
+        data_url = row.get("url")
+        if isinstance(data_url, str):
+            parsed = urllib.parse.urlparse(data_url)
+            path = parsed.path or ""
+            fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
+            if fmt in ("csv", "json", "xlsx", "xls"):
+                return _fetch_data_preview(data_url)
 
     # HTML fallback: per tutti i source con landing_page raggiungibile
     # dati_camera ha scraping_blocked=true → salta HTML se CKAN package_show già provato

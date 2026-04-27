@@ -157,6 +157,8 @@ def _fetch_sitemap(sitemap_url: str, timeout: int = 15) -> tuple[list[str] | Non
 def _scan_sitemap(
     sitemap_url: str,
     topic_hint: str | None,
+    source_id: str,
+    base_url: str,
     *,
     sample_pages: int = 10,
     page_delay: float = 0.2,
@@ -253,12 +255,33 @@ def _scan_sitemap(
         filename = url.split("/")[-1].rsplit(".", 1)[0]
         prefix = _extract_prefix(filename)
         years = _extract_years(filename)
+        topic = _guess_topic(url, topic_hint)
+        item_id = filename[:100]  # truncate per safety
         rows.append({
+            # canonical columns (per bulk_source_check e inventario)
+            "source_id": source_id,
+            "source_kind": "catalog",
+            "protocol": "html",
+            "source_url": base_url,
+            "item_id": item_id,
+            "item_name": prefix,
+            "item_slug": item_id,
+            "title": f"{prefix} {topic}",
+            "organization": None,
+            "tags": None,
+            "notes_excerpt": None,
+            "landing_page": None,
+            "distribution_url": url,
+            "datastore_active": False,
+            "resource_count": 1,
+            "issued": None,
+            "modified": None,
+            # custom columns (informative per csv_magnet)
             "url": url,
             "format": link.get("format", "?"),
             "prefix": prefix,
             "year_signal": years[0] if years else None,
-            "topic": _guess_topic(url, topic_hint),
+            "topic": topic,
         })
 
     summary = {
@@ -282,6 +305,8 @@ def _scan_sitemap(
 def _scan_area_pages(
     area_pages: list[str],
     topic_hint: str | None,
+    source_id: str,
+    base_url: str,
     *,
     page_delay: float = 0.2,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
@@ -347,12 +372,33 @@ def _scan_area_pages(
         filename = url.split("/")[-1].rsplit(".", 1)[0]
         prefix = _extract_prefix(filename)
         years = _extract_years(filename)
+        topic = _guess_topic(url, topic_hint)
+        item_id = filename[:100]
         rows.append({
+            # canonical columns
+            "source_id": source_id,
+            "source_kind": "catalog",
+            "protocol": "html",
+            "source_url": base_url,
+            "item_id": item_id,
+            "item_name": prefix,
+            "item_slug": item_id,
+            "title": f"{prefix} {topic}",
+            "organization": None,
+            "tags": None,
+            "notes_excerpt": None,
+            "landing_page": None,
+            "distribution_url": url,
+            "datastore_active": False,
+            "resource_count": 1,
+            "issued": None,
+            "modified": None,
+            # custom columns
             "url": url,
             "format": link.get("format", "?"),
             "prefix": prefix,
             "year_signal": years[0] if years else None,
-            "topic": _guess_topic(url, topic_hint),
+            "topic": topic,
         })
 
     summary = {
@@ -400,6 +446,8 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         summary, rows = _scan_sitemap(
             sitemap_url,
             topic_hint,
+            source_id,
+            base_url,
             sample_pages=10,
             page_delay=delay,
         )
@@ -407,6 +455,8 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         summary, rows = _scan_area_pages(
             area_pages,
             topic_hint,
+            source_id,
+            base_url,
             page_delay=delay,
         )
     else:
@@ -423,12 +473,33 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             url = link["url"]
             filename = url.split("/")[-1].rsplit(".", 1)[0]
             years = _extract_years(filename)
+            topic = _guess_topic(url, topic_hint)
+            item_id = filename[:100]
             rows.append({
+                # canonical columns
+                "source_id": source_id,
+                "source_kind": "catalog",
+                "protocol": "html",
+                "source_url": base_url,
+                "item_id": item_id,
+                "item_name": _extract_prefix(filename),
+                "item_slug": item_id,
+                "title": f"{_extract_prefix(filename)} {topic}",
+                "organization": None,
+                "tags": None,
+                "notes_excerpt": None,
+                "landing_page": None,
+                "distribution_url": url,
+                "datastore_active": False,
+                "resource_count": 1,
+                "issued": None,
+                "modified": None,
+                # custom columns
                 "url": url,
                 "format": link.get("format", "?"),
                 "prefix": _extract_prefix(filename),
                 "year_signal": years[0] if years else None,
-                "topic": _guess_topic(url, topic_hint),
+                "topic": topic,
             })
         summary = {
             "total_links_exact": len(rows),
