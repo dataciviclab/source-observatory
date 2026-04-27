@@ -103,7 +103,8 @@ dati_salute:
     value: 382
     method: csv_magnet_sitemap_scan
     reliability: medium
-    note: "Sondaggio CSV magnet via sitemap-0.xml. 191 pagine dataset, 4 formati (CSV/XML/JSON/ZIP). Prefix matrix: FRM=45, DISPO=38. Anni: 2023-2026."
+    note: 'Sondaggio CSV magnet via sitemap-0.xml. 191 pagine dataset, 4 formati (CSV/XML/JSON/ZIP).
+      Prefix matrix: FRM=45, DISPO=38. Anni: 2023-2026.'
   verdict: go
   note: Portale Ministero Salute — csv_magnet scan integrato nel pipeline catalog-watch.
   html_portal:
@@ -134,18 +135,20 @@ mim_opendata:
     value: 1116
     method: csv_magnet_homepage_area_pages
     reliability: medium
-    note: "Sondaggio CSV magnet via area pages. 6 aree tematiche (Scuole, Studenti, Personale, Valutazione, Edilizia, Adozioni). 1116 link CSV/XLS. Prefix: ALU=300, EDI=282, SCU=132. Nessuna sitemap disponibile."
+    note: 'Sondaggio CSV magnet via area pages. 6 aree tematiche (Scuole, Studenti,
+      Personale, Valutazione, Edilizia, Adozioni). 1116 link CSV/XLS. Prefix: ALU=300,
+      EDI=282, SCU=132. Nessuna sitemap disponibile.'
   verdict: go
   note: Portale Ministero Istruzione — csv_magnet scan via area_pages (no sitemap).
   html_portal:
     topic_hint: istruzione
     area_pages:
-      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Scuole
-      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Studenti
-      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Personale%20Scuola
-      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Sistema%20Nazionale%20di%20Valutazione
-      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Edilizia%20Scolastica
-      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Adozioni%20libri%20di%20testo
+    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Scuole
+    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Studenti
+    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Personale%20Scuola
+    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Sistema%20Nazionale%20di%20Valutazione
+    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Edilizia%20Scolastica
+    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Adozioni%20libri%20di%20testo
     delay_seconds: 0.3
   datasets_in_use:
   - mim-alunni-corso-eta

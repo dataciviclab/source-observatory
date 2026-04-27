@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-04-27T08:42:41.739384+00:00",
+  "generated_at": "2026-04-27T20:35:44.433506+00:00",
   "probe_date": "2026-04-27",
   "sources_total": 14,
   "status_counts": {
-    "GREEN": 8,
+    "GREEN": 7,
     "YELLOW": 3,
-    "RED": 3
+    "RED": 4
   },
   "sources": [
     {
@@ -57,7 +57,7 @@
       "id": "dati_salute",
       "status": "RED",
       "protocol": "html",
-      "observation_mode": "radar-only",
+      "observation_mode": "catalog-watch",
       "http_code": "-",
       "last_check": "2026-04-27",
       "datasets_in_use": []
@@ -75,7 +75,7 @@
       "id": "mim_opendata",
       "status": "GREEN",
       "protocol": "html",
-      "observation_mode": "radar-only",
+      "observation_mode": "catalog-watch",
       "http_code": "200",
       "last_check": "2026-04-27",
       "datasets_in_use": [
@@ -93,10 +93,10 @@
     },
     {
       "id": "dati_cultura",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
       "observation_mode": "catalog-watch",
-      "http_code": "200",
+      "http_code": "-",
       "last_check": "2026-04-27",
       "datasets_in_use": []
     },
