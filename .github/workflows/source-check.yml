@@ -85,7 +85,7 @@ jobs:
             "$prefix/source-check/snapshots/source_check_${stamp}.parquet"
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: source-check-results
           path: data/catalog_inventory/generated/source_check_results.parquet
