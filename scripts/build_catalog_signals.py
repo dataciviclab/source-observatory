@@ -49,6 +49,56 @@ def _classify(
             "suggested_action": "nessuna",
         }
 
+    # HTML portals: protocol=html non hanno rows, solo summary con csv_magnet stats.
+    # Intercetta qui prima del caso generico "ok" che si aspetta rows.
+    if protocol == "html":
+        summary = info.get("summary", {})
+        if summary.get("type") == "csv_magnet_error":
+            return {
+                "source": source_id,
+                "protocol": protocol,
+                "signal_type": "csv_magnet",
+                "result": "error",
+                "metric_value": None,
+                "detail": summary.get("message", "CSV magnet scan fallito."),
+                "suggested_action": "verificare raggiungibilità del portale",
+            }
+        if summary.get("type") == "csv_magnet":
+            total = summary.get("total_links_estimate") or summary.get("total_links_exact") or 0
+            by_fmt = summary.get("by_format", {})
+            fmt_str = ", ".join(f"{k} {v}" for k, v in sorted(by_fmt.items())) if by_fmt else "no format"
+            years_range = summary.get("years_range", [])
+            years_str = f", years {years_range[0]}-{years_range[1]}" if years_range else ""
+            prefixes = summary.get("prefix_matrix", {})
+            top_prefixes = sorted(prefixes.items(), key=lambda x: -x[1])[:5]
+            top_str = ", ".join(f"{p}={c}" for p, c in top_prefixes) if top_prefixes else ""
+            return {
+                "source": source_id,
+                "protocol": protocol,
+                "signal_type": "csv_magnet",
+                "result": "scan_completed",
+                "metric_value": total,
+                "detail": (
+                    f"{total} link data ({fmt_str}){years_str}"
+                    + (f" — top prefixes: {top_str}" if top_str else "")
+                ),
+                "prefix_matrix": prefixes,
+                "series": summary.get("series", {}),
+                "topics": summary.get("topics", {}),
+                "years_range": years_range,
+                "suggested_action": "catalog-watch-ready" if total > 10 else "low signal",
+            }
+        # html senza summary — non era nel run, skipped
+        return {
+            "source": source_id,
+            "protocol": protocol,
+            "signal_type": "no signal",
+            "result": "skipped",
+            "metric_value": None,
+            "detail": "Fonte html non inventariata in questo run (nessun summary csv_magnet).",
+            "suggested_action": "nessuna",
+        }
+
     # Errori/recovery di connettività sono coperti da radar_summary.
     # Il catalog_signals mantiene solo segnali inventariali e strutturali.
     if status == "error":
