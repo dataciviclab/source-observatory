@@ -119,6 +119,62 @@ def test_non_inventariabile_regression_if_was_ok():
     assert sig["result"] == "regressione"
 
 
+# --- html / csv_magnet ---
+
+def _html_csv_magnet(total: int) -> dict:
+    return {
+        "status": "ok",
+        "protocol": "html",
+        "source_id": "dati_salute",
+        "summary": {
+            "type": "csv_magnet",
+            "total_links_estimate": total,
+            "by_format": {"CSV": 6, "JSON": 2, "XML": 3, "ZIP": 4},
+            "prefix_matrix": {"FRM": 3, "C": 6},
+            "years_range": [2022, 2026],
+            "topics": {"sanita": 1},
+        },
+    }
+
+
+def test_html_csv_magnet_high_signal():
+    sig = _classify("dati_salute", _html_csv_magnet(286), None)
+    assert sig["signal_type"] == "csv_magnet"
+    assert sig["result"] == "scan_completed"
+    assert sig["metric_value"] == 286
+    assert sig["suggested_action"] == "catalog-watch-ready"
+    assert "prefix_matrix" in sig
+    assert "series" in sig
+
+
+def test_html_csv_magnet_low_signal():
+    sig = _classify("dati_salute", _html_csv_magnet(5), None)
+    assert sig["signal_type"] == "csv_magnet"
+    assert sig["result"] == "scan_completed"
+    assert sig["metric_value"] == 5
+    assert sig["suggested_action"] == "low signal"
+
+
+def test_html_csv_magnet_error():
+    info = {
+        "status": "ok",
+        "protocol": "html",
+        "source_id": "dati_salute",
+        "summary": {"type": "csv_magnet_error", "message": "HTTP 404"},
+    }
+    sig = _classify("dati_salute", info, None)
+    assert sig["signal_type"] == "csv_magnet"
+    assert sig["result"] == "error"
+    assert sig["suggested_action"] == "verificare raggiungibilità del portale"
+
+
+def test_html_no_summary_skipped():
+    info = {"status": "ok", "protocol": "html", "source_id": "dati_salute"}
+    sig = _classify("dati_salute", info, None)
+    assert sig["signal_type"] == "no signal"
+    assert sig["result"] == "skipped"
+
+
 # --- build_signals integration ---
 
 def test_build_signals_structure():

@@ -19,6 +19,7 @@ Uso:
 
 from __future__ import annotations
 
+import random
 import re
 import time
 from typing import Any
@@ -162,8 +163,8 @@ def _scan_sitemap(
     """Scan un portale HTML via sitemap con quick sample.
 
     1. Parse sitemap → dataset page URLs
-    2. Campiona N pagine direttamente (no HEAD su tutte)
-    3. Probe HEAD + fetch su sample → estrae data link pattern
+    2. Campiona N pagine direttamente dal sitemap
+    3. Fetch sample → estrae data link pattern
     4. Stima total links dal sample
 
     Returns:
@@ -184,8 +185,7 @@ def _scan_sitemap(
 
     total_pages = len(dataset_page_urls)
 
-    # Sample N pages directly from sitemap (no HEAD on all)
-    import random
+    # Sample N pages directly from sitemap
     sampled = list(dataset_page_urls[:])  # copy
     random.shuffle(sampled)
     sample_size = min(sample_pages, len(sampled))
@@ -197,16 +197,11 @@ def _scan_sitemap(
 
     for page_url in sampled:
         time.sleep(page_delay)
-        # Probe HEAD first (fast)
-        head_resp, _ = observatory_ssl_fallback_get(page_url, timeout=5)
-        if not head_resp or head_resp.status_code != 200:
-            continue
-        pages_probed += 1
-
-        # Fetch full page to extract data links
+        # Fetch page directly — no separate HEAD probe (saves one round-trip)
         response, page_err = observatory_ssl_fallback_get(page_url, timeout=10)
         if page_err:
             continue
+        pages_probed += 1
         parser = _DataLinksParser(page_url, response.text)
         for link in parser.links:
             if link["url"] not in seen_data_urls:

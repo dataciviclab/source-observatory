@@ -17,6 +17,10 @@ DEFAULT_REPORT = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catal
 DEFAULT_OUT = REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
 DEFAULT_REPORT_OUT = REPO_ROOT / "data" / "catalog" / "CATALOG_WATCH_REPORT.md"
 
+# Soglia minima di link per considerare un portale HTML "catalog-watch-ready".
+# Sotto questa soglia il signal è classificato come "low signal".
+_HTML_MIN_LINKS_FOR_WATCH = 10
+
 
 def _classify(
     source_id: str,
@@ -86,7 +90,7 @@ def _classify(
                 "series": summary.get("series", {}),
                 "topics": summary.get("topics", {}),
                 "years_range": years_range,
-                "suggested_action": "catalog-watch-ready" if total > 10 else "low signal",
+                "suggested_action": "catalog-watch-ready" if total > _HTML_MIN_LINKS_FOR_WATCH else "low signal",
             }
         # html senza summary — non era nel run, skipped
         return {
