@@ -22,6 +22,7 @@ from __future__ import annotations
 import random
 import re
 import time
+from collections import Counter
 from typing import Any
 from urllib.parse import urljoin
 
@@ -271,7 +272,7 @@ def _scan_sitemap(
         "prefix_matrix": prefix_matrix,
         "series": series_serializable,
         "years_range": [min(years_set), max(years_set)] if years_set else [],
-        "topics": {_guess_topic(link["url"], topic_hint): 1 for link in all_data_links},
+        "topics": dict(Counter(_guess_topic(link["url"], topic_hint) for link in all_data_links)),
         "method": "csv_magnet_sitemap_sample",
     }
 
@@ -361,7 +362,7 @@ def _scan_area_pages(
         "prefix_matrix": prefix_matrix,
         "series": series_serializable,
         "years_range": [min(years_set), max(years_set)] if years_set else [],
-        "topics": {_guess_topic(link["url"], topic_hint): 1 for link in all_data_links},
+        "topics": dict(Counter(_guess_topic(link["url"], topic_hint) for link in all_data_links)),
         "method": "csv_magnet_area_pages_direct",
     }
 
@@ -435,7 +436,10 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         }
 
     if "error" in summary:
-        return CollectorResult(rows=[], summary={**summary, "source_id": source_id})
+        return CollectorResult(
+            rows=[],
+            summary={"type": "csv_magnet_error", "message": summary["error"], "source_id": source_id},
+        )
 
     summary["type"] = "csv_magnet"
     summary["source_id"] = source_id
