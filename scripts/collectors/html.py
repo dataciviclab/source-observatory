@@ -171,7 +171,7 @@ def _scan_sitemap(
         summary dict, rows list
     """
     sitemap_urls, sitemap_err = _fetch_sitemap(sitemap_url)
-    if sitemap_err:
+    if sitemap_err or sitemap_urls is None:
         return {"error": f"sitemap failed: {sitemap_err}"}, []
 
     dataset_signals = ("/it/dataset/", "/dataset/", "/dati/", "/open-data/", "/opendata/", "/catalogo/")
@@ -199,7 +199,7 @@ def _scan_sitemap(
         time.sleep(page_delay)
         # Fetch page directly — no separate HEAD probe (saves one round-trip)
         response, page_err = observatory_ssl_fallback_get(page_url, timeout=10)
-        if page_err:
+        if page_err or response is None:
             continue
         pages_probed += 1
         parser = _DataLinksParser(page_url, response.text)
@@ -298,7 +298,7 @@ def _scan_area_pages(
     for area_url in area_pages:
         time.sleep(page_delay)
         response, err = observatory_ssl_fallback_get(area_url, timeout=15)
-        if err:
+        if err or response is None:
             continue
         parser = _DataLinksParser(area_url, response.text)
         for link in parser.links:
@@ -411,7 +411,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     else:
         # Homepage only probe
         response, fetch_err = observatory_ssl_fallback_get(base_url, timeout=15)
-        if fetch_err:
+        if fetch_err or response is None:
             return CollectorResult(
                 rows=[],
                 summary={"type": "csv_magnet_error", "message": fetch_err},
