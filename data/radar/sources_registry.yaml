@@ -94,21 +94,22 @@ openbdap:
 dati_salute:
   source_kind: catalog
   protocol: html
-  observation_mode: radar-only
+  observation_mode: catalog-watch
   base_url: https://www.dati.salute.gov.it/
   last_probed: '2026-04-27'
   catalog_baseline:
     captured_at: '2026-04-07'
-    metric: dataset_url_count
-    value: 191
-    method: sitemap_dataset_count
+    metric: csv_magnet_total_links
+    value: 382
+    method: csv_magnet_sitemap_scan
     reliability: medium
-    note: Conteggio URL /it/dataset/ dal sitemap-0.xml. Protocollo html non supportato
-      dal builder; il radar fallisce per SSL. Watch manuale finche' html non aggiunto.
+    note: "Sondaggio CSV magnet via sitemap-0.xml. 191 pagine dataset, 4 formati (CSV/XML/JSON/ZIP). Prefix matrix: FRM=45, DISPO=38. Anni: 2023-2026."
   verdict: go
-  note: Portale Ministero Salute con sitemap replicabile. Declassato a radar-only
-    perche' il protocollo html non e' supportato dal builder e il probe SSL fallisce.
-    Riportare a catalog-watch quando html e' supportato.
+  note: Portale Ministero Salute — csv_magnet scan integrato nel pipeline catalog-watch.
+  html_portal:
+    topic_hint: sanita
+    sitemap_url: https://www.dati.salute.gov.it/sitemap-0.xml
+    delay_seconds: 0.3
   datasets_in_use: []
 inail_opendata:
   source_kind: portal
@@ -124,13 +125,28 @@ inail_opendata:
 mim_opendata:
   source_kind: portal
   protocol: html
-  observation_mode: radar-only
+  observation_mode: catalog-watch
   base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
   last_probed: '2026-04-27'
+  catalog_baseline:
+    captured_at: '2026-04-27'
+    metric: csv_magnet_total_links
+    value: 1116
+    method: csv_magnet_homepage_area_pages
+    reliability: medium
+    note: "Sondaggio CSV magnet via area pages. 6 aree tematiche (Scuole, Studenti, Personale, Valutazione, Edilizia, Adozioni). 1116 link CSV/XLS. Prefix: ALU=300, EDI=282, SCU=132. Nessuna sitemap disponibile."
   verdict: go
-  note: Portale HTML custom senza API catalog (CKAN/SDMX). Download CSV diretti nel
-    markup ma nessuna superficie inventariale strutturata osservabile via probe semplice.
-    Endpoint SPARQL come capacita secondaria.
+  note: Portale Ministero Istruzione — csv_magnet scan via area_pages (no sitemap).
+  html_portal:
+    topic_hint: istruzione
+    area_pages:
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Scuole
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Studenti
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Personale%20Scuola
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Sistema%20Nazionale%20di%20Valutazione
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Edilizia%20Scolastica
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Adozioni%20libri%20di%20testo
+    delay_seconds: 0.3
   datasets_in_use:
   - mim-alunni-corso-eta
 dati_camera:
