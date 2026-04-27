@@ -123,7 +123,7 @@ inail_opendata:
     non ancora difendibile; tenere in radar-only finche' non definito un metodo stabile.
   datasets_in_use: []
 mim_opendata:
-  source_kind: portal
+  source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
   base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
