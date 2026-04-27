@@ -127,7 +127,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Download discovery artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: portal-discovery
           path: data/portal_scout
