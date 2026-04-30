@@ -7,6 +7,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 import requests
 import urllib3
+from requests.adapters import HTTPAdapter
 from urllib3.exceptions import InsecureRequestWarning
 
 
@@ -42,6 +43,16 @@ def get_observatory_session() -> requests.Session:
             "Connection": "close",
         }
     )
+    return session
+
+
+def get_pooled_session(pool_connections: int = 16, pool_maxsize: int = 32) -> requests.Session:
+    """Session with HTTPAdapter connection pooling — reuse across calls."""
+    session = requests.Session()
+    session.headers["User-Agent"] = USER_AGENT
+    adapter = HTTPAdapter(pool_connections=pool_connections, pool_maxsize=pool_maxsize)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
     return session
 
 

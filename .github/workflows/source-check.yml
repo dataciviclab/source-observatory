@@ -50,6 +50,7 @@ jobs:
         uses: google-github-actions/setup-gcloud@v3
 
       - name: Download catalog inventory from GCS
+        id: download_inventory
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         run: |
           prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
@@ -59,7 +60,7 @@ jobs:
             data/catalog_inventory/generated/catalog_inventory_latest.parquet
 
       - name: Build catalog inventory (fallback se parquet non disponibile)
-        if: ${{ hashFiles('data/catalog_inventory/generated/catalog_inventory_latest.parquet') == '' }}
+        if: ${{ steps.download_inventory.outcome != 'success' }}
         run: |
           python scripts/build_catalog_inventory.py \
             --out-dir data/catalog_inventory/generated \
