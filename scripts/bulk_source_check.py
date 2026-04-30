@@ -379,20 +379,17 @@ def _fetch_html_metadata(url: str, session: Optional[requests.Session] = None) -
         if session is not None:
             with session.get(url, timeout=10, stream=False) as resp:
                 resp.raise_for_status()
-                content = resp.content
+                # resp.text uses requests encoding detection (Content-Type charset),
+                # which may differ from the UTF-8 fallback used when session is None.
+                # Divergence is acceptable for regex-based link extraction.
+                html = resp.text
         else:
             resp = observatory_get(url, timeout=10, stream=False)
             resp.raise_for_status()
-            content = resp.content
+            html = resp.text
 
         # Limita a 200KB
-        content_length = len(content)
-        if content_length > 200000:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "html_scrape_failed"
-            return result
-
-        html = resp.text if session is None else content.decode("utf-8", errors="replace")
+        content_length = len(html.encode("utf-8", errors="replace"))
 
         # Cerca link a file scaricabili: regex su href
         file_patterns = [r'href=["\']([^"\']*\.csv)["\']',
@@ -815,7 +812,10 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
     check_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     results = []
 
-    # Shared session with connection pooling — reused across all HTTP calls in the pool
+    # Shared session with connection pooling — reused across all HTTP calls in the pool.
+    # Thread-safe for read-only usage: headers are set at creation and never mutated,
+    # no cookies are modified, the adapter pool is append-only.
+    # Do NOT add cookie/header mutations after creation — that would introduce races.
     session = get_pooled_session(pool_connections=16, pool_maxsize=32)
     with ThreadPoolExecutor(max_workers=workers) as pool:
         future_to_idx = {pool.submit(_check_row, row, check_ts, registry, session): i for i, row in df.iterrows()}
