@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -30,6 +31,8 @@ REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 DEFAULT_OUT_DIR = REPO_ROOT / "data" / "catalog_inventory" / "generated"
 DEFAULT_OUT_PARQUET = "catalog_inventory_latest.parquet"
 DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
+
+logger = logging.getLogger(__name__)
 
 def collect_ckan_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: str):
     res = _collect_ckan_inventory(
@@ -244,6 +247,18 @@ def main() -> None:
             else:
                 preserved["source_status"] = "unknown"
             df = pd.concat([df, preserved], ignore_index=True)
+
+    # ── Fix C: dedup per (source_id, item_id) ─────────────────────────────────────
+    # quando una fonte produce righe con stesso item_id ma formati diversi (es. CSV/JSON/XML),
+    # o quando preserve aggiunge righe stale dello stesso item_id, teniamo la più recente.
+    # Priorità: active > stale; a parità di status, last_successful_fetch più recente.
+    if not df.empty and "item_id" in df.columns and "source_id" in df.columns:
+        _status_order = {"active": 0, "stale": 1, "unknown": 2}
+        df["_status_ord"] = df["source_status"].map(lambda s: _status_order.get(str(s), 2))
+        df = df.sort_values(["_status_ord", "last_successful_fetch"], ascending=[True, False])
+        df = df.drop_duplicates(subset=["source_id", "item_id"], keep="first").drop(columns=["_status_ord"])
+        df = df.reset_index(drop=True)
+        logger.info("  dedup (source_id, item_id): %d items", len(df))
 
     # After merge, if still no rows → nothing worked
     if df.empty:
