@@ -156,6 +156,20 @@ Contiene tutto ciò che richiede chiamate attive alla fonte o inferenza sui meta
 
 **Linea di confine:** se è derivabile dall'inventory senza chiamate esterne → layer 1. Se richiede una chiamata attiva alla fonte → layer 2.
 
+## Stato sorgente e staleness (Layer 1)
+
+L'inventory preserva le righe anche quando una fonte è temporaneamente down. Ogni riga include:
+
+| Campo | Tipo | Descrizione |
+|---|---|---|
+| `source_status` | `active` \| `stale` \| `unknown` | `active` = raccolta nell'ultimo run ok. `stale` = fonte non raggiunta, righe precedenti preservate. `unknown` = campo non popolato (vecchi run pre-PR #155) |
+| `stale_reason` | `source_500` \| `source_503` \| `timeout` \| `ssl_error` \| ... | Codice errore che ha causato la caduta |
+| `last_successful_fetch` | ISO timestamp | Quando la fonte ha funzionato l'ultima volta |
+
+**Merge logica**: quando una fonte fallisce, le righe precedenti NON vengono cancellate — vengono marcate `stale`. Quando la fonte torna, le nuove righe sono `active` e coesistono con quelle stale.
+
+Questo comportamento è implementato in `build_catalog_inventory.py` — funzione `_error_to_stale_reason()` e il merge loop che preserva righe stale — e vale per tutti i Layer 1 run.
+
 ## Fonti con scraping bloccato
 
 Alcune fonti bloccano le richieste HTTP non-browser (reCAPTCHA, WAF). Sono marcate nel registry con `scraping_blocked: true`. Il source-check le salta automaticamente senza tentare HTML scraping.

@@ -1,13 +1,14 @@
-﻿# Dati Catalogo
+# Dati Catalogo
 
 Stato canonico per l'osservazione a livello catalogo nel Source Observatory.
 
 ## Struttura
 
 - `CATALOG_WATCH_REPORT.md`
-  - ultimo report catalogo leggibile
+  - rendering leggibile del report catalogo, generato dalla CI ogni lunedì via `scripts/build_catalog_signals.py`
 - `catalog_signals.json`
-  - piccolo riepilogo strutturato degli ultimi segnali catalogo
+  - output strutturato (stesso script che genera anche il `.md`); contiene segnali drill/down/inventory-change per singola fonte
+  - consumato da agent-context-builder per il context operativo
 
 ## Perimetro
 
