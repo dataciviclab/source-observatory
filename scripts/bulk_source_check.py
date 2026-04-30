@@ -388,8 +388,11 @@ def _fetch_html_metadata(url: str, session: Optional[requests.Session] = None) -
             resp.raise_for_status()
             html = resp.text
 
-        # Limita a 200KB
-        content_length = len(html.encode("utf-8", errors="replace"))
+        # Limita a 200KB (usa len(stringa) come proxy ragionevole per UTF-8)
+        if len(html) > 200000:
+            result = _EMPTY_ENRICH.copy()
+            result["enrich_method"] = "html_scrape_failed"
+            return result
 
         # Cerca link a file scaricabili: regex su href
         file_patterns = [r'href=["\']([^"\']*\.csv)["\']',
