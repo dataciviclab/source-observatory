@@ -4,3 +4,5 @@ duckdb>=1.5.2,<2.0
 pandas>=3.0.2,<4.0
 pyarrow>=14.0,<24.0
 ddgs>=9.0,<10.0
+mcp>=1.0.0
+fastmcp>=0.1.0
