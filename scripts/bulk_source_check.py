@@ -40,7 +40,7 @@ import requests
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from collectors.base import observatory_get, observatory_head
+from collectors.base import observatory_get, observatory_head, get_pooled_session
 
 logger = logging.getLogger(__name__)
 
@@ -131,11 +131,14 @@ def _infer_years(text: str) -> tuple[Optional[int], Optional[int]]:
 
 # ── HTTP check ────────────────────────────────────────────────────────────────
 
-def _http_head(url: str) -> tuple[Optional[int], bool, str]:
+def _http_head(url: str, session: Optional[requests.Session] = None) -> tuple[Optional[int], bool, str]:
     if not isinstance(url, str) or not url.startswith("http"):
         return None, False, "url_missing_or_invalid"
     try:
-        resp = observatory_head(url, timeout=HTTP_TIMEOUT)
+        if session is not None:
+            resp = session.head(url, timeout=HTTP_TIMEOUT)
+        else:
+            resp = observatory_head(url, timeout=HTTP_TIMEOUT)
         reachable = resp.status_code < 400
         return resp.status_code, reachable, ""
     except requests.exceptions.SSLError:
@@ -150,13 +153,19 @@ def _http_head(url: str) -> tuple[Optional[int], bool, str]:
 
 # ── CKAN enrichment ───────────────────────────────────────────────────────────
 
-def _fetch_ckan_package(base_api: str, item_name: str) -> Optional[dict]:
+def _fetch_ckan_package(base_api: str, item_name: str, session: Optional[requests.Session] = None) -> Optional[dict]:
     url = f"{base_api}/package_show?id={item_name}"
     try:
-        r = observatory_get(url, timeout=HTTP_TIMEOUT)
-        if r.status_code != 200:
-            return None
-        data = r.json()
+        if session is not None:
+            with session.get(url, timeout=HTTP_TIMEOUT) as r:
+                if r.status_code != 200:
+                    return None
+                data = r.json()
+        else:
+            r = observatory_get(url, timeout=HTTP_TIMEOUT)
+            if r.status_code != 200:
+                return None
+            data = r.json()
         if not data.get("success"):
             return None
         return data.get("result") or None
@@ -238,7 +247,7 @@ def _parse_ckan_package(pkg: dict) -> dict:
 
 # ── SDMX enrichment ───────────────────────────────────────────────────────────
 
-def _fetch_sdmx_years(base_url: str, flow_id: str) -> tuple[Optional[int], Optional[int]]:
+def _fetch_sdmx_years(base_url: str, flow_id: str, session: Optional[requests.Session] = None) -> tuple[Optional[int], Optional[int]]:
     """Chiama l'endpoint dati SDMX per ricavare year_min/year_max dalla dimensione TIME_PERIOD."""
     try:
         # ricava la root SDMX togliendo /dataflow/IT1 (o simile) dal base_url
@@ -251,10 +260,17 @@ def _fetch_sdmx_years(base_url: str, flow_id: str) -> tuple[Optional[int], Optio
         else:
             sdmx_root = base
         url = f"{sdmx_root}/data/{flow_id}?lastNObservations=1"
-        r = observatory_get(url, timeout=20)
-        if r.status_code != 200:
-            return None, None
-        root = ET.fromstring(r.content)
+        if session is not None:
+            with session.get(url, timeout=20) as r:
+                if r.status_code != 200:
+                    return None, None
+                content = r.content
+        else:
+            r = observatory_get(url, timeout=20)
+            if r.status_code != 200:
+                return None, None
+            content = r.content
+        root = ET.fromstring(content)
         time_values: list[str] = []
         # pattern 1: <generic:Value id="TIME_PERIOD" value="..."/> dentro <generic:ObsKey>
         for val_el in root.findall(".//generic:ObsKey/generic:Value", SDMX_NS):
@@ -282,7 +298,7 @@ def _fetch_sdmx_years(base_url: str, flow_id: str) -> tuple[Optional[int], Optio
         return None, None
 
 
-def _fetch_sdmx_dataflow(base_url: str, flow_id: str) -> Optional[ET.Element]:
+def _fetch_sdmx_dataflow(base_url: str, flow_id: str, session: Optional[requests.Session] = None) -> Optional[ET.Element]:
     # rimuovi query string e normalizza
     base = base_url.split("?")[0].rstrip("/")
     # risali alla root se l'url punta al listing completo
@@ -292,10 +308,17 @@ def _fetch_sdmx_dataflow(base_url: str, flow_id: str) -> Optional[ET.Element]:
         root_url = base.rsplit("/", 1)[0]
     url = f"{root_url}/{flow_id}"
     try:
-        r = observatory_get(url, timeout=HTTP_TIMEOUT)
-        if r.status_code != 200:
-            return None
-        return ET.fromstring(r.content)
+        if session is not None:
+            with session.get(url, timeout=HTTP_TIMEOUT) as r:
+                if r.status_code != 200:
+                    return None
+                content = r.content
+        else:
+            r = observatory_get(url, timeout=HTTP_TIMEOUT)
+            if r.status_code != 200:
+                return None
+            content = r.content
+        return ET.fromstring(content)
     except Exception:
         return None
 
@@ -337,7 +360,7 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 
 # ── HTML enrichment (fallback per landing_page) ───────────────────────────────
 
-def _fetch_html_metadata(url: str) -> dict:
+def _fetch_html_metadata(url: str, session: Optional[requests.Session] = None) -> dict:
     """Estrae metadati leggeri da una landing_page HTML.
 
     Ricerca:
@@ -353,18 +376,23 @@ def _fetch_html_metadata(url: str) -> dict:
         return result
 
     try:
-        resp = observatory_get(url, timeout=10, stream=False)
-        resp.raise_for_status()
+        if session is not None:
+            with session.get(url, timeout=10, stream=False) as resp:
+                resp.raise_for_status()
+                content = resp.content
+        else:
+            resp = observatory_get(url, timeout=10, stream=False)
+            resp.raise_for_status()
+            content = resp.content
 
         # Limita a 200KB
-        content_length = len(resp.content)
+        content_length = len(content)
         if content_length > 200000:
-            resp.close()
             result = _EMPTY_ENRICH.copy()
             result["enrich_method"] = "html_scrape_failed"
             return result
 
-        html = resp.text
+        html = resp.text if session is None else content.decode("utf-8", errors="replace")
 
         # Cerca link a file scaricabili: regex su href
         file_patterns = [r'href=["\']([^"\']*\.csv)["\']',
@@ -579,7 +607,7 @@ _EMPTY_ENRICH = {
 }
 
 
-def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
+def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests.Session] = None) -> dict:
     source_id = row.get("source_id") or ""
     source_cfg = registry.get(source_id, {})
     protocol = source_cfg.get("protocol") or row.get("protocol") or ""
@@ -599,7 +627,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
             # usa api_base_url pre-calcolata dal layer 1 (gestisce endpoint non-standard come INPS /odapi/)
             api_base_url = row.get("api_base_url")
             base_api = api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http") else base_url
-            pkg = _fetch_ckan_package(base_api, item_name)
+            pkg = _fetch_ckan_package(base_api, item_name, session=session)
             if pkg:
                 return _parse_ckan_package(pkg)
         # CKAN senza slug valido → skip package_show, passa a HTML fallback sotto
@@ -610,7 +638,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
         api_base_url = row.get("api_base_url")
         if isinstance(api_base_url, str) and api_base_url.startswith("http"):
             sdmx_base = api_base_url
-        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name)
+        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name, session=session)
         if xml_root is not None:
             return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
 
@@ -622,7 +650,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
             path = parsed.path or ""
             fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
             if fmt in ("csv", "json", "xlsx", "xls"):
-                return _fetch_data_preview(data_url)
+                return _fetch_data_preview(data_url, session=session)
 
     # HTML fallback: per tutti i source con landing_page raggiungibile
     # dati_camera ha scraping_blocked=true → salta HTML se CKAN package_show già provato
@@ -635,7 +663,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
             result = _EMPTY_ENRICH.copy()
             result["enrich_method"] = "scraping_blocked"
             return result
-        return _fetch_html_metadata(landing)
+        return _fetch_html_metadata(landing, session=session)
 
     return _EMPTY_ENRICH.copy()
 
@@ -710,8 +738,8 @@ def _intake_score(
 
 # ── core ──────────────────────────────────────────────────────────────────────
 
-def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
-    enrich = _enrich(row, registry)
+def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session: Optional[requests.Session] = None) -> dict:
+    enrich = _enrich(row, registry, session=session)
 
     # granularità e anni: da enrichment, poi fallback su campi catalogo
     granularity = enrich["granularity"]
@@ -734,7 +762,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
     if enrich["enrich_method"] == "sdmx_dataflow_annotations":
         url_to_check = row.get("landing_page") or row.get("distribution_url")
 
-    http_status, reachable, note = _http_head(url_to_check or "")
+    http_status, reachable, note = _http_head(url_to_check or "", session=session)
 
     return {
         "check_timestamp": check_ts,
@@ -782,21 +810,24 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
     check_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     results = []
 
+    # Shared session with connection pooling — reused across all HTTP calls in the pool
+    session = get_pooled_session(pool_connections=16, pool_maxsize=32)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        future_to_idx = {pool.submit(_check_row, row, check_ts, registry): i for i, row in df.iterrows()}
+        future_to_idx = {pool.submit(_check_row, row, check_ts, registry, session): i for i, row in df.iterrows()}
         done = 0
         total = len(future_to_idx)
         for future in as_completed(future_to_idx):
             i = future_to_idx[future]
             try:
                 results.append(_finalize_scores(future.result()))
-            except Exception:
-                logger.exception("Row check failed for index %d", i)
-                results.append({"check_notes": "check failed", "enrich_method": "error"})
+            except Exception as exc:
+                logger.warning("Row check failed for index %d: %s", i, exc)
+                results.append({"check_notes": f"check failed: {exc}", "enrich_method": "error"})
             done += 1
             if done % 50 == 0 or done == total:
                 logger.info("  %d/%d completed", done, total)
 
+    session.close()
     return pd.DataFrame(results)
 
 
