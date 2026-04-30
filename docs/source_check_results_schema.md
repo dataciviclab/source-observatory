@@ -79,6 +79,7 @@ score finale: max(0, min(100, somma))
 - **HTTP status e raggiungibilità non influenzano lo score** — un URL irraggiungibile non abbassa direttamente il punteggio, ma l'assenza di `resource_format` e `year_min` produrrà `needs_review = True`, che applica il -5 e potrebbe far scendere sotto soglia.
 - **`enrich_method = error`** indica un'eccezione non gestita durante l'enrichment. La riga è presente ma con dati incompleti.
 - Il parquet viene sovrascritto ad ogni run — non è incrementale. Per segnali longitudinali, consultare gli snapshot in GCS (`source-check/snapshots/source_check_{stamp}.parquet`).
+- Il file locale sotto `data/catalog_inventory/generated/` è una cache operativa. La fonte corrente è il path GCS pubblicato dal workflow `source-check.yml`; l'artifact GitHub Actions resta un canale di recupero/debug.
 
 ---
 
@@ -86,4 +87,4 @@ score finale: max(0, min(100, somma))
 
 - Default: `data/catalog_inventory/generated/source_check_results.parquet`
 - Snapshots GCS: `gs://<CATALOG_INVENTORY_GCS_PREFIX>/source-check/snapshots/`
-- Artifact Actions: disponibile come `observatory-results` su ogni run del workflow `observatory.yml`
+- Artifact Actions: disponibile come `source-check-results` su ogni run del workflow `source-check.yml`

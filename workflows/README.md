@@ -8,6 +8,10 @@ Indice minimo dei workflow canonici di `source-observatory`.
   - triage di un catalog inventory per ricavare una shortlist
   - decide cosa mandare a `source-check` o `watchlist`
 
+- [mcp-artifact-triage.md](./mcp-artifact-triage.md)
+  - lettura ordinata degli artifact Source Observatory via MCP read-only
+  - chiarisce cosa e' coperto, cosa manca e quale workflow usare dopo
+
 - [source-check.md](./source-check.md)
   - verifica se una fonte o un dataset pubblico regge davvero come pista del Lab
   - esce con un verdetto singolo e un next step esplicito
@@ -16,6 +20,8 @@ Indice minimo dei workflow canonici di `source-observatory`.
 
 - `catalog-inventory-scout`
   - triage di una lista di item di un catalogo
+- `mcp-artifact-triage`
+  - orientamento sugli artifact gia' prodotti da radar, catalog-watch, inventory e discovery
 - `source-check`
   - valutazione umana della fonte come possibile pista del Lab
 
@@ -26,6 +32,8 @@ Indice minimo dei workflow canonici di `source-observatory`.
 Se la domanda è:
 
 - "cosa c'è in questo catalogo e cosa vale la pena approfondire?" -> `catalog-inventory-scout`
+- "cosa dicono gli artifact SO gia' prodotti?" -> `mcp-artifact-triage`
+- "questo portale è davvero un catalogo osservabile?" -> `portal-scout`
 - "il catalogo ha cambiato inventario o struttura?" -> leggi `data/catalog/CATALOG_WATCH_REPORT.md`
 - "questa fonte regge davvero come pista del Lab?" -> `source-check`
 

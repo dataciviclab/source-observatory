@@ -39,7 +39,8 @@ Per default questi output vengono generati in:
 
 La directory `generated/` non è versionata nel repo:
 - gli artifact vengono esposti come artifact GitHub Actions
-- l'upload su GCS è opzionale e richiede secret/config espliciti
+- il latest operativo pubblico e' su `gs://dataciviclab-clean/catalog_inventory/`
+- i file locali sono cache operative: per analisi correnti usare il parquet GCS latest o rigenerare prima del triage
 
 ## Schema minimo del parquet
 
@@ -89,4 +90,5 @@ python scripts/build_catalog_inventory.py --workers 3
 
 - il perimetro segue solo le fonti `catalog-watch` del registry
 - l'inventory può essere intenzionalmente parziale se una fonte è osservabile ma non inventariabile in modo stabile
-- il README locale resta in `_local/data/catalog_inventory/README.md`
+- non interpretare una fonte assente dal parquet come assenza di dataset: controllare sempre il report inventory
+- non trattare una cache locale vecchia come source of truth: verificare timestamp, `cache.source` e provenienza dell'artifact
