@@ -888,6 +888,23 @@ def main() -> None:
         df = df.groupby("source_id", group_keys=False).head(args.limit_per_source)
         logger.info("  limit-per-source %d: %d items", args.limit_per_source, len(df))
 
+    # ── Fix A: dedup per item_id (stesso dataset, formati multipli) ─────────────────
+    # tiene una riga per item_id con preferenza CSV > JSON > XLSX > altro
+    FORMAT_PREF = {"CSV": 0, "JSON": 1, "XLSX": 2, "XLS": 3}
+    if not df.empty:
+        df = df.copy()
+        df["_fmt_pref"] = df["format"].map(lambda f: FORMAT_PREF.get(str(f).strip().upper(), 99))
+        df = df.sort_values("_fmt_pref").drop_duplicates(subset=["item_id"], keep="first").drop(columns=["_fmt_pref"])
+        logger.info("  dedup item_id: %d items", len(df))
+
+    # ── Fix B: skip fonti interamente stale ───────────────────────────────────────
+    if "source_status" in df.columns and not df.empty:
+        stale_sources = df.groupby("source_id")["source_status"].apply(lambda s: all(v == "stale" for v in s))
+        stale_source_ids = stale_sources[stale_sources].index.tolist()
+        if stale_source_ids:
+            df = df[~df["source_id"].isin(stale_source_ids)]
+            logger.info("  skip stale sources %s: %d items", stale_source_ids, len(df))
+
     if df.empty:
         logger.info("No items to check. Exiting.")
         return
