@@ -1,13 +1,31 @@
 # Catalog Watch Report
 
-_Generato: 2026-04-27T06:09:57+00:00 — 10 fonti controllate_
+_Generato: 2026-04-30T08:47:48+00:00 — 12 fonti controllate_
 
 ## Segnali attivi
 
-_Nessun segnale di drift o inventory change._
+### 📦 `istat_sdmx` — inventory change
+
+- **Protocollo**: sdmx
+- **Dettaglio**: 4834 item (dataflow_count), delta +6 rispetto al run precedente (4828).
+- **Item**: 4834
+- **Azione**: verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset
+
+### • `dati_salute` — csv_magnet
+
+- **Protocollo**: html
+- **Dettaglio**: sitemap failed: SSL failed (HTTPSConnectionPool(host='www.dati.salute.gov.it', port=443): Max retries exceeded with url: /sitemap-0.xml (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))) then fallback failed (HTTPSConnectionPool(host='www.dati.salute.gov.it', port=443): Max retries exceeded with url: /sitemap-0.xml (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)'))))
+- **Azione**: verificare raggiungibilità del portale
+
+### • `mim_opendata` — csv_magnet
+
+- **Protocollo**: html
+- **Dettaglio**: 1116 link data (CSV 372, JSON 372, XML 372), years 2015-2025 — top prefixes: INFANZIA=192, ALUCORSO=120, SCUANAGR=66, SCUANAAU=66, ALUITAST=60
+- **Item**: 1116
+- **Azione**: catalog-watch-ready
 
 ## Fonti stabili / skipped
 
-_10 fonti senza segnali inventariali in questo run._
+_9 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.

@@ -1,6 +1,6 @@
 {
-  "captured_at": "2026-04-27T06:09:57+00:00",
-  "sources_checked": 10,
+  "captured_at": "2026-04-30T08:47:48+00:00",
+  "sources_checked": 12,
   "signals": [
     {
       "source": "opencoesione",
@@ -13,11 +13,11 @@
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 4828,
-      "detail": "4828 item (dataflow_count), connettività presidiata da radar_summary.",
-      "suggested_action": "nessuna"
+      "signal_type": "inventory change",
+      "result": "inventory change",
+      "metric_value": 4834,
+      "detail": "4834 item (dataflow_count), delta +6 rispetto al run precedente (4828).",
+      "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset"
     },
     {
       "source": "inps",
@@ -38,11 +38,622 @@
       "suggested_action": "nessuna"
     },
     {
+      "source": "dati_salute",
+      "protocol": "html",
+      "signal_type": "csv_magnet",
+      "result": "error",
+      "detail": "sitemap failed: SSL failed (HTTPSConnectionPool(host='www.dati.salute.gov.it', port=443): Max retries exceeded with url: /sitemap-0.xml (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))) then fallback failed (HTTPSConnectionPool(host='www.dati.salute.gov.it', port=443): Max retries exceeded with url: /sitemap-0.xml (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)'))))",
+      "suggested_action": "verificare raggiungibilità del portale"
+    },
+    {
+      "source": "mim_opendata",
+      "protocol": "html",
+      "signal_type": "csv_magnet",
+      "result": "scan_completed",
+      "metric_value": 1116,
+      "detail": "1116 link data (CSV 372, JSON 372, XML 372), years 2015-2025 — top prefixes: INFANZIA=192, ALUCORSO=120, SCUANAGR=66, SCUANAAU=66, ALUITAST=60",
+      "prefix_matrix": {
+        "SCUANAGR": 66,
+        "SCUANAAU": 66,
+        "ALUCORSO": 120,
+        "ALUITAST": 60,
+        "ALUSECGR": 60,
+        "ALUTEMPO": 60,
+        "INFANZIA": 192,
+        "DOCTIT20": 27,
+        "AS1516DO": 6,
+        "ATATIT20": 27,
+        "AS1516AT": 6,
+        "DOCSUPXX": 6,
+        "DOCSUP20": 21,
+        "ATASUP20": 27,
+        "VALUTAZIONE": 24,
+        "RUBRICA": 6,
+        "EDIANAGR": 24,
+        "EDIAMBIE": 21,
+        "EDICOLLE": 24,
+        "EDIVINCO": 24,
+        "EDICONSI": 42,
+        "EDIAMBFU": 24,
+        "EDISUPBA": 21,
+        "EDIETAOR": 24,
+        "EDIUNITA": 15,
+        "EDITIPOR": 21,
+        "EDIRIDUZ": 21,
+        "EDIPROTE": 21,
+        "ALTABRUZ": 3,
+        "ALTBASIL": 3,
+        "ALTCALAB": 3,
+        "ALTCAMPA": 3,
+        "ALTEMILI": 3,
+        "ALTFRIUL": 3,
+        "ALTLAZIO": 3,
+        "ALTLIGUR": 3,
+        "ALTLOMBA": 3,
+        "ALTMARCH": 3,
+        "ALTMOLIS": 3,
+        "ALTPIEMO": 3,
+        "ALTPUGLI": 3,
+        "ALTSARDE": 3,
+        "ALTSICIL": 3,
+        "ALTTOSCA": 3,
+        "ALTTRENT": 3,
+        "ALTUMBRI": 3,
+        "ALTVALLE": 3,
+        "ALTVENET": 3
+      },
+      "series": {
+        "SCUANAGR": {
+          "years": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 66,
+          "sample": "SCUANAGRAFESTAT20252620250901"
+        },
+        "SCUANAAU": {
+          "years": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 66,
+          "sample": "SCUANAAUTSTAT20252620250901"
+        },
+        "ALUCORSO": {
+          "years": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 120,
+          "sample": "ALUCORSOETASTA20242520250831"
+        },
+        "ALUITAST": {
+          "years": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 60,
+          "sample": "ALUITASTRACITSTA20242520250831"
+        },
+        "ALUSECGR": {
+          "years": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 60,
+          "sample": "ALUSECGRADOINDSTA20242520250831"
+        },
+        "ALUTEMPO": {
+          "years": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 60,
+          "sample": "ALUTEMPOSCUOLASTA20242520250831"
+        },
+        "INFANZIA": {
+          "years": [
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 192,
+          "sample": "INFANZIACLASTA20242520250831"
+        },
+        "DOCTIT20": {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 27,
+          "sample": "DOCTIT20242520250831"
+        },
+        "AS1516DO": {
+          "years": [
+            2016
+          ],
+          "count": 6,
+          "sample": "AS1516DOCTIT20160831"
+        },
+        "ATATIT20": {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 27,
+          "sample": "ATATIT20242520250831"
+        },
+        "AS1516AT": {
+          "years": [
+            2016
+          ],
+          "count": 6,
+          "sample": "AS1516ATATIT20160831"
+        },
+        "DOCSUPXX": {
+          "years": [
+            2023,
+            2024,
+            2025
+          ],
+          "count": 6,
+          "sample": "DOCSUPXXV20242520250831"
+        },
+        "DOCSUP20": {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023
+          ],
+          "count": 21,
+          "sample": "DOCSUP20222320230831"
+        },
+        "ATASUP20": {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 27,
+          "sample": "ATASUP20242520250831"
+        },
+        "VALUTAZIONE": {
+          "years": [
+            2016,
+            2017
+          ],
+          "count": 24,
+          "sample": "VALUTAZIONE_ESITI_STA20161720170831"
+        },
+        "RUBRICA": {
+          "years": [
+            2016,
+            2017
+          ],
+          "count": 6,
+          "sample": "RUBRICA_VAL20161720170831"
+        },
+        "EDIANAGR": {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 24,
+          "sample": "EDIANAGRAFESTA202120242520250806"
+        },
+        "EDIAMBIE": {
+          "years": [
+            2017,
+            2018,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 21,
+          "sample": "EDIAMBIENTESTA202120242520250806"
+        },
+        "EDICOLLE": {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 24,
+          "sample": "EDICOLLEGAMENTISTA202120242520250806"
+        },
+        "EDIVINCO": {
+          "years": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 24,
+          "sample": "EDIVINCOLISTA202120242520250806"
+        },
+        "EDICONSI": {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 42,
+          "sample": "EDICONSISTENZASTA202120242520250806"
+        },
+        "EDIAMBFU": {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 24,
+          "sample": "EDIAMBFUNZSTA202120242520250806"
+        },
+        "EDISUPBA": {
+          "years": [
+            2017,
+            2018,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 21,
+          "sample": "EDISUPBARARCSTA202120242520250806"
+        },
+        "EDIETAOR": {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 24,
+          "sample": "EDIETAORIGINESTA202120242520250806"
+        },
+        "EDIUNITA": {
+          "years": [
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 15,
+          "sample": "EDIUNITASTRUTSTA20242520250806"
+        },
+        "EDITIPOR": {
+          "years": [
+            2017,
+            2018,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 21,
+          "sample": "EDITIPORISCSTA202120242520250806"
+        },
+        "EDIRIDUZ": {
+          "years": [
+            2017,
+            2018,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 21,
+          "sample": "EDIRIDUZCONSENESTA202120242520250806"
+        },
+        "EDIPROTE": {
+          "years": [
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 21,
+          "sample": "EDIPROTEZRUMSTA202120242520250806"
+        },
+        "ALTABRUZ": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTABRUZZO000020250910"
+        },
+        "ALTBASIL": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTBASILICATA000020250910"
+        },
+        "ALTCALAB": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTCALABRIA000020250910"
+        },
+        "ALTCAMPA": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTCAMPANIA000020250910"
+        },
+        "ALTEMILI": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTEMILIAROMAGNA000020250910"
+        },
+        "ALTFRIUL": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTFRIULIVENEZIAGIULIA000020250910"
+        },
+        "ALTLAZIO": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTLAZIO000020250910"
+        },
+        "ALTLIGUR": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTLIGURIA000020250910"
+        },
+        "ALTLOMBA": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTLOMBARDIA000020250910"
+        },
+        "ALTMARCH": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTMARCHE000020250910"
+        },
+        "ALTMOLIS": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTMOLISE000020250910"
+        },
+        "ALTPIEMO": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTPIEMONTE000020250910"
+        },
+        "ALTPUGLI": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTPUGLIA000020250910"
+        },
+        "ALTSARDE": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTSARDEGNA000020250910"
+        },
+        "ALTSICIL": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTSICILIA000020250910"
+        },
+        "ALTTOSCA": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTTOSCANA000020250910"
+        },
+        "ALTTRENT": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTTRENTINOALTOADIGE000020250910"
+        },
+        "ALTUMBRI": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTUMBRIA000020250910"
+        },
+        "ALTVALLE": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTVALLEDAOSTA000020250910"
+        },
+        "ALTVENET": {
+          "years": [
+            2025
+          ],
+          "count": 3,
+          "sample": "ALTVENETO000020250910"
+        }
+      },
+      "topics": {
+        "istruzione": 1116
+      },
+      "years_range": [
+        2015,
+        2025
+      ],
+      "suggested_action": "catalog-watch-ready"
+    },
+    {
       "source": "dati_camera",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 104,
+      "detail": "104 item (sparql_query), connettività presidiata da radar_summary.",
       "suggested_action": "nessuna"
     },
     {
