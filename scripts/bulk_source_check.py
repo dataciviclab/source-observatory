@@ -438,7 +438,7 @@ REGION_COLUMNS = ["regione", "region", "provincia", "province", "area", "territo
 COMUNE_COLUMNS = ["comune", "municip", "localita", "citta", "city"]
 
 
-def _fetch_data_preview(url: str) -> dict:
+def _fetch_data_preview(url: str, session: Optional[requests.Session] = None) -> dict:
     """Fetch e parse content preview da un URL CSV/JSON/XLS.
 
     Estrae: column names, year_min/year_max (da colonna anno),
@@ -463,13 +463,18 @@ def _fetch_data_preview(url: str) -> dict:
         result["enrich_method"] = "csv_preview_skipped"
         return result
 
+    def _do_get() -> requests.Response:
+        if session is not None:
+            return session.get(url, timeout=HTTP_TIMEOUT)
+        return observatory_get(url, timeout=HTTP_TIMEOUT)
+
     try:
         # Fetch ~5 KB (enough for headers + a few rows)
         # Retry once on timeout (transient network issues)
         resp = None
         for attempt in range(2):
             try:
-                resp = observatory_get(url, timeout=HTTP_TIMEOUT)
+                resp = _do_get()
                 break
             except requests.exceptions.Timeout:
                 if attempt == 0:
