@@ -7,53 +7,42 @@ Risponde a una domanda sola: **questa fonte vale il tempo del Lab?**
 ## Il funnel
 
 ```
-discover_portals  →  portal-scout  →  gate
-                                        ├─ catalog-watch   (catalogo osservabile)
-                                        ├─ radar-only      (monitoraggio passivo)
-                                        └─ source-check    (valutazione manuale)
-                                              ↓
-                                        catalog-inventory  (snapshot interrogabile)
+gate  ── catalog-watch ── catalog-inventory ── source-check
+     └── radar-only
 ```
 
-1. **Discover** — trova portali PA nazionali via DDG, proba il protocollo (CKAN/SDMX/SPARQL)
-2. **Portal-scout** — classifica la superficie tecnica, assegna un verdict
-3. **Gate** — decide il regime di osservazione
-4. **Catalog-inventory** — enumera gli item dei cataloghi ammessi
+1. **Gate** — decide il regime di osservazione (`catalog-watch` o `radar-only`)
+2. **Catalog-inventory** — enumera gli item dei cataloghi ammessi
+3. **Source-check** — valuta qualità e granularità dei dataset
+
+Il funnel è alimentato dal `sources_registry.yaml`: ogni fonte ha un `source_id`, un `protocol` e un `observation_mode`. Le fonti nuove vengono aggiunte al registry manualmente.
 
 ## Script
 
 | Script | Cosa fa |
 |---|---|
-| `scripts/discover_portals.py` | Discovery DDG + protocol probe → parquet candidati |
-| `scripts/portal_scout.py` | Sonda copertura metadata su campione → JSON per portale |
 | `scripts/radar_check.py` | Health check giornaliero delle fonti nel registry |
 | `scripts/build_catalog_inventory.py` | Snapshot tabulare di tutti gli item enumerabili |
 | `scripts/build_catalog_signals.py` | Segnali drift/inventory del catalogo; health delegata a radar |
+| `scripts/bulk_source_check.py` | Scoring di qualità, granularità e rilevanza per ogni item |
 
 ```bash
-# Discovery mirata per protocollo
-python scripts/discover_portals.py --protocols ckan --only-matched
-
-# Scout su candidati
-python scripts/portal_scout.py --registry-path /tmp/candidate.yaml --dry-run
-
-# Radar
+# Radar (giornaliero)
 python scripts/radar_check.py
 
-# Catalog inventory
+# Catalog inventory (settimanale)
 python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/generated
+
+# Source-check (settimanale — scoring completo di tutti gli item)
+python scripts/bulk_source_check.py --only-with-title --include-no-url --workers 8
 ```
 
 ## Workflow
 
 I workflow in `workflows/` sono istruzioni operative per agenti e review umana. In parallelo, alcuni workflow GitHub Actions schedulati producono artifact e report di osservazione.
 
-- [`workflows/portal-scout.md`](workflows/portal-scout.md) — classifica un portale e assegna verdict
 - [`workflows/source-check.md`](workflows/source-check.md) — valuta se una fonte regge come pista del Lab
 - [`workflows/catalog-inventory-scout.md`](workflows/catalog-inventory-scout.md) — triage degli item in un catalogo noto
-
-> I segnali di drift/inventory change sono prodotti automaticamente ogni lunedì dalla CI (`catalog-inventory.yml`) e leggibili in `data/catalog/CATALOG_WATCH_REPORT.md`.
-> Il workflow `portal-scout.yml` può chiudere lo scout strutturale come `ok`, `degraded` o `failed`, a seconda della qualità dell'output prodotto.
 
 ## Output e artefatti
 
@@ -65,12 +54,10 @@ Se GCS non è configurato, i workflow restano eseguibili: usano artifact Actions
 - `data/radar/radar_summary.json` — health complessivo (GREEN/YELLOW/RED per fonte)
 - `data/catalog/catalog_signals.json` — segnali drift/inventory per singola fonte
 - `data/catalog/CATALOG_WATCH_REPORT.md` — report leggibile prodotto dalla CI ogni lunedì
-- `data/portal_scout/discovered_portals.parquet` — candidati discovery (parquet completo)
-- `data/portal_scout/discovered_portals_summary.json` — sommario nuovi portali strutturati
-- `data/portal_scout/portal_scout_shortlist.md` — shortlist leggibile per review umana
 - `data/catalog_inventory/generated/catalog_inventory_latest.parquet` — oltre 6000 item da INPS, OpenBDAP, ISPRA, Camera e altri
+- `data/catalog_inventory/generated/source_check_results.parquet` — scoring completo degli item
 
-I tre JSON (`radar_summary`, `catalog_signals`, `discovered_portals_summary`) sono consumati da **agent-context-builder** per includere lo stato delle fonti nel contesto operativo degli agenti AI. `radar_summary` presidia la salute di rete/HTTP; `catalog_signals` resta solo sul drift inventariale.
+I tre JSON (`radar_summary`, `catalog_signals`) sono consumati da **agent-context-builder** per includere lo stato delle fonti nel contesto operativo degli agenti AI.
 
 ## Struttura
 
