@@ -71,7 +71,6 @@ jobs:
           python scripts/bulk_source_check.py \
             --only-with-title \
             --include-no-url \
-            --max-age-days 7 \
             --workers 8
 
       - name: Upload source-check results to GCS

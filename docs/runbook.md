@@ -92,16 +92,6 @@ Disciplina:
 - in assenza di GCS il workflow resta valido: usa baseline locale vuota e salta i passaggi opzionali di storage/diff
 - il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`
 
-## Portal scout
-
-Il workflow `portal-scout.yml` ha tre esiti operativi per lo scout strutturale:
-
-- `ok` se `portal_scout.py` completa il run
-- `degraded` se lo script esce con errore ma produce comunque JSON utilizzabili in `scout_results/`
-- `failed` se lo script non produce output utilizzabile; in questo caso il job fallisce
-
-`skip_discovery=true` richiede GCS configurato, perché il parquet di discovery viene recuperato da storage invece di essere ricostruito via DDG.
-
 ## Ordine consigliato
 
 1. esegui `radar`
