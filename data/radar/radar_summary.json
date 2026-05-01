@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-04-30T08:37:02.101737+00:00",
-  "probe_date": "2026-04-30",
+  "generated_at": "2026-05-01T08:26:22.759631+00:00",
+  "probe_date": "2026-05-01",
   "sources_total": 14,
   "status_counts": {
-    "GREEN": 8,
+    "GREEN": 7,
     "YELLOW": 3,
-    "RED": 3
+    "RED": 4
   },
   "sources": [
     {
@@ -14,7 +14,7 @@
       "protocol": "sdmx",
       "observation_mode": "catalog-watch",
       "http_code": "-",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": [
         "istat-gini-regionale",
         "istat-housing-crowding",
@@ -27,7 +27,7 @@
       "protocol": "ckan",
       "observation_mode": "radar-only",
       "http_code": "403",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": []
     },
     {
@@ -36,7 +36,7 @@
       "protocol": "ckan",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": [
         "inps-pensioni"
       ]
@@ -47,7 +47,7 @@
       "protocol": "ckan",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": [
         "dipendenti-pubblici",
         "bdap-lea"
@@ -59,7 +59,7 @@
       "protocol": "html",
       "observation_mode": "catalog-watch",
       "http_code": "-",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": []
     },
     {
@@ -68,7 +68,7 @@
       "protocol": "aem",
       "observation_mode": "radar-only",
       "http_code": "200",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": []
     },
     {
@@ -77,18 +77,18 @@
       "protocol": "html",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": [
         "mim-alunni-corso-eta"
       ]
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
       "observation_mode": "catalog-watch",
-      "http_code": "200",
-      "last_check": "2026-04-30",
+      "http_code": "503",
+      "last_check": "2026-05-01",
       "datasets_in_use": []
     },
     {
@@ -97,7 +97,7 @@
       "protocol": "sparql",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": []
     },
     {
@@ -106,7 +106,7 @@
       "protocol": "sparql",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": []
     },
     {
@@ -115,7 +115,7 @@
       "protocol": "ckan",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": []
     },
     {
@@ -124,7 +124,7 @@
       "protocol": "ckan",
       "observation_mode": "catalog-watch",
       "http_code": "200",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": []
     },
     {
@@ -133,7 +133,7 @@
       "protocol": "ckan",
       "observation_mode": "catalog-watch",
       "http_code": "-",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": []
     },
     {
@@ -142,7 +142,7 @@
       "protocol": "rest",
       "observation_mode": "catalog-watch",
       "http_code": "403",
-      "last_check": "2026-04-30",
+      "last_check": "2026-05-01",
       "datasets_in_use": [
         "opencoesione-pagamenti-ue-2014-2020"
       ]
