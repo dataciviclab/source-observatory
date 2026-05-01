@@ -850,8 +850,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--limit-per-source", type=int, default=None, metavar="N",
                    help="Massimo N item per source_id (applicato prima del check)")
     p.add_argument("--workers", type=int, default=MAX_WORKERS)
-    p.add_argument("--max-age-days", type=int, default=7,
-                   help="Non ri-controllare item con check_timestamp più recente di N giorni (default: 7)")
+    p.add_argument("--max-age-days", type=int, default=None,
+                   help="Non ri-controllare item con check_timestamp più recente di N giorni. Default: None (nessun skip — tutti gli item vengono controllati)")
     p.add_argument("--include-no-url", dest="only_with_url", action="store_false", default=True,
                    help="Includi anche item senza URL nel catalogo (verranno comunque arricchiti via API)")
     p.add_argument("--only-with-title", action="store_true", default=False,
@@ -936,8 +936,8 @@ def main() -> None:
         if "check_timestamp" in existing.columns:
             existing["check_timestamp"] = pd.to_datetime(existing["check_timestamp"], utc=True)
 
-        # Filtra item da non ri-controllare
-        if "item_id" in existing.columns:
+        # Filtra item da non ri-controllare (solo se --max-age-days è specificato)
+        if args.max_age_days is not None and "item_id" in existing.columns:
             now = pd.Timestamp.now(tz="UTC")
             cutoff = now - pd.Timedelta(days=args.max_age_days)
 
@@ -984,8 +984,11 @@ def main() -> None:
                 logger.info("  Skipped %d items checked in last %d days", skipped, args.max_age_days)
             logger.info("  %d items to check", len(df_to_check))
             df = df_to_check
-        else:
+        elif "item_id" not in existing.columns:
             logger.warning("  existing has no 'item_id' column, skipping dedup")
+        else:
+            # max_age_days is None — nessun skip, controlla tutto
+            logger.info("  --max-age-days not specified, checking all %d items", len(df))
 
     if df.empty:
         logger.info("No new items to check. Exiting.")
