@@ -14,6 +14,10 @@ import pandas as pd
 from collectors import dispatch, supported_protocols
 from collectors.base import inventory_cfg, now_utc_iso
 from _constants import REGISTRY_PATH, load_registry, stale_reason_from_exception
+
+# Backwards-compatible alias for tests
+_error_to_stale_reason = stale_reason_from_exception
+
 from collectors.ckan import (
     collect_ckan_inventory_via_search,
     collect_ckan_inventory_via_current_list,
