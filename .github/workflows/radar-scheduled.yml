@@ -44,7 +44,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/radar/STATUS.md data/radar/sources_registry.yaml data/radar/radar_summary.json
+          git add data/radar/STATUS.md data/radar/sources_registry.yaml data/radar/radar_summary.json data/radar/radar_history.json
           git diff --cached --quiet && exit 0
           git commit -m "chore: refresh radar status"
           git push

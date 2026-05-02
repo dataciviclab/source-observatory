@@ -10,11 +10,9 @@ from typing import Any, cast
 
 import duckdb
 import pandas as pd
-import yaml
 
 from collectors import dispatch, supported_protocols
 from collectors.base import inventory_cfg, now_utc_iso
-# Re-exporting functions for tests (monkeypatching support)
 from collectors.ckan import (
     collect_ckan_inventory_via_search,
     collect_ckan_inventory_via_current_list,
@@ -25,14 +23,14 @@ from collectors.ckan import (
 from collectors.sparql import collect as _collect_sparql_inventory
 from collectors.sdmx import collect as _collect_sdmx_inventory
 
+from _constants import REGISTRY_PATH, load_registry, stale_reason_from_exception
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
-DEFAULT_OUT_DIR = REPO_ROOT / "data" / "catalog_inventory" / "generated"
-DEFAULT_OUT_PARQUET = "catalog_inventory_latest.parquet"
-DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
+# Backwards-compatible alias for tests
+_error_to_stale_reason = stale_reason_from_exception
+
 
 logger = logging.getLogger(__name__)
+
 
 def collect_ckan_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: str):
     res = _collect_ckan_inventory(
@@ -46,18 +44,21 @@ def collect_ckan_inventory(source_id: str, source_cfg: dict[str, Any], captured_
     )
     return res.rows, res.warning
 
+
 def collect_sparql_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: str):
     res = _collect_sparql_inventory(source_id, source_cfg, captured_at)
     return res.rows, res.summary
+
 
 def collect_sdmx_inventory(source_id: str, source_cfg: dict[str, Any], captured_at: str):
     res = _collect_sdmx_inventory(source_id, source_cfg, captured_at)
     return res.rows, res.warning
 
 
-def load_registry() -> dict[str, Any]:
-    with REGISTRY_PATH.open("r", encoding="utf-8") as fh:
-        return yaml.safe_load(fh)
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_OUT_DIR = REPO_ROOT / "data" / "catalog_inventory" / "generated"
+DEFAULT_OUT_PARQUET = "catalog_inventory_latest.parquet"
+DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
 
 
 def _collect_source(
@@ -96,24 +97,6 @@ def parse_args() -> argparse.Namespace:
         help="Limita il build a queste source_id (spazio-separato).",
     )
     return parser.parse_args()
-
-
-def _error_to_stale_reason(exc: Exception) -> str:
-    """Map exception to stale_reason tag."""
-    msg = str(exc).lower()
-    if "500" in msg or "internal server error" in msg:
-        return "source_500"
-    if "503" in msg or "service unavailable" in msg:
-        return "source_503"
-    if "connecttimeout" in msg or "connection timed out" in msg:
-        return "timeout"
-    if "ssl_error" in msg or "sslv3" in msg or "tls" in msg:
-        return "ssl_error"
-    if "connection error" in msg or "connectionerror" in msg:
-        return "connection_error"
-    if "resolution error" in msg or "resolutionerror" in msg or "name or service not known" in msg:
-        return "dns_error"
-    return "unknown"
 
 
 def main() -> None:
@@ -209,7 +192,7 @@ def main() -> None:
                 stale_rows = existing_df[existing_df["source_id"] == source_id].copy()
                 if not stale_rows.empty:
                     stale_rows["source_status"] = "stale"
-                    stale_rows["stale_reason"] = _error_to_stale_reason(exc)
+                    stale_rows["stale_reason"] = stale_reason_from_exception(exc)
                     all_rows.extend(cast(list[dict[str, Any]], stale_rows.to_dict(orient="records")))
             continue
 

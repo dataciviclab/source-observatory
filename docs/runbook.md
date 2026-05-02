@@ -57,7 +57,7 @@ Usa `catalog-watch` quando la domanda è:
 
 Modello v0:
 
-- i segnali vengono prodotti automaticamente dal workflow schedulato `catalog-inventory.yml`
+- i segnali vengono prodotti automaticamente dal workflow schedulato `observatory.yml` (ogni lunedì 03:15)
 - il follow-up resta `human-run`: il report non sostituisce la review umana sui cambi rilevanti
 - il run manuale va usato quando serve un check metodologicamente difendibile fuori schedule
 - gli output canonici restano `CATALOG_WATCH_REPORT.md` e `catalog_signals.json`
@@ -81,7 +81,7 @@ Output (non versionati nel repo):
 - `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
 - `data/catalog_inventory/generated/catalog_inventory_report.json`
 
-Per ottenere l'ultimo output senza rieseguire: artifact del workflow `catalog-inventory` su GitHub Actions, oppure GCS se configurato.
+Per ottenere l'ultimo output senza rieseguire: artifact del workflow `observatory` su GitHub Actions, oppure GCS se configurato.
 
 Disciplina:
 

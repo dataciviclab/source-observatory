@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 import json
@@ -10,16 +11,24 @@ from pathlib import Path
 from typing import Any
 
 import requests
-import yaml
 
-from _constants import SDMX_RETRYABLE_STATUS_CODES, SDMX_RETRY_DELAYS_SECONDS
+from _constants import (
+    SDMX_RETRYABLE_STATUS_CODES,
+    SDMX_RETRY_DELAYS_SECONDS,
+    REGISTRY_PATH,
+    RADAR_SUMMARY_PATH,
+    RADAR_HISTORY_PATH,
+    load_registry,
+    save_registry,
+    load_radar_history,
+    save_radar_history,
+    append_radar_probe,
+)
 from collectors.base import SslFallbackFailed, observatory_ssl_fallback_get
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
-REGISTRY_PATH = WORKSPACE_ROOT / "data" / "radar" / "sources_registry.yaml"
 STATUS_PATH = WORKSPACE_ROOT / "data" / "radar" / "STATUS.md"
-SUMMARY_PATH = WORKSPACE_ROOT / "data" / "radar" / "radar_summary.json"
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 TIMEOUT_SECONDS = 10
 
@@ -32,19 +41,6 @@ class ProbeResult:
     ssl_fallback_used: bool = False
     final_url: str | None = None
     content_type: str | None = None
-
-
-def load_registry(path: Path) -> dict[str, dict[str, Any]]:
-    with path.open("r", encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
-    if not isinstance(data, dict):
-        raise ValueError(f"Registry YAML at {path} must contain a top-level mapping.")
-    return data
-
-
-def save_registry(path: Path, registry: dict[str, dict[str, Any]]) -> None:
-    with path.open("w", encoding="utf-8") as fh:
-        yaml.safe_dump(registry, fh, sort_keys=False, allow_unicode=True)
 
 
 def classify_response(status_code: int) -> str:
@@ -357,48 +353,54 @@ def build_radar_summary(
     registry: dict[str, dict[str, Any]],
     results: dict[str, ProbeResult],
     probe_date: str,
-) -> dict[str, Any]:
-    """Build compact radar summary JSON consumable by agent-context-builder.
+    history: dict | None = None,
+) -> tuple[dict[str, Any], list[dict]]:
+    """Build compact radar summary JSON and sources list for history.
 
-    Schema:
-    {
-        "generated_at": ISO8601 timestamp,
-        "probe_date": YYYY-MM-DD,
-        "sources_total": N,
-        "status_counts": { "GREEN": N, "YELLOW": N, "RED": N },
-        "sources": [
-            {
-                "id": source_id,
-                "status": GREEN|YELLOW|RED,
-                "protocol": protocol,
-                "observation_mode": radar-only|catalog-watch|monitor-active,
-                "http_code": "200" | "-",
-                "last_check": YYYY-MM-DD,
-                "datasets_in_use": [...]
-            }
-        ]
-    }
+    If history is provided, computes RED/YELLOW streak from previous probes.
+    Returns (summary_dict, sources_list) where sources_list is suitable for
+    append_radar_probe.
     """
     generated_at = datetime.now(timezone.utc).isoformat()
     _missing = ProbeResult(status="RED", http_code="-", note="probe result missing")
     status_counts = Counter(result.status for result in results.values())
     sources_list = []
+    persistent_red = 0
+
+    probes = (history or {}).get("probes", [])
+    # Reverse: index 0 = most recent (newest), so we traverse newest→oldest.
+    # Streak increments while consecutive RED; breaks on first non-RED.
+    recent_probes = list(reversed(probes)) if probes else []
 
     for source_id, meta in registry.items():
         result = results.get(source_id) or _missing
-        sources_list.append(
-            {
-                "id": source_id,
-                "status": result.status,
-                "protocol": meta.get("protocol", "-"),
-                "observation_mode": meta.get("observation_mode", "radar-only"),
-                "http_code": result.http_code,
-                "last_check": probe_date,
-                "datasets_in_use": meta.get("datasets_in_use") or [],
-            }
-        )
 
-    return {
+        # Compute RED streak
+        streak = 0
+        current_is_red = result.status == "RED"
+        for probe in recent_probes:
+            src = next((s for s in probe.get("sources", []) if s["id"] == source_id), None)
+            if src and src.get("status") == "RED":
+                streak += 1
+            else:
+                break
+
+        # Only count as persistent if current status is RED and streak >= 2
+        if current_is_red and streak >= 2:
+            persistent_red += 1
+
+        entry = {
+            "id": source_id,
+            "status": result.status,
+            "protocol": meta.get("protocol", "-"),
+            "http_code": result.http_code,
+            "note": result.note,
+        }
+        if streak >= 2:
+            entry["red_streak"] = streak
+        sources_list.append(entry)
+
+    summary = {
         "generated_at": generated_at,
         "probe_date": probe_date,
         "sources_total": len(registry),
@@ -407,8 +409,10 @@ def build_radar_summary(
             "YELLOW": status_counts.get("YELLOW", 0),
             "RED": status_counts.get("RED", 0),
         },
+        "persistent_red": persistent_red,
         "sources": sources_list,
     }
+    return summary, sources_list
 
 
 def parse_args() -> argparse.Namespace:
@@ -420,7 +424,34 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Run probes without writing YAML or STATUS.md.",
     )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=4,
+        help="Number of parallel probe workers (default: 4).",
+    )
     return parser.parse_args()
+
+
+def _probe_one(
+    portal: str, base_url: str | None
+) -> tuple[str, ProbeResult]:
+    """Worker for ThreadPoolExecutor — probes a single portal."""
+    if not base_url:
+        return portal, ProbeResult(
+            status="RED",
+            http_code="-",
+            note="Missing base_url in registry entry",
+        )
+    try:
+        result = probe_url(base_url)
+    except Exception as exc:
+        result = ProbeResult(
+            status="RED",
+            http_code="-",
+            note=f"Probe exception non gestita: {exc.__class__.__name__}: {exc}",
+        )
+    return portal, result
 
 
 def main() -> int:
@@ -428,44 +459,51 @@ def main() -> int:
     registry = load_registry(REGISTRY_PATH)
     probe_date = date.today().isoformat()
 
+    # Parallel probe — each portal is an independent HTTP call
     results: dict[str, ProbeResult] = {}
-    for portal, meta in registry.items():
-        base_url = meta.get("base_url")
-        if not base_url:
-            results[portal] = ProbeResult(
-                status="RED",
-                http_code="-",
-                note="Missing base_url in registry entry",
-            )
-            continue
-        try:
-            results[portal] = probe_url(str(base_url))
-        except Exception as exc:
-            results[portal] = ProbeResult(
-                status="RED",
-                http_code="-",
-                note=f"Probe exception non gestita: {exc.__class__.__name__}: {exc}",
-            )
+    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+        futures = {
+            executor.submit(_probe_one, portal, meta.get("base_url")): portal
+            for portal, meta in registry.items()
+        }
+        for future in as_completed(futures):
+            portal, result = future.result()
+            results[portal] = result
 
     report = build_status_report(registry, results, probe_date)
-    summary = build_radar_summary(registry, results, probe_date)
 
     if args.dry_run:
         print(report)
+        # Build summary without history for dry-run output
+        summary, _ = build_radar_summary(registry, results, probe_date)
         print("\n--- SUMMARY JSON ---")
         print(json.dumps(summary, indent=2, ensure_ascii=False))
         return 0
 
     update_last_probed(registry, probe_date)
+
+    # Load history and append probe
+    history = load_radar_history()
+    # Build sources_list with streak data from history
+    _, sources_list = build_radar_summary(registry, results, probe_date, history)
+    history = append_radar_probe(history, probe_date, sources_list)
+
+    # Rebuild summary with updated history for final output
+    summary, _ = build_radar_summary(registry, results, probe_date, history)
+
     STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
     STATUS_PATH.write_text(report, encoding="utf-8")
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(
+    RADAR_SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    RADAR_SUMMARY_PATH.write_text(
         json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
     )
+    save_radar_history(history)
     save_registry(REGISTRY_PATH, registry)
     print(f"Wrote {STATUS_PATH}")
-    print(f"Wrote {SUMMARY_PATH}")
+    print(f"Wrote {RADAR_SUMMARY_PATH}")
+    if summary.get("persistent_red"):
+        print(f"⚠️  Persistent RED: {summary['persistent_red']} fonti ({', '.join(s['id'] for s in summary['sources'] if s.get('red_streak'))})")
+    print(f"Wrote {RADAR_HISTORY_PATH} ({len(history['probes'])} probes)")
     print(f"Updated {REGISTRY_PATH}")
     return 0
 

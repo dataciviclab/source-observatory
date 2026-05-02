@@ -4,6 +4,8 @@ Genera catalog_signals.json e CATALOG_WATCH_REPORT.md da catalog_inventory_repor
 
 Confronta con il report precedente (se disponibile) per rilevare
 solo drift e inventory: la salute pura della connessione è delegata a radar_summary.
+Se radar è RED ma l'inventario è ok, segnala endpoint_unstable per avvisare
+che i dati potrebbero essere stale.
 """
 
 from __future__ import annotations
@@ -14,6 +16,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORT = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_report.json"
+DEFAULT_RADAR = REPO_ROOT / "data" / "radar" / "radar_summary.json"
 DEFAULT_OUT = REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
 DEFAULT_REPORT_OUT = REPO_ROOT / "data" / "catalog" / "CATALOG_WATCH_REPORT.md"
 
@@ -26,6 +29,7 @@ def _classify(
     source_id: str,
     info: dict,
     prev_info: dict | None,
+    radar_status: str | None = None,
 ) -> dict:
     status = info.get("status")
     protocol = info.get("protocol", "n/d")
@@ -125,16 +129,21 @@ def _classify(
         method = info.get("method", "n/d")
         prev_status = prev_info.get("status") if prev_info else None
 
-        # Recovery di connettività ignorata: il radar la presidia.
-        if prev_status == "error":
+        # Bridge radar: endpoint unstable ma inventario ok → dati potrebbero essere stale.
+        # Radar RED senza inventario significa che l'ultimo run potrebbe essere cached/stale.
+        # Non applicare se la sorgente stava già in errore (recovery presidia la transizione).
+        if radar_status == "RED" and prev_status != "error":
             return {
                 "source": source_id,
                 "protocol": protocol,
-                "signal_type": "no signal",
-                "result": "stabile",
+                "signal_type": "endpoint unstable",
+                "result": "endpoint unstable",
                 "metric_value": rows,
-                "detail": f"{rows} item ({method}), connettività presidiata da radar_summary.",
-                "suggested_action": "nessuna",
+                "detail": (
+                    f"{rows} item ({method}), ma radar RED — endpoint irraggiungibile o errore. "
+                    "Dati potrebbero essere stale. Verificare radar_summary.json."
+                ),
+                "suggested_action": "verificare radar RED; non fidarsi dell'inventario se non confermato da run recente",
             }
 
         # Inventory change — solo se il metodo di conteggio coincide (policy comparabilità)
@@ -190,14 +199,16 @@ def _classify(
     }
 
 
-def build_signals(report: dict, prev_report: dict | None) -> dict:
+def build_signals(report: dict, prev_report: dict | None, radar_summary: dict | None = None) -> dict:
     sources = report.get("sources", {})
     prev_sources = (prev_report or {}).get("sources", {})
+    radar_sources = {s["id"]: s["status"] for s in (radar_summary or {}).get("sources", [])}
 
     signals = []
     for source_id, info in sources.items():
         prev_info = prev_sources.get(source_id)
-        signals.append(_classify(source_id, info, prev_info))
+        radar_status = radar_sources.get(source_id)
+        signals.append(_classify(source_id, info, prev_info, radar_status))
 
     # Rimuovi metric_value None per pulizia (campi opzionali)
     for s in signals:
@@ -215,6 +226,7 @@ _SIGNAL_EMOJI = {
     "inventory change": "📦",
     "structural drift": "⚠️",
     "missing_data": "❓",
+    "endpoint unstable": "🚨",
     "follow-up candidate": "🔍",
     "no signal": "✅",
 }
@@ -227,6 +239,11 @@ def build_watch_report(signals: dict) -> str:
 
     actionable = [s for s in signal_list if s.get("signal_type") not in ("no signal", "")]
     stable = [s for s in signal_list if s.get("signal_type") in ("no signal", "")]
+
+    # endpoint unstable is actionable (radar RED but inventory OK — data may be stale)
+    unstable = [s for s in signal_list if s.get("signal_type") == "endpoint unstable"]
+    if unstable:
+        actionable = [s for s in actionable if s.get("signal_type") != "endpoint unstable"] + unstable
 
     lines = [
         "# Catalog Watch Report",
@@ -281,6 +298,12 @@ def main() -> None:
         help="Path al report inventory precedente (opzionale, per rilevare regressioni).",
     )
     parser.add_argument(
+        "--radar",
+        type=Path,
+        default=DEFAULT_RADAR,
+        help="Path al radar_summary.json (opzionale, per bridge radar-signals).",
+    )
+    parser.add_argument(
         "--out",
         type=Path,
         default=DEFAULT_OUT,
@@ -301,7 +324,11 @@ def main() -> None:
         if not prev_report.get("sources"):
             prev_report = None  # primo run
 
-    signals = build_signals(report, prev_report)
+    radar_summary = None
+    if args.radar.exists():
+        radar_summary = json.loads(args.radar.read_text(encoding="utf-8"))
+
+    signals = build_signals(report, prev_report, radar_summary)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(signals, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

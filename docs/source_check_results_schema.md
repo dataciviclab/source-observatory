@@ -86,4 +86,4 @@ score finale: max(0, min(100, somma))
 
 - Default: `data/catalog_inventory/generated/source_check_results.parquet`
 - Snapshots GCS: `gs://<CATALOG_INVENTORY_GCS_PREFIX>/source-check/snapshots/`
-- Artifact Actions: disponibile come `source-check-results` su ogni run del workflow `source-check.yml`
+- Artifact Actions: disponibile come `observatory-results` su ogni run del workflow `observatory.yml`
