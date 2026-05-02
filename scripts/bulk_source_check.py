@@ -135,10 +135,10 @@ def _http_head_with_retry(
     url: str,
     session: Optional[requests.Session] = None,
     max_retries: int = 1,
-) -> tuple[Optional[int], bool, str]:
-    """HTTP HEAD with 1 retry on transient errors (timeout, 5xx)."""
+) -> tuple[Optional[int], bool, str, Optional[str]]:
+    """HTTP HEAD with 1 retry on transient errors. Returns (status, reachable, note, content_type)."""
     if not isinstance(url, str) or not url.startswith("http"):
-        return None, False, "url_missing_or_invalid"
+        return None, False, "url_missing_or_invalid", None
 
     last_error = ""
     for attempt in range(max_retries + 1):
@@ -154,23 +154,37 @@ def _http_head_with_retry(
                 time.sleep(0.5 * (attempt + 1))
                 continue
 
+            # Estrarre Content-Type dalla response
+            ct = resp.headers.get("Content-Type", "") or ""
+            content_type = None
+            for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
+                if fmt.lower() in ct.lower():
+                    content_type = fmt
+                    break
+            # application/vnd.ms-excel → XLS; spreadsheetml → XLSX
+            if content_type is None:
+                if "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
+                    content_type = "XLS"
+                elif "spreadsheetml" in ct.lower():
+                    content_type = "XLSX"
+
             reachable = resp.status_code < 400
-            return resp.status_code, reachable, ""
+            return resp.status_code, reachable, "", content_type
 
         except requests.exceptions.Timeout:
             if attempt < max_retries:
                 last_error = "timeout"
                 time.sleep(0.5 * (attempt + 1))
                 continue
-            return None, False, "timeout"
+            return None, False, "timeout", None
         except requests.exceptions.ConnectionError:
-            return None, False, "connection_error"
+            return None, False, "connection_error", None
         except requests.exceptions.SSLError:
-            return None, False, "ssl_error"
+            return None, False, "ssl_error", None
         except Exception as exc:
-            return None, False, str(exc)[:120]
+            return None, False, str(exc)[:120], None
 
-    return None, False, last_error or "transient_error"
+    return None, False, last_error or "transient_error", None
 
 
 def _content_type_format(url: str, session: Optional[requests.Session] = None) -> Optional[str]:
@@ -183,13 +197,16 @@ def _content_type_format(url: str, session: Optional[requests.Session] = None) -
         else:
             resp = observatory_head(url, timeout=HTTP_TIMEOUT)
         ct = resp.headers.get("Content-Type", "") or ""
-        # application/json; charset=utf-8 → JSON
-        for fmt in ("JSON", "CSV", "XLSX", "XLS", "XML", "PDF", "SDMX", "PARQUET"):
+        # application/json → JSON; CSV; XLSX; XML; PDF; SDMX; PARQUET
+        for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
             if fmt.lower() in ct.lower():
                 return fmt
-        # application/vnd.ms-excel → XLS
-        if "excel" in ct.lower() or "spreadsheetml" in ct.lower():
+        # application/vnd.ms-excel → XLS (legacy binary format)
+        if "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
             return "XLS"
+        # application/vnd.openxmlformats...spreadsheetml.sheet → XLSX (OOXML)
+        if "spreadsheetml" in ct.lower():
+            return "XLSX"
     except Exception:
         pass
     return None
@@ -936,10 +953,10 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
     if enrich["enrich_method"] in ("sdmx_dataflow_annotations", "inventory_only"):
         url_to_check = row.get("landing_page") or row.get("distribution_url") or url_to_check
 
-    http_status, reachable, note = _http_head_with_retry(url_to_check or "", session=session)
+    http_status, reachable, note, content_type = _http_head_with_retry(url_to_check or "", session=session)
 
-    # Content-type format as primary detection
-    fmt_from_content = _content_type_format(url_to_check, session=session) if url_to_check else None
+    # Content-type format as primary detection (now unified in _http_head_with_retry)
+    fmt_from_content = content_type
 
     return {
         "check_timestamp": check_ts,
@@ -1112,12 +1129,12 @@ def main() -> None:
 
         # Sample from each group
         if len(no_format) > target_no_format:
-            no_format_sample = no_format.sample(n=target_no_format, random_state=42)
+            no_format_sample = no_format.sample(n=target_no_format, random_state=None)
         else:
             no_format_sample = no_format
 
         if len(has_format) > target_has_format:
-            has_format_sample = has_format.sample(n=target_has_format, random_state=42)
+            has_format_sample = has_format.sample(n=target_has_format, random_state=None)
         else:
             has_format_sample = has_format
 
