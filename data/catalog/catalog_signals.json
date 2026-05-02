@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-05-02T13:24:09+00:00",
+  "captured_at": "2026-05-02T18:26:58+00:00",
   "sources_checked": 12,
   "signals": [
     {
@@ -13,11 +13,11 @@
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
-      "signal_type": "inventory change",
-      "result": "inventory change",
+      "signal_type": "endpoint unstable",
+      "result": "endpoint unstable",
       "metric_value": 4835,
-      "detail": "4835 item (dataflow_count), delta +1 rispetto al run precedente (4834).",
-      "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset"
+      "detail": "4835 item (dataflow_count), ma radar RED — endpoint irraggiungibile o errore. Dati potrebbero essere stale. Verificare radar_summary.json.",
+      "suggested_action": "verificare radar RED; non fidarsi dell'inventario se non confermato da run recente"
     },
     {
       "source": "inps",
@@ -650,19 +650,18 @@
     {
       "source": "dati_camera",
       "protocol": "sparql",
-      "signal_type": "no signal",
-      "result": "stabile",
+      "signal_type": "endpoint unstable",
+      "result": "endpoint unstable",
       "metric_value": 104,
-      "detail": "104 item (sparql_query), connettività presidiata da radar_summary.",
-      "suggested_action": "nessuna"
+      "detail": "104 item (sparql_query), ma radar RED — endpoint irraggiungibile o errore. Dati potrebbero essere stale. Verificare radar_summary.json.",
+      "suggested_action": "verificare radar RED; non fidarsi dell'inventario se non confermato da run recente"
     },
     {
       "source": "dati_cultura",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 213,
-      "detail": "213 item (sparql_query), in linea con la baseline.",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {

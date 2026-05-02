@@ -1,15 +1,8 @@
 # Catalog Watch Report
 
-_Generato: 2026-05-02T13:24:09+00:00 — 12 fonti controllate_
+_Generato: 2026-05-02T18:26:58+00:00 — 12 fonti controllate_
 
 ## Segnali attivi
-
-### 📦 `istat_sdmx` — inventory change
-
-- **Protocollo**: sdmx
-- **Dettaglio**: 4835 item (dataflow_count), delta +1 rispetto al run precedente (4834).
-- **Item**: 4835
-- **Azione**: verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset
 
 ### • `dati_salute` — csv_magnet
 
@@ -24,8 +17,22 @@ _Generato: 2026-05-02T13:24:09+00:00 — 12 fonti controllate_
 - **Item**: 1116
 - **Azione**: catalog-watch-ready
 
+### 🚨 `istat_sdmx` — endpoint unstable
+
+- **Protocollo**: sdmx
+- **Dettaglio**: 4835 item (dataflow_count), ma radar RED — endpoint irraggiungibile o errore. Dati potrebbero essere stale. Verificare radar_summary.json.
+- **Item**: 4835
+- **Azione**: verificare radar RED; non fidarsi dell'inventario se non confermato da run recente
+
+### 🚨 `dati_camera` — endpoint unstable
+
+- **Protocollo**: sparql
+- **Dettaglio**: 104 item (sparql_query), ma radar RED — endpoint irraggiungibile o errore. Dati potrebbero essere stale. Verificare radar_summary.json.
+- **Item**: 104
+- **Azione**: verificare radar RED; non fidarsi dell'inventario se non confermato da run recente
+
 ## Fonti stabili / skipped
 
-_9 fonti senza segnali inventariali in questo run._
+_8 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
