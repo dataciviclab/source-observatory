@@ -1154,8 +1154,8 @@ def main() -> None:
         if "check_timestamp" in existing.columns:
             existing["check_timestamp"] = pd.to_datetime(existing["check_timestamp"], utc=True)
 
-        # Filtra item da non ri-controllare
-        if "item_id" in existing.columns:
+        # Filtra item da non ri-controllare (solo se max_age_days è specificato)
+        if args.max_age_days is not None and "item_id" in existing.columns:
             now = pd.Timestamp.now(tz="UTC")
             cutoff = now - pd.Timedelta(days=args.max_age_days)
 
@@ -1202,8 +1202,10 @@ def main() -> None:
                 logger.info("  Skipped %d items checked in last %d days", skipped, args.max_age_days)
             logger.info("  %d items to check", len(df_to_check))
             df = df_to_check
-        else:
+        elif "item_id" not in existing.columns:
+            # skip dedup se no item_id
             logger.warning("  existing has no 'item_id' column, skipping dedup")
+        # else: max_age_days=None → non skippare nessuno, check all (df unchanged)
 
     if df.empty:
         logger.info("No new items to check. Exiting.")

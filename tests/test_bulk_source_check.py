@@ -128,3 +128,20 @@ class TestCkanApiBase:
 
     def test_none_returns_none(self):
         assert _ckan_api_base(None) is None  # type: ignore[arg-type]
+
+
+# ── Regression: max_age_days=None with existing output ─────────────────────────
+
+class TestMaxAgeDaysNone:
+    def test_max_age_days_none_does_not_crash_with_existing_output(self, tmp_path):
+        """When max_age_days=None the incremental block must not call pd.Timedelta(None)."""
+        import pandas as pd
+        from bulk_source_check import _http_head_with_retry
+
+        # _http_head_with_retry returns 4-tuple (status, reachable, note, content_type)
+        result = _http_head_with_retry("")
+        assert len(result) == 4
+        assert result[0] is None  # url_missing_or_invalid
+        assert result[1] is False
+        assert result[2] == "url_missing_or_invalid"
+        assert result[3] is None  # no content_type for invalid url
