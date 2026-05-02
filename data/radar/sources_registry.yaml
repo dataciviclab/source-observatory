@@ -207,7 +207,8 @@ dati_cultura:
     limit: 5000
     timeout_seconds: 90
   verdict: go
-  note: Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check completato con verdict catalog-watch.
+  note: Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check completato
+    con verdict catalog-watch.
   datasets_in_use: []
 ispra_linked_data:
   source_kind: catalog

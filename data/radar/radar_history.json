@@ -1,0 +1,108 @@
+{
+  "probes": [
+    {
+      "probe_date": "2026-05-02",
+      "captured_at": "2026-05-02T18:17:03.900321+00:00",
+      "sources": [
+        {
+          "id": "istat_sdmx",
+          "status": "RED",
+          "protocol": "sdmx",
+          "http_code": "-",
+          "note": "Probe exception non gestita: ReadTimeout: HTTPSConnectionPool(host='esploradati.istat.it', port=443): Read timed out. (read timeout=10)"
+        },
+        {
+          "id": "anac",
+          "status": "YELLOW",
+          "protocol": "ckan",
+          "http_code": "403",
+          "note": null
+        },
+        {
+          "id": "inps",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "openbdap",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "dati_salute",
+          "status": "RED",
+          "protocol": "html",
+          "http_code": "-",
+          "note": "SSL verify failed; fallback connection error (SSLError)"
+        },
+        {
+          "id": "inail_opendata",
+          "status": "GREEN",
+          "protocol": "aem",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "mim_opendata",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "dati_camera",
+          "status": "RED",
+          "protocol": "sparql",
+          "http_code": "503",
+          "note": null
+        },
+        {
+          "id": "dati_cultura",
+          "status": "RED",
+          "protocol": "sparql",
+          "http_code": "-",
+          "note": "Probe exception non gestita: ConnectTimeout: HTTPSConnectionPool(host='dati.cultura.gov.it', port=443): Max retries exceeded with url: /sparql (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati.cultura.gov.it', port=443) at 0x7fbb27cf9dc0>, 'Connection to dati.cultura.gov.it timed out. (connect timeout=10)'))"
+        },
+        {
+          "id": "ispra_linked_data",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "consip_open_data",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "lavoro_opendata",
+          "status": "YELLOW",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": "CKAN API returned non-JSON content"
+        },
+        {
+          "id": "mur_ustat",
+          "status": "RED",
+          "protocol": "ckan",
+          "http_code": "-",
+          "note": "Probe exception non gestita: ConnectTimeout: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list?limit=1 (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7fbb27cfa840>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=10)'))"
+        },
+        {
+          "id": "opencoesione",
+          "status": "YELLOW",
+          "protocol": "rest",
+          "http_code": "403",
+          "note": null
+        }
+      ]
+    }
+  ]
+}
