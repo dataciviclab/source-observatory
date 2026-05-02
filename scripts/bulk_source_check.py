@@ -131,24 +131,85 @@ def _infer_years(text: str) -> tuple[Optional[int], Optional[int]]:
 
 # ── HTTP check ────────────────────────────────────────────────────────────────
 
-def _http_head(url: str, session: Optional[requests.Session] = None) -> tuple[Optional[int], bool, str]:
+def _http_head_with_retry(
+    url: str,
+    session: Optional[requests.Session] = None,
+    max_retries: int = 1,
+) -> tuple[Optional[int], bool, str, Optional[str]]:
+    """HTTP HEAD with 1 retry on transient errors. Returns (status, reachable, note, content_type)."""
     if not isinstance(url, str) or not url.startswith("http"):
-        return None, False, "url_missing_or_invalid"
+        return None, False, "url_missing_or_invalid", None
+
+    last_error = ""
+    for attempt in range(max_retries + 1):
+        try:
+            if session is not None:
+                resp = session.head(url, timeout=HTTP_TIMEOUT)
+            else:
+                resp = observatory_head(url, timeout=HTTP_TIMEOUT)
+
+            # 5xx → retry
+            if resp.status_code >= 500 and attempt < max_retries:
+                last_error = f"server_error_{resp.status_code}"
+                time.sleep(0.5 * (attempt + 1))
+                continue
+
+            # Estrarre Content-Type dalla response
+            ct = resp.headers.get("Content-Type", "") or ""
+            content_type = None
+            for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
+                if fmt.lower() in ct.lower():
+                    content_type = fmt
+                    break
+            # application/vnd.ms-excel → XLS; spreadsheetml → XLSX
+            if content_type is None:
+                if "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
+                    content_type = "XLS"
+                elif "spreadsheetml" in ct.lower():
+                    content_type = "XLSX"
+
+            reachable = resp.status_code < 400
+            return resp.status_code, reachable, "", content_type
+
+        except requests.exceptions.Timeout:
+            if attempt < max_retries:
+                last_error = "timeout"
+                time.sleep(0.5 * (attempt + 1))
+                continue
+            return None, False, "timeout", None
+        except requests.exceptions.ConnectionError:
+            return None, False, "connection_error", None
+        except requests.exceptions.SSLError:
+            return None, False, "ssl_error", None
+        except Exception as exc:
+            return None, False, str(exc)[:120], None
+
+    return None, False, last_error or "transient_error", None
+
+
+def _content_type_format(url: str, session: Optional[requests.Session] = None) -> Optional[str]:
+    """Extract format from Content-Type header via a quick HEAD request."""
+    if not isinstance(url, str) or not url.startswith("http"):
+        return None
     try:
         if session is not None:
             resp = session.head(url, timeout=HTTP_TIMEOUT)
         else:
             resp = observatory_head(url, timeout=HTTP_TIMEOUT)
-        reachable = resp.status_code < 400
-        return resp.status_code, reachable, ""
-    except requests.exceptions.SSLError:
-        return None, False, "ssl_error"
-    except requests.exceptions.ConnectionError:
-        return None, False, "connection_error"
-    except requests.exceptions.Timeout:
-        return None, False, "timeout"
-    except Exception as exc:
-        return None, False, str(exc)[:120]
+        ct = resp.headers.get("Content-Type", "") or ""
+        # application/json → JSON; CSV; XLSX; XML; PDF; SDMX; PARQUET
+        for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
+            if fmt.lower() in ct.lower():
+                return fmt
+        # application/vnd.ms-excel → XLS (legacy binary format)
+        if "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
+            return "XLS"
+        # application/vnd.openxmlformats...spreadsheetml.sheet → XLSX (OOXML)
+        if "spreadsheetml" in ct.lower():
+            return "XLSX"
+    except Exception:
+        pass
+    return None
 
 
 # ── CKAN enrichment ───────────────────────────────────────────────────────────
@@ -741,10 +802,135 @@ def _intake_score(
     return score, candidate
 
 
-# ── core ──────────────────────────────────────────────────────────────────────
+# ── inventory-aware enrich ───────────────────────────────────────────────────
+
+def _enrich_with_inventory(
+    row: pd.Series,
+    registry: dict[str, Any],
+    session: Optional[requests.Session] = None,
+) -> dict:
+    """
+    Enrich item using inventory as primary source.
+
+    Rules:
+    - title/format/tags from inventory → use directly (no re-fetch)
+    - Re-enrich via API only if: inventory.format is null AND item looks promising
+    - For CKAN: re-fetch package_show only when inventory has no format AND no title
+    - For SDMX: always use dataflow annotations (inventory has them)
+    - For HTML: use inventory.url + content-type detection
+    """
+    source_id = row.get("source_id") or ""
+    source_cfg = registry.get(source_id, {})
+    protocol = source_cfg.get("protocol") or row.get("protocol") or ""
+    base_url = source_cfg.get("base_url") or row.get("source_url") or ""
+
+    # Inventory has these → use directly
+    inv_title = row.get("title")
+    inv_format = row.get("format")
+    inv_tags = row.get("tags")
+    inv_notes = row.get("notes_excerpt")
+    inv_granularity = row.get("granularity")  # may be None
+
+    _raw_name = row.get("item_name") or row.get("item_id")
+    item_name = "" if pd.isna(_raw_name) else str(_raw_name)
+    _slug = row.get("item_slug")
+    if isinstance(_slug, str) and _slug.strip():
+        item_name = _slug.strip()
+
+    # CKAN: only re-fetch package_show if format AND title are missing in inventory
+    has_valid_slug = bool(isinstance(_slug, str) and _slug.strip() and _slug.strip() != "dataset")
+    needs_ckan_refetch = (
+        protocol == "ckan"
+        and base_url
+        and item_name
+        and has_valid_slug
+        and not inv_format
+        and not inv_title
+    )
+
+    if needs_ckan_refetch:
+        api_base_url = row.get("api_base_url")
+        base_api = api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http") else base_url
+        pkg = _fetch_ckan_package(base_api, item_name, session=session)
+        if pkg:
+            return _parse_ckan_package(pkg)
+
+    # SDMX: always use dataflow annotations (structured, not in inventory format)
+    if protocol == "sdmx" and base_url and item_name:
+        sdmx_base = base_url
+        api_base_url = row.get("api_base_url")
+        if isinstance(api_base_url, str) and api_base_url.startswith("http"):
+            sdmx_base = api_base_url
+        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name, session=session)
+        if xml_root is not None:
+            return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
+
+    # HTML: use inventory url + content-type format detection
+    if protocol == "html":
+        data_url = row.get("url")
+        if isinstance(data_url, str):
+            fmt = _content_type_format(data_url, session=session)
+            if fmt:
+                return {
+                    "enriched_title": inv_title,
+                    "enriched_tags": inv_tags,
+                    "enriched_notes": inv_notes,
+                    "resource_url": data_url,
+                    "resource_format": fmt,
+                    "granularity": inv_granularity,
+                    "year_min": row.get("year_signal"),
+                    "year_max": row.get("year_signal"),
+                    "enrich_method": "content_type",
+                }
+
+    # HTML fallback via direct fetch for CSV/JSON/XLS
+    if protocol == "html":
+        data_url = row.get("url")
+        if isinstance(data_url, str):
+            parsed = urllib.parse.urlparse(data_url)
+            path = parsed.path or ""
+            fmt_ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
+            if fmt_ext in ("csv", "json", "xlsx", "xls"):
+                return _fetch_data_preview(data_url, session=session)
+
+    # HTML fallback: landing_page reachable
+    landing = row.get("landing_page")
+    if isinstance(landing, str) and landing.startswith("http"):
+        if source_cfg.get("scraping_blocked") and not (protocol == "ckan" and not has_valid_slug):
+            result = _EMPTY_ENRICH.copy()
+            result["enrich_method"] = "scraping_blocked"
+            return result
+        # use content-type format from landing page
+        fmt = _content_type_format(landing, session=session)
+        if fmt:
+            return {
+                "enriched_title": inv_title,
+                "enriched_tags": inv_tags,
+                "enriched_notes": inv_notes,
+                "resource_url": landing,
+                "resource_format": fmt,
+                "granularity": inv_granularity,
+                "year_min": row.get("year_signal"),
+                "year_max": row.get("year_signal"),
+                "enrich_method": "content_type_landing",
+            }
+
+    # No re-enrich possible — use inventory as-is
+    return {
+        "enriched_title": inv_title,
+        "enriched_tags": inv_tags,
+        "enriched_notes": inv_notes,
+        "resource_url": row.get("url") or row.get("landing_page"),
+        "resource_format": inv_format,
+        "granularity": inv_granularity,
+        "year_min": row.get("year_signal"),
+        "year_max": row.get("year_signal"),
+        "enrich_method": "inventory_only",
+    }
+
 
 def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session: Optional[requests.Session] = None) -> dict:
-    enrich = _enrich(row, registry, session=session)
+    enrich = _enrich_with_inventory(row, registry, session=session)
 
     # granularità e anni: da enrichment, poi fallback su campi catalogo
     granularity = enrich["granularity"]
@@ -764,10 +950,13 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
         or row.get("distribution_url")
     )
     # per SDMX la metadata_url non è un dato, usiamo la base_url per il check
-    if enrich["enrich_method"] == "sdmx_dataflow_annotations":
-        url_to_check = row.get("landing_page") or row.get("distribution_url")
+    if enrich["enrich_method"] in ("sdmx_dataflow_annotations", "inventory_only"):
+        url_to_check = row.get("landing_page") or row.get("distribution_url") or url_to_check
 
-    http_status, reachable, note = _http_head(url_to_check or "", session=session)
+    http_status, reachable, note, content_type = _http_head_with_retry(url_to_check or "", session=session)
+
+    # Content-type format as primary detection (now unified in _http_head_with_retry)
+    fmt_from_content = content_type
 
     return {
         "check_timestamp": check_ts,
@@ -785,7 +974,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
         "granularity": granularity,
         "year_min": year_min,
         "year_max": year_max,
-        "resource_format": enrich["resource_format"] or row.get("format"),
+        "resource_format": fmt_from_content or enrich["resource_format"] or row.get("format"),
         "enrich_method": enrich["enrich_method"],
         "source_status": row.get("source_status", "unknown"),
         "needs_review": (granularity == "non_determinato") or (year_min is None),
@@ -850,8 +1039,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--limit-per-source", type=int, default=None, metavar="N",
                    help="Massimo N item per source_id (applicato prima del check)")
     p.add_argument("--workers", type=int, default=MAX_WORKERS)
-    p.add_argument("--max-age-days", type=int, default=7,
-                   help="Non ri-controllare item con check_timestamp più recente di N giorni (default: 7)")
+    p.add_argument("--max-age-days", type=int, default=None,
+                   help="Non ri-controllare item con check_timestamp più recente di N giorni. Default: None (nessun skip — tutti gli item vengono controllati)")
+    p.add_argument("--max-items", type=int, default=500,
+                   help="Target massimo di item da processare per run. Prioritize: items senza format + sample random. Default: 500")
     p.add_argument("--include-no-url", dest="only_with_url", action="store_false", default=True,
                    help="Includi anche item senza URL nel catalogo (verranno comunque arricchiti via API)")
     p.add_argument("--only-with-title", action="store_true", default=False,
@@ -924,6 +1115,33 @@ def main() -> None:
         logger.info("No items to check. Exiting.")
         return
 
+    # ── Smart sampling per target size ───────────────────────────────────────────
+    # Prioritize: items senza format (arricchimento needed) + random sample
+    # per validation coverage
+    if len(df) > args.max_items:
+        # 70% of target: items without format (enrichment value)
+        no_format = df[df["format"].isna() | (df["format"] == "")]
+        target_no_format = int(args.max_items * 0.7)
+
+        # 30% of target: random sample from items WITH format (validation)
+        has_format = df[df["format"].notna() & (df["format"] != "")]
+        target_has_format = args.max_items - target_no_format
+
+        # Sample from each group
+        if len(no_format) > target_no_format:
+            no_format_sample = no_format.sample(n=target_no_format, random_state=None)
+        else:
+            no_format_sample = no_format
+
+        if len(has_format) > target_has_format:
+            has_format_sample = has_format.sample(n=target_has_format, random_state=None)
+        else:
+            has_format_sample = has_format
+
+        df = pd.concat([no_format_sample, has_format_sample]).reset_index(drop=True)
+        logger.info("  smart sampling to %d items (no_format=%d, has_format=%d)",
+                    len(df), len(no_format_sample), len(has_format_sample))
+
     # ── Logica incrementale ──────────────────────────────────────────────────────
     existing = None
     skipped = 0
@@ -936,8 +1154,8 @@ def main() -> None:
         if "check_timestamp" in existing.columns:
             existing["check_timestamp"] = pd.to_datetime(existing["check_timestamp"], utc=True)
 
-        # Filtra item da non ri-controllare
-        if "item_id" in existing.columns:
+        # Filtra item da non ri-controllare (solo se max_age_days è specificato)
+        if args.max_age_days is not None and "item_id" in existing.columns:
             now = pd.Timestamp.now(tz="UTC")
             cutoff = now - pd.Timedelta(days=args.max_age_days)
 
@@ -984,8 +1202,10 @@ def main() -> None:
                 logger.info("  Skipped %d items checked in last %d days", skipped, args.max_age_days)
             logger.info("  %d items to check", len(df_to_check))
             df = df_to_check
-        else:
+        elif "item_id" not in existing.columns:
+            # skip dedup se no item_id
             logger.warning("  existing has no 'item_id' column, skipping dedup")
+        # else: max_age_days=None → non skippare nessuno, check all (df unchanged)
 
     if df.empty:
         logger.info("No new items to check. Exiting.")
