@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-04-30T14:49:31+00:00",
+  "captured_at": "2026-05-02T13:24:09+00:00",
   "sources_checked": 12,
   "signals": [
     {
@@ -13,11 +13,11 @@
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 4834,
-      "detail": "4834 item (dataflow_count), in linea con la baseline.",
-      "suggested_action": "nessuna"
+      "signal_type": "inventory change",
+      "result": "inventory change",
+      "metric_value": 4835,
+      "detail": "4835 item (dataflow_count), delta +1 rispetto al run precedente (4834).",
+      "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset"
     },
     {
       "source": "inps",
@@ -651,8 +651,9 @@
       "source": "dati_camera",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 104,
+      "detail": "104 item (sparql_query), connettività presidiata da radar_summary.",
       "suggested_action": "nessuna"
     },
     {

@@ -1,8 +1,15 @@
 # Catalog Watch Report
 
-_Generato: 2026-04-30T14:49:31+00:00 — 12 fonti controllate_
+_Generato: 2026-05-02T13:24:09+00:00 — 12 fonti controllate_
 
 ## Segnali attivi
+
+### 📦 `istat_sdmx` — inventory change
+
+- **Protocollo**: sdmx
+- **Dettaglio**: 4835 item (dataflow_count), delta +1 rispetto al run precedente (4834).
+- **Item**: 4835
+- **Azione**: verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset
 
 ### • `dati_salute` — csv_magnet
 
@@ -19,6 +26,6 @@ _Generato: 2026-04-30T14:49:31+00:00 — 12 fonti controllate_
 
 ## Fonti stabili / skipped
 
-_10 fonti senza segnali inventariali in questo run._
+_9 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
