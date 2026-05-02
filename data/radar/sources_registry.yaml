@@ -111,6 +111,7 @@ dati_salute:
     topic_hint: sanita
     sitemap_url: https://www.dati.salute.gov.it/sitemap-0.xml
     delay_seconds: 0.3
+    sample_pages: 191
   datasets_in_use: []
 inail_opendata:
   source_kind: portal
