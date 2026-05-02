@@ -504,6 +504,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     area_pages = html_portal_cfg.get("area_pages", [])
     topic_hint = html_portal_cfg.get("topic_hint")
     delay = html_portal_cfg.get("delay_seconds", 0.2)
+    sample_pages = html_portal_cfg.get("sample_pages", 30)
 
     if sitemap_url:
         summary, rows = _scan_sitemap(
@@ -511,7 +512,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             topic_hint,
             source_id,
             base_url,
-            sample_pages=10,
+            sample_pages=sample_pages,
             page_delay=delay,
         )
     elif area_pages:
