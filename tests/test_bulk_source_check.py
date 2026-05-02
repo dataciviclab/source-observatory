@@ -135,7 +135,6 @@ class TestCkanApiBase:
 class TestMaxAgeDaysNone:
     def test_max_age_days_none_does_not_crash_with_existing_output(self, tmp_path):
         """When max_age_days=None the incremental block must not call pd.Timedelta(None)."""
-        import pandas as pd
         from bulk_source_check import _http_head_with_retry
 
         # _http_head_with_retry returns 4-tuple (status, reachable, note, content_type)
