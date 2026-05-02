@@ -106,6 +106,16 @@ class TestIntakeScore:
         score, _ = _intake_score("non_determinato", None, None, False, None, "none", True)
         assert score >= 0
 
+    def test_concatenated_format_normalized_to_csv(self):
+        """'csv,xml' should normalize to 'CSV' (score 20, not 0)."""
+        score, _ = _intake_score("comune", 2015, 2022, True, "csv,xml", "ckan_package_show", False)
+        assert score >= 20  # CSV format gives 20 points
+
+    def test_xls_csv_xml_normalized_to_xls(self):
+        """'xls,csv,xml' should normalize to 'XLS' (score 10)."""
+        score, _ = _intake_score("comune", 2015, 2022, True, "xls,csv,xml", "ckan_package_show", False)
+        assert score >= 10  # XLS format gives 10 points
+
 
 # ── _ckan_api_base ────────────────────────────────────────────────────────────
 

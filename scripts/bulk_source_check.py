@@ -1021,7 +1021,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
         "granularity": granularity,
         "year_min": year_min,
         "year_max": year_max,
-        "resource_format": fmt_from_content or enrich["resource_format"] or _normalize_format(row.get("format") or ""),
+        "resource_format": fmt_from_content or _normalize_format(enrich["resource_format"] or "") or _normalize_format(row.get("format") or ""),
         "enrich_method": enrich["enrich_method"],
         "source_status": row.get("source_status", "unknown"),
         "needs_review": (granularity == "non_determinato") or pd.isna(year_min),
