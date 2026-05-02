@@ -4,10 +4,6 @@ Indice minimo dei workflow canonici di `source-observatory`.
 
 ## Come orientarsi
 
-- [portal-scout.md](./portal-scout.md)
-  - classifica un portale o una superficie dati prima dell'ingresso nel funnel
-  - decide se ha senso `catalog-watch`, `radar-only` o `source-check` item-based
-
 - [catalog-inventory-scout.md](./catalog-inventory-scout.md)
   - triage di un catalog inventory per ricavare una shortlist
   - decide cosa mandare a `source-check` o `watchlist`
@@ -18,8 +14,6 @@ Indice minimo dei workflow canonici di `source-observatory`.
 
 ## Boundary rapido
 
-- `portal-scout`
-  - classificazione iniziale del portale
 - `catalog-inventory-scout`
   - triage di una lista di item di un catalogo
 - `source-check`
@@ -32,32 +26,18 @@ Indice minimo dei workflow canonici di `source-observatory`.
 Se la domanda è:
 
 - "cosa c'è in questo catalogo e cosa vale la pena approfondire?" -> `catalog-inventory-scout`
-- "questo portale è davvero un catalogo osservabile?" -> `portal-scout`
 - "il catalogo ha cambiato inventario o struttura?" -> leggi `data/catalog/CATALOG_WATCH_REPORT.md`
 - "questa fonte regge davvero come pista del Lab?" -> `source-check`
 
-## Onboarding portali
+## Ingresso di una nuova fonte
 
-Sequenza canonica minima per un nuovo portale:
+Le fonti nuove vengono aggiunte al `sources_registry.yaml` manualmente, con:
 
-1. `discover_portals.py` (opzionale, per discovery batch) → parquet candidati
-2. `portal-scout` → verdict + soglie minime
-3. decision gate
-4. eventuale ingresso nel registry
-5. eventuale baseline o inventory
-6. eventuale `source-check` su item specifici
+- `source_id`, `base_url`, `protocol`
+- `observation_mode`: `catalog-watch` o `radar-only`
+- eventuale `note` sulla fonte
 
-Esiti canonici del gate e soglie minime:
-
-| Esito | Condizioni minime |
-|---|---|
-| `GO catalog-watch` | Probe reale · enumerabile · temporale ≥ 80% · ≥ 20 dataset strutturati · non duplicato |
-| `GO radar-only` | Raggiungibile · PA nazionale · non automatizzabile ora |
-| `GO source-check item-based` | Strutturato ma < 20 dataset o > 50% PDF |
-| `NO per ora` | Falso positivo · WAF · fuori scope · duplicato |
-
-`GO catalog-watch` → proponi YAML per registry + apri issue SO (`portal-scout`). Il monitoraggio differenziale avviene via CI automatica.
-`GO radar-only` → aggiorna registry direttamente, nessuna issue.
+Non esiste un processo di discovery automatico. I portali CKAN italiani noti sono tracciati da `ckan_find_portals(country="Italy")` o dal registry di datashades.
 
 ## Nota: catalog inventory
 

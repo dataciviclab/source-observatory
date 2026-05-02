@@ -23,7 +23,6 @@ Questo workflow serve a chiudere il gap tra un inventory ampio/rumoroso e i work
 
 Usalo quando hai già uno di questi input:
 - `data/catalog_inventory/generated/*.parquet` (generato dalla CI o manualmente)
-- lista di dataset o risorse di un portale estratta via `portal-scout`
 
 Usalo soprattutto se devi capire rapidamente cosa vale la pena approfondire e cosa ignorare senza perdere tempo.
 
