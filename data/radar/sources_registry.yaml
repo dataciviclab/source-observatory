@@ -75,7 +75,7 @@ openbdap:
     skip_package_search_reason: timeout sistematico a 60s
     skip_current_list: true
     package_show_sample: true
-    sample_size: 500
+    sample_size: 4000
   last_probed: '2026-05-01'
   catalog_baseline:
     captured_at: '2026-04-02'

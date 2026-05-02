@@ -430,6 +430,98 @@ def _fetch_package_show(
         return None, f"{package_id}: {exc}"
 
 
+def collect_ckan_inventory_via_package_search_offset(
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
+    page_size: int = 100,
+) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    """Collect full catalog via paginated package_search with offset.
+
+    package_search è veloce e restituisce metadata completi (resources, organization,
+    title, notes) per ogni dataset — a differenza di package_list che ha solo id/name.
+
+    Strategia: paging con offset incrementali (0, page_size, 2*page_size, ...)
+    fino a totale count. Break anticipato se count non cala (server non supporta offset).
+
+    Returns:
+        enriched_rows (full catalog), warning (stats)
+    """
+    endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_search")
+
+    all_rows: list[dict[str, Any]] = []
+    page_errors: list[str] = []
+    seen_ids: set[str] = set()
+    total_count: int | None = None
+    offset = 0
+
+    while True:
+        params = f"rows={page_size}&offset={offset}&q=*:*"
+        try:
+            payload = ckan_get_json(endpoint, params=params, timeout=60)
+        except Exception as exc:
+            page_errors.append(f"offset={offset}: {exc}")
+            break
+
+        if not payload.get("success"):
+            page_errors.append(f"offset={offset}: success=false")
+            break
+
+        result = payload.get("result", {})
+        results_list = result.get("results", [])
+
+        if total_count is None:
+            total_count = result.get("count", 0)
+
+        if not results_list:
+            break
+
+        # Break se offset non avanza (server ignora offset — ritorna sempre stesso count)
+        if offset > 0 and result.get("count") == total_count:
+            first_id = results_list[0].get("id") or results_list[0].get("name")
+            if first_id and first_id in seen_ids:
+                page_errors.append(f"offset={offset}: server ignores offset (count={total_count} static, break)")
+                break
+
+        for ordinal_idx, item in enumerate(results_list):
+            item_id = item.get("id") or item.get("name")
+            if item_id and item_id not in seen_ids:
+                seen_ids.add(item_id)
+                try:
+                    row = extract_ckan_inventory_row(
+                        source_id=source_id,
+                        source_cfg=source_cfg,
+                        captured_at=captured_at,
+                        item=item,
+                        endpoint=endpoint,
+                        ordinal=offset + ordinal_idx,
+                        inventory_method="package_search_offset",
+                    )
+                    row["item_id"] = item_id
+                    all_rows.append(row)
+                except Exception as row_exc:
+                    page_errors.append(f"row {item_id}: {row_exc}")
+
+        if len(results_list) < page_size:
+            break
+
+        offset += page_size
+        if total_count is not None and offset >= total_count:
+            break
+
+    warning: dict[str, Any] | None = None
+    if page_errors:
+        warning = {
+            "type": "package_search_offset_partial",
+            "message": f"package_search offset paging completato con {len(page_errors)} errori.",
+            "rows_collected": len(all_rows),
+            "total_count_seen": total_count,
+            "errors_preview": page_errors[:10],
+        }
+
+    return all_rows, warning
+
+
 def collect_ckan_inventory_via_package_show_sample(
     source_id: str,
     source_cfg: dict[str, Any],
@@ -488,9 +580,21 @@ def collect(
     current_list_fn=collect_ckan_inventory_via_current_list,
     package_list_fn=collect_ckan_inventory_via_package_list,
     package_show_sample_fn=collect_ckan_inventory_via_package_show_sample,
+    package_search_offset_fn=collect_ckan_inventory_via_package_search_offset,
 ) -> CollectorResult:
     inv = inventory_cfg(source_cfg)
     search_exc: Exception | None = None
+
+    # Strategy: se use_offset_paging=true, salta package_search e usa offset paging diretto
+    if inv.get("use_offset_paging"):
+        rows, warning = package_search_offset_fn(
+            source_id=source_id,
+            source_cfg=source_cfg,
+            captured_at=captured_at,
+            page_size=inv.get("offset_page_size", 100),
+        )
+        return CollectorResult(rows=rows, warning=warning)
+
     if not inv.get("skip_package_search"):
         try:
             rows = search_fn(source_id, source_cfg, captured_at)
