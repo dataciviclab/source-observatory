@@ -168,7 +168,7 @@ L'inventory preserva le righe anche quando una fonte è temporaneamente down. Og
 
 **Merge logica**: quando una fonte fallisce, le righe precedenti NON vengono cancellate — vengono marcate `stale`. Quando la fonte torna, le nuove righe sono `active` e coesistono con quelle stale.
 
-Questo comportamento è implementato in `build_catalog_inventory.py` — funzione `_error_to_stale_reason()` e il merge loop che preserva righe stale — e vale per tutti i Layer 1 run.
+Questo comportamento è implementato in `build_catalog_inventory.py` — funzione `stale_reason_from_exception()` in `_constants.py` e il merge loop che preserva righe stale — e vale per tutti i Layer 1 run.
 
 ## Fonti con scraping bloccato
 

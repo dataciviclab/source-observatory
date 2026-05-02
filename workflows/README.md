@@ -19,7 +19,7 @@ Indice minimo dei workflow canonici di `source-observatory`.
 - `source-check`
   - valutazione umana della fonte come possibile pista del Lab
 
-> I segnali di drift/inventory change del catalogo sono prodotti automaticamente dalla CI (`catalog-inventory.yml`) e leggibili in `data/catalog/CATALOG_WATCH_REPORT.md` e `data/catalog/catalog_signals.json`.
+> I segnali di drift/inventory change del catalogo sono prodotti automaticamente dalla CI (`observatory.yml`) e leggibili in `data/catalog/CATALOG_WATCH_REPORT.md` e `data/catalog/catalog_signals.json`.
 
 ## Regola pratica
 

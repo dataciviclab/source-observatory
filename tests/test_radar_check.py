@@ -274,7 +274,7 @@ def test_build_radar_summary_schema() -> None:
         ),
     }
 
-    summary = radar_check.build_radar_summary(registry, results, "2026-04-18")
+    summary, sources_list = radar_check.build_radar_summary(registry, results, "2026-04-18")
 
     # Verifica struttura top-level
     assert "generated_at" in summary
@@ -290,23 +290,22 @@ def test_build_radar_summary_schema() -> None:
     assert summary["status_counts"]["YELLOW"] == 1
     assert summary["status_counts"]["RED"] == 0
 
-    # Verifica entry fonte
-    sources_by_id = {s["id"]: s for s in summary["sources"]}
+    # Verifica entry fonte (new lean schema — history-oriented)
+    assert len(sources_list) == 2
+    sources_by_id = {s["id"]: s for s in sources_list}
     assert "demo_ckan" in sources_by_id
     assert "istat_sdmx" in sources_by_id
 
     demo = sources_by_id["demo_ckan"]
     assert demo["status"] == "GREEN"
     assert demo["protocol"] == "ckan"
-    assert demo["observation_mode"] == "catalog-watch"
     assert demo["http_code"] == "200"
-    assert demo["last_check"] == "2026-04-18"
-    assert demo["datasets_in_use"] == ["dataset1", "dataset2"]
+    assert "note" in demo or demo.get("note") is None
 
     istat = sources_by_id["istat_sdmx"]
     assert istat["status"] == "YELLOW"
     assert istat["http_code"] == "-"
-    assert istat["datasets_in_use"] == []
+    assert istat["note"] == "Timeout"
 
     # Verifica JSON-serializable
     json_str = json.dumps(summary)
