@@ -804,9 +804,9 @@ def _intake_score(
         valid = ["CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"]
         if "." in fmt_raw and len(fmt_raw) > 6:
             # Caso filename: estrae estensione (es. "metadati.xls" → "XLS")
-            candidate = fmt_raw.rsplit(".", 1)[-1].upper()
-            if candidate in valid:
-                fmt = candidate
+            fmt_ext = fmt_raw.rsplit(".", 1)[-1].upper()
+            if fmt_ext in valid:
+                fmt = fmt_ext
         else:
             # Caso lista: "csv,xml" → prendi il primo match (CSV)
             up = fmt_raw.upper()
@@ -994,9 +994,13 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
     # Se l'enrich ha già fatto un HEAD con successo (content_type/content_type_landing/html_scrape),
     # evitiamo un secondo HEAD ridondante sullo stesso URL.
     if enrich["enrich_method"] in ("content_type", "content_type_landing", "html_scrape"):
-        http_status, reachable, note, content_type = 200, True, None, None
+        http_status: int = 200
+        reachable = True
+        note = None
+        content_type = None
     else:
-        http_status, reachable, note, content_type = _http_head_with_retry(url_to_check or "", session=session)
+        http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "", session=session)
+        http_status = http_status_raw if http_status_raw is not None else 0
 
     # Content-type format as primary detection (now unified in _http_head_with_retry)
     fmt_from_content = content_type
