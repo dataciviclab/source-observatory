@@ -3,10 +3,8 @@ name: observatory
 on:
   workflow_dispatch:
   schedule:
-    # Lunedì 03:15 — inventory + signals
+    # Lunedì 03:15 — inventory + signals + source-check
     - cron: "15 3 * * 1"
-    # Martedì 05:00 — source-check (dipende da inventory del lunedì)
-    - cron: "0 5 * * 2"
 
 permissions:
   contents: write
