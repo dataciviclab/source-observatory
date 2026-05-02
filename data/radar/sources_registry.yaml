@@ -51,7 +51,7 @@ inps:
   inventory:
     skip_current_list: true
     package_show_sample: true
-    sample_size: 1000
+    sample_size: 10000
   last_probed: '2026-05-02'
   catalog_baseline:
     captured_at: '2026-04-02'
@@ -75,7 +75,7 @@ openbdap:
     skip_package_search_reason: timeout sistematico a 60s
     skip_current_list: true
     package_show_sample: true
-    sample_size: 500
+    sample_size: 4000
   last_probed: '2026-05-02'
   catalog_baseline:
     captured_at: '2026-04-02'
@@ -111,6 +111,7 @@ dati_salute:
     topic_hint: sanita
     sitemap_url: https://www.dati.salute.gov.it/sitemap-0.xml
     delay_seconds: 0.3
+    sample_pages: 191
   datasets_in_use: []
 inail_opendata:
   source_kind: portal
@@ -262,7 +263,7 @@ lavoro_opendata:
     skip_package_search_reason: count inaffidabile
     skip_current_list: true
     package_show_sample: true
-    sample_size: 100
+    sample_size: 10000
   last_probed: '2026-05-02'
   catalog_baseline:
     captured_at: '2026-04-11'
