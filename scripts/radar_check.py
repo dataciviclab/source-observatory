@@ -368,7 +368,8 @@ def build_radar_summary(
     persistent_red = 0
 
     probes = (history or {}).get("probes", [])
-    # Reverse to traverse from oldest to newest (streak = consecutive toward current)
+    # Reverse: index 0 = most recent (newest), so we traverse newest→oldest.
+    # Streak increments while consecutive RED; breaks on first non-RED.
     recent_probes = list(reversed(probes)) if probes else []
 
     for source_id, meta in registry.items():
@@ -470,10 +471,11 @@ def main() -> int:
             results[portal] = result
 
     report = build_status_report(registry, results, probe_date)
-    summary, sources_list = build_radar_summary(registry, results, probe_date)
 
     if args.dry_run:
         print(report)
+        # Build summary without history for dry-run output
+        summary, _ = build_radar_summary(registry, results, probe_date)
         print("\n--- SUMMARY JSON ---")
         print(json.dumps(summary, indent=2, ensure_ascii=False))
         return 0
@@ -482,9 +484,11 @@ def main() -> int:
 
     # Load history and append probe
     history = load_radar_history()
+    # Build sources_list with streak data from history
+    _, sources_list = build_radar_summary(registry, results, probe_date, history)
     history = append_radar_probe(history, probe_date, sources_list)
 
-    # Rebuild summary with history for streak calculation
+    # Rebuild summary with updated history for final output
     summary, _ = build_radar_summary(registry, results, probe_date, history)
 
     STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)

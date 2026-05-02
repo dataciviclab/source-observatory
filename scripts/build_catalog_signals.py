@@ -131,7 +131,8 @@ def _classify(
 
         # Bridge radar: endpoint unstable ma inventario ok → dati potrebbero essere stale.
         # Radar RED senza inventario significa che l'ultimo run potrebbe essere cached/stale.
-        if radar_status == "RED":
+        # Non applicare se la sorgente stava già in errore (recovery presidia la transizione).
+        if radar_status == "RED" and prev_status != "error":
             return {
                 "source": source_id,
                 "protocol": protocol,
