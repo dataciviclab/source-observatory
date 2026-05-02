@@ -49,8 +49,9 @@ DEFAULT_IN = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_i
 DEFAULT_OUT = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
 REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 
-HTTP_TIMEOUT = 15
+HTTP_TIMEOUT = (5, 10)  # (connect_timeout, read_timeout) — fail fast su host irraggiungibili
 MAX_WORKERS = 8
+_NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
 
 SDMX_NS = {
     "message": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message",
@@ -310,6 +311,9 @@ def _parse_ckan_package(pkg: dict) -> dict:
 
 def _fetch_sdmx_years(base_url: str, flow_id: str, session: Optional[requests.Session] = None) -> tuple[Optional[int], Optional[int]]:
     """Chiama l'endpoint dati SDMX per ricavare year_min/year_max dalla dimensione TIME_PERIOD."""
+    # Skip if --no-sdmx-years flag was set
+    if _NO_SDMX_YEARS:
+        return None, None
     try:
         # ricava la root SDMX togliendo /dataflow/IT1 (o simile) dal base_url
         base = base_url.split("?")[0].rstrip("/")
@@ -322,12 +326,12 @@ def _fetch_sdmx_years(base_url: str, flow_id: str, session: Optional[requests.Se
             sdmx_root = base
         url = f"{sdmx_root}/data/{flow_id}?lastNObservations=1"
         if session is not None:
-            with session.get(url, timeout=20) as r:
+            with session.get(url, timeout=HTTP_TIMEOUT) as r:
                 if r.status_code != 200:
                     return None, None
                 content = r.content
         else:
-            r = observatory_get(url, timeout=20)
+            r = observatory_get(url, timeout=HTTP_TIMEOUT)
             if r.status_code != 200:
                 return None, None
             content = r.content
@@ -438,14 +442,14 @@ def _fetch_html_metadata(url: str, session: Optional[requests.Session] = None) -
 
     try:
         if session is not None:
-            with session.get(url, timeout=10, stream=False) as resp:
+            with session.get(url, timeout=HTTP_TIMEOUT, stream=False) as resp:
                 resp.raise_for_status()
                 # resp.text uses requests encoding detection (Content-Type charset),
                 # which may differ from the UTF-8 fallback used when session is None.
                 # Divergence is acceptable for regex-based link extraction.
                 html = resp.text
         else:
-            resp = observatory_get(url, timeout=10, stream=False)
+            resp = observatory_get(url, timeout=HTTP_TIMEOUT, stream=False)
             resp.raise_for_status()
             html = resp.text
 
@@ -751,6 +755,20 @@ _FORMAT_SCORE = {"CSV": 20, "JSON": 20, "XLSX": 12, "XLS": 10, "XML": 8, "SDMX":
 _YEAR_SPAN_MAX = 20  # anni di copertura oltre i quali il bonus è al massimo
 
 
+def _normalize_format(raw: str) -> str:
+    """Extract first clean format from a raw format string like 'csv,xml' or 'xls,csv,xml'.
+    Priority order: CSV > JSON > XLSX > XLS > XML > PDF > SDMX > ZIP > PARQUET."""
+    if not isinstance(raw, str):
+        return ""
+    # List = guaranteed iteration order (unlike set)
+    valid_priority = ["CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"]
+    up = raw.upper()
+    for v in valid_priority:
+        if v in up:
+            return v
+    return ""
+
+
 def _intake_score(
     granularity: Optional[str],
     year_min: Optional[int],
@@ -777,11 +795,25 @@ def _intake_score(
     # raggiungibile — 0..20
     score += 20 if reachable else 0
 
-    # formato — 0..20 (normalizza: estrai estensione se il campo è un nome file)
+    # formato — 0..20 (normalizza: estrai estensione se il campo è un nome file
+    # o una stringa concatenata come "csv,xml" → prendi il primo formato valido)
     fmt_raw = ("" if not isinstance(resource_format, str) else resource_format).strip()
-    if "." in fmt_raw and len(fmt_raw) > 6:
-        fmt_raw = fmt_raw.rsplit(".", 1)[-1]
-    fmt = fmt_raw.upper()
+    fmt = ""
+    if fmt_raw:
+        # Estrai primo formato valido (CSV, JSON, XLSX, XLS, XML, PDF, SDMX)
+        valid = ["CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"]
+        if "." in fmt_raw and len(fmt_raw) > 6:
+            # Caso filename: estrae estensione (es. "metadati.xls" → "XLS")
+            fmt_ext = fmt_raw.rsplit(".", 1)[-1].upper()
+            if fmt_ext in valid:
+                fmt = fmt_ext
+        else:
+            # Caso lista: "csv,xml" → prendi il primo match (CSV)
+            up = fmt_raw.upper()
+            for v in valid:
+                if v in up:
+                    fmt = v
+                    break
     score += _FORMAT_SCORE.get(fmt, 0)
 
     # qualità enrichment — 0..5 bonus, -5 penalità
@@ -838,13 +870,16 @@ def _enrich_with_inventory(
         item_name = _slug.strip()
 
     # CKAN: only re-fetch package_show if format AND title are missing in inventory
+    # inv_format="csv,xml" is truthy but is a dirty concatenated string → treat as missing
+    valid_formats = {"CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"}
+    inv_format_clean = isinstance(inv_format, str) and inv_format.upper() in valid_formats
     has_valid_slug = bool(isinstance(_slug, str) and _slug.strip() and _slug.strip() != "dataset")
     needs_ckan_refetch = (
         protocol == "ckan"
         and base_url
         and item_name
         and has_valid_slug
-        and not inv_format
+        and not inv_format_clean
         and not inv_title
     )
 
@@ -936,12 +971,15 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
     granularity = enrich["granularity"]
     year_min = enrich["year_min"]
     year_max = enrich["year_max"]
-    if granularity == "non_determinato" or (granularity is None) or (year_min is None):
+    # Bug 1 fix: pd.isna() handles NaN from pandas correctly (NaN is not None)
+    if granularity == "non_determinato" or (granularity is None) or pd.isna(year_min):
         fb_gran, fb_ymin, fb_ymax = _fallback_infer(row)
         if granularity in (None, "non_determinato"):
             granularity = fb_gran
-        year_min = year_min or fb_ymin
-        year_max = year_max or fb_ymax
+        if pd.isna(year_min):
+            year_min = fb_ymin
+        if pd.isna(year_max):
+            year_max = fb_ymax
 
     # URL da controllare: enrichment resource > catalogo landing_page > distribution_url
     url_to_check = (
@@ -953,7 +991,16 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
     if enrich["enrich_method"] in ("sdmx_dataflow_annotations", "inventory_only"):
         url_to_check = row.get("landing_page") or row.get("distribution_url") or url_to_check
 
-    http_status, reachable, note, content_type = _http_head_with_retry(url_to_check or "", session=session)
+    # Se l'enrich ha già fatto un HEAD con successo (content_type/content_type_landing/html_scrape),
+    # evitiamo un secondo HEAD ridondante sullo stesso URL.
+    if enrich["enrich_method"] in ("content_type", "content_type_landing", "html_scrape"):
+        http_status: int = 200
+        reachable = True
+        note = None
+        content_type = None
+    else:
+        http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "", session=session)
+        http_status = http_status_raw if http_status_raw is not None else 0
 
     # Content-type format as primary detection (now unified in _http_head_with_retry)
     fmt_from_content = content_type
@@ -974,10 +1021,10 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
         "granularity": granularity,
         "year_min": year_min,
         "year_max": year_max,
-        "resource_format": fmt_from_content or enrich["resource_format"] or row.get("format"),
+        "resource_format": fmt_from_content or _normalize_format(enrich["resource_format"] or "") or _normalize_format(row.get("format") or ""),
         "enrich_method": enrich["enrich_method"],
         "source_status": row.get("source_status", "unknown"),
-        "needs_review": (granularity == "non_determinato") or (year_min is None),
+        "needs_review": (granularity == "non_determinato") or pd.isna(year_min),
         "intake_score": None,  # placeholder, calcolato sotto
         "intake_candidate": None,
     }
@@ -1047,12 +1094,18 @@ def parse_args() -> argparse.Namespace:
                    help="Includi anche item senza URL nel catalogo (verranno comunque arricchiti via API)")
     p.add_argument("--only-with-title", action="store_true", default=False,
                    help="Salta item senza title nel catalogo (tipicamente righe non-sample senza metadati)")
+    p.add_argument("--skip-red-sources", action="store_true", default=False,
+                   help="Skip item da fonti con status RED in radar_summary.json (evita timeout su fonti down)")
+    p.add_argument("--no-sdmx-years", action="store_true", default=False,
+                   help="Skip SDMX year fetch (riduce timeout risk su CI)")
     return p.parse_args()
 
 
 def main() -> None:
     logging.basicConfig(format="%(levelname)s %(message)s", level=logging.INFO)
     args = parse_args()
+    global _NO_SDMX_YEARS
+    _NO_SDMX_YEARS = args.no_sdmx_years
 
     logger.info("Loading catalog: %s", args.input)
     df = pd.read_parquet(args.input)
@@ -1070,6 +1123,26 @@ def main() -> None:
     if args.only_with_title:
         df = df[df["title"].notna()]
         logger.info("  non-null title filter: %d items", len(df))
+
+    # ── Skip RED sources from radar_summary ────────────────────────────────────
+    # Evita di campionare item da fonti che timeoutmano su Actions (IP cloud blocked)
+    # e allungano il source-check senza produrre valore.
+    if args.skip_red_sources:
+        radar_summary_path = REPO_ROOT / "data" / "radar" / "radar_summary.json"
+        if radar_summary_path.exists():
+            import json
+            try:
+                with radar_summary_path.open() as f:
+                    radar = json.load(f)
+                red_source_ids = [s["id"] for s in radar.get("sources", []) if s.get("status") == "RED"]
+                if red_source_ids:
+                    skipped = df["source_id"].isin(red_source_ids).sum()
+                    df = df[~df["source_id"].isin(red_source_ids)]
+                    logger.info("  skip RED sources (radar): %s — %d items rimossi", red_source_ids, skipped)
+            except Exception as exc:
+                logger.warning("  skip-red-sources: could not read radar_summary: %s", exc)
+        else:
+            logger.warning("  skip-red-sources: radar_summary.json not found at %s", radar_summary_path)
 
     if args.limit:
         df = df.head(args.limit)
@@ -1127,14 +1200,14 @@ def main() -> None:
         has_format = df[df["format"].notna() & (df["format"] != "")]
         target_has_format = args.max_items - target_no_format
 
-        # Sample from each group
+        # Sample from each group (deterministic seed for reproducible runs)
         if len(no_format) > target_no_format:
-            no_format_sample = no_format.sample(n=target_no_format, random_state=None)
+            no_format_sample = no_format.sample(n=target_no_format, random_state=42)
         else:
             no_format_sample = no_format
 
         if len(has_format) > target_has_format:
-            has_format_sample = has_format.sample(n=target_has_format, random_state=None)
+            has_format_sample = has_format.sample(n=target_has_format, random_state=42)
         else:
             has_format_sample = has_format
 
@@ -1227,7 +1300,7 @@ def main() -> None:
 
         # Deduplica su item_id tenendo la riga con check_timestamp più recente
         results["check_timestamp"] = pd.to_datetime(results["check_timestamp"], utc=True)
-        results = results.sort_values("check_timestamp", ascending=False).drop_duplicates(subset=["item_id"], keep="first").reset_index(drop=True)
+        results = results.sort_values("check_timestamp", ascending=False).drop_duplicates(subset=["source_id", "item_id"], keep="first").reset_index(drop=True)
         logger.info("  Unified %d results (new + previous not re-checked)", len(results))
 
     enrich_counts = results["enrich_method"].value_counts()

@@ -129,12 +129,12 @@ jobs:
             echo "Nessuna variazione rilevata."
           fi
 
-      # ── Source-check ──────────────────────────────────────────────────────
+      # ── Source-check: only items with URL, smart sampling 500 ─────────────
       - name: Run bulk source-check
         run: |
           python scripts/bulk_source_check.py \
-            --only-with-title \
-            --include-no-url \
+            --skip-red-sources \
+            --no-sdmx-years \
             --max-items 500 \
             --workers 8
 
