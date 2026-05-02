@@ -34,6 +34,47 @@ DATA_EXTENSIONS = {".csv", ".json", ".xlsx", ".xls", ".ods", ".zip", ".xml", ".g
 # ─── HTML Parsing ──────────────────────────────────────────────────────────────
 
 
+_DATA_TITLE_RE = None  # lazycompiled
+
+
+def _extract_page_meta(html: str) -> dict[str, str]:
+    """Estrae metadata significativi da una pagina HTML (title, modified, description).
+
+    Supporta:
+    - <meta name="gatsby:title"> (Gatsby/Drupal pattern)
+    - <title> plain
+    - <meta name="description">
+    - data items con schema.org Dataset (per portali open data strutturati)
+    """
+    global _DATA_TITLE_RE
+    if _DATA_TITLE_RE is None:
+        _DATA_TITLE_RE = re.compile(r'<title[^>]*>([^<]+)</title>', re.IGNORECASE)
+
+    meta: dict[str, str] = {}
+
+    # Try gatsby:title (priority — it's the canonical page title for open data portals)
+    gatsby_title = re.search(r'<meta\s+(?:name|data-gatsby-head)=["\']gatsby:title["\']\s+content=["\']([^"\']+)["\']', html)
+    if gatsby_title:
+        meta["title"] = gatsby_title.group(1).strip()
+
+    # Fallback to <title>
+    if "title" not in meta:
+        m = _DATA_TITLE_RE.search(html)
+        if m:
+            raw = m.group(1).strip()
+            # Strip common prefix pattern "Open Data - "
+            if raw.startswith("Open Data - "):
+                raw = raw[12:]
+            meta["title"] = raw
+
+    # Description
+    desc = re.search(r'<meta\s+name=["\']description["\']\s+content=["\']([^"\']+)["\']', html, re.IGNORECASE)
+    if desc:
+        meta["description"] = desc.group(1).strip()[:200]
+
+    return meta
+
+
 class _DataLinksParser:
     """Estrae link a file data da HTML già scaricato."""
 
@@ -160,7 +201,7 @@ def _scan_sitemap(
     source_id: str,
     base_url: str,
     *,
-    sample_pages: int = 10,
+    sample_pages: int = 30,
     page_delay: float = 0.2,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Scan un portale HTML via sitemap con quick sample.
@@ -197,6 +238,7 @@ def _scan_sitemap(
     all_data_links: list[dict[str, str]] = []
     seen_data_urls: set[str] = set()
     pages_probed = 0
+    page_meta: dict[str, dict[str, str]] = {}  # page_url → {title, description}
 
     for page_url in sampled:
         time.sleep(page_delay)
@@ -205,13 +247,27 @@ def _scan_sitemap(
         if page_err or response is None:
             continue
         pages_probed += 1
+
+        # Extract page metadata (title, description) for enrichment
+        page_meta[page_url] = _extract_page_meta(response.text)
+
         parser = _DataLinksParser(page_url, response.text)
         for link in parser.links:
             if link["url"] not in seen_data_urls:
                 seen_data_urls.add(link["url"])
+                link["_page_url"] = page_url  # track provenance for metadata enrichment
                 all_data_links.append(link)
 
-    # Build prefix/format stats from sample
+    # Dedup by (url, format) — use frozenset as dict key, track separately
+    seen_url_formats: set[tuple[str, str]] = set()
+    deduped_links: list[dict[str, str]] = []
+    for link in all_data_links:
+        key = (link["url"], link.get("format") or "")
+        if key not in seen_url_formats:
+            seen_url_formats.add(key)
+            deduped_links.append(link)
+    all_data_links = deduped_links
+
     prefix_matrix: dict[str, int] = {}
     by_format: dict[str, int] = {}
     years_set: set[int] = set()
@@ -257,6 +313,12 @@ def _scan_sitemap(
         years = _extract_years(filename)
         topic = _guess_topic(url, topic_hint)
         item_id = filename[:100]  # truncate per safety
+
+        # Enrich from page metadata (provenance-aware)
+        data_page_url: str | None = link.get("_page_url")
+        page_meta_row = page_meta.get(data_page_url) if data_page_url else {}
+        page_title = page_meta_row.get("title") if page_meta_row else None
+
         rows.append({
             # canonical columns (per bulk_source_check e inventario)
             "source_id": source_id,
@@ -266,11 +328,11 @@ def _scan_sitemap(
             "item_id": item_id,
             "item_name": prefix,
             "item_slug": item_id,
-            "title": f"{prefix} {topic}",
+            "title": page_title or f"{prefix} {topic}",
             "organization": None,
             "tags": None,
-            "notes_excerpt": None,
-            "landing_page": None,
+            "notes_excerpt": page_meta_row.get("description") if page_meta_row else None,
+            "landing_page": data_page_url,
             "distribution_url": url,
             "datastore_active": False,
             "resource_count": 1,
