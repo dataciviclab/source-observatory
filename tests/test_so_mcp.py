@@ -1,12 +1,23 @@
 from __future__ import annotations
 
 import json
+import importlib.util
+import sys
+from pathlib import Path
+
+import pandas as pd  # must be before so_server_core import
+
+# Force-load local so_server_core bypassing pip-installed mcp package
+SO_MCP_PATH = Path(__file__).resolve().parents[1] / "mcp" / "so_server_core.py"
+_spec = importlib.util.spec_from_file_location("mcp.so_server_core", SO_MCP_PATH)
+assert _spec and _spec.loader
+_so_server_core = importlib.util.module_from_spec(_spec)
+sys.modules["mcp.so_server_core"] = _so_server_core
+_spec.loader.exec_module(_so_server_core)
+core = _so_server_core
 
 import duckdb
-import pandas as pd
 import pytest
-
-from mcp import so_server_core as core
 
 
 @pytest.fixture(autouse=True)
