@@ -37,9 +37,26 @@ Verifica se una fonte regge davvero come pista del Lab prima di aprire Discussio
 
 > Serie storica corta o chiusa **non è blocco** se la domanda civica regge da sola.
 
-## 3. Passi Canonici (Checklist)
+## 1. Pre-check MCP (obbligatorio prima di iniziare)
 
-1. **Accesso Reale**: Verifica raggiungibilità e leggibilità (redirect, login, WAF). Qualifica come `verificato` o `inferito`.
+Prima di toccare la fonte, consulta gli artifact SO via MCP per evitare duplicati e orientarti:
+
+```
+1. so_find_by_url(<URL>)       → la fonte è già in source_check o inventory?
+2. so_inventory_query(source_id=?, min_score=3) → score esistente per questa fonte
+3. so_radar_summary             → stato radar della fonte (se già nota)
+4. so_probe_url(<URL>)          → reachability rapida
+```
+
+**Se `so_find_by_url` trova risultati**: la fonte è già catalogata — consulta i risultati prima di proseguire e possibilmente riutilizza evidenze esistenti.
+
+**Se `so_radar_summary` mostra RED**: valuta se il source-check ha senso (fonte temporaneamente down).
+
+**Se la fonte non è ancora nel radar**: procedi normalmente, ma annota `source_id` provvisorio nella nota.
+
+## 2. Accesso Reale
+
+Verifica raggiungibilità e leggibilità (redirect, login, WAF). Qualifica come `verificato` o `inferito`.
 2. **Shape minima**: Controlla formato, granularità (cosa rappresenta una riga) e copertura.
 3. **Sufficienza Semantica**:
    - [ ] Il dato è leggibile subito?
