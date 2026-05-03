@@ -16,8 +16,8 @@ sys.modules["mcp.so_server_core"] = _so_server_core
 _spec.loader.exec_module(_so_server_core)
 core = _so_server_core
 
-import duckdb
-import pytest
+import duckdb  # noqa: E402
+import pytest  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
