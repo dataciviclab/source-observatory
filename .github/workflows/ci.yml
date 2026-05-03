@@ -51,7 +51,7 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v
 
-      - name: Smoke test: bulk_source_check on mef_irpef
+      - name: "Smoke test: bulk_source_check on mef_irpef"
         run: |
           python scripts/bulk_source_check.py \
             --source-ids mef_irpef \
