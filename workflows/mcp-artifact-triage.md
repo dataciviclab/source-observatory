@@ -69,11 +69,11 @@ Non usarlo per:
    - controlla portali scoperti o nuovi candidati
    - utile per alimentare `portal-scout`
 
-9. `so_probe_url`
+12. `so_probe_url`
    - verifica puntuale di reachability o content-type
    - non sostituisce `portal-scout`
 
-10. `so_discover_sdmx`
+13. `so_discover_sdmx`
    - consulta l'inventory SDMX se disponibile
    - se l'inventory non e' disponibile, leggere lo stato restituito e non dedurre che ISTAT non abbia dataflow
 

@@ -83,8 +83,9 @@ def so_inventory_query(
     source_id: str | None = None,
     min_score: int | None = None,
     limit: int = 50,
+    has_results: bool | None = None,
 ) -> dict[str, Any]:
-    return _guard(query_inventory, source_id, min_score, limit)
+    return _guard(query_inventory, source_id, min_score, limit, has_results)
 
 
 @mcp.tool(
