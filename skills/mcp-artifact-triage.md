@@ -4,13 +4,13 @@ Workflow per usare il layer MCP read-only di Source Observatory quando un agente
 
 ## Quando usarlo
 
-Usalo quando la domanda e':
+Usalo quando la domanda è:
 
 - quali fonti sono gia' osservate?
 - quali cataloghi sono inventariati?
 - ci sono candidati portale nuovi?
 - cosa dicono gli artifact prima di aprire un nuovo source-check?
-- perche' una fonte non compare nel catalog inventory?
+- perchè una fonte non compare nel catalog inventory?
 
 Non usarlo per:
 
@@ -23,11 +23,11 @@ Non usarlo per:
 
 1. `so_radar_summary`
    - orienta lo stato fonte e la copertura radar
-   - utile per capire se una fonte e' gia' nota anche senza inventory
+   - utile per capire se una fonte è gia' nota anche senza inventory
 
 2. `so_radar_history`
    - legge la storia probes per capire fonti con streak RED persistenti
-   - da usare quando serve capire se un RED e' occasionale o strutturale
+   - da usare quando serve capire se un RED è occasionale o strutturale
 
 3. `so_radar_status_md`
    - legge STATUS.md per un sommario umano leggibile
@@ -40,9 +40,9 @@ Non usarlo per:
 
 5. `so_inventory_status`
    - legge il report del catalog inventory
-   - usa il GCS pubblico di default, altrimenti cache locale se il backend e' `local` o GCS non e' raggiungibile in `auto`
+   - usa il GCS pubblico di default, altrimenti cache locale se il backend è `local` o GCS non è raggiungibile in `auto`
    - distingue `ok`, `error`, `protocol_not_supported` e assenza dal run
-   - e' il primo posto da controllare quando una fonte non appare nel parquet
+   - è il primo posto da controllare quando una fonte non appare nel parquet
 
 6. `so_catalog_inventory_search`
    - cerca item o dataflow solo dentro l'inventory derivato
@@ -59,7 +59,7 @@ Non usarlo per:
 
 9. `so_find_by_url`
    - cerca un URL in source_check_results e catalog_inventory
-   - da usare quando si conosce gia' un URL e si vuole sapere se e' catalogato
+   - da usare quando si conosce gia' un URL e si vuole sapere se è catalogato
 
 10. `so_registry_query`
     - interroga sources_registry.yaml per protocol, source_kind, observation_mode
@@ -75,15 +75,15 @@ Non usarlo per:
 
 13. `so_discover_sdmx`
    - consulta l'inventory SDMX se disponibile
-   - se l'inventory non e' disponibile, leggere lo stato restituito e non dedurre che ISTAT non abbia dataflow
+   - se l'inventory non è disponibile, leggere lo stato restituito e non dedurre che ISTAT non abbia dataflow
 
 ## Regole di interpretazione
 
 - Ogni risposta va letta insieme al campo `artifact` o `source`.
-- Per i parquet, `cache.source = gcs` e' la situazione preferita quando i prefissi GCS sono configurati.
+- Per i parquet, `cache.source = gcs` è la situazione preferita quando i prefissi GCS sono configurati.
 - Per i parquet, leggere sempre anche il blocco `cache`: se `stale = true`, refresh da artifact CI/GCS o rigenera prima di usare i risultati come stato corrente.
-- Un artifact mancante e' un problema di disponibilita' del run, non una conclusione sulla fonte.
-- Una fonte assente dall'inventory puo' essere fuori perimetro, non supportata, fallita nel run o semplicemente non enumerabile in modo difendibile.
+- Un artifact mancante è un problema di disponibilità del run, non una conclusione sulla fonte.
+- Una fonte assente dall'inventory può essere fuori perimetro, non supportata, fallita nel run o semplicemente non enumerabile in modo difendibile.
 - `source_check_results.parquet` e `catalog_inventory_latest.parquet` hanno semantiche diverse: il primo contiene controlli item-level, il secondo inventory cataloghi.
 - Non fare fallback automatici tra artifact diversi senza dichiararlo nel report.
 
@@ -94,7 +94,7 @@ Un triage MCP dovrebbe chiudere con:
 - artifact consultati
 - freschezza della cache locale, se sono stati letti parquet
 - stato per fonte, se rilevante
-- cosa e' coperto dagli artifact
+- cosa è coperto dagli artifact
 - cosa resta fuori
 - prossimo workflow consigliato
 
@@ -105,11 +105,11 @@ Artifact letti:
 - radar_summary: fonte presente, stato YELLOW
 - inventory_status: run error su endpoint catalogo
 - source_check_results: cache locale stale, non usata come fonte corrente
-- catalog_inventory_search: non interrogato perche' inventory non disponibile
+- catalog_inventory_search: non interrogato perchè inventory non disponibile
 
 Interpretazione:
-la fonte e' nota al radar, ma non c'e' inventory interrogabile. Non e' una prova di assenza dataset.
+la fonte è nota al radar, ma non c'è inventory interrogabile. Non è una prova di assenza dataset.
 
 Next step:
-source-check su item noto oppure portal-scout se serve rivalutare l'enumerabilita'.
+source-check su item noto oppure portal-scout se serve rivalutare l'enumerabilità.
 ```
