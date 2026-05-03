@@ -62,7 +62,7 @@ Verifica raggiungibilità e leggibilità (redirect, login, WAF). Qualifica come 
 2. **Sufficienza Semantica**:
    - [ ] Il dato è leggibile subito?
    - [ ] Messaggi/Valori chiave sono autonomi?
-   - [ ] Esite un output minimo senza join esterne?
+   - [ ] Esiste un output minimo senza join esterne?
 3. **Domanda Civica**: Formula in una riga *perché* non è solo un "elenco" ma serve a una domanda reale.
 4. **Perimetro v0**: Fissa geografia e finestra temporale iniziale (preferisci perimetro stretto).
 5. **Deduplica**: Controlla se il filone è già vivo in `Discussion` o `dataset-incubator`.
