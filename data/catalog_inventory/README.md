@@ -42,9 +42,9 @@ La directory `generated/` non è versionata nel repo:
 - il latest operativo pubblico e' su `gs://dataciviclab-clean/catalog_inventory/`
 - i file locali sono cache operative: per analisi correnti usare il parquet GCS latest o rigenerare prima del triage
 
-## Schema minimo del parquet
+## Schema parquet
 
-Colonne chiave:
+Colonne chiave (per schema completo vedere `docs/source_check_results_schema.md`):
 - `captured_at`: timestamp UTC del run inventory
 - `source_id`: id della fonte nel registry (`istat_sdmx`, `inps`, `openbdap`, ...)
 - `source_kind`: oggi atteso `catalog`
@@ -59,6 +59,20 @@ Colonne chiave:
 - `notes_excerpt`: estratto breve delle note, se disponibile
 - `source_url`: endpoint usato per l'inventory
 - `ordinal`: posizione del record nell'enumerazione della fonte
+- `url`: URL diretto alla risorsa dati (popolato da collector HTML)
+- `format`: formato della risorsa (`CSV`, `XLSX`, `ZIP`, ...)
+- `prefix`: segmento iniziale del filename (utile per inferenza granularità)
+- `year_signal`: anno estratto dal nome file
+
+## Accesso via MCP
+
+I tool MCP SO forniscono accesso programmatco a questi artifact:
+- `so_inventory_query` — query parquet source-check-results con filtri per source e score
+- `so_inventory_status` — legge `catalog_inventory_report.json` per stato build per fonte
+- `so_catalog_inventory_search` — cerca item nell'inventory parquet per keyword
+- `so_find_by_url` — trova un URL in entrambi i parquet (source-check + inventory)
+
+GCS latest: `gs://dataciviclab-clean/catalog_inventory/catalog_inventory_latest.parquet`
 
 **Nota su ANAC**: la fonte è nel registry come `catalog-watch` ma non è inventariabile automaticamente — risponde con WAF `Request Rejected` ai client HTTP standard. Non introduciamo bypass anti-bot per forzare il conteggio.
 
