@@ -1,6 +1,6 @@
-# Workflows
+# Skills
 
-Indice minimo dei workflow canonici di `source-observatory`.
+Indice delle guide operative di `source-observatory`.
 
 ## MCP tools come modo consigliato
 
