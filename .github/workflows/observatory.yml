@@ -85,15 +85,27 @@ jobs:
           fi
 
       # ═══════════════════════════════════════════════════════════════════
-      # STEP 2 — INVENTORY (only Monday)
+      # STEP 2 — INVENTORY (only Monday or manual dispatch)
       # ═══════════════════════════════════════════════════════════════════
+      - name: Set IS_INVENTORY_RUN flag
+        run: |
+          DAY=$(date +%u)
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "$DAY" == "1" ]]; then
+            echo "IS_INVENTORY_RUN=true" >> "$GITHUB_ENV"
+          else
+            echo "IS_INVENTORY_RUN=false" >> "$GITHUB_ENV"
+          fi
+          echo "Day of week: $DAY, IS_INVENTORY_RUN: $IS_INVENTORY_RUN"
+
       - name: Download previous report for signals delta
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         run: |
           prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
           prefix="${prefix%/}"
           gcloud storage cp "$prefix/catalog_inventory_report.json" previous_report.json || echo "{}" > previous_report.json
 
       - name: Download catalog inventory from GCS (always — for source-check upsert)
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         run: |
           prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
           prefix="${prefix%/}"
@@ -102,14 +114,14 @@ jobs:
             data/catalog_inventory/generated/catalog_inventory_latest.parquet || echo "No inventory snapshot yet"
 
       - name: Build catalog inventory
-        if: ${{ github.event.schedule == '15 3 * * 1' }}
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
         run: |
           python scripts/build_catalog_inventory.py \
             --out-dir data/catalog_inventory/generated \
             --workers 4
 
       - name: Build catalog signals
-        if: ${{ github.event.schedule == '15 3 * * 1' }}
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
         run: |
           python scripts/build_catalog_signals.py \
             --report data/catalog_inventory/generated/catalog_inventory_report.json \
@@ -119,7 +131,7 @@ jobs:
             --report-out data/catalog/CATALOG_WATCH_REPORT.md
 
       - name: Commit catalog signals
-        if: ${{ github.event.schedule == '15 3 * * 1' }}
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -134,7 +146,7 @@ jobs:
           fi
 
       - name: Generate raw diff
-        if: ${{ github.event.schedule == '15 3 * * 1' }}
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
         run: |
           if python -c "import json,sys; d=json.load(open('previous_report.json')); sys.exit(0 if d.get('sources') else 1)"; then
             python scripts/catalog_diff.py previous_report.json data/catalog_inventory/generated/catalog_inventory_report.json --output diff.md
@@ -145,7 +157,7 @@ jobs:
           fi
 
       - name: Build enriched issue body
-        if: ${{ github.event.schedule == '15 3 * * 1' }}
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
         env:
           GCS_PREFIX: ${{ secrets.CATALOG_INVENTORY_GCS_PREFIX }}
         run: |
@@ -164,15 +176,13 @@ jobs:
           new_report = json.loads(Path("data/catalog_inventory/generated/catalog_inventory_report.json").read_text(encoding="utf-8"))
           radar = json.loads(Path("data/radar/radar_summary.json").read_text(encoding="utf-8")) if Path("data/radar/radar_summary.json").exists() else {}
 
-          # Count categories from raw diff markdown
-          regressions = len(re.findall(r'^#### Regressioni', raw, re.M))
-          recoveries  = len(re.findall(r'^#### Recovery', raw, re.M))
-          new_sources = len(re.findall(r'^#### Nuove fonti', raw, re.M))
-          removed     = len(re.findall(r'^#### Fonti rimosse', raw, re.M))
-          changed     = len(re.findall(r'^#### Variazione numero', raw, re.M))
+          # Count categories from raw diff markdown — count bullet lines, not sections
+          regressions   = len(re.findall(r'^- `[^`]+`.*errore', raw, re.M))
+          recoveries    = len(re.findall(r'^- `[^`]+`.*tornato ok', raw, re.M))
+          new_sources   = len(re.findall(r'^- `[^`]+`.*\d+ item', raw, re.M))
+          removed       = len(re.findall(r'^- `[^`]+`.*precedentemente', raw, re.M))
 
           total_items_new = sum(v.get("rows", 0) for v in new_report.get("sources", {}).values())
-          total_items_old = 0
 
           # Compute delta from changed rows
           delta_items = 0
@@ -190,7 +200,7 @@ jobs:
           if new_sources: parts.append(f"{new_sources} nuova fonte")
           if recoveries:  parts.append(f"{recoveries} recovery")
           if removed:      parts.append(f"{removed} rimossa")
-          if changed and delta_items: parts.append(f"{delta_items:+d} item")
+          if delta_items:  parts.append(f"{delta_items:+d} item")
 
           title_base = "[Catalog] " + date_str
           if parts:
@@ -201,13 +211,15 @@ jobs:
           # Build enriched body
           gcs = '${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'.replace('gs://', '').rstrip('/')
 
+          counts = radar.get('status_counts', {})
+
           lines = [
-            f"## Radar status (@ {captured[:19]} UTC)",
-            "",
-            f"- Fonti totali: {radar.get('sources_total', '?')}",
-            f"- ✅ ok: {radar.get('status_counts', {}).get('ok', 0)}",
-            f"- ⚠️ yellow: {radar.get('status_counts', {}).get('yellow', 0)}",
-            f"- 🔴 red: {radar.get('status_counts', {}).get('red', 0)}",
+              f"## Radar status (@ {captured[:19]} UTC)",
+              "",
+              f"- Fonti totali: {radar.get('sources_total', '?')}",
+              f"- ✅ GREEN: {counts.get('GREEN', 0)}",
+              f"- ⚠️ YELLOW: {counts.get('YELLOW', 0)}",
+              f"- 🔴 RED: {counts.get('RED', 0)}",
           ]
           if radar.get('persistent_red'):
               lines.append(f"- ⚠️ persistent red: {radar['persistent_red']}")
@@ -246,7 +258,7 @@ jobs:
           PY
 
       - name: Create or update catalog alert issue
-        if: ${{ github.event.schedule == '15 3 * * 1' }}
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -257,7 +269,7 @@ jobs:
 
           TITLE=$(cat issue_title.txt)
           BODY_FILE="issue_body.md"
-          LABELS=$(cat issue_labels.json)
+          LABEL_ARGS=$(python3 -c "import json,sys; print(' '.join('--label '+l for l in json.load(open('issue_labels.json'))))")
 
           EXISTING=$(gh issue list --label "catalog-alert" --state open --json number,title --jq ".[] | select(.title | startswith(\"[Catalog]\")) | .number" | head -1)
           if [ -n "$EXISTING" ]; then
@@ -265,7 +277,7 @@ jobs:
             gh issue comment "$EXISTING" --body-file "$BODY_FILE"
           else
             echo "Apro nuova issue."
-            gh issue create --title "$TITLE" --body-file "$BODY_FILE" --label $LABELS
+            eval "gh issue create --title \"\$TITLE\" --body-file \"\$BODY_FILE\" $LABEL_ARGS"
           fi
 
       # ═══════════════════════════════════════════════════════════════════
@@ -292,7 +304,7 @@ jobs:
             --workers 8
 
       # ═══════════════════════════════════════════════════════════════════
-      # STEP 4 — UPLOAD (always source-check, inventory only Monday)
+      # STEP 4 — UPLOAD (always source-check, inventory only on inventory run)
       # ═══════════════════════════════════════════════════════════════════
       - name: Upload source-check results to GCS
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
@@ -306,7 +318,7 @@ jobs:
             "$prefix/source-check/snapshots/source_check_${stamp}.parquet"
 
       - name: Upload inventory snapshot to GCS
-        if: ${{ github.event.schedule == '15 3 * * 1' }}
+        if: ${{ env.IS_INVENTORY_RUN == 'true' && env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         run: |
           stamp=$(python - <<'PY'
           import json
