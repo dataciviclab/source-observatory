@@ -77,41 +77,28 @@ _FORMAT_BY_SUFFIX = {
 _ENV_LOADED = False
 
 
-def _load_collectors_base() -> Any:
-    spec = importlib.util.spec_from_file_location("_so_collectors_base", _COLLECTORS_BASE)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot load collectors base from {_COLLECTORS_BASE}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+_collectors_base = None
+observatory_get = None
+observatory_head = None
 
 
-_collectors_base = _load_collectors_base()
-observatory_get = _collectors_base.observatory_get
-observatory_head = _collectors_base.observatory_head
+def _get_observatory_get() -> Any:
+    global _collectors_base, observatory_get, observatory_head
+    if _collectors_base is None:
+        spec = importlib.util.spec_from_file_location("_so_collectors_base", _COLLECTORS_BASE)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Cannot load collectors base from {_COLLECTORS_BASE}")
+        _collectors_base = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = _collectors_base
+        spec.loader.exec_module(_collectors_base)
+        observatory_get = _collectors_base.observatory_get
+        observatory_head = _collectors_base.observatory_head
+    return observatory_get
 
 
-@dataclass(frozen=True)
-class _ParquetArtifact:
-    name: str
-    local_path: Path
-    gcs_env: str
-    gcs_key: str
-
-
-@dataclass(frozen=True)
-class _ParquetArtifact:
-    name: str
-    local_path: Path
-    gcs_env: str
-    gcs_key: str
-
-    def gcs_uri(self) -> str | None:
-        prefix = _gcs_prefix(self.gcs_env)
-        if prefix is None:
-            return None
-        return f"{prefix.rstrip('/')}/{self.gcs_key}"
+def _get_observatory_head() -> Any:
+    _get_observatory_get()  # ensure initialized
+    return observatory_head
 
 
 @dataclass(frozen=True)
@@ -732,33 +719,28 @@ def query_inventory(
             con = duckdb.connect()
             try:
                 cols = _table_columns(con, parquet_path)
+                query = f'SELECT * FROM "{parquet_path}"'
+                filters: list[str] = []
+                params: list[Any] = []
+
+                if source_id:
+                    filters.append("source_id = ?")
+                    params.append(source_id)
+                if min_score is not None:
+                    filters.append("intake_score >= ?")
+                    params.append(min_score)
+                if has_results is not None:
+                    if has_results:
+                        filters.append("intake_score IS NOT NULL AND intake_score > 0")
+                    else:
+                        filters.append("(intake_score IS NULL OR intake_score = 0)")
+                if filters:
+                    query += " WHERE " + " AND ".join(filters)
+                query += f" ORDER BY intake_score DESC NULLS LAST LIMIT {safe_limit}"
+
+                rows = con.execute(query, params).fetchall()
             finally:
                 con.close()
-
-            query = f'SELECT * FROM "{parquet_path}"'
-            filters: list[str] = []
-            params: list[Any] = []
-
-            if source_id:
-                filters.append("source_id = ?")
-                params.append(source_id)
-            if min_score is not None:
-                filters.append("intake_score >= ?")
-                params.append(min_score)
-            if has_results is not None:
-                if has_results:
-                    filters.append("intake_score IS NOT NULL AND intake_score > 0")
-                else:
-                    filters.append("(intake_score IS NULL OR intake_score = 0)")
-            if filters:
-                query += " WHERE " + " AND ".join(filters)
-            query += f" ORDER BY intake_score DESC NULLS LAST LIMIT {safe_limit}"
-
-            con2 = duckdb.connect()
-            try:
-                rows = con2.execute(query, params).fetchall()
-            finally:
-                con2.close()
     except FileNotFoundError:
         return _parquet_not_found(artifact)
 
@@ -771,6 +753,9 @@ def query_inventory(
         "returned": len(rows),
         "has_more": len(rows) == safe_limit,
     }
+
+
+def inventory_status(source_id: str | None = None) -> dict[str, Any]:
     """Return catalog inventory build status from catalog_inventory_report.json."""
     loaded = _load_inventory_report()
     if loaded is None:
@@ -1019,10 +1004,10 @@ def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
 
     safe_timeout = max(1, min(int(timeout or 15), 60))
     try:
-        response = observatory_head(clean_url, timeout=safe_timeout)
+        response = _get_observatory_head()(clean_url, timeout=safe_timeout)
     except requests.RequestException as exc:
         try:
-            response = observatory_get(
+            response = _get_observatory_get()(
                 clean_url,
                 timeout=safe_timeout,
                 headers={"Range": "bytes=0-0"},
