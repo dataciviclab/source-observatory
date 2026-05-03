@@ -33,7 +33,8 @@ Ogni riga corrisponde a un item controllato. Le colonne si dividono in tre grupp
 
 | Campo | Tipo | Descrizione |
 |---|---|---|
-| `url_checked` | `str` | URL su cui è stato eseguito il HEAD check. Precedenza: `resource_url` (enrichment) → `landing_page` (catalogo) → `distribution_url` (catalogo). Può essere stringa vuota se nessun URL era disponibile. |
+| `url` | `str` | URL diretto alla risorsa dati. Popolato dal collector HTML per fonti senza API strutturata. Presente anche in `catalog_inventory_latest.parquet`. |
+| `url_checked` | `str` | URL su cui è stato eseguito il HEAD check. Precedenza: `resource_url` (enrichment) → `landing_page` (catalogo) → `distribution_url` (catalogo) → `url` (collector). Può essere stringa vuota se nessun URL era disponibile. |
 | `http_status` | `int` | Codice HTTP restituito dal HEAD. `None` se il check non è stato possibile (es. URL mancante, errore di rete). |
 | `reachable` | `bool` | `True` se `http_status` è < 400. `False` altrimenti (inclusi i casi di errore di rete che producono `http_status = None`). |
 | `check_notes` | `str` | Motivo dell'errore se `reachable = False`. Valori possibili: `"url_missing_or_invalid"`, `"ssl_error"`, `"connection_error"`, `"timeout"`, o altro messaggio. Troncato a 120 caratteri nel path normale via `_http_head()`; fino a 200 caratteri nel fallback su eccezioni non gestite. `None` se il check è andato a buon fine. |
