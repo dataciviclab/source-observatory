@@ -305,7 +305,7 @@ opencoesione:
     (redirect a /it/ con 404 "Pagina non trovata"). Mantenuto in radar-only
     per eventuale monitoraggio futuro.
   catalog_baseline:
-    captured_at: '2024-04-09'
+    captured_at: '2026-04-09'
     metric: data_aggiornamento
     value: '2025-10-31'
     method: api_root
