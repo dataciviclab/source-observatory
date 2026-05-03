@@ -3,8 +3,8 @@ name: observatory
 on:
   workflow_dispatch:
   schedule:
-    # Lunedì 03:15 — inventory + signals + source-check
-    - cron: "15 3 * * 1"
+    # Ogni giorno 03:15 — radar sempre, inventory solo lunedì, source-check incrementale sempre
+    - cron: "15 3 * * *"
 
 permissions:
   contents: write
@@ -15,16 +15,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+  CATALOG_INVENTORY_GCS_PREFIX: ${{ secrets.CATALOG_INVENTORY_GCS_PREFIX }}
+
 jobs:
   observatory:
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
-    env:
-      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      CATALOG_INVENTORY_GCS_PREFIX: ${{ secrets.CATALOG_INVENTORY_GCS_PREFIX }}
 
     steps:
       - name: Checkout
@@ -52,7 +53,50 @@ jobs:
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         uses: google-github-actions/setup-gcloud@v3
 
-      # ── Inventory: download baseline + previous report ──────────────────
+      # ═══════════════════════════════════════════════════════════════════
+      # STEP 1 — RADAR (always, ~30s)
+      # ═══════════════════════════════════════════════════════════════════
+      - name: Run radar check
+        run: |
+          python scripts/radar_check.py
+
+      - name: Upload radar artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: radar-results
+          path: |
+            data/radar/radar_summary.json
+            data/radar/radar_history.json
+            data/radar/sources_registry.yaml
+            data/radar/STATUS.md
+
+      - name: Commit radar state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/radar/radar_history.json data/radar/radar_summary.json data/radar/sources_registry.yaml data/radar/STATUS.md
+          if git diff --cached --quiet; then
+            echo "Nessuna variazione nel radar."
+          else
+            git commit -m "chore(so): refresh radar status [ci skip]"
+            git push
+          fi
+
+      # ═══════════════════════════════════════════════════════════════════
+      # STEP 2 — INVENTORY (only Monday or manual dispatch)
+      # ═══════════════════════════════════════════════════════════════════
+      - name: Set IS_INVENTORY_RUN flag
+        run: |
+          DAY=$(date +%u)
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "$DAY" == "1" ]]; then
+            echo "IS_INVENTORY_RUN=true" >> "$GITHUB_ENV"
+          else
+            echo "IS_INVENTORY_RUN=false" >> "$GITHUB_ENV"
+          fi
+          echo "Day of week: $DAY, IS_INVENTORY_RUN: $IS_INVENTORY_RUN"
+
       - name: Download previous report for signals delta
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         run: |
@@ -60,25 +104,24 @@ jobs:
           prefix="${prefix%/}"
           gcloud storage cp "$prefix/catalog_inventory_report.json" previous_report.json || echo "{}" > previous_report.json
 
-      - name: Download catalog inventory parquet from GCS
-        id: download_inventory
+      - name: Download catalog inventory from GCS (always — for source-check upsert)
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         run: |
           prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
           prefix="${prefix%/}"
           mkdir -p data/catalog_inventory/generated
           gcloud storage cp "$prefix/catalog_inventory_latest.parquet" \
-            data/catalog_inventory/generated/catalog_inventory_latest.parquet
+            data/catalog_inventory/generated/catalog_inventory_latest.parquet || echo "No inventory snapshot yet"
 
-      # ── Inventory: build ────────────────────────────────────────────────
       - name: Build catalog inventory
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
         run: |
           python scripts/build_catalog_inventory.py \
             --out-dir data/catalog_inventory/generated \
             --workers 4
 
-      # ── Signals: build (uses previous for delta) ──────────────────────────
       - name: Build catalog signals
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
         run: |
           python scripts/build_catalog_signals.py \
             --report data/catalog_inventory/generated/catalog_inventory_report.json \
@@ -88,6 +131,7 @@ jobs:
             --report-out data/catalog/CATALOG_WATCH_REPORT.md
 
       - name: Commit catalog signals
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -101,46 +145,198 @@ jobs:
             git push
           fi
 
-      # ── Diff alert ─────────────────────────────────────────────────────────
-      - name: Generate diff and alert
-        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Generate raw diff
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
         run: |
           if python -c "import json,sys; d=json.load(open('previous_report.json')); sys.exit(0 if d.get('sources') else 1)"; then
             python scripts/catalog_diff.py previous_report.json data/catalog_inventory/generated/catalog_inventory_report.json --output diff.md
           else
+            echo "NO_BASELINE" > diff.md
             echo "Nessun baseline precedente — skip diff (primo run)."
             exit 0
           fi
 
-          if [ -s diff.md ]; then
-            echo "Diff rilevato."
-            ISSUE_TITLE="[Catalog] Variazioni rilevate nell'inventario"
-            EXISTING=$(gh issue list --label "catalog-alert" --state open --json number,title --jq ".[] | select(.title==\"$ISSUE_TITLE\") | .number" | head -1)
-            if [ -n "$EXISTING" ]; then
-              echo "Aggiorno issue #$EXISTING esistente."
-              gh issue comment "$EXISTING" --body-file diff.md
-            else
-              echo "Apro nuova issue."
-              gh issue create --title "$ISSUE_TITLE" --body-file diff.md --label "catalog-alert"
-            fi
-          else
-            echo "Nessuna variazione rilevata."
+      - name: Build enriched issue body
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
+        env:
+          GCS_PREFIX: ${{ secrets.CATALOG_INVENTORY_GCS_PREFIX }}
+        run: |
+          python - <<'PY'
+          import json, re, sys
+          from pathlib import Path
+          from datetime import datetime, timezone
+
+          # Parse raw diff
+          raw = Path("diff.md").read_text(encoding="utf-8") if Path("diff.md").exists() else ""
+          if raw == "NO_BASELINE":
+              print("No baseline — skipping issue creation.")
+              sys.exit(0)
+
+          # Load reports
+          new_report = json.loads(Path("data/catalog_inventory/generated/catalog_inventory_report.json").read_text(encoding="utf-8"))
+          radar = json.loads(Path("data/radar/radar_summary.json").read_text(encoding="utf-8")) if Path("data/radar/radar_summary.json").exists() else {}
+
+          # Count categories from raw diff markdown — isolate section before counting
+          # Each section starts with "#### <heading>" and ends before the next "####"
+          sections = re.split(r'^#### ', raw, flags=re.M)
+
+          regressions = 0
+          recoveries  = 0
+          new_sources = 0
+          removed     = 0
+
+          for section in sections:
+              lines = section.splitlines()
+              if not lines:
+                  continue
+              heading = lines[0].strip()
+              body = '\n'.join(lines[1:])
+              if heading == 'Regressioni (ok → errore)':
+                  regressions = len(re.findall(r'^- `([^`]+)`', body, re.M))
+              elif heading == 'Recovery (errore → ok)':
+                  recoveries = len(re.findall(r'^- `([^`]+)`', body, re.M))
+              elif heading == 'Nuove fonti rilevate':
+                  new_sources = len(re.findall(r'^- `([^`]+)`', body, re.M))
+              elif heading == 'Fonti rimosse o non più raggiungibili':
+                  removed = len(re.findall(r'^- `([^`]+)`', body, re.M))
+
+          total_items_new = sum(v.get("rows", 0) for v in new_report.get("sources", {}).values())
+
+          # Compute delta from changed rows
+          delta_items = 0
+          for line in raw.splitlines():
+              m = re.search(r'\| `([^`]+)` \| (\d+) \| (\d+) \|', line)
+              if m:
+                  delta_items += (int(m.group(3)) - int(m.group(2)))
+
+          captured = new_report.get("captured_at", datetime.now(timezone.utc).isoformat())
+          date_str = captured[:10]
+
+          # Build dynamic title
+          parts = []
+          if regressions: parts.append(f"{regressions} regressione{'e' if regressions==1 else 'i'}")
+          if new_sources: parts.append(f"{new_sources} nuova fonte")
+          if recoveries:  parts.append(f"{recoveries} recovery")
+          if removed:      parts.append(f"{removed} rimossa")
+          if delta_items:  parts.append(f"{delta_items:+d} item")
+
+          title_base = "[Catalog] " + date_str
+          if parts:
+              title_base += " — " + ", ".join(parts)
+          else:
+              title_base += " — variazioni"
+
+          # Build enriched body
+          gcs = '${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'.replace('gs://', '').rstrip('/')
+
+          counts = radar.get('status_counts', {})
+
+          lines = [
+              f"## Radar status (@ {captured[:19]} UTC)",
+              "",
+              f"- Fonti totali: {radar.get('sources_total', '?')}",
+              f"- ✅ GREEN: {counts.get('GREEN', 0)}",
+              f"- ⚠️ YELLOW: {counts.get('YELLOW', 0)}",
+              f"- 🔴 RED: {counts.get('RED', 0)}",
+          ]
+          if radar.get('persistent_red'):
+              lines.append(f"- ⚠️ persistent red: {radar['persistent_red']}")
+          lines.append("")
+
+          lines.append("## Sommario inventario")
+          lines.append(f"- Nuove fonti: **{new_sources}**")
+          lines.append(f"- Rimosse: **{removed}**")
+          lines.append(f"- Regressioni: **{regressions}**")
+          lines.append(f"- Recovery: **{recoveries}**")
+          lines.append(f"- Variazione item: **{delta_items:+d}** (totale: {total_items_new})")
+          lines.append("")
+
+          lines.append("## Dettaglio")
+          lines.append(raw)
+          lines.append("")
+
+          lines.append("## Risorse")
+          lines.append(f"- [Snapshot GCS](https://console.cloud.google.com/storage/browser/{gcs}/snapshots/catalog_inventory_{captured[:10].replace('-','')}.parquet)")
+          lines.append(f"- [Report JSON](https://console.cloud.google.com/storage/browser/{gcs}/snapshots/catalog_inventory_report_{captured[:10].replace('-','')}.json)")
+          lines.append(f"- [Radar summary](../../data/radar/radar_summary.json)")
+          lines.append("")
+
+          # Labels
+          labels = ["catalog-alert"]
+          if regressions: labels.append("catalog-regression")
+          if new_sources: labels.append("catalog-new-source")
+          if recoveries:  labels.append("catalog-recovery")
+
+          Path("issue_title.txt").write_text(title_base, encoding="utf-8")
+          Path("issue_body.md").write_text("\n".join(lines), encoding="utf-8")
+          Path("issue_labels.json").write_text(json.dumps(labels), encoding="utf-8")
+
+          print(f"Title: {title_base}")
+          print(f"Labels: {labels}")
+          PY
+
+      - name: Create or update catalog alert issue
+        if: ${{ env.IS_INVENTORY_RUN == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -f issue_title.txt ]; then
+            echo "Nessuna variazione o baseline assente."
+            exit 0
           fi
 
-      # ── Source-check: only items with URL, smart sampling 500 ─────────────
-      - name: Run bulk source-check
+          TITLE=$(cat issue_title.txt)
+          BODY_FILE="issue_body.md"
+          LABEL_ARGS=$(python3 -c "import json,sys; print(' '.join('--label '+l for l in json.load(open('issue_labels.json'))))")
+
+          EXISTING=$(gh issue list --label "catalog-alert" --state open --json number,title --jq ".[] | select(.title | startswith(\"[Catalog]\")) | .number" | head -1)
+          if [ -n "$EXISTING" ]; then
+            echo "Aggiorno issue #$EXISTING."
+            gh issue comment "$EXISTING" --body-file "$BODY_FILE"
+          else
+            echo "Apro nuova issue."
+            eval "gh issue create --title \"\$TITLE\" --body-file \"\$BODY_FILE\" $LABEL_ARGS"
+          fi
+
+      # ═══════════════════════════════════════════════════════════════════
+      # STEP 3 — SOURCE-CHECK (always, ~3-5 min)
+      # Incrementale: skip item già checkati di recente
+      # ═══════════════════════════════════════════════════════════════════
+      - name: Download source-check results from GCS (for incremental merge)
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        run: |
+          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
+          prefix="${prefix%/}"
+          mkdir -p data/catalog_inventory/generated
+          gcloud storage cp "$prefix/source-check/source_check_results.parquet" \
+            data/catalog_inventory/generated/source_check_results.parquet 2>/dev/null || \
+            echo "No previous results — starting fresh"
+
+      - name: Run bulk source-check (incremental)
         run: |
           python scripts/bulk_source_check.py \
             --skip-red-sources \
             --no-sdmx-years \
-            --max-items 500 \
+            --max-items 200 \
+            --max-age-days 7 \
             --workers 8
 
-      # ── Upload to GCS ─────────────────────────────────────────────────────
-      - name: Upload inventory snapshot to GCS
+      # ═══════════════════════════════════════════════════════════════════
+      # STEP 4 — UPLOAD (always source-check, inventory only on inventory run)
+      # ═══════════════════════════════════════════════════════════════════
+      - name: Upload source-check results to GCS
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        run: |
+          stamp=$(python -c "from datetime import datetime, timezone; print(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S'))")
+          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
+          prefix="${prefix%/}"
+          gcloud storage cp data/catalog_inventory/generated/source_check_results.parquet \
+            "$prefix/source-check/source_check_results.parquet"
+          gcloud storage cp data/catalog_inventory/generated/source_check_results.parquet \
+            "$prefix/source-check/snapshots/source_check_${stamp}.parquet"
+
+      - name: Upload inventory snapshot to GCS
+        if: ${{ env.IS_INVENTORY_RUN == 'true' && env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
         run: |
           stamp=$(python - <<'PY'
           import json
@@ -156,66 +352,42 @@ jobs:
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/snapshots/catalog_inventory_${stamp}.parquet"
           gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/snapshots/catalog_inventory_report_${stamp}.json"
 
-      - name: Upload source-check results to GCS
-        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
-        run: |
-          stamp=$(python -c "from datetime import datetime, timezone; print(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S'))")
-          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
-          prefix="${prefix%/}"
-          gcloud storage cp data/catalog_inventory/generated/source_check_results.parquet \
-            "$prefix/source-check/source_check_results.parquet"
-          gcloud storage cp data/catalog_inventory/generated/source_check_results.parquet \
-            "$prefix/source-check/snapshots/source_check_${stamp}.parquet"
-
-      # ── Artifacts ─────────────────────────────────────────────────────────
+      # ═══════════════════════════════════════════════════════════════════
+      # STEP 5 — ARTIFACTS + SUMMARIES
+      # ═══════════════════════════════════════════════════════════════════
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v7
         with:
           name: observatory-results
           path: |
-            data/catalog_inventory/generated/catalog_inventory_latest.parquet
-            data/catalog_inventory/generated/catalog_inventory_report.json
             data/catalog_inventory/generated/source_check_results.parquet
-            data/catalog/catalog_signals.json
-            data/catalog/CATALOG_WATCH_REPORT.md
+            data/radar/radar_summary.json
+            data/radar/radar_history.json
 
-      # ── Summaries ─────────────────────────────────────────────────────────
-      - name: Publish catalog inventory summary
+      - name: Publish radar summary
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
 
-          report = json.loads(Path("data/catalog_inventory/generated/catalog_inventory_report.json").read_text(encoding="utf-8"))
-          repo = "${{ github.repository }}"
-          sha = "${{ github.sha }}"
+          summary = json.loads(Path("data/radar/radar_summary.json").read_text(encoding="utf-8"))
+          counts = summary.get("status_counts", {})
 
-          lines = ["## Catalog inventory", ""]
-          sources = report.get("sources", {})
-          error_count = sum(1 for info in sources.values() if info.get("status") == "error")
-          ok_count = sum(1 for info in sources.values() if info.get("status") == "ok")
-          total_count = len(sources)
-
-          if error_count > 0:
-              lines.append(f"> [!WARNING]\n> {error_count}/{total_count} source hanno riportato errori.")
+          lines = ["## Radar status", ""]
+          lines.append(f"- Fonti controllate: {summary.get('sources_total', '?')}")
+          for status, count in counts.items():
+              lines.append(f"- {status}: {count}")
+          if summary.get("persistent_red"):
+              lines.append(f"> [!WARNING]\n> {summary['persistent_red']} fonti RED persistenti (≥2 probe consecutivi)")
               lines.append("")
-
-          lines.append(f"- Fonti inventariate: {ok_count}/{total_count}")
           lines.append("")
+          for src in summary.get("sources", []):
+              flag = "⚠️" if src.get("red_streak", 0) >= 2 else "  "
+              lines.append(f"{flag} `{src['id']}` — {src['status']} | HTTP {src.get('http_code','-')} | {src.get('note','') or 'ok'}")
 
-          for source_id, info in sources.items():
-              status = info.get("status")
-              if status == "ok":
-                  lines.append(f"- `{source_id}`: ok ({info.get('rows')} item)")
-              elif status in ("non_inventariabile", "protocol_not_supported"):
-                  lines.append(f"- `{source_id}`: {status.replace('_', ' ')}")
-              else:
-                  err = info.get("error") or info.get("reason", "n/d")
-                  lines.append(f"- `{source_id}`: errore ({err})")
-
-          Path("catalog_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          Path("radar_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY
-          cat catalog_summary.md >> "$GITHUB_STEP_SUMMARY"
+          cat radar_summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Publish source-check summary
         run: |
@@ -230,7 +402,7 @@ jobs:
           avg_score = df["intake_score"].mean() if "intake_score" in df.columns else 0
 
           lines = ["## Source check results", ""]
-          lines.append(f"- Item controllati: {total}")
+          lines.append(f"- Item in database: {total}")
           if total:
               lines.append(f"- Raggiungibili: {reachable} ({reachable/total*100:.0f}%)")
           lines.append(f"- Intake candidates (score ≥ 40): {candidates}")
