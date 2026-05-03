@@ -312,3 +312,23 @@ opencoesione:
     reliability: unknown
     note: Baseline non piu' verificabile — portale ritirato.
   datasets_in_use: []
+mef_irpef:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
+  last_probed: '2026-05-03'
+  catalog_baseline:
+    captured_at: '2026-05-03'
+    metric: csv_magnet_homepage_links
+    value: 147
+    method: csv_magnet_homepage_direct
+    reliability: medium
+    note: "Sondaggio CSV magnet via homepage. 81 CSV + 66 ZIP (metadati) = 147 link totali su singola pagina statica. Nessuna sitemap ne sottopagine. Prefix: REG, cla, sesso, Redditi. Serie 2010-2025."
+  verdict: go
+  note: Portale MEF Dipartimento Finanze — Open Data IRPEF comunale. Dati fiscali regionali per tipo reddito, classi, sesso. Alta rilevanza civica per analisi disuguaglianza e gettito regionale.
+  html_portal:
+    topic_hint: fisco
+    homepage: https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
+    delay_seconds: 0.2
+  datasets_in_use: []
