@@ -76,7 +76,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/radar/radar_history.json data/radar/radar_summary.json data/radar/sources_registry.yaml
+          git add data/radar/radar_history.json data/radar/radar_summary.json data/radar/sources_registry.yaml data/radar/STATUS.md
           if git diff --cached --quiet; then
             echo "Nessuna variazione nel radar."
           else
@@ -176,11 +176,29 @@ jobs:
           new_report = json.loads(Path("data/catalog_inventory/generated/catalog_inventory_report.json").read_text(encoding="utf-8"))
           radar = json.loads(Path("data/radar/radar_summary.json").read_text(encoding="utf-8")) if Path("data/radar/radar_summary.json").exists() else {}
 
-          # Count categories from raw diff markdown — count bullet lines, not sections
-          regressions   = len(re.findall(r'^- `[^`]+`.*errore', raw, re.M))
-          recoveries    = len(re.findall(r'^- `[^`]+`.*tornato ok', raw, re.M))
-          new_sources   = len(re.findall(r'^- `[^`]+`.*\d+ item', raw, re.M))
-          removed       = len(re.findall(r'^- `[^`]+`.*precedentemente', raw, re.M))
+          # Count categories from raw diff markdown — isolate section before counting
+          # Each section starts with "#### <heading>" and ends before the next "####"
+          sections = re.split(r'^#### ', raw, flags=re.M)
+
+          regressions = 0
+          recoveries  = 0
+          new_sources = 0
+          removed     = 0
+
+          for section in sections:
+              lines = section.splitlines()
+              if not lines:
+                  continue
+              heading = lines[0].strip()
+              body = '\n'.join(lines[1:])
+              if heading == 'Regressioni (ok → errore)':
+                  regressions = len(re.findall(r'^- `([^`]+)`', body, re.M))
+              elif heading == 'Recovery (errore → ok)':
+                  recoveries = len(re.findall(r'^- `([^`]+)`', body, re.M))
+              elif heading == 'Nuove fonti rilevate':
+                  new_sources = len(re.findall(r'^- `([^`]+)`', body, re.M))
+              elif heading == 'Fonti rimosse o non più raggiungibili':
+                  removed = len(re.findall(r'^- `([^`]+)`', body, re.M))
 
           total_items_new = sum(v.get("rows", 0) for v in new_report.get("sources", {}).values())
 
