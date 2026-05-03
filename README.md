@@ -37,12 +37,12 @@ python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/gener
 python scripts/bulk_source_check.py --only-with-title --include-no-url --workers 8
 ```
 
-## Workflow
+## Skill
 
-I workflow in `workflows/` sono istruzioni operative per agenti e review umana. In parallelo, alcuni workflow GitHub Actions schedulati producono artifact e report di osservazione.
+I skill in `skills/` sono istruzioni operative per agenti e review umana. In parallelo, alcuni workflow GitHub Actions schedulati producono artifact e report di osservazione.
 
-- [`workflows/source-check.md`](workflows/source-check.md) — valuta se una fonte regge come pista del Lab
-- [`workflows/catalog-inventory-scout.md`](workflows/catalog-inventory-scout.md) — triage degli item in un catalogo noto
+- [`skills/source-check.md`](skills/source-check.md) — valuta se una fonte regge come pista del Lab
+- [`skills/catalog-inventory-scout.md`](skills/catalog-inventory-scout.md) — triage degli item in un catalogo noto
 
 ## Output e artefatti
 
@@ -64,7 +64,7 @@ I tre JSON (`radar_summary`, `catalog_signals`) sono consumati da **agent-contex
 ```
 scripts/    codice runtime
 data/       stato generato e report
-workflows/  istruzioni operative per agenti
+skills/  istruzioni operative per agenti
 docs/       architettura, runbook, policy
 ```
 

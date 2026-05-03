@@ -141,4 +141,4 @@ Per una domanda su "cosa sappiamo gia'":
 4. usare i source-check item-level per evidenze gia' validate
 5. usare probe o discovery solo per verifiche puntuali
 
-Il workflow di riferimento e' `workflows/mcp-artifact-triage.md`.
+Il workflow di riferimento e' `skills/mcp-artifact-triage.md`.
