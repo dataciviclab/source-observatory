@@ -296,18 +296,19 @@ mur_ustat:
 opencoesione:
   source_kind: catalog
   protocol: rest
-  observation_mode: catalog-watch
+  observation_mode: radar-only
   base_url: https://opencoesione.gov.it/it/api/
   last_probed: '2026-05-03'
+  verdict: hold
+  note: >
+    Portale disabilitato/ritirato. CKAN API non piu' raggiungibile
+    (redirect a /it/ con 404 "Pagina non trovata"). Mantenuto in radar-only
+    per eventuale monitoraggio futuro.
   catalog_baseline:
     captured_at: '2026-04-09'
     metric: data_aggiornamento
     value: '2025-10-31'
     method: api_root
-    reliability: medium
-    note: Baseline su campo data_aggiornamento esposto dal root API.
-  verdict: go
-  note: API REST custom con endpoint aggregati e data_aggiornamento. Usare per change
-    detection e trigger re-run del candidate DI.
-  datasets_in_use:
-  - opencoesione-pagamenti-ue-2014-2020
+    reliability: unknown
+    note: Baseline non piu' verificabile — portale ritirato.
+  datasets_in_use: []
