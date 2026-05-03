@@ -585,7 +585,7 @@ def find_by_url(url: str) -> dict[str, Any]:
             con = duckdb.connect()
             try:
                 cols = _table_columns(con, parquet_path)
-                url_cols = [c for c in cols if c in ("distribution_url", "landing_page", "source_url")]
+                url_cols = [c for c in cols if c in ("url", "url_checked", "distribution_url", "landing_page", "source_url")]
                 if not url_cols:
                     results["source_check_error"] = "No URL columns found in parquet"
                 else:
@@ -610,7 +610,7 @@ def find_by_url(url: str) -> dict[str, Any]:
             con = duckdb.connect()
             try:
                 cols = _table_columns(con, parquet_path)
-                url_cols = [c for c in cols if c in ("distribution_url", "landing_page", "source_url")]
+                url_cols = [c for c in cols if c in ("url", "url_checked", "distribution_url", "landing_page", "source_url")]
                 if not url_cols:
                     results["catalog_inventory_error"] = "No URL columns found in parquet"
                 else:
