@@ -80,6 +80,7 @@ _GRAN_PATTERNS: list[tuple[str, str]] = [
         "regione",
     ),
     (r"\bnazional[ei]\b|\bitali[ae]\b|\bnazione\b|\bnational\b|\bregional\b", "nazionale"),
+    (r"(?<![a-zA-Z])(REG|reg)(?![a-zA-Z])", "regione"),
     (r"\beurope[ao]\b|\bue\b|\beuropa\b|\beuropean\b", "europeo"),
 ]
 
@@ -741,10 +742,16 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
 # ── fallback euristica su campi catalogo ──────────────────────────────────────
 
 def _fallback_infer(row: pd.Series) -> tuple[str, Optional[int], Optional[int]]:
-    combined = " ".join(
-        str(v) for v in [row.get("title"), row.get("tags"), row.get("notes_excerpt")]
-        if v and str(v) != "nan"
-    )
+    # Composizione di campi: title, tags, notes_excerpt, prefix, url
+    # prefix è il segmento iniziale del filename (es. "REG", "cla", "Redditi")
+    # url completo può contenere hint geografici o di contenuto
+    parts = []
+    for col in ("title", "tags", "notes_excerpt", "prefix", "url"):
+        v = row.get(col)
+        if v and str(v) not in ("nan", "None", ""):
+            parts.append(str(v))
+
+    combined = " ".join(parts)
     return _infer_granularity(combined), *_infer_years(combined)
 
 

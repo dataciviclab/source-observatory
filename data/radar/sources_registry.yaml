@@ -324,7 +324,7 @@ mef_irpef:
     value: 147
     method: csv_magnet_homepage_direct
     reliability: medium
-    note: Sondaggio CSV magnet via homepage. 81 CSV + 66 ZIP (metadati) = 147 link totali su singola pagina statica. Nessuna sitemap ne' sottopagine. Prefix: REG, cla, sesso, Redditi. Serie 2010-2025.
+    note: "Sondaggio CSV magnet via homepage. 81 CSV + 66 ZIP (metadati) = 147 link totali su singola pagina statica. Nessuna sitemap ne sottopagine. Prefix: REG, cla, sesso, Redditi. Serie 2010-2025."
   verdict: go
   note: Portale MEF Dipartimento Finanze — Open Data IRPEF comunale. Dati fiscali regionali per tipo reddito, classi, sesso. Alta rilevanza civica per analisi disuguaglianza e gettito regionale.
   html_portal:
