@@ -48,6 +48,7 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 - `so_inventory_query`
   - legge `data/catalog_inventory/generated/source_check_results.parquet`
   - serve per cercare risultati item-level gia' controllati
+  - include `has_results` filter e `gcs_uri` in risposta
 
 - `so_catalog_signals`
   - legge `data/catalog/catalog_signals.json`
@@ -56,6 +57,26 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 - `so_radar_summary`
   - legge `data/radar/radar_summary.json`
   - serve per capire lo stato sintetico delle fonti nel radar
+
+- `so_radar_history`
+  - legge `data/radar/radar_history.json`
+  - serve per verificare streak/persistent RED e storia probes per fonte
+
+- `so_radar_status_md`
+  - legge `data/radar/STATUS.md`
+  - serve per avere un sommario umano leggibile dello stato radar
+
+- `so_radar_delta`
+  - confronta ultimo e penultimo probe del radar
+  - restituisce fonti cambiate, nuove RED, recovery, persistent RED
+
+- `so_find_by_url`
+  - cerca un URL in source_check_results e catalog_inventory
+  - serve per capire se un URL e' gia' catalogato
+
+- `so_registry_query`
+  - interroga `data/radar/sources_registry.yaml`
+  - filtra per protocol, source_kind, observation_mode o cerca per source_id
 
 - `so_inventory_status`
   - legge `data/catalog_inventory/generated/catalog_inventory_report.json`
@@ -99,6 +120,9 @@ Non deve:
 | Artifact | Uso MCP |
 |---|---|
 | `data/radar/radar_summary.json` | stato fonte radar |
+| `data/radar/radar_history.json` | storia probes e streak RED |
+| `data/radar/STATUS.md` | sommario umano radar |
+| `data/radar/sources_registry.yaml` | query fonti per protocol/kind/mode |
 | `data/catalog/catalog_signals.json` | segnali catalog-watch |
 | `CATALOG_INVENTORY_GCS_PREFIX/source-check/source_check_results.parquet` | risultati source-check item-level |
 | `CATALOG_INVENTORY_GCS_PREFIX/catalog_inventory_latest.parquet` | inventory cataloghi enumerabili |

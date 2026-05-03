@@ -35,9 +35,12 @@ _INVENTORY_REPORT = (
 )
 _SIGNALS_JSON = _REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
 _RADAR_JSON = _REPO_ROOT / "data" / "radar" / "radar_summary.json"
+_RADAR_HISTORY_JSON = _REPO_ROOT / "data" / "radar" / "radar_history.json"
+_STATUS_MD = _REPO_ROOT / "data" / "radar" / "STATUS.md"
 _PORTAL_SUMMARY_JSON = _REPO_ROOT / "data" / "portal_scout" / "discovered_portals_summary.json"
 _DISCOVERED_PORTALS_PARQUET = _REPO_ROOT / "data" / "portal_scout" / "discovered_portals.parquet"
 _NEW_CANDIDATES_PARQUET = _REPO_ROOT / "data" / "portal_scout" / "new_candidates.parquet"
+_REGISTRY_YAML = _REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 _DEFAULT_CACHE_MAX_AGE_HOURS = 24
 _DEFAULT_GCS_PREFIXES = {
     "CATALOG_INVENTORY_GCS_PREFIX": "gs://dataciviclab-clean/catalog_inventory",
@@ -98,11 +101,31 @@ class _ParquetArtifact:
 
 
 @dataclass(frozen=True)
+class _ParquetArtifact:
+    name: str
+    local_path: Path
+    gcs_env: str
+    gcs_key: str
+
+    def gcs_uri(self) -> str | None:
+        prefix = _gcs_prefix(self.gcs_env)
+        if prefix is None:
+            return None
+        return f"{prefix.rstrip('/')}/{self.gcs_key}"
+
+
+@dataclass(frozen=True)
 class _JsonArtifact:
     name: str
     local_path: Path
     gcs_env: str
     gcs_key: str
+
+    def gcs_uri(self) -> str | None:
+        prefix = _gcs_prefix(self.gcs_env)
+        if prefix is None:
+            return None
+        return f"{prefix.rstrip('/')}/{self.gcs_key}"
 
 
 def _source_check_parquet() -> _ParquetArtifact:
@@ -383,50 +406,6 @@ def _load_inventory_report() -> tuple[dict[str, Any], dict[str, Any]] | None:
         return None
 
 
-def query_inventory(
-    source_id: str | None = None,
-    min_score: int | None = None,
-    limit: int = 50,
-) -> dict[str, Any]:
-    """Query source_check_results.parquet with optional source and score filters."""
-    safe_limit = max(1, min(int(limit or 50), 200))
-    artifact = _source_check_parquet()
-    try:
-        with _resolved_parquet(artifact) as (resolved_path, cache):
-            parquet_path = str(resolved_path)
-            query = f'SELECT * FROM "{parquet_path}"'
-            filters: list[str] = []
-            params: list[Any] = []
-
-            if source_id:
-                filters.append("source_id = ?")
-                params.append(source_id)
-            if min_score is not None:
-                filters.append("intake_score >= ?")
-                params.append(min_score)
-            if filters:
-                query += " WHERE " + " AND ".join(filters)
-            query += f" ORDER BY intake_score DESC NULLS LAST LIMIT {safe_limit}"
-
-            con = duckdb.connect()
-            try:
-                rows = con.execute(query, params).fetchall()
-                cols = _table_columns(con, parquet_path)
-            finally:
-                con.close()
-    except FileNotFoundError:
-        return _parquet_not_found(artifact)
-
-    return {
-        "artifact": _display_path(_CHECK_PARQUET),
-        "cache": cache,
-        "filters": {"source_id": source_id, "min_score": min_score, "limit": safe_limit},
-        "results": [dict(zip(cols, row)) for row in rows],
-        "returned": len(rows),
-        "has_more": len(rows) == safe_limit,
-    }
-
-
 def query_signals(source_id: str | None = None, limit: int | None = None) -> dict[str, Any]:
     """Query catalog_signals.json with optional source filter."""
     if not _SIGNALS_JSON.exists():
@@ -470,13 +449,328 @@ def radar_summary(source_id: str | None = None) -> dict[str, Any]:
         "probe_date": radar_doc.get("probe_date"),
         "sources_total": radar_doc.get("sources_total"),
         "status_counts": radar_doc.get("status_counts", {}),
+        "persistent_red": radar_doc.get("persistent_red"),
         "filters": {"source_id": source_id},
         "sources": sources,
         "returned": len(sources),
     }
 
 
-def inventory_status(source_id: str | None = None) -> dict[str, Any]:
+def radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, Any]:
+    """Return radar_history.json: probe history per fonte, per calcolare streak/persistent."""
+    if not _RADAR_HISTORY_JSON.exists():
+        return _artifact_not_found(_RADAR_HISTORY_JSON, "radar_history.json")
+
+    with _RADAR_HISTORY_JSON.open(encoding="utf-8") as fh:
+        history_doc = json.load(fh)
+
+    probes = history_doc.get("probes", [])
+    if not isinstance(probes, list):
+        probes = []
+
+    safe_limit = max(1, min(int(limit or 5), 20))
+    recent_probes = list(reversed(probes))[-safe_limit:] if probes else []
+
+    sources_map: dict[str, list[dict[str, Any]]] = {}
+    for probe in recent_probes:
+        for src in probe.get("sources", []):
+            sid = src.get("id", "unknown")
+            if source_id and sid != source_id:
+                continue
+            if sid not in sources_map:
+                sources_map[sid] = []
+            sources_map[sid].append({
+                "probe_date": probe.get("probe_date"),
+                "status": src.get("status"),
+                "http_code": src.get("http_code"),
+                "note": src.get("note"),
+            })
+
+    results = []
+    for sid, entries in sorted(sources_map.items()):
+        entries.sort(key=lambda e: e.get("probe_date") or "", reverse=True)
+        red_count = sum(1 for e in entries if e.get("status") == "RED")
+        results.append({
+            "source_id": sid,
+            "probes": entries,
+            "recent_red_count": red_count,
+            "current_status": entries[0].get("status") if entries else None,
+        })
+
+    return {
+        "artifact": _display_path(_RADAR_HISTORY_JSON),
+        "captured_at": history_doc.get("captured_at"),
+        "filters": {"source_id": source_id, "limit": safe_limit},
+        "sources": results,
+        "returned": len(results),
+        "probes_in_window": len(recent_probes),
+    }
+
+
+def radar_status_md() -> dict[str, Any]:
+    """Return STATUS.md content as plain text for human-readable radar state."""
+    if not _STATUS_MD.exists():
+        return _artifact_not_found(_STATUS_MD, "STATUS.md")
+
+    content = _STATUS_MD.read_text(encoding="utf-8")
+    stat = _STATUS_MD.stat()
+    modified_at = datetime.fromtimestamp(stat.st_mtime, timezone.utc)
+    age_hours = (datetime.now(timezone.utc) - modified_at).total_seconds() / 3600
+
+    return {
+        "artifact": _display_path(_STATUS_MD),
+        "modified_at": modified_at.isoformat(),
+        "age_hours": round(age_hours, 2),
+        "content": content,
+    }
+
+
+def radar_delta() -> dict[str, Any]:
+    """Compare latest and previous probe to return only changed sources."""
+    if not _RADAR_HISTORY_JSON.exists():
+        return _artifact_not_found(_RADAR_HISTORY_JSON, "radar_history.json")
+
+    with _RADAR_HISTORY_JSON.open(encoding="utf-8") as fh:
+        history_doc = json.load(fh)
+
+    probes = history_doc.get("probes", [])
+    if not isinstance(probes, list) or len(probes) < 2:
+        return {
+            "artifact": _display_path(_RADAR_HISTORY_JSON),
+            "captured_at": history_doc.get("captured_at"),
+            "message": "Not enough probes to compute delta (need at least 2)",
+            "changes": [],
+            "new_red": [],
+            "recoveries": [],
+            "persistent_red": [],
+        }
+
+    latest = probes[-1]
+    previous = probes[-2]
+    latest_sources = {s["id"]: s for s in latest.get("sources", [])}
+    prev_sources = {s["id"]: s for s in previous.get("sources", [])}
+
+    changes = []
+    new_red = []
+    recoveries = []
+    persistent_red = []
+
+    all_ids = set(latest_sources.keys()) | set(prev_sources.keys())
+    for sid in sorted(all_ids):
+        curr = latest_sources.get(sid)
+        prev = prev_sources.get(sid)
+
+        curr_status = curr.get("status") if curr else None
+        prev_status = prev.get("status") if prev else None
+
+        if curr_status != prev_status:
+            changes.append({
+                "source_id": sid,
+                "previous": prev_status,
+                "current": curr_status,
+                "http_code": curr.get("http_code") if curr else None,
+                "note": curr.get("note") if curr else None,
+            })
+            if curr_status == "RED":
+                new_red.append(sid)
+            elif prev_status == "RED" and curr_status != "RED":
+                recoveries.append(sid)
+
+        if curr_status == "RED":
+            streak = 0
+            for probe in reversed(probes):
+                src = next((s for s in probe.get("sources", []) if s.get("id") == sid), None)
+                if src and src.get("status") == "RED":
+                    streak += 1
+                else:
+                    break
+            if streak >= 2:
+                persistent_red.append(sid)
+
+    return {
+        "artifact": _display_path(_RADAR_HISTORY_JSON),
+        "captured_at": history_doc.get("captured_at"),
+        "probe_date_latest": latest.get("probe_date"),
+        "probe_date_previous": previous.get("probe_date"),
+        "changes": changes,
+        "new_red": new_red,
+        "recoveries": recoveries,
+        "persistent_red": persistent_red,
+        "changed_count": len(changes),
+    }
+
+
+def find_by_url(url: str) -> dict[str, Any]:
+    """Find a URL across source_check_results and catalog_inventory."""
+    clean_url = (url or "").strip()
+    if not clean_url:
+        return {"error": "empty_url", "message": "Provide a non-empty URL."}
+
+    results: dict[str, Any] = {
+        "query_url": clean_url,
+        "source_check_results": [],
+        "catalog_inventory": [],
+    }
+
+    source_check_artifact = _source_check_parquet()
+    try:
+        with _resolved_parquet(source_check_artifact) as (resolved_path, cache):
+            parquet_path = str(resolved_path)
+            con = duckdb.connect()
+            try:
+                cols = _table_columns(con, parquet_path)
+                url_cols = [c for c in cols if c in ("distribution_url", "landing_page", "source_url")]
+                if not url_cols:
+                    results["source_check_error"] = "No URL columns found in parquet"
+                else:
+                    where = " OR ".join(
+                        f"lower(coalesce(cast({c} as varchar), '')) LIKE ?"
+                        for c in url_cols
+                    )
+                    like = f"%{clean_url}%"
+                    sql = f'SELECT * FROM "{parquet_path}" WHERE {where} LIMIT 10'
+                    rows = con.execute(sql, [like] * len(url_cols)).fetchall()
+                    results["source_check_results"] = [dict(zip(cols, row)) for row in rows]
+                    results["source_check_cache"] = cache
+            finally:
+                con.close()
+    except FileNotFoundError:
+        results["source_check_error"] = f"{source_check_artifact.name} not found"
+
+    catalog_artifact = _catalog_inventory_parquet()
+    try:
+        with _resolved_parquet(catalog_artifact) as (resolved_path, cache):
+            parquet_path = str(resolved_path)
+            con = duckdb.connect()
+            try:
+                cols = _table_columns(con, parquet_path)
+                url_cols = [c for c in cols if c in ("distribution_url", "landing_page", "source_url")]
+                if not url_cols:
+                    results["catalog_inventory_error"] = "No URL columns found in parquet"
+                else:
+                    where = " OR ".join(
+                        f"lower(coalesce(cast({c} as varchar), '')) LIKE ?"
+                        for c in url_cols
+                    )
+                    like = f"%{clean_url}%"
+                    sql = f'SELECT * FROM "{parquet_path}" WHERE {where} LIMIT 10'
+                    rows = con.execute(sql, [like] * len(url_cols)).fetchall()
+                    results["catalog_inventory"] = [dict(zip(cols, row)) for row in rows]
+                    results["catalog_inventory_cache"] = cache
+            finally:
+                con.close()
+    except FileNotFoundError:
+        results["catalog_inventory_error"] = f"{catalog_artifact.name} not found"
+
+    return results
+
+
+def registry_query(
+    protocol: str | None = None,
+    source_kind: str | None = None,
+    observation_mode: str | None = None,
+    source_id: str | None = None,
+) -> dict[str, Any]:
+    """Query sources_registry.yaml with optional filters."""
+    if not _REGISTRY_YAML.exists():
+        return _artifact_not_found(_REGISTRY_YAML, "sources_registry.yaml")
+
+    import yaml
+    with _REGISTRY_YAML.open(encoding="utf-8") as fh:
+        registry = yaml.safe_load(fh)
+
+    if not isinstance(registry, dict):
+        return {"error": "invalid_registry", "message": "Registry is not a dict."}
+
+    results = []
+    for sid, info in sorted(registry.items()):
+        if source_id and sid != source_id:
+            continue
+        if source_kind and info.get("source_kind") != source_kind:
+            continue
+        if protocol and info.get("protocol") != protocol:
+            continue
+        if observation_mode and info.get("observation_mode") != observation_mode:
+            continue
+        results.append({
+            "source_id": sid,
+            "source_kind": info.get("source_kind"),
+            "protocol": info.get("protocol"),
+            "observation_mode": info.get("observation_mode"),
+            "base_url": info.get("base_url"),
+            "verdict": info.get("verdict"),
+            "last_probed": info.get("last_probed"),
+            "datasets_in_use": info.get("datasets_in_use", []),
+            "note": info.get("note"),
+        })
+
+    return {
+        "artifact": _display_path(_REGISTRY_YAML),
+        "filters": {
+            "source_id": source_id,
+            "protocol": protocol,
+            "source_kind": source_kind,
+            "observation_mode": observation_mode,
+        },
+        "results": results,
+        "returned": len(results),
+    }
+
+
+def query_inventory(
+    source_id: str | None = None,
+    min_score: int | None = None,
+    limit: int = 50,
+    has_results: bool | None = None,
+) -> dict[str, Any]:
+    """Query source_check_results.parquet with optional source and score filters."""
+    safe_limit = max(1, min(int(limit or 50), 200))
+    artifact = _source_check_parquet()
+    try:
+        with _resolved_parquet(artifact) as (resolved_path, cache):
+            parquet_path = str(resolved_path)
+            con = duckdb.connect()
+            try:
+                cols = _table_columns(con, parquet_path)
+            finally:
+                con.close()
+
+            query = f'SELECT * FROM "{parquet_path}"'
+            filters: list[str] = []
+            params: list[Any] = []
+
+            if source_id:
+                filters.append("source_id = ?")
+                params.append(source_id)
+            if min_score is not None:
+                filters.append("intake_score >= ?")
+                params.append(min_score)
+            if has_results is not None:
+                if has_results:
+                    filters.append("intake_score IS NOT NULL AND intake_score > 0")
+                else:
+                    filters.append("(intake_score IS NULL OR intake_score = 0)")
+            if filters:
+                query += " WHERE " + " AND ".join(filters)
+            query += f" ORDER BY intake_score DESC NULLS LAST LIMIT {safe_limit}"
+
+            con2 = duckdb.connect()
+            try:
+                rows = con2.execute(query, params).fetchall()
+            finally:
+                con2.close()
+    except FileNotFoundError:
+        return _parquet_not_found(artifact)
+
+    return {
+        "artifact": _display_path(_CHECK_PARQUET),
+        "cache": cache,
+        "gcs_uri": artifact.gcs_uri(),
+        "filters": {"source_id": source_id, "min_score": min_score, "limit": safe_limit, "has_results": has_results},
+        "results": [dict(zip(cols, row)) for row in rows],
+        "returned": len(rows),
+        "has_more": len(rows) == safe_limit,
+    }
     """Return catalog inventory build status from catalog_inventory_report.json."""
     loaded = _load_inventory_report()
     if loaded is None:

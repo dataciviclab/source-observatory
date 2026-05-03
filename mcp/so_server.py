@@ -26,12 +26,17 @@ try:
     from .so_server_core import (
         catalog_inventory_search,
         discover_sdmx,
+        find_by_url,
         inventory_status,
         portal_candidates,
         probe_url,
         query_inventory,
         query_signals,
+        radar_delta,
+        radar_history,
+        radar_status_md,
         radar_summary,
+        registry_query,
     )
 except ImportError:
     if str(_MCP_DIR) not in sys.path:
@@ -39,12 +44,17 @@ except ImportError:
     from so_server_core import (  # type: ignore[no-redef]
         catalog_inventory_search,
         discover_sdmx,
+        find_by_url,
         inventory_status,
         portal_candidates,
         probe_url,
         query_inventory,
         query_signals,
+        radar_delta,
+        radar_history,
+        radar_status_md,
         radar_summary,
+        registry_query,
     )
 
 
@@ -94,6 +104,22 @@ def so_radar_summary(source_id: str | None = None) -> dict[str, Any]:
 
 
 @mcp.tool(
+    description="Legge radar_history.json: storia probes per fonte, utile per capire streak RED e fonti persistenti.",
+    structured_output=True,
+)
+def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, Any]:
+    return _guard(radar_history, source_id, limit)
+
+
+@mcp.tool(
+    description="Legge STATUS.md: markdown umano con stato radar e sommario per fonte.",
+    structured_output=True,
+)
+def so_radar_status_md() -> dict[str, Any]:
+    return _guard(radar_status_md)
+
+
+@mcp.tool(
     description="Legge catalog_inventory_report.json: stato build inventory per fonte.",
     structured_output=True,
 )
@@ -140,6 +166,35 @@ def so_probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
 )
 def so_discover_sdmx(keywords: list[str], limit: int = 30) -> dict[str, Any]:
     return _guard(discover_sdmx, keywords, limit)
+
+
+@mcp.tool(
+    description="Confronta ultimo e penultimo probe del radar: restituisce fonti cambiate, nuove RED, recovery, persistent RED.",
+    structured_output=True,
+)
+def so_radar_delta() -> dict[str, Any]:
+    return _guard(radar_delta)
+
+
+@mcp.tool(
+    description="Cerca un URL in source_check_results.parquet e catalog_inventory_latest.parquet per vedere se e' gia' catalogato.",
+    structured_output=True,
+)
+def so_find_by_url(url: str) -> dict[str, Any]:
+    return _guard(find_by_url, url)
+
+
+@mcp.tool(
+    description="Interroga sources_registry.yaml: filtra per protocol, source_kind, observation_mode o cerca per source_id.",
+    structured_output=True,
+)
+def so_registry_query(
+    protocol: str | None = None,
+    source_kind: str | None = None,
+    observation_mode: str | None = None,
+    source_id: str | None = None,
+) -> dict[str, Any]:
+    return _guard(registry_query, protocol, source_kind, observation_mode, source_id)
 
 
 if __name__ == "__main__":

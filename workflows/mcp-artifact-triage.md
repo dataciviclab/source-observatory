@@ -25,33 +25,55 @@ Non usarlo per:
    - orienta lo stato fonte e la copertura radar
    - utile per capire se una fonte e' gia' nota anche senza inventory
 
-2. `so_inventory_status`
+2. `so_radar_history`
+   - legge la storia probes per capire fonti con streak RED persistenti
+   - da usare quando serve capire se un RED e' occasionale o strutturale
+
+3. `so_radar_status_md`
+   - legge STATUS.md per un sommario umano leggibile
+   - utile per orientamento rapido senza dover parsare JSON
+
+4. `so_radar_delta`
+   - confronta ultimo e penultimo probe del radar
+   - restituisce solo le fonti cambiate, nuove RED, recovery, persistent RED
+   - da usare in session start o triage veloce senza parsare history a mano
+
+5. `so_inventory_status`
    - legge il report del catalog inventory
    - usa il GCS pubblico di default, altrimenti cache locale se il backend e' `local` o GCS non e' raggiungibile in `auto`
    - distingue `ok`, `error`, `protocol_not_supported` e assenza dal run
    - e' il primo posto da controllare quando una fonte non appare nel parquet
 
-3. `so_catalog_inventory_search`
+6. `so_catalog_inventory_search`
    - cerca item o dataflow solo dentro l'inventory derivato
    - non usarlo come prova di assenza assoluta di dataset
 
-4. `so_catalog_signals`
+7. `so_catalog_signals`
    - controlla segnali di cambiamento catalogo
    - utile prima di riaprire triage su fonti gia' monitorate
 
-5. `so_inventory_query`
+8. `so_inventory_query`
    - cerca risultati source-check item-level gia' prodotti
    - utile per evitare duplicati e riusare evidenze
+   - supporta `has_results` filter e include `gcs_uri` in risposta
 
-6. `so_portal_candidates`
+9. `so_find_by_url`
+   - cerca un URL in source_check_results e catalog_inventory
+   - da usare quando si conosce gia' un URL e si vuole sapere se e' catalogato
+
+10. `so_registry_query`
+    - interroga sources_registry.yaml per protocol, source_kind, observation_mode
+    - utile per capire quali fonti esistono e con che caratteristiche
+
+11. `so_portal_candidates`
    - controlla portali scoperti o nuovi candidati
    - utile per alimentare `portal-scout`
 
-7. `so_probe_url`
+9. `so_probe_url`
    - verifica puntuale di reachability o content-type
    - non sostituisce `portal-scout`
 
-8. `so_discover_sdmx`
+10. `so_discover_sdmx`
    - consulta l'inventory SDMX se disponibile
    - se l'inventory non e' disponibile, leggere lo stato restituito e non dedurre che ISTAT non abbia dataflow
 
