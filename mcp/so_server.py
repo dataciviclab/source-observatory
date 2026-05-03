@@ -28,7 +28,6 @@ try:
         discover_sdmx,
         find_by_url,
         inventory_status,
-        portal_candidates,
         probe_url,
         query_inventory,
         query_signals,
@@ -46,7 +45,6 @@ except ImportError:
         discover_sdmx,
         find_by_url,
         inventory_status,
-        portal_candidates,
         probe_url,
         query_inventory,
         query_signals,
@@ -139,18 +137,6 @@ def so_catalog_inventory_search(
     limit: int = 25,
 ) -> dict[str, Any]:
     return _guard(catalog_inventory_search, query, source_id, protocol, limit)
-
-
-@mcp.tool(
-    description="Lista portali candidati da portal-scout, filtrabili per protocollo.",
-    structured_output=True,
-)
-def so_portal_candidates(
-    protocol: str | None = None,
-    only_new: bool = True,
-    limit: int = 25,
-) -> dict[str, Any]:
-    return _guard(portal_candidates, protocol, only_new, limit)
 
 
 @mcp.tool(
