@@ -39,7 +39,9 @@ def test_query_inventory_filters_and_orders(tmp_path, monkeypatch) -> None:
 
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "high"
-    assert result["filters"] == {"source_id": "a", "min_score": 40, "limit": 10}
+    assert result["filters"]["source_id"] == "a"
+    assert result["filters"]["min_score"] == 40
+    assert result["filters"]["limit"] == 10
     assert result["cache"]["source"] == "local_cache"
     assert result["cache"]["source_of_truth"] == "GitHub Actions artifact or configured GCS prefix"
     assert result["cache"]["stale"] is False

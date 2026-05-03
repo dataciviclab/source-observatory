@@ -102,6 +102,20 @@ def _get_observatory_head() -> Any:
 
 
 @dataclass(frozen=True)
+class _ParquetArtifact:
+    name: str
+    local_path: Path
+    gcs_env: str
+    gcs_key: str
+
+    def gcs_uri(self) -> str | None:
+        prefix = _gcs_prefix(self.gcs_env)
+        if prefix is None:
+            return None
+        return f"{prefix.rstrip('/')}/{self.gcs_key}"
+
+
+@dataclass(frozen=True)
 class _JsonArtifact:
     name: str
     local_path: Path
@@ -223,13 +237,6 @@ def _gcs_prefix(env_name: str) -> str | None:
     return _env(f"SO_{env_name}") or _env(env_name) or _DEFAULT_GCS_PREFIXES.get(env_name)
 
 
-def _gcs_uri(artifact: _ParquetArtifact | _JsonArtifact) -> str | None:
-    prefix = _gcs_prefix(artifact.gcs_env)
-    if prefix is None:
-        return None
-    return f"{prefix.rstrip('/')}/{artifact.gcs_key}"
-
-
 def _artifact_cache_info(
     path: Path,
     *,
@@ -304,75 +311,47 @@ def _copy_gcs_to_temp(uri: str, artifact_name: str) -> Path:
 
 
 @contextmanager
+def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact) -> Iterator[tuple[Path, dict[str, Any]]]:
+    backend = _artifact_backend()
+    uri = artifact.gcs_uri()
+    fallback_warning = None
+
+    if backend in {"auto", "gcs"} and uri:
+        tmp_path: Path | None = None
+        try:
+            tmp_path = _copy_gcs_to_temp(uri, artifact.name)
+        except Exception as exc:
+            if backend == "gcs":
+                raise RuntimeError(f"Cannot read {artifact.name} from GCS {uri}: {exc}") from exc
+            fallback_warning = f"Cannot read GCS artifact {uri}; using local cache if available."
+        else:
+            try:
+                yield tmp_path, _artifact_cache_info(tmp_path, source="gcs", uri=uri)
+                return
+            finally:
+                tmp_path.unlink(missing_ok=True)
+
+    if artifact.local_path.exists():
+        yield artifact.local_path, _artifact_cache_info(
+            artifact.local_path,
+            source="local_cache",
+            uri=uri,
+            fallback_warning=fallback_warning,
+        )
+        return
+
+    raise FileNotFoundError(
+        f"{artifact.name} not found locally at {artifact.local_path}"
+        + (f" and no readable GCS artifact at {uri}" if uri else "")
+    )
+
+
 def _resolved_parquet(artifact: _ParquetArtifact) -> Iterator[tuple[Path, dict[str, Any]]]:
-    backend = _artifact_backend()
-    uri = _gcs_uri(artifact)
-    fallback_warning = None
-
-    if backend in {"auto", "gcs"} and uri:
-        tmp_path: Path | None = None
-        try:
-            tmp_path = _copy_gcs_to_temp(uri, artifact.name)
-        except Exception as exc:
-            if backend == "gcs":
-                raise RuntimeError(f"Cannot read {artifact.name} from GCS {uri}: {exc}") from exc
-            fallback_warning = f"Cannot read GCS artifact {uri}; using local cache if available."
-        else:
-            try:
-                yield tmp_path, _artifact_cache_info(tmp_path, source="gcs", uri=uri)
-                return
-            finally:
-                tmp_path.unlink(missing_ok=True)
-
-    if artifact.local_path.exists():
-        yield artifact.local_path, _artifact_cache_info(
-            artifact.local_path,
-            source="local_cache",
-            uri=uri,
-            fallback_warning=fallback_warning,
-        )
-        return
-
-    raise FileNotFoundError(
-        f"{artifact.name} not found locally at {artifact.local_path}"
-        + (f" and no readable GCS artifact at {uri}" if uri else "")
-    )
+    return _resolved_artifact(artifact)
 
 
-@contextmanager
 def _resolved_json(artifact: _JsonArtifact) -> Iterator[tuple[Path, dict[str, Any]]]:
-    backend = _artifact_backend()
-    uri = _gcs_uri(artifact)
-    fallback_warning = None
-
-    if backend in {"auto", "gcs"} and uri:
-        tmp_path: Path | None = None
-        try:
-            tmp_path = _copy_gcs_to_temp(uri, artifact.name)
-        except Exception as exc:
-            if backend == "gcs":
-                raise RuntimeError(f"Cannot read {artifact.name} from GCS {uri}: {exc}") from exc
-            fallback_warning = f"Cannot read GCS artifact {uri}; using local cache if available."
-        else:
-            try:
-                yield tmp_path, _artifact_cache_info(tmp_path, source="gcs", uri=uri)
-                return
-            finally:
-                tmp_path.unlink(missing_ok=True)
-
-    if artifact.local_path.exists():
-        yield artifact.local_path, _artifact_cache_info(
-            artifact.local_path,
-            source="local_cache",
-            uri=uri,
-            fallback_warning=fallback_warning,
-        )
-        return
-
-    raise FileNotFoundError(
-        f"{artifact.name} not found locally at {artifact.local_path}"
-        + (f" and no readable GCS artifact at {uri}" if uri else "")
-    )
+    return _resolved_artifact(artifact)
 
 
 def _parquet_not_found(artifact: _ParquetArtifact) -> dict[str, Any]:
