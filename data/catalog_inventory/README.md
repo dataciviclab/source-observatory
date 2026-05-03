@@ -66,7 +66,7 @@ Colonne chiave (per schema completo vedere `docs/source_check_results_schema.md`
 
 ## Accesso via MCP
 
-I tool MCP SO forniscono accesso programmatco a questi artifact:
+I tool MCP SO forniscono accesso programmatico a questi artifact:
 - `so_inventory_query` — query parquet source-check-results con filtri per source e score
 - `so_inventory_status` — legge `catalog_inventory_report.json` per stato build per fonte
 - `so_catalog_inventory_search` — cerca item nell'inventory parquet per keyword

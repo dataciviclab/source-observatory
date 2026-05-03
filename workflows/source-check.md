@@ -37,7 +37,7 @@ Verifica se una fonte regge davvero come pista del Lab prima di aprire Discussio
 
 > Serie storica corta o chiusa **non è blocco** se la domanda civica regge da sola.
 
-## 1. Pre-check MCP (obbligatorio prima di iniziare)
+## 3. Pre-check MCP (obbligatorio prima di iniziare)
 
 Prima di toccare la fonte, consulta gli artifact SO via MCP per evitare duplicati e orientarti:
 
@@ -54,19 +54,20 @@ Prima di toccare la fonte, consulta gli artifact SO via MCP per evitare duplicat
 
 **Se la fonte non è ancora nel radar**: procedi normalmente, ma annota `source_id` provvisorio nella nota.
 
-## 2. Accesso Reale
+## 4. Accesso Reale
 
 Verifica raggiungibilità e leggibilità (redirect, login, WAF). Qualifica come `verificato` o `inferito`.
-2. **Shape minima**: Controlla formato, granularità (cosa rappresenta una riga) e copertura.
-3. **Sufficienza Semantica**:
+
+1. **Shape minima**: Controlla formato, granularità (cosa rappresenta una riga) e copertura.
+2. **Sufficienza Semantica**:
    - [ ] Il dato è leggibile subito?
    - [ ] Messaggi/Valori chiave sono autonomi?
    - [ ] Esite un output minimo senza join esterne?
-4. **Domanda Civica**: Formula in una riga *perché* non è solo un "elenco" ma serve a una domanda reale.
-5. **Perimetro v0**: Fissa geografia e finestra temporale iniziale (preferisci perimetro stretto).
-6. **Deduplica**: Controlla se il filone è già vivo in `Discussion` o `dataset-incubator`.
+3. **Domanda Civica**: Formula in una riga *perché* non è solo un "elenco" ma serve a una domanda reale.
+4. **Perimetro v0**: Fissa geografia e finestra temporale iniziale (preferisci perimetro stretto).
+5. **Deduplica**: Controlla se il filone è già vivo in `Discussion` o `dataset-incubator`.
 
-## 4. Verdict e Output
+## 5. Verdict e Output
 
 Scegli un solo verdetto:
 - `go Discussion`: La fonte regge come pista autonoma.
@@ -90,7 +91,7 @@ Schema commento:
 **Next step**: [azione esplicita]
 ```
 
-## 5. Se verdict = go Discussion
+## 6. Se verdict = go Discussion
 
 Il verdetto `go Discussion` significa: la fonte merita una Discussion. Il workflow deve almeno preparare il testo; pubblicarlo è un passo separato, consentito solo se il maintainer conferma o se il task lo richiede esplicitamente.
 
@@ -119,7 +120,7 @@ Poi:
 - Se non pubblicata, lascia come next step `preparare/pubblicare Discussion Datasets`.
 - **Non chiudere** l'issue SO solo per il source-check: resta audit trail finché il maintainer non decide.
 
-## 6. Qualificatori Semantici (da annotare)
+## 7. Qualificatori Semantici (da annotare)
 
 - `self-contained`: Pronto all'uso.
 - `usable-with-enrichment`: Serve join/mapping per valore reale.
