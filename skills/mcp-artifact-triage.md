@@ -1,16 +1,15 @@
 # MCP Artifact Triage
 
-Workflow per usare il layer MCP read-only di Source Observatory quando un agente deve capire cosa esiste gia' negli artifact.
+Workflow per usare il layer MCP read-only di Source Observatory quando un agente deve capire cosa esiste già negli artifact.
 
 ## Quando usarlo
 
 Usalo quando la domanda è:
 
-- quali fonti sono gia' osservate?
+- quali fonti sono già osservate?
 - quali cataloghi sono inventariati?
-- ci sono candidati portale nuovi?
 - cosa dicono gli artifact prima di aprire un nuovo source-check?
-- perchè una fonte non compare nel catalog inventory?
+- perché una fonte non compare nel catalog inventory?
 
 Non usarlo per:
 
@@ -23,7 +22,7 @@ Non usarlo per:
 
 1. `so_radar_summary`
    - orienta lo stato fonte e la copertura radar
-   - utile per capire se una fonte è gia' nota anche senza inventory
+   - utile per capire se una fonte è già nota anche senza inventory
 
 2. `so_radar_history`
    - legge la storia probes per capire fonti con streak RED persistenti
@@ -50,32 +49,27 @@ Non usarlo per:
 
 7. `so_catalog_signals`
    - controlla segnali di cambiamento catalogo
-   - utile prima di riaprire triage su fonti gia' monitorate
+   - utile prima di riaprire triage su fonti già monitorate
 
 8. `so_inventory_query`
-   - cerca risultati source-check item-level gia' prodotti
+   - cerca risultati source-check item-level già prodotti
    - utile per evitare duplicati e riusare evidenze
    - supporta `has_results` filter e include `gcs_uri` in risposta
 
 9. `so_find_by_url`
    - cerca un URL in source_check_results e catalog_inventory
-   - da usare quando si conosce gia' un URL e si vuole sapere se è catalogato
+   - da usare quando si conosce già un URL e si vuole sapere se è catalogato
 
 10. `so_registry_query`
     - interroga sources_registry.yaml per protocol, source_kind, observation_mode
     - utile per capire quali fonti esistono e con che caratteristiche
 
-11. `so_portal_candidates`
-   - controlla portali scoperti o nuovi candidati
-   - utile per alimentare `portal-scout`
+11. `so_probe_url`
+    - verifica puntuale di reachability o content-type
 
-12. `so_probe_url`
-   - verifica puntuale di reachability o content-type
-   - non sostituisce `portal-scout`
-
-13. `so_discover_sdmx`
-   - consulta l'inventory SDMX se disponibile
-   - se l'inventory non è disponibile, leggere lo stato restituito e non dedurre che ISTAT non abbia dataflow
+12. `so_discover_sdmx`
+    - consulta l'inventory SDMX se disponibile
+    - se l'inventory non è disponibile, leggere lo stato restituito e non dedurre che ISTAT non abbia dataflow
 
 ## Regole di interpretazione
 
@@ -105,11 +99,11 @@ Artifact letti:
 - radar_summary: fonte presente, stato YELLOW
 - inventory_status: run error su endpoint catalogo
 - source_check_results: cache locale stale, non usata come fonte corrente
-- catalog_inventory_search: non interrogato perchè inventory non disponibile
+- catalog_inventory_search: non interrogato perché inventory non disponibile
 
 Interpretazione:
 la fonte è nota al radar, ma non c'è inventory interrogabile. Non è una prova di assenza dataset.
 
 Next step:
-source-check su item noto oppure portal-scout se serve rivalutare l'enumerabilità.
+source-check su item noto se il perimetro è chiaro, altrimenti valutare se un nuovo portal-scout è giustificato.
 ```

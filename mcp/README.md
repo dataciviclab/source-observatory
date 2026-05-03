@@ -2,9 +2,9 @@
 
 Layer MCP read-only sugli artifact prodotti da Source Observatory.
 
-Il server non sostituisce gli script di build e non scrive nello workspace: espone agli agenti una vista interrogabile degli artifact gia' generati da CI o run locali.
+Il server non sostituisce gli script di build e non scrive nello workspace: espone agli agenti una vista interrogabile degli artifact già generati da CI o run locali.
 
-Gli artifact sotto `data/*/generated/` sono cache locali. La fonte operativa corrente per i parquet e' il prefisso GCS configurato dai workflow; gli artifact GitHub Actions restano utili per debug e recupero manuale. Le risposte sui parquet includono un blocco `cache` con `source`, `uri`, `modified_at`, `age_hours`, soglia `max_age_hours` e warning quando la cache locale supera 24 ore.
+Gli artifact sotto `data/*/generated/` sono cache locali. La fonte operativa corrente per i parquet è il prefisso GCS configurato dai workflow; gli artifact GitHub Actions restano utili per debug e recupero manuale. Le risposte sui parquet includono un blocco `cache` con `source`, `uri`, `modified_at`, `age_hours`, soglia `max_age_hours` e warning quando la cache locale supera 24 ore.
 
 ## Avvio
 
@@ -24,30 +24,28 @@ Config canonica workspace:
 }
 ```
 
-Usare l'avvio via file path, non `python -m mcp.so_server`: la repo contiene una directory locale `mcp/` che puo' collidere con la libreria Python `mcp`.
+Usare l'avvio via file path, non `python -m mcp.so_server`: la repo contiene una directory locale `mcp/` che può collidere con la libreria Python `mcp`.
 
 ## Config artifact
 
 Default pubblici:
 
 - `CATALOG_INVENTORY_GCS_PREFIX=gs://dataciviclab-clean/catalog_inventory`
-- `PORTAL_SCOUT_GCS_PREFIX=gs://dataciviclab-clean/portal_scout`
 
 Variabili supportate per override:
 
 - `SO_ARTIFACT_BACKEND`: `auto`, `gcs` o `local` (`auto` default)
 - `SO_ENV_FILE`: file env opzionale; se non impostato, il server prova `dataciviclab-workspace/.env`
 - `CATALOG_INVENTORY_GCS_PREFIX`: override del prefisso GCS inventory/source-check
-- `PORTAL_SCOUT_GCS_PREFIX`: override del prefisso GCS portal-scout
 - `SO_CACHE_MAX_AGE_HOURS`: soglia di freschezza per cache locale (`24` default)
 
-In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa la cache locale e lo dichiara in `cache.fallback_warning`. In `gcs`, un errore GCS e' bloccante. In `local`, il server usa solo i file locali.
+In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa la cache locale e lo dichiara in `cache.fallback_warning`. In `gcs`, un errore GCS è bloccante. In `local`, il server usa solo i file locali.
 
 ## Tool
 
 - `so_inventory_query`
   - legge `data/catalog_inventory/generated/source_check_results.parquet`
-  - serve per cercare risultati item-level gia' controllati
+  - serve per cercare risultati item-level già controllati
   - include `has_results` filter e `gcs_uri` in risposta
 
 - `so_catalog_signals`
@@ -72,7 +70,7 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 
 - `so_find_by_url`
   - cerca un URL in source_check_results e catalog_inventory
-  - serve per capire se un URL e' gia' catalogato
+  - serve per capire se un URL è già catalogato
 
 - `so_registry_query`
   - interroga `data/radar/sources_registry.yaml`
@@ -86,17 +84,16 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
   - legge `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
   - serve per cercare item e dataflow nel catalog inventory derivato
 
-- `so_portal_candidates`
-  - legge `data/portal_scout/new_candidates.parquet` o `discovered_portals.parquet`
-  - include, quando disponibile, il riepilogo da `discovered_portals_summary.json`
-
 - `so_probe_url`
   - esegue una verifica HTTP leggera su un URL esplicito
-  - e' pensato per controlli puntuali, non per crawling
+  - è pensato per controlli puntuali, non per crawling
 
 - `so_discover_sdmx`
   - usa solo `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
-  - se l'inventory SDMX non e' disponibile, restituisce lo stato del report inventory invece di ripiegare su artifact item-level diversi
+  - se l'inventory SDMX non è disponibile, restituisce lo stato del report inventory invece di ripiegare su artifact item-level diversi
+
+- `so_portal_candidates`
+  - **DEPRECATED**: portal-scout non è più nel perimetro di SO. Rimosso.
 
 ## Boundary
 
@@ -124,21 +121,19 @@ Non deve:
 | `data/radar/STATUS.md` | sommario umano radar |
 | `data/radar/sources_registry.yaml` | query fonti per protocol/kind/mode |
 | `data/catalog/catalog_signals.json` | segnali catalog-watch |
-| `CATALOG_INVENTORY_GCS_PREFIX/source-check/source_check_results.parquet` | risultati source-check item-level |
-| `CATALOG_INVENTORY_GCS_PREFIX/catalog_inventory_latest.parquet` | inventory cataloghi enumerabili |
-| `CATALOG_INVENTORY_GCS_PREFIX/catalog_inventory_report.json` | stato per fonte del run inventory |
-| `PORTAL_SCOUT_GCS_PREFIX/discovered_portals.parquet` | portali scoperti |
-| `data/portal_scout/new_candidates.parquet` | nuovi candidati portale |
-| `data/portal_scout/discovered_portals_summary.json` | riepilogo discovery |
+| `data/catalog_inventory/generated/source_check_results.parquet` | risultati source-check item-level |
+| `data/catalog_inventory/generated/catalog_inventory_latest.parquet` | inventory cataloghi enumerabili |
+| `data/catalog_inventory/generated/catalog_inventory_report.json` | stato per fonte del run inventory |
+| GCS: `gs://dataciviclab-clean/catalog_inventory/` | percorso base dei parquet operativi |
 
 ## Uso operativo
 
-Per una domanda su "cosa sappiamo gia'":
+Per una domanda su "cosa sappiamo già":
 
 1. leggere prima radar e report inventory
 2. controllare il blocco `cache` prima di trattare i parquet come correnti
-3. interrogare l'inventory solo se la fonte e' inventariata
-4. usare i source-check item-level per evidenze gia' validate
+3. interrogare l'inventory solo se la fonte è inventariata
+4. usare i source-check item-level per evidenze già validate
 5. usare probe o discovery solo per verifiche puntuali
 
-Il workflow di riferimento e' `skills/mcp-artifact-triage.md`.
+Il workflow di riferimento è `skills/mcp-artifact-triage.md`.

@@ -21,7 +21,7 @@ Output:
 
 Scheduling v0:
 
-- run giornaliero via GitHub Actions (`radar-scheduled.yml`)
+- run giornaliero via GitHub Actions (`observatory.yml`)
 - `workflow_dispatch` disponibile per run manuali
 - il modello v0 è `report-only`: aggiorna `STATUS.md` e `sources_registry.yaml`
 - nessuna issue automatica o alerting complesso in questa fase
