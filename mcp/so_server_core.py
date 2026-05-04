@@ -12,7 +12,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -332,11 +332,11 @@ def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
     )
 
 
-def _resolved_parquet(artifact: _ParquetArtifact):
+def _resolved_parquet(artifact: _ParquetArtifact) -> AbstractContextManager[tuple[Path, dict[str, Any]]]:
     return _resolved_artifact(artifact)
 
 
-def _resolved_json(artifact: _JsonArtifact):
+def _resolved_json(artifact: _JsonArtifact) -> AbstractContextManager[tuple[Path, dict[str, Any]]]:
     return _resolved_artifact(artifact)
 
 

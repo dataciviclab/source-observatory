@@ -221,9 +221,11 @@ def test_catalog_inventory_search_filters_rows(tmp_path, monkeypatch) -> None:
     assert result["results"][0]["item_id"] == "a"
 
 
-def test_portal_candidates_filters_protocol(tmp_path, monkeypatch) -> None:
-    """portal_candidates rimosso dal core MCP — test mantenuto per riferimento."""
-    pass
+def test_portal_candidates_removed_from_core() -> None:
+    """portal_candidates non e' piu esportato da so_server_core."""
+    assert not hasattr(core, "portal_candidates"), (
+        "portal_candidates rimosso dal core MCP: se lo riaggiungi, aggiorna questo test"
+    )
 
 
 def test_probe_url_rejects_invalid_url() -> None:
