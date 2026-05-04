@@ -64,10 +64,6 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
   - legge `data/radar/STATUS.md`
   - serve per avere un sommario umano leggibile dello stato radar
 
-- `so_radar_delta`
-  - confronta ultimo e penultimo probe del radar
-  - restituisce fonti cambiate, nuove RED, recovery, persistent RED
-
 - `so_find_by_url`
   - cerca un URL in source_check_results e catalog_inventory
   - serve per capire se un URL è già catalogato
@@ -84,6 +80,16 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
   - legge `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
   - serve per cercare item e dataflow nel catalog inventory derivato
 
+- `so_sparql_query`
+  - esegue query SPARQL SELECT su endpoint pubblici
+  - usa observatory_get per User-Agent coerente
+  - sostituisce il server locale `_local/mcp/sparql`
+
+- `so_html_extract_links`
+  - estrae link di download (CSV, JSON, XLSX, ZIP, XML) da pagine HTML
+  - usa observatory_get per User-Agent coerente
+  - sostituisce il server locale `_local/mcp/html-extractor`
+
 - `so_probe_url`
   - esegue una verifica HTTP leggera su un URL esplicito
   - è pensato per controlli puntuali, non per crawling
@@ -91,9 +97,6 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 - `so_discover_sdmx`
   - usa solo `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
   - se l'inventory SDMX non è disponibile, restituisce lo stato del report inventory invece di ripiegare su artifact item-level diversi
-
-- `so_portal_candidates`
-  - **DEPRECATED**: portal-scout non è più nel perimetro di SO. Rimosso.
 
 ## Boundary
 

@@ -31,7 +31,6 @@ try:
         probe_url,
         query_inventory,
         query_signals,
-        radar_delta,
         radar_history,
         radar_status_md,
         radar_summary,
@@ -48,7 +47,6 @@ except ImportError:
         probe_url,
         query_inventory,
         query_signals,
-        radar_delta,
         radar_history,
         radar_status_md,
         radar_summary,
@@ -155,14 +153,6 @@ def so_probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
 )
 def so_discover_sdmx(keywords: list[str], limit: int = 30) -> dict[str, Any]:
     return _guard(discover_sdmx, keywords, limit)
-
-
-@mcp.tool(
-    description="Confronta ultimo e penultimo probe del radar: restituisce fonti cambiate, nuove RED, recovery, persistent RED.",
-    structured_output=True,
-)
-def so_radar_delta() -> dict[str, Any]:
-    return _guard(radar_delta)
 
 
 @mcp.tool(
