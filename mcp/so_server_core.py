@@ -16,7 +16,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 from urllib.parse import urlparse
 
 import duckdb
@@ -297,7 +297,7 @@ def _copy_gcs_to_temp(uri: str, artifact_name: str) -> Path:
 
 
 @contextmanager
-def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact) -> Iterator[tuple[Path, dict[str, Any]]]:
+def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
     backend = _artifact_backend()
     uri = artifact.gcs_uri()
     fallback_warning = None
@@ -332,11 +332,11 @@ def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact) -> Iterator[t
     )
 
 
-def _resolved_parquet(artifact: _ParquetArtifact) -> Iterator[tuple[Path, dict[str, Any]]]:
+def _resolved_parquet(artifact: _ParquetArtifact):
     return _resolved_artifact(artifact)
 
 
-def _resolved_json(artifact: _JsonArtifact) -> Iterator[tuple[Path, dict[str, Any]]]:
+def _resolved_json(artifact: _JsonArtifact):
     return _resolved_artifact(artifact)
 
 
