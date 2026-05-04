@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-04T06:21:30.947816+00:00",
+  "generated_at": "2026-05-04T07:59:40.787155+00:00",
   "probe_date": "2026-05-04",
   "sources_total": 15,
   "status_counts": {
@@ -7,14 +7,15 @@
     "YELLOW": 3,
     "RED": 3
   },
-  "persistent_red": 2,
+  "persistent_red": 3,
   "sources": [
     {
       "id": "istat_sdmx",
       "status": "RED",
       "protocol": "sdmx",
       "http_code": "-",
-      "note": "Probe exception non gestita: ReadTimeout: HTTPSConnectionPool(host='esploradati.istat.it', port=443): Read timed out. (read timeout=10)"
+      "note": "Probe exception non gestita: ReadTimeout: HTTPSConnectionPool(host='esploradati.istat.it', port=443): Read timed out. (read timeout=10)",
+      "red_streak": 2
     },
     {
       "id": "anac",
@@ -43,7 +44,7 @@
       "protocol": "html",
       "http_code": "-",
       "note": "SSL verify failed; fallback connection error (SSLError)",
-      "red_streak": 3
+      "red_streak": 4
     },
     {
       "id": "inail_opendata",
@@ -99,8 +100,8 @@
       "status": "RED",
       "protocol": "ckan",
       "http_code": "-",
-      "note": "Probe exception non gestita: ConnectTimeout: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list?limit=1 (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7f5351f45d90>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=10)'))",
-      "red_streak": 3
+      "note": "Probe exception non gestita: ConnectTimeout: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list?limit=1 (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7f258eefef90>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=10)'))",
+      "red_streak": 4
     },
     {
       "id": "opencoesione",
