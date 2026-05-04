@@ -1,6 +1,6 @@
 # Catalog Watch Report
 
-_Generato: 2026-05-03T07:47:07+00:00 — 12 fonti controllate_
+_Generato: 2026-05-04T06:21:42+00:00 — 12 fonti controllate_
 
 ## Segnali attivi
 
@@ -17,8 +17,22 @@ _Generato: 2026-05-03T07:47:07+00:00 — 12 fonti controllate_
 - **Item**: 1116
 - **Azione**: catalog-watch-ready
 
+### • `mef_irpef` — csv_magnet
+
+- **Protocollo**: html
+- **Dettaglio**: 147 link data (no format)
+- **Item**: 147
+- **Azione**: catalog-watch-ready
+
+### 🚨 `istat_sdmx` — endpoint unstable
+
+- **Protocollo**: sdmx
+- **Dettaglio**: 4835 item (dataflow_count), ma radar RED — endpoint irraggiungibile o errore. Dati potrebbero essere stale. Verificare radar_summary.json.
+- **Item**: 4835
+- **Azione**: verificare radar RED; non fidarsi dell'inventario se non confermato da run recente
+
 ## Fonti stabili / skipped
 
-_10 fonti senza segnali inventariali in questo run._
+_8 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
