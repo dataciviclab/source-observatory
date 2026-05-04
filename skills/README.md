@@ -1,6 +1,19 @@
-# Workflows
+# Skills
 
-Indice minimo dei workflow canonici di `source-observatory`.
+Indice delle guide operative di `source-observatory`.
+
+## MCP tools come modo consigliato
+
+Il layer MCP SO (`mcp/so_server_core.py`) è il modo **consigliato** per leggere tutti gli artifact del Lab:
+- `so_radar_summary`, `so_radar_delta`, `so_radar_history` — radar
+- `so_inventory_status`, `so_inventory_query`, `so_catalog_signals` — inventory
+- `so_find_by_url`, `so_catalog_inventory_search` — ricerca item
+- `so_registry_query`, `so_catalog_inventory_search`, `so_probe_url` — scouting
+- `so_discover_sdmx` — discovery ISTAT SDMX
+
+Vedi [mcp-artifact-triage.md](./mcp-artifact-triage.md) per l'ordine di lettura canonico.
+
+I workflow documentati sotto partono dal presupposto che gli artifact siano già stati consultati via MCP o che il parquet locale sia disponibile.
 
 ## Come orientarsi
 
@@ -10,7 +23,7 @@ Indice minimo dei workflow canonici di `source-observatory`.
 
 - [mcp-artifact-triage.md](./mcp-artifact-triage.md)
   - lettura ordinata degli artifact Source Observatory via MCP read-only
-  - chiarisce cosa e' coperto, cosa manca e quale workflow usare dopo
+  - chiarisce cosa è coperto, cosa manca e quale workflow usare dopo
 
 - [source-check.md](./source-check.md)
   - verifica se una fonte o un dataset pubblico regge davvero come pista del Lab
@@ -21,7 +34,7 @@ Indice minimo dei workflow canonici di `source-observatory`.
 - `catalog-inventory-scout`
   - triage di una lista di item di un catalogo
 - `mcp-artifact-triage`
-  - orientamento sugli artifact gia' prodotti da radar, catalog-watch, inventory e discovery
+  - orientamento sugli artifact già prodotti da radar, catalog-watch, inventory e discovery
 - `source-check`
   - valutazione umana della fonte come possibile pista del Lab
 
@@ -32,7 +45,7 @@ Indice minimo dei workflow canonici di `source-observatory`.
 Se la domanda è:
 
 - "cosa c'è in questo catalogo e cosa vale la pena approfondire?" -> `catalog-inventory-scout`
-- "cosa dicono gli artifact SO gia' prodotti?" -> `mcp-artifact-triage`
+- "cosa dicono gli artifact SO già prodotti?" -> `mcp-artifact-triage`
 - "questo portale è davvero un catalogo osservabile?" -> `portal-scout`
 - "il catalogo ha cambiato inventario o struttura?" -> leggi `data/catalog/CATALOG_WATCH_REPORT.md`
 - "questa fonte regge davvero come pista del Lab?" -> `source-check`

@@ -12,11 +12,11 @@ import re
 import subprocess
 import sys
 import tempfile
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 from urllib.parse import urlparse
 
 import duckdb
@@ -37,19 +37,14 @@ _SIGNALS_JSON = _REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
 _RADAR_JSON = _REPO_ROOT / "data" / "radar" / "radar_summary.json"
 _RADAR_HISTORY_JSON = _REPO_ROOT / "data" / "radar" / "radar_history.json"
 _STATUS_MD = _REPO_ROOT / "data" / "radar" / "STATUS.md"
-_PORTAL_SUMMARY_JSON = _REPO_ROOT / "data" / "portal_scout" / "discovered_portals_summary.json"
-_DISCOVERED_PORTALS_PARQUET = _REPO_ROOT / "data" / "portal_scout" / "discovered_portals.parquet"
-_NEW_CANDIDATES_PARQUET = _REPO_ROOT / "data" / "portal_scout" / "new_candidates.parquet"
 _REGISTRY_YAML = _REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 _DEFAULT_CACHE_MAX_AGE_HOURS = 24
 _DEFAULT_GCS_PREFIXES = {
     "CATALOG_INVENTORY_GCS_PREFIX": "gs://dataciviclab-clean/catalog_inventory",
-    "PORTAL_SCOUT_GCS_PREFIX": "gs://dataciviclab-clean/portal_scout",
 }
 _SOURCE_CHECK_ARTIFACT = "source_check_results.parquet"
 _CATALOG_INVENTORY_ARTIFACT = "catalog_inventory_latest.parquet"
 _CATALOG_INVENTORY_REPORT_ARTIFACT = "catalog_inventory_report.json"
-_DISCOVERED_PORTALS_ARTIFACT = "discovered_portals.parquet"
 
 _FORMAT_BY_CONTENT_TYPE = {
     "text/csv": "CSV",
@@ -153,15 +148,6 @@ def _catalog_inventory_report_artifact() -> _JsonArtifact:
         local_path=_INVENTORY_REPORT,
         gcs_env="CATALOG_INVENTORY_GCS_PREFIX",
         gcs_key="catalog_inventory_report.json",
-    )
-
-
-def _discovered_portals_gcs_parquet(local_path: Path) -> _ParquetArtifact:
-    return _ParquetArtifact(
-        name=local_path.name,
-        local_path=local_path,
-        gcs_env="PORTAL_SCOUT_GCS_PREFIX",
-        gcs_key="discovered_portals.parquet",
     )
 
 
@@ -311,7 +297,7 @@ def _copy_gcs_to_temp(uri: str, artifact_name: str) -> Path:
 
 
 @contextmanager
-def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact) -> Iterator[tuple[Path, dict[str, Any]]]:
+def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
     backend = _artifact_backend()
     uri = artifact.gcs_uri()
     fallback_warning = None
@@ -346,11 +332,11 @@ def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact) -> Iterator[t
     )
 
 
-def _resolved_parquet(artifact: _ParquetArtifact) -> Iterator[tuple[Path, dict[str, Any]]]:
+def _resolved_parquet(artifact: _ParquetArtifact) -> AbstractContextManager[tuple[Path, dict[str, Any]]]:
     return _resolved_artifact(artifact)
 
 
-def _resolved_json(artifact: _JsonArtifact) -> Iterator[tuple[Path, dict[str, Any]]]:
+def _resolved_json(artifact: _JsonArtifact) -> AbstractContextManager[tuple[Path, dict[str, Any]]]:
     return _resolved_artifact(artifact)
 
 
@@ -894,67 +880,6 @@ def catalog_inventory_search(
     if not rows and source_id:
         result["source_status"] = _inventory_source_status(source_id)
     return result
-
-
-def portal_candidates(
-    protocol: str | None = None,
-    only_new: bool = True,
-    limit: int = 25,
-) -> dict[str, Any]:
-    """Return portal discovery candidates from portal-scout artifacts."""
-    local_path = _NEW_CANDIDATES_PARQUET if only_new else _DISCOVERED_PORTALS_PARQUET
-    artifact = _discovered_portals_gcs_parquet(local_path)
-    safe_limit = max(1, min(int(limit or 25), 200))
-    try:
-        with _resolved_parquet(artifact) as (resolved_path, cache):
-            parquet_path = str(resolved_path)
-            con = duckdb.connect()
-            try:
-                columns = set(_table_columns(con, parquet_path))
-                where: list[str] = []
-                params: list[Any] = []
-                if protocol:
-                    where.append("protocol = ?")
-                    params.append(protocol)
-                if only_new and "in_registry" in columns:
-                    where.append("lower(cast(in_registry as varchar)) IN ('no', 'false')")
-
-                sql = f"""
-                    SELECT *
-                    FROM "{parquet_path}"
-                    {"WHERE " + " AND ".join(where) if where else ""}
-                    ORDER BY in_registry ASC, protocol, domain
-                    LIMIT {safe_limit}
-                """
-                rows = con.execute(sql, params).fetchall()
-                cols = [desc[0] for desc in con.description]
-            finally:
-                con.close()
-    except FileNotFoundError:
-        return _parquet_not_found(artifact)
-
-    summary = None
-    if _PORTAL_SUMMARY_JSON.exists():
-        with _PORTAL_SUMMARY_JSON.open(encoding="utf-8") as fh:
-            summary_doc = json.load(fh)
-        summary = {
-            "artifact": _display_path(_PORTAL_SUMMARY_JSON),
-            "generated_at": summary_doc.get("generated_at"),
-            "total_portals": summary_doc.get("total_portals"),
-            "new_candidates": summary_doc.get("new_candidates"),
-            "new_confirmed_protocol": summary_doc.get("new_confirmed_protocol"),
-            "by_protocol": summary_doc.get("by_protocol"),
-        }
-
-    return {
-        "artifact": _display_path(local_path),
-        "cache": cache,
-        "summary": summary,
-        "filters": {"protocol": protocol, "only_new": only_new, "limit": safe_limit},
-        "candidates": [dict(zip(cols, row)) for row in rows],
-        "returned": len(rows),
-        "has_more": len(rows) == safe_limit,
-    }
 
 
 def _guess_format(url: str, content_type: str | None) -> str | None:

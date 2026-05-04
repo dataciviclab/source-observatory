@@ -23,14 +23,30 @@ Questo workflow serve a chiudere il gap tra un inventory ampio/rumoroso e i work
 
 Usalo quando hai già uno di questi input:
 - `data/catalog_inventory/generated/*.parquet` (generato dalla CI o manualmente)
+- Accesso al layer MCP SO (per consultare artifact senza scaricare file)
 
 Usalo soprattutto se devi capire rapidamente cosa vale la pena approfondire e cosa ignorare senza perdere tempo.
 
 ## Non usarlo quando
 
 - Devi verificare davvero una singola fonte: in quel caso fai [source-check.md](./source-check.md).
-- Devi vedere se il catalogo ha cambiato inventario o struttura: leggi `data/catalog/CATALOG_WATCH_REPORT.md` (prodotto dalla CI ogni lunedì).
+- Devi vedere se il catalogo ha cambiato inventario o struttura: leggi `data/catalog/CATALOG_WATCH_REPORT.md` (prodotto dalla CI ogni lunedì) oppure usa `so_catalog_signals` via MCP.
 - L'inventory non è leggibile o non hai abbastanza metadati minimi per triagiarlo.
+
+## Pre-check MCP (prima di aprire il parquet)
+
+Prima di toccare l'inventory parquet, consulta gli artifact SO via MCP per orientarti:
+
+```
+1. so_catalog_inventory_search(query)  → cerca nell'inventory se la fonte esiste già
+2. so_inventory_status             → stato build inventory: ok/error/protocol_not_supported
+3. so_catalog_signals(limit=5)     → segnali di drift per fonte
+4. so_radar_summary               → stato radar delle fonti monitorate
+```
+
+**Se `so_inventory_status` mostra error per una fonte**: l'inventory di quella fonte è inaffidabile — salta il triage per quella fonte o interpreta i risultati con cautela.
+
+**Se `so_catalog_signals` mostra `no signal`**: il catalogo è stabile, nessun bisogno urgente di re-inventory.
 
 ## Preconditions minime
 
@@ -42,6 +58,7 @@ Usalo soprattutto se devi capire rapidamente cosa vale la pena approfondire e co
 
 ### 1. Inquadra l'inventory
 Identifica il catalogo, la data dell'inventory e la dimensione della lista.
+Se hai già consultato `so_inventory_status` e `so_catalog_signals`, integra qui il risultato.
 
 ### 2. Definisci il criterio di triage
 Dichiara cosa stai cercando (es. nuovi dataset su un tema specifico, aggiornamenti rilevanti, risorse candidate per il Lab).

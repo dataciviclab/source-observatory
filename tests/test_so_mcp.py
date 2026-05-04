@@ -221,40 +221,11 @@ def test_catalog_inventory_search_filters_rows(tmp_path, monkeypatch) -> None:
     assert result["results"][0]["item_id"] == "a"
 
 
-def test_portal_candidates_filters_protocol(tmp_path, monkeypatch) -> None:
-    candidates_path = tmp_path / "new_candidates.parquet"
-    summary_path = tmp_path / "discovered_portals_summary.json"
-    _write_parquet(
-        candidates_path,
-        [
-            {
-                "domain": "a.example",
-                "protocol": "ckan",
-                "probe_url": "https://a.example/api/3/action/package_list",
-                "base_url": "https://a.example",
-                "in_registry": False,
-            },
-            {
-                "domain": "b.example",
-                "protocol": "html",
-                "probe_url": "https://b.example",
-                "base_url": "https://b.example",
-                "in_registry": False,
-            },
-        ],
+def test_portal_candidates_removed_from_core() -> None:
+    """portal_candidates non e' piu esportato da so_server_core."""
+    assert not hasattr(core, "portal_candidates"), (
+        "portal_candidates rimosso dal core MCP: se lo riaggiungi, aggiorna questo test"
     )
-    summary_path.write_text(
-        json.dumps({"total_portals": 2, "new_candidates": 2, "by_protocol": {"ckan": 1}}),
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(core, "_NEW_CANDIDATES_PARQUET", candidates_path)
-    monkeypatch.setattr(core, "_PORTAL_SUMMARY_JSON", summary_path)
-
-    result = core.portal_candidates(protocol="ckan", only_new=True)
-
-    assert result["summary"]["total_portals"] == 2
-    assert result["returned"] == 1
-    assert result["candidates"][0]["domain"] == "a.example"
 
 
 def test_probe_url_rejects_invalid_url() -> None:

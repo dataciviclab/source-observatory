@@ -28,3 +28,13 @@ Non e' un inventario di resource e non decide se una fonte merita un candidate.
 - script: `scripts/radar_check.py`
 - runbook: `docs/runbook.md`
 - nota architetturale: `docs/architecture.md`
+
+## Accesso via MCP
+
+I tool MCP SO forniscono accesso programmatico a questi artifact:
+- `so_radar_summary` — legge `radar_summary.json` (status compatto per fonte)
+- `so_radar_history` — legge `radar_history.json` (storia probes per fonte)
+- `so_radar_status_md` — legge `STATUS.md` (sommario leggibile per fonte)
+- `so_radar_delta` — confronta ultimo vs penultimo probe (nuove RED, recovery, persistent RED)
+
+GCS latest: `gs://dataciviclab-clean/radar/radar_summary.json`
