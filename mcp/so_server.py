@@ -53,6 +53,8 @@ except ImportError:
         radar_status_md,
         radar_summary,
         registry_query,
+        _html_extract_links,
+        _sparql_query_raw,
     )
 
 
@@ -182,6 +184,31 @@ def so_registry_query(
     source_id: str | None = None,
 ) -> dict[str, Any]:
     return _guard(registry_query, protocol, source_kind, observation_mode, source_id)
+
+
+@mcp.tool(
+    description="Execute a SPARQL SELECT query against a public endpoint and return tabular results. "
+    "endpoint: SPARQL URL (http/https). query: SPARQL query string. "
+    "timeout: seconds (1-120, default 60). max_rows: maximum rows (1-500, default 500).",
+    structured_output=True,
+)
+def so_sparql_query(
+    endpoint: str,
+    query: str,
+    timeout: int = 60,
+    max_rows: int = 500,
+) -> dict[str, Any]:
+    return _guard(_sparql_query_raw, endpoint, query, timeout, max_rows)
+
+
+@mcp.tool(
+    description="Extract file download links (CSV, JSON, XLSX, ZIP, XML) from an HTML page. "
+    "url: page URL. timeout: request timeout in seconds (default 20). "
+    "Returns {url, links, total, formats, is_reachable, http_status}.",
+    structured_output=True,
+)
+def so_html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
+    return _guard(_html_extract_links, url, timeout)
 
 
 if __name__ == "__main__":

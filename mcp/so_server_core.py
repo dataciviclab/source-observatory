@@ -1053,3 +1053,169 @@ def discover_sdmx(keywords: list[str] | str, limit: int = 30) -> dict[str, Any]:
         "returned": min(len(results), safe_limit),
         "matched": len(results),
     }
+
+
+# ─── SPARQL Query (read-only, on-demand) ────────────────────────────────────
+
+
+def _sparql_query_raw(
+    endpoint: str,
+    query: str,
+    timeout: int = 60,
+    max_rows: int = 500,
+) -> dict[str, Any]:
+    """Execute a SPARQL SELECT query against any public endpoint.
+
+    Returns dict with rows, columns, and bindings count.
+    Uses observatory_get for consistent User-Agent header.
+    """
+    if not endpoint or not query:
+        return {"error": "invalid_params", "message": "endpoint and query are required"}
+    parsed = urlparse(endpoint)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return {"error": "invalid_url", "message": f"Invalid SPARQL endpoint: {endpoint}"}
+    safe_timeout = max(1, min(int(timeout or 60), 120))
+    safe_max_rows = max(1, min(int(max_rows or 500), 5000))
+
+    # Inject LIMIT if not present
+    clean_query = query.strip()
+    if "LIMIT" not in clean_query.upper():
+        clean_query = f"{clean_query}\nLIMIT {safe_max_rows}"
+
+    try:
+        response = _get_observatory_get()(
+            endpoint,
+            params={"query": clean_query, "format": "application/sparql-results+json"},
+            headers={
+                "Accept": "application/sparql-results+json",
+                "User-Agent": "DataCivicLab-SourceObservatory/1.0",
+            },
+            timeout=safe_timeout,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception as exc:
+        return {
+            "error": type(exc).__name__,
+            "message": str(exc)[:200],
+            "endpoint": endpoint,
+        }
+
+    bindings = ((payload.get("results") or {}).get("bindings")) or []
+    if not isinstance(bindings, list):
+        return {
+            "error": "invalid_response",
+            "message": "SPARQL endpoint did not return bindings list",
+            "endpoint": endpoint,
+        }
+
+    # Flatten bindings to rows
+    rows: list[dict[str, Any]] = []
+    for binding in bindings:
+        row: dict[str, Any] = {}
+        for var_name, var_value in binding.items():
+            if isinstance(var_value, dict):
+                row[var_name] = var_value.get("value")
+            else:
+                row[var_name] = var_value
+        rows.append(row)
+
+    return {
+        "endpoint": endpoint,
+        "query": clean_query,
+        "columns": list(rows[0].keys()) if rows else [],
+        "rows": rows,
+        "bindings": len(bindings),
+        "returned": len(rows),
+    }
+
+
+# ─── HTML Link Extraction (read-only, on-demand) ─────────────────────────────
+
+
+def _extract_links_from_html(html: str, base_url: str) -> list[dict[str, Any]]:
+    """Extract data download links from raw HTML.
+
+    Uses _DataLinksParser from collectors/html.py — same logic as csv_magnet.
+    Returns list of {url, format, title}.
+    """
+    DATA_EXTENSIONS = {".csv", ".json", ".xlsx", ".xls", ".ods", ".zip", ".xml", ".geojson"}
+    from html.parser import HTMLParser
+    from urllib.parse import urljoin
+
+    class Parser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.links: list[dict[str, str]] = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag not in ("a", "area"):
+                return
+            attrs_dict = dict(attrs)
+            href = attrs_dict.get("href", "") or attrs_dict.get("xlink:href", "")
+            if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
+                return
+            full_url = urljoin(base_url, href)
+            lower = full_url.lower()
+            fmt = None
+            for ext in DATA_EXTENSIONS:
+                if ext in lower:
+                    fmt = ext.lstrip(".").upper()
+                    if fmt == "GEOJSON":
+                        fmt = "GEOJSON"
+                    break
+            if not fmt:
+                return
+            title = (attrs_dict.get("aria-label") or attrs_dict.get("title") or "").strip()
+            self.links.append({"url": full_url, "format": fmt, "title": title})
+
+    parser = Parser()
+    try:
+        parser.feed(html)
+    except Exception:
+        pass
+    return parser.links
+
+
+def _html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
+    """Extract file download links from an HTML page.
+
+    Returns {url, links: [{url, format, title}], total, content_type, is_reachable}.
+    Uses observatory_get with proper UA.
+    """
+    if not url:
+        return {"error": "invalid_url", "message": "url is required"}
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return {"error": "invalid_url", "message": f"Invalid URL: {url}"}
+
+    safe_timeout = max(1, min(int(timeout or 20), 60))
+
+    try:
+        response = _get_observatory_get()(url, timeout=safe_timeout)
+        content_type = response.headers.get("content-type", "")
+    except Exception as exc:
+        return {
+            "url": url,
+            "is_reachable": False,
+            "error": type(exc).__name__,
+            "message": str(exc)[:200],
+        }
+
+    text_html = "text/html" in content_type.lower()
+    try:
+        html_text = response.text if text_html else ""
+    except Exception:
+        html_text = ""
+
+    links = _extract_links_from_html(html_text, url) if text_html else []
+
+    return {
+        "url": url,
+        "is_reachable": response.status_code < 400,
+        "http_status": response.status_code,
+        "content_type": content_type,
+        "links": links,
+        "total": len(links),
+        "formats": sorted({link["format"] for link in links}),
+    }
