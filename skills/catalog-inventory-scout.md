@@ -38,7 +38,7 @@ Usalo soprattutto se devi capire rapidamente cosa vale la pena approfondire e co
 Prima di toccare l'inventory parquet, consulta gli artifact SO via MCP per orientarti:
 
 ```
-1. so_portal_candidates(limit=5)  → nuovi portali scoperti che potrebbero coincidere
+1. so_catalog_inventory_search(query)  → cerca nell'inventory se la fonte esiste già
 2. so_inventory_status             → stato build inventory: ok/error/protocol_not_supported
 3. so_catalog_signals(limit=5)     → segnali di drift per fonte
 4. so_radar_summary               → stato radar delle fonti monitorate

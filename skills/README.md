@@ -8,7 +8,7 @@ Il layer MCP SO (`mcp/so_server_core.py`) è il modo **consigliato** per leggere
 - `so_radar_summary`, `so_radar_delta`, `so_radar_history` — radar
 - `so_inventory_status`, `so_inventory_query`, `so_catalog_signals` — inventory
 - `so_find_by_url`, `so_catalog_inventory_search` — ricerca item
-- `so_registry_query`, `so_portal_candidates`, `so_probe_url` — scouting
+- `so_registry_query`, `so_catalog_inventory_search`, `so_probe_url` — scouting
 - `so_discover_sdmx` — discovery ISTAT SDMX
 
 Vedi [mcp-artifact-triage.md](./mcp-artifact-triage.md) per l'ordine di lettura canonico.
