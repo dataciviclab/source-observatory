@@ -1356,10 +1356,11 @@ def inventory_diff(source_id: str, days: int = 7) -> dict[str, Any]:
         with _resolved_parquet(artifact) as (resolved_path, cache):
             con = duckdb.connect()
             try:
-                current_count = con.execute(
+                row = con.execute(
                     f'SELECT COUNT(*) FROM "{resolved_path}" WHERE source_id = ?',
                     [source_id],
-                ).fetchone()[0]
+                ).fetchone()
+                current_count = row[0] if row else 0
             finally:
                 con.close()
     except FileNotFoundError:
