@@ -27,6 +27,8 @@ try:
         catalog_inventory_search,
         discover_sdmx,
         find_by_url,
+        infer_topic,
+        inventory_diff,
         inventory_status,
         probe_url,
         query_inventory,
@@ -34,7 +36,9 @@ try:
         radar_history,
         radar_status_md,
         radar_summary,
+        recommend_sources,
         registry_query,
+        _ckan_package_show,
     )
 except ImportError:
     if str(_MCP_DIR) not in sys.path:
@@ -51,6 +55,7 @@ except ImportError:
         radar_status_md,
         radar_summary,
         registry_query,
+        _ckan_package_show,
         _html_extract_links,
         _sparql_query_raw,
     )
@@ -199,6 +204,51 @@ def so_sparql_query(
 )
 def so_html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
     return _guard(_html_extract_links, url, timeout)
+
+
+@mcp.tool(
+    description="Fetch a single CKAN dataset (package_show) and return enriched metadata. "
+    "endpoint: CKAN portal base URL (e.g. https://dati.gov.it). "
+    "package_id: dataset ID or name. "
+    "Returns item_id, name, title, notes_excerpt, organization, tags, format, "
+    "resource_count, datastore_active, landing_page, distribution_url, source_url. "
+    "On error returns {error, message}.",
+    structured_output=True,
+)
+def so_ckan_package_show(endpoint: str, package_id: str, timeout: int = 30) -> dict[str, Any]:
+    return _guard(_ckan_package_show, endpoint, package_id, timeout)
+
+
+@mcp.tool(
+    description="Infer thematic topics from any text string (item_name, title, tags, notes, etc.). "
+    "Uses a fixed taxonomy of 13 topics: lavoro, economia, sanita, istruzione, trasporti, "
+    "ambiente, agricoltura, turismo, giustizia, demografia, energia, commercio. "
+    "Returns topics sorted by relevance score (desc), with top_match if dominant (score>=3).",
+    structured_output=True,
+)
+def so_infer_topic(text: str) -> dict[str, Any]:
+    return _guard(infer_topic, text)
+
+
+@mcp.tool(
+    description="Recommend sources from catalog_inventory matching a keyword. "
+    "Searches item_name, title, tags, organization, notes_excerpt. "
+    "Returns top matching sources with item counts and organizations.",
+    structured_output=True,
+)
+def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
+    return _guard(recommend_sources, keyword, limit)
+
+
+@mcp.tool(
+    description="Compare current inventory against baseline for a source. "
+    "Shows item count delta, baseline date, and current count. "
+    "Uses catalog_inventory_latest.parquet + catalog_inventory_report.json. "
+    "days: window for baseline comparison (default 7, max 90).",
+    structured_output=True,
+)
+def so_inventory_diff(source_id: str, days: int = 7) -> dict[str, Any]:
+    return _guard(inventory_diff, source_id, days)
 
 
 if __name__ == "__main__":

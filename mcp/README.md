@@ -90,13 +90,26 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
   - usa observatory_get per User-Agent coerente
   - sostituisce il server locale `_local/mcp/html-extractor`
 
-- `so_probe_url`
-  - esegue una verifica HTTP leggera su un URL esplicito
-  - è pensato per controlli puntuali, non per crawling
+- `so_ckan_package_show`
+  - esegue una fetch package_show su endpoint CKAN e restituisce metadata arricchiti
+  - argomenti: `endpoint` (URL base CKAN), `package_id` (ID o nome dataset)
+  - ritorna `success`, `item_id`, `name`, `title`, `notes_excerpt`, `organization`, `tags`, `format`, `resource_count`, `datastore_active`, `landing_page`, `distribution_url`, `source_url`
+  - in caso di errore ritorna `{error, message}`
 
-- `so_discover_sdmx`
-  - usa solo `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
-  - se l'inventory SDMX non è disponibile, restituisce lo stato del report inventory invece di ripiegare su artifact item-level diversi
+- `so_infer_topic`
+  - inferisce temi da qualunque testo (item_name, title, tags, notes, ecc.)
+  - tassonomia 13 temi: lavoro, economia, sanita, istruzione, trasporti, ambiente, agricoltura, turismo, giustizia, demografia, energia, commercio
+  - ritorna `topics` (dict ordinato per score, descending), `top_match` (se score>=3), `matched_count`
+
+- `so_recommend_sources`
+  - cerca fonti nell'inventory per keyword
+  - cerca in item_name, title, tags, organization, notes_excerpt
+  - ritorna lista di source_id con item_count e organizations
+
+- `so_inventory_diff`
+  - confronta inventory attuale vs baseline per una fonte
+  - mostra delta righe, baseline_date, current_count
+  - days: finestra per confronto baseline (default 7, max 90)
 
 ## Boundary
 

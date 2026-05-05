@@ -39,6 +39,137 @@ _RADAR_HISTORY_JSON = _REPO_ROOT / "data" / "radar" / "radar_history.json"
 _STATUS_MD = _REPO_ROOT / "data" / "radar" / "STATUS.md"
 _REGISTRY_YAML = _REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 _DEFAULT_CACHE_MAX_AGE_HOURS = 24
+
+# ── CKAN package_show helper ─────────────────────────────────────────────────
+
+def _ckan_action_endpoint(base_url: str, action: str) -> str:
+    """Build a CKAN API action URL from a base URL.
+
+    If base_url already contains /api/3/action, appends the action directly.
+    Otherwise appends /api/3/action/{action}.
+    """
+    base = base_url.rstrip("/")
+    if "/api/3/action" in base:
+        return f"{base}/{action}"
+    return f"{base}/api/3/action/{action}"
+
+
+def _ckan_get_json(url: str, timeout: int = 30, params: dict | None = None) -> dict[str, Any]:
+    """Simple HTTP GET returning JSON — uses observatory_get for consistent UA."""
+    response = _get_observatory_get()(url, timeout=timeout, params=params)
+    response.raise_for_status()
+    content_type = (response.headers.get("content-type") or "").lower()
+    if "json" not in content_type:
+        preview = response.text[:200].replace("\n", " ").strip()
+        raise ValueError(
+            f"Non-JSON content-type (status={response.status_code}, "
+            f"content_type={content_type or 'unknown'}, preview={preview!r})"
+        )
+    try:
+        return response.json()
+    except ValueError as exc:
+        preview = response.text[:200].replace("\n", " ").strip()
+        raise ValueError(
+            f"Invalid JSON (status={response.status_code}, "
+            f"content_type={content_type or 'unknown'}, preview={preview!r})"
+        ) from exc
+
+
+def _ckan_package_show(endpoint: str, package_id: str, timeout: int = 30) -> dict[str, Any]:
+    """Fetch a single CKAN package_show.
+
+    Args:
+        endpoint: CKAN portal base URL (e.g. https://dati.gov.it).
+            Can include /api/3/action or not — normalized automatically.
+        package_id: CKAN dataset ID or name.
+        timeout: request timeout in seconds (default 30, max 120).
+
+    Returns dict with keys:
+        success: True if dataset found
+        item_id, name, title, notes (first 300 chars), organization,
+        tags (comma-joined), format (resource formats), resource_count,
+        datastore_active (bool), landing_page, distribution_url,
+        source_url (API endpoint used)
+    OR error + message on failure.
+    """
+    if not endpoint or not package_id:
+        return {"error": "invalid_params", "message": "endpoint and package_id are required"}
+
+    api_url = _ckan_action_endpoint(endpoint, "package_show")
+    params = {"id": package_id}
+
+    try:
+        payload = _ckan_get_json(api_url, params=params, timeout=timeout)
+    except Exception as exc:
+        return {"error": type(exc).__name__, "message": str(exc)[:200]}
+
+    if not payload.get("success"):
+        return {"error": "ckan_error", "message": f"success=false for {package_id}"}
+
+    item = payload.get("result")
+    if not isinstance(item, dict):
+        return {"error": "ckan_error", "message": f"result non-dict for {package_id}"}
+
+    # Organization
+    organization = (item.get("organization") or {}).get("title") or (
+        item.get("organization") or {}
+    ).get("name")
+    if not organization:
+        organization = item.get("author") or item.get("maintainer")
+
+    # Tags
+    tag_items = item.get("tags") or []
+    tags: list[str] = []
+    for tag_item in tag_items:
+        if isinstance(tag_item, dict):
+            tag_value = tag_item.get("display_name") or tag_item.get("name")
+        elif isinstance(tag_item, str):
+            tag_value = tag_item.strip()
+        else:
+            tag_value = None
+        if tag_value:
+            tags.append(tag_value)
+
+    # Resource formats
+    resources = item.get("resources") or []
+    formats: list[str] = []
+    for r in resources:
+        fmt = str(r.get("format") or "").strip().lower()
+        if fmt:
+            formats.append(fmt)
+    format_str = ",".join(dict.fromkeys(formats)) if formats else None
+
+    # Landing page
+    landing = item.get("url")
+    if not landing:
+        for r in resources:
+            u = r.get("url")
+            if u and isinstance(u, str) and u.strip():
+                landing = u.strip()
+                break
+
+    # Datastore active
+    datastore_active = any(
+        str(r.get("datastore_active") or "").lower() == "true" for r in resources
+    )
+
+    notes = (item.get("notes") or "").strip()
+
+    return {
+        "success": True,
+        "item_id": item.get("id") or item.get("name"),
+        "name": item.get("name"),
+        "title": item.get("title"),
+        "notes_excerpt": notes[:300] if notes else None,
+        "organization": organization,
+        "tags": ", ".join(tags) if tags else None,
+        "format": format_str,
+        "resource_count": len(resources),
+        "datastore_active": datastore_active,
+        "landing_page": landing,
+        "distribution_url": resources[0].get("url") if resources else None,
+        "source_url": api_url,
+    }
 _DEFAULT_GCS_PREFIXES = {
     "CATALOG_INVENTORY_GCS_PREFIX": "gs://dataciviclab-clean/catalog_inventory",
 }
@@ -1052,6 +1183,200 @@ def discover_sdmx(keywords: list[str] | str, limit: int = 30) -> dict[str, Any]:
         "dataflows": results[:safe_limit],
         "returned": min(len(results), safe_limit),
         "matched": len(results),
+    }
+
+
+# ─── Topic Inference (read-only, on-demand) ────────────────────────────────
+
+
+_TOPIC_KEYWORDS = {
+    "lavoro": ["lavoro", "occupazione", "disoccupazione", "forze_lavoro", "OECD", "LAU", "ISTAT", "tasso", "disaoccupazione", "impiego"],
+    "economia": ["PIL", "GDP", "produzione", "valore_aggiunto", "conti_economici", "reddito", "economia", "crisi", "inflazione", "prezzi"],
+    "sanita": ["sanita", "salute", "ospedal", "medico", "SSN", " ASL", "patologie", "mortalita", "natalita", "speranza_vita"],
+    "istruzione": ["istruzione", "scuola", "universita", "studenti", "docenti", "iscritti", "laurea", "formazione", "educazione"],
+    "trasporti": ["trasporti", "mobilita", "traffico", "ferrovier", "aeroporto", "porto", " merci", "passeggeri", "veicoli"],
+    "ambiente": ["ambiente", "emissioni", "aria", "acqua", "rifiuti", "energia", "verde", "inquinamento", "clima"],
+    "agricoltura": ["agricoltura", "coltivaz", "allevamento", "pesca", "agro", "SEMI", "superficie", "produzione_agricola"],
+    "turismo": ["turismo", "flussi", "presenze", "arrivi", "strutture_ricettive", "viaggiatori", "pernottamenti"],
+    "giustizia": ["giustizia", "reati", "crimini", "carceri", "procedimenti", "tribunali", "denunce"],
+    "demografia": ["demografia", "popolazione", "natalita", "mortalita", "migrazioni", "invecchiamento", "indice_vecchiaia"],
+    "energia": ["energia", "elettricita", "gas", "petrolio", "rinnovabili", "consumi_energetici"],
+    "commercio": ["commercio", "export", "import", "interscambio", "merci", " esport", "import"],
+}
+
+
+def _score_text_by_topics(text: str) -> dict[str, int]:
+    """Score text against thematic topic keywords.
+
+    Returns dict of topic -> score. Score is sum of keyword matches.
+    Word-boundary matches = 3pt, substring matches = 1pt.
+    """
+    low = text.lower()
+    scores: dict[str, int] = {}
+    for topic, keywords in _TOPIC_KEYWORDS.items():
+        score = 0
+        for kw in keywords:
+            pattern = re.escape(kw.lower())
+            if re.search(rf"\b{pattern}\b", low):
+                score += 3
+            elif kw.lower() in low:
+                score += 1
+        if score > 0:
+            scores[topic] = score
+    return scores
+
+
+def infer_topic(text: str) -> dict[str, Any]:
+    """Infer thematic topics from any text string.
+
+    Matches against a fixed taxonomy of 13 topics (lavoro, economia, sanita,
+    istruzione, trasporti, ambiente, agricoltura, turismo, giustizia,
+    demografia, energia, commercio).
+    Returns topics sorted by relevance score (desc), with scores.
+    Also returns top_match if a dominant topic exists (score >= 3).
+    """
+    if not text or not str(text).strip():
+        return {"error": "empty_text", "message": "Provide non-empty text to analyze."}
+
+    scores = _score_text_by_topics(str(text))
+    if not scores:
+        return {
+            "text_preview": str(text)[:80],
+            "topics": {},
+            "top_match": None,
+            "matched_count": 0,
+        }
+
+    sorted_topics = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+    top_match = sorted_topics[0][0] if sorted_topics[0][1] >= 3 else None
+
+    return {
+        "text_preview": str(text)[:80],
+        "topics": dict(sorted_topics),
+        "top_match": top_match,
+        "matched_count": len(sorted_topics),
+    }
+
+
+# ─── Source Recommendation (read-only, on-demand) ─────────────────────────
+
+
+def recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
+    """Recommend sources from inventory matching a keyword.
+
+    Searches across item_name, title, tags, organization, notes_excerpt.
+    Returns top matching sources with their item counts.
+    """
+    if not keyword or not str(keyword).strip():
+        return {"error": "empty_keyword", "message": "Provide non-empty keyword."}
+
+    safe_limit = max(1, min(int(limit or 10), 50))
+    keyword_low = str(keyword).strip().lower()
+
+    try:
+        artifact = _catalog_inventory_parquet()
+        with _resolved_parquet(artifact) as (resolved_path, cache):
+            con = duckdb.connect()
+            try:
+                rows = con.execute(
+                    f'''
+                    SELECT source_id, source_kind, protocol,
+                           COUNT(*) as item_count,
+                           STRING_AGG(DISTINCT organization, ', ') as organizations
+                    FROM "{resolved_path}"
+                    WHERE (
+                        LOWER(item_name) LIKE ? OR
+                        LOWER(title) LIKE ? OR
+                        LOWER(tags) LIKE ? OR
+                        LOWER(organization) LIKE ? OR
+                        LOWER(notes_excerpt) LIKE ?
+                    )
+                    GROUP BY source_id, source_kind, protocol
+                    ORDER BY item_count DESC
+                    LIMIT ?
+                    ''',
+                    [f"%{keyword_low}%"] * 5 + [safe_limit],
+                ).fetchall()
+            finally:
+                con.close()
+    except FileNotFoundError:
+        return _parquet_not_found(_catalog_inventory_parquet())
+
+    cols = ["source_id", "source_kind", "protocol", "item_count", "organizations"]
+    sources = [dict(zip(cols, row)) for row in rows]
+
+    return {
+        "keyword": keyword.strip(),
+        "filters": {"limit": safe_limit},
+        "sources": sources,
+        "returned": len(sources),
+        "cache": cache,
+    }
+
+
+# ─── Inventory Diff (read-only, on-demand) ──────────────────────────────────
+
+
+def inventory_diff(source_id: str, days: int = 7) -> dict[str, Any]:
+    """Compare current inventory against baseline for a source.
+
+    Shows item count delta, new items, disappeared items since baseline.
+    Uses catalog_inventory_latest.parquet + catalog_inventory_report.json.
+    days: window for baseline comparison (default 7).
+    """
+    if not source_id:
+        return {"error": "invalid_params", "message": "source_id is required"}
+
+    safe_days = max(1, min(int(days or 7), 90))
+
+    # Load report for baseline
+    report_loaded = _load_inventory_report()
+    if report_loaded is None:
+        return {
+            "error": "report_not_found",
+            "message": "catalog_inventory_report.json not available",
+            "source_id": source_id,
+        }
+    report, _cache = report_loaded
+
+    source_info = (report.get("sources") or {}).get(source_id)
+    if not source_info:
+        return {
+            "error": "source_not_in_report",
+            "message": f"source_id '{source_id}' not found in inventory report",
+            "source_id": source_id,
+        }
+
+    baseline = source_info.get("catalog_baseline", {})
+    baseline_value = baseline.get("value") or source_info.get("package_count") or source_info.get("dataflow_count") or source_info.get("rows")
+    baseline_date = baseline.get("captured_at") or source_info.get("last_inventory")
+
+    try:
+        artifact = _catalog_inventory_parquet()
+        with _resolved_parquet(artifact) as (resolved_path, cache):
+            con = duckdb.connect()
+            try:
+                current_count = con.execute(
+                    f'SELECT COUNT(*) FROM "{resolved_path}" WHERE source_id = ?',
+                    [source_id],
+                ).fetchone()[0]
+            finally:
+                con.close()
+    except FileNotFoundError:
+        return _parquet_not_found(_catalog_inventory_parquet())
+
+    delta = (current_count or 0) - (baseline_value or 0)
+
+    return {
+        "source_id": source_id,
+        "baseline_date": baseline_date,
+        "baseline_value": baseline_value,
+        "current_count": current_count,
+        "delta": delta,
+        "delta_pct": round((delta / baseline_value * 100), 1) if baseline_value else None,
+        "days_window": safe_days,
+        "cache": cache,
+        "note": "delta calcolato vs baseline nel registry; verificare se baseline_value è aggiornato",
     }
 
 
