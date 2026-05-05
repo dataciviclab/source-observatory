@@ -309,3 +309,242 @@ def test_discover_sdmx_reports_missing_source_from_inventory_report(tmp_path, mo
     assert result["error"] == "source_unavailable"
     assert result["source_status"]["error"] == "HTTP 500"
     assert result["dataflows"] == []
+
+
+# ─── Tests for new tools (MCP v2) ───────────────────────────────────────────────
+
+
+def test_infer_topic_match() -> None:
+    result = core.infer_topic("tasso di disoccupazione regionale, forze di lavoro, occupazione")
+
+    assert result["topics"]["lavoro"] >= 3
+    assert result["top_match"] == "lavoro"
+    assert result["matched_count"] >= 1
+
+
+def test_infer_topic_no_match() -> None:
+    result = core.infer_topic("foo bar baz xyz")
+
+    assert result["topics"] == {}
+    assert result["top_match"] is None
+    assert result["matched_count"] == 0
+
+
+def test_infer_topic_empty_text() -> None:
+    result = core.infer_topic("")
+
+    assert result["error"] == "empty_text"
+    # matched_count not present when error is returned
+    assert "matched_count" not in result
+
+
+def test_infer_topic_ambiente_vs_energia_not_overlapping() -> None:
+    """energia keyword removed from ambiente - should not give double scoring."""
+    result = core.infer_topic("emissioni CO2 e consumi energetici")
+    topics = result["topics"]
+
+    # Should score both ambiente (emissioni) and energia separately
+    assert "ambiente" in topics or "energia" in topics
+
+
+def test_recommend_sources(tmp_path, monkeypatch) -> None:
+    inventory_path = tmp_path / "catalog_inventory_latest.parquet"
+    _write_parquet(
+        inventory_path,
+        [
+            {
+                "source_id": "inps",
+                "protocol": "ckan",
+                "source_kind": "catalog",
+                "item_id": "544",
+                "item_name": "pensioni",
+                "title": "Pensioni INPS",
+                "organization": "INPS",
+                "tags": "pensioni,INPS",
+                "notes_excerpt": "Dati pensioni",
+                "landing_page": "",
+                "distribution_url": "",
+                "format": "csv",
+                "source_status": "",
+                "inventory_method": "package_list",
+                "item_kind": "dataset",
+                "api_base_url": "https://example.test/api",
+                "captured_at": "2026-04-30",
+                "civic_priority": "",
+                "topic": "",
+                "theme": "",
+            },
+            {
+                "source_id": "openbdap",
+                "protocol": "ckan",
+                "source_kind": "catalog",
+                "item_id": "b",
+                "item_name": "conti",
+                "title": "Conto economico",
+                "organization": "MEF",
+                "tags": "",
+                "notes_excerpt": "",
+                "landing_page": "",
+                "distribution_url": "",
+                "format": "csv",
+                "source_status": "",
+                "inventory_method": "package_search",
+                "item_kind": "dataset",
+                "api_base_url": "https://example.test/api",
+                "captured_at": "2026-04-30",
+                "civic_priority": "",
+                "topic": "",
+                "theme": "",
+            },
+        ],
+    )
+    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inventory_path)
+
+    result = core.recommend_sources("INPS")
+
+    assert result["returned"] == 1
+    assert result["sources"][0]["source_id"] == "inps"
+    assert result["sources"][0]["item_count"] >= 1
+
+
+def test_recommend_sources_empty_keyword() -> None:
+    result = core.recommend_sources("")
+
+    assert result["error"] == "empty_keyword"
+
+
+def test_inventory_diff(tmp_path, monkeypatch) -> None:
+    report_path = tmp_path / "catalog_inventory_report.json"
+    report_path.write_text(
+        json.dumps(
+            {
+                "captured_at": "2026-04-30T00:00:00+00:00",
+                "sources": {
+                    "inps": {
+                        "status": "ok",
+                        "protocol": "ckan",
+                        "rows": 2323,
+                        "method": "package_list",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    inventory_path = tmp_path / "catalog_inventory_latest.parquet"
+    _write_parquet(
+        inventory_path,
+        [
+            {
+                "source_id": "inps",
+                "protocol": "ckan",
+                "item_id": f"item_{i}",
+                "item_name": f"item_{i}",
+                "title": f"Item {i}",
+                "organization": "INPS",
+                "tags": "",
+                "notes_excerpt": "",
+                "landing_page": "",
+                "distribution_url": "",
+                "format": "csv",
+                "source_status": "",
+                "inventory_method": "package_list",
+                "item_kind": "dataset",
+                "api_base_url": "https://example.test/api",
+                "captured_at": "2026-04-30",
+                "civic_priority": "",
+                "topic": "",
+                "theme": "",
+            }
+            for i in range(2325)
+        ],
+    )
+    monkeypatch.setattr(core, "_INVENTORY_REPORT", report_path)
+    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inventory_path)
+
+    result = core.inventory_diff("inps")
+
+    assert result["source_id"] == "inps"
+    assert result["baseline_value"] == 2323
+    assert result["current_count"] == 2325
+    assert result["delta"] == 2
+
+
+def test_inventory_diff_source_not_in_report(tmp_path, monkeypatch) -> None:
+    report_path = tmp_path / "catalog_inventory_report.json"
+    report_path.write_text(json.dumps({"sources": {}}), encoding="utf-8")
+    monkeypatch.setattr(core, "_INVENTORY_REPORT", report_path)
+
+    result = core.inventory_diff("unknown_source")
+
+    assert result["error"] == "source_not_in_report"
+
+
+def test_inventory_diff_parquet_not_found(tmp_path, monkeypatch) -> None:
+    report_path = tmp_path / "catalog_inventory_report.json"
+    report_path.write_text(
+        json.dumps(
+            {
+                "sources": {
+                    "inps": {"status": "ok", "rows": 100, "method": "package_list"}
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(core, "_INVENTORY_REPORT", report_path)
+    # Point to non-existent parquet
+    monkeypatch.setattr(
+        core, "_INVENTORY_PARQUET", tmp_path / "nonexistent.parquet"
+    )
+
+    result = core.inventory_diff("inps")
+
+    assert result["error"] == "artifact_not_found"
+
+
+# ─── Tests for HTTP tools (mocked) ─────────────────────────────────────────────
+
+
+class FakeResponse:
+    def __init__(self, *, status_code: int = 200, json_data: dict, headers: dict | None = None):
+        self._json = json_data
+        self.status_code = status_code
+        self.headers = headers or {"content-type": "application/json"}
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            raise Exception(f"HTTP {self.status_code}")
+
+    @property
+    def text(self) -> str:
+        return json.dumps(self._json)
+
+
+def _fake_observatory_get(url: str, **kwargs):
+    return FakeResponse(json_data={"success": True, "result": {}})
+
+
+def test_ckan_package_show_invalid_endpoint() -> None:
+    """Test that _ckan_package_show rejects empty params."""
+    result = core._ckan_package_show("", "544")
+    assert result["error"] == "invalid_params"
+
+    result2 = core._ckan_package_show("https://example.gov.it", "")
+    assert result2["error"] == "invalid_params"
+
+
+def test_infer_topic_energia_not_in_ambiente(monkeypatch) -> None:
+    """After removing 'energia' from ambiente keywords, a text about energy
+    should not score ambiente just because of the word 'energia'."""
+    result = core.infer_topic("energia rinnovabile elettrica gas petrolio")
+
+    assert "ambiente" not in result["topics"]
+    assert "energia" in result["topics"]
+
+
+def test_infer_topic_tasso_not_false_positive(monkeypatch) -> None:
+    """tasso removed from lavoro - 'tassazione' should not score lavoro."""
+    result = core.infer_topic("tassazione دخل دخل")
+    # No topic keywords match "tassazione" - not lavoro, not economia
+    assert "lavoro" not in result["topics"]
