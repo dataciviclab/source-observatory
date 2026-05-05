@@ -41,59 +41,122 @@ Variabili supportate per override:
 
 In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa la cache locale e lo dichiara in `cache.fallback_warning`. In `gcs`, un errore GCS è bloccante. In `local`, il server usa solo i file locali.
 
-## Tool
+## Tool — raggruppati per skill
+
+### SO_01 — portal-scout
+
+| Tool | Uso |
+|---|---|
+| `so_find_by_url` | pre-check: gia catalogato? |
+| `so_probe_url` | reachability + content-type |
+| `so_html_extract_links` | rileva link CSV/JSON/XLSX su pagina HTML |
+| `so_ckan_package_show` | conferma CKAN e verifica enumerateabilita |
+| `so_registry_query` | pre-check: gia nel registry? |
+
+### SO_02 — catalog-inventory-scout
+
+| Tool | Uso |
+|---|---|
+| `so_inventory_status` | stato build inventory per fonte |
+| `so_inventory_diff` | baseline vs attuale (delta item) |
+| `so_catalog_inventory_search` | cerca item per keyword/testo |
+| `so_recommend_sources` | trova source_id per keyword tema |
+| `so_infer_topic` | filtra item per tema |
+
+### SO_03 — source-check
+
+| Tool | Uso |
+|---|---|
+| `so_find_by_url` | pre-check: gia catalogato? |
+| `so_inventory_query` | score esistente per questa fonte |
+| `so_radar_summary` | stato radar (se gia nota) |
+| `so_probe_url` | reachability rapida |
+| `so_ckan_package_show` | fetch dettagli singolo dataset |
+| `so_infer_topic` | categorizza il dataset |
+
+### Extra (non legati a skill specifica)
+
+| Tool | Uso |
+|---|---|
+| `so_radar_summary` | stato sintetico radar |
+| `so_radar_history` | streak RED persistenti |
+| `so_radar_status_md` | sommario leggibile radar |
+| `so_catalog_signals` | drift catalogo (weekly CI) |
+| `so_discover_sdmx` | discovery dataflow ISTAT |
+| `so_sparql_query` | query SPARQL arbitraria |
+
+## Tool detail
 
 - `so_inventory_query`
-  - legge `data/catalog_inventory/generated/source_check_results.parquet`
-  - serve per cercare risultati item-level già controllati
-  - include `has_results` filter e `gcs_uri` in risposta
+  - legge `source_check_results.parquet`
+  - cerca risultati item-level gia controllati
+  - include `has_results` filter e `gcs_uri`
 
 - `so_catalog_signals`
-  - legge `data/catalog/catalog_signals.json`
-  - serve per controllare segnali di drift o cambiamento catalogo
+  - legge `catalog_signals.json`
+  - segnali di drift o cambiamento catalogo
 
 - `so_radar_summary`
-  - legge `data/radar/radar_summary.json`
-  - serve per capire lo stato sintetico delle fonti nel radar
+  - legge `radar_summary.json`
+  - stato GREEN/YELLOW/RED per fonte
 
 - `so_radar_history`
-  - legge `data/radar/radar_history.json`
-  - serve per verificare streak/persistent RED e storia probes per fonte
+  - legge `radar_history.json`
+  - streak RED e storia probes
 
 - `so_radar_status_md`
-  - legge `data/radar/STATUS.md`
-  - serve per avere un sommario umano leggibile dello stato radar
-
-- `so_radar_delta`
-  - confronta ultimo e penultimo probe del radar
-  - restituisce fonti cambiate, nuove RED, recovery, persistent RED
+  - legge `STATUS.md`
+  - sommario umano leggibile
 
 - `so_find_by_url`
-  - cerca un URL in source_check_results e catalog_inventory
-  - serve per capire se un URL è già catalogato
+  - cerca URL in source_check_results e catalog_inventory
+  - verifica se gia catalogato
 
 - `so_registry_query`
-  - interroga `data/radar/sources_registry.yaml`
-  - filtra per protocol, source_kind, observation_mode o cerca per source_id
+  - interroga `sources_registry.yaml`
+  - filtra per protocol, source_kind, observation_mode
 
 - `so_inventory_status`
-  - legge `data/catalog_inventory/generated/catalog_inventory_report.json`
-  - serve per distinguere fonte assente, errore di run, protocollo non supportato e inventory riuscito
+  - legge `catalog_inventory_report.json`
+  - distingue ok/error/protocol_not_supported
 
 - `so_catalog_inventory_search`
-  - legge `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
-  - serve per cercare item e dataflow nel catalog inventory derivato
+  - legge `catalog_inventory_latest.parquet`
+  - cerca item per testo/libro
 
-- `so_probe_url`
-  - esegue una verifica HTTP leggera su un URL esplicito
-  - è pensato per controlli puntuali, non per crawling
+- `so_sparql_query`
+  - esegue SPARQL SELECT su endpoint pubblici
+  - usa observatory_get per User-Agent coerente
+  - sostituisce `_local/mcp/sparql`
+
+- `so_html_extract_links`
+  - estrae link CSV/JSON/XLSX/ZIP/XML da pagina HTML
+  - usa observatory_get per User-Agent coerente
+  - sostituisce `_local/mcp/html-extractor`
+
+- `so_ckan_package_show`
+  - fetch package_show su endpoint CKAN
+  - argomenti: `endpoint`, `package_id`
+  - ritorna: item_id, name, title, notes_excerpt, organization, tags, format, resource_count, datastore_active, landing_page, distribution_url
+  - errore: `{error, message}`
+
+- `so_infer_topic`
+  - inferisce tema da qualunque testo (item_name, title, tags, notes)
+  - tassonomia 13 temi: lavoro, economia, sanita, istruzione, trasporti, ambiente, agricoltura, turismo, giustizia, demografia, energia, commercio
+  - ritorna: topics (dict ordinato), top_match (se score>=3), matched_count
+
+- `so_recommend_sources`
+  - cerca fonti nell'inventory per keyword
+  - cerca in: item_name, title, tags, organization, notes_excerpt
+  - ritorna: source_id, item_count, organizations
+
+- `so_inventory_diff`
+  - confronta inventory attuale vs baseline per source_id
+  - mostra delta righe, baseline_date, current_count
 
 - `so_discover_sdmx`
-  - usa solo `data/catalog_inventory/generated/catalog_inventory_latest.parquet`
-  - se l'inventory SDMX non è disponibile, restituisce lo stato del report inventory invece di ripiegare su artifact item-level diversi
-
-- `so_portal_candidates`
-  - **DEPRECATED**: portal-scout non è più nel perimetro di SO. Rimosso.
+  - discovery tematico ISTAT SDMX da artifact locali
+  - cerca dataflow per keywords
 
 ## Boundary
 
@@ -126,14 +189,12 @@ Non deve:
 | `data/catalog_inventory/generated/catalog_inventory_report.json` | stato per fonte del run inventory |
 | GCS: `gs://dataciviclab-clean/catalog_inventory/` | percorso base dei parquet operativi |
 
-## Uso operativo
+## Skill
 
-Per una domanda su "cosa sappiamo già":
+Le 3 skill operative sono in `skills/`:
 
-1. leggere prima radar e report inventory
-2. controllare il blocco `cache` prima di trattare i parquet come correnti
-3. interrogare l'inventory solo se la fonte è inventariata
-4. usare i source-check item-level per evidenze già validate
-5. usare probe o discovery solo per verifiche puntuali
+- `portal-scout.md` — dado un URL, identifica protocollo e decide go registry
+- `catalog-inventory-scout.md` — browse inventory, estrai shortlist per source-check
+- `source-check.md` — verifica singolo item, verdict go DI / watchlist / no-go
 
-Il workflow di riferimento è `skills/mcp-artifact-triage.md`.
+Il workflow di riferimento è `skills/portal-scout.md`, `skills/source-check.md` e `skills/catalog-inventory-scout.md`.

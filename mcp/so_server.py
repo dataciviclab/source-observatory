@@ -27,15 +27,20 @@ try:
         catalog_inventory_search,
         discover_sdmx,
         find_by_url,
+        infer_topic,
+        inventory_diff,
         inventory_status,
         probe_url,
         query_inventory,
         query_signals,
-        radar_delta,
         radar_history,
         radar_status_md,
         radar_summary,
+        recommend_sources,
         registry_query,
+        _ckan_package_show,
+        _html_extract_links,
+        _sparql_query_raw,
     )
 except ImportError:
     if str(_MCP_DIR) not in sys.path:
@@ -44,15 +49,20 @@ except ImportError:
         catalog_inventory_search,
         discover_sdmx,
         find_by_url,
+        infer_topic,
+        inventory_diff,
         inventory_status,
         probe_url,
         query_inventory,
         query_signals,
-        radar_delta,
         radar_history,
         radar_status_md,
         radar_summary,
+        recommend_sources,
         registry_query,
+        _ckan_package_show,
+        _html_extract_links,
+        _sparql_query_raw,
     )
 
 
@@ -156,14 +166,6 @@ def so_discover_sdmx(keywords: list[str], limit: int = 30) -> dict[str, Any]:
 
 
 @mcp.tool(
-    description="Confronta ultimo e penultimo probe del radar: restituisce fonti cambiate, nuove RED, recovery, persistent RED.",
-    structured_output=True,
-)
-def so_radar_delta() -> dict[str, Any]:
-    return _guard(radar_delta)
-
-
-@mcp.tool(
     description="Cerca un URL in source_check_results.parquet e catalog_inventory_latest.parquet per vedere se e' gia' catalogato.",
     structured_output=True,
 )
@@ -182,6 +184,75 @@ def so_registry_query(
     source_id: str | None = None,
 ) -> dict[str, Any]:
     return _guard(registry_query, protocol, source_kind, observation_mode, source_id)
+
+
+@mcp.tool(
+    description="Execute a SPARQL SELECT query against a public endpoint and return tabular results. "
+    "endpoint: SPARQL URL (http/https). query: SPARQL query string. "
+    "timeout: seconds (1-120, default 60). max_rows: maximum rows (1-500, default 500).",
+    structured_output=True,
+)
+def so_sparql_query(
+    endpoint: str,
+    query: str,
+    timeout: int = 60,
+    max_rows: int = 500,
+) -> dict[str, Any]:
+    return _guard(_sparql_query_raw, endpoint, query, timeout, max_rows)
+
+
+@mcp.tool(
+    description="Extract file download links (CSV, JSON, XLSX, ZIP, XML) from an HTML page. "
+    "url: page URL. timeout: request timeout in seconds (default 20). "
+    "Returns {url, links, total, formats, is_reachable, http_status}.",
+    structured_output=True,
+)
+def so_html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
+    return _guard(_html_extract_links, url, timeout)
+
+
+@mcp.tool(
+    description="Fetch a single CKAN dataset (package_show) and return enriched metadata. "
+    "endpoint: CKAN portal base URL (e.g. https://dati.gov.it). "
+    "package_id: dataset ID or name. "
+    "Returns item_id, name, title, notes_excerpt, organization, tags, format, "
+    "resource_count, datastore_active, landing_page, distribution_url, source_url. "
+    "On error returns {error, message}.",
+    structured_output=True,
+)
+def so_ckan_package_show(endpoint: str, package_id: str, timeout: int = 30) -> dict[str, Any]:
+    return _guard(_ckan_package_show, endpoint, package_id, timeout)
+
+
+@mcp.tool(
+    description="Infer thematic topics from any text string (item_name, title, tags, notes, etc.). "
+    "Uses a fixed taxonomy of 13 topics: lavoro, economia, sanita, istruzione, trasporti, "
+    "ambiente, agricoltura, turismo, giustizia, demografia, energia, commercio. "
+    "Returns topics sorted by relevance score (desc), with top_match if dominant (score>=3).",
+    structured_output=True,
+)
+def so_infer_topic(text: str) -> dict[str, Any]:
+    return _guard(infer_topic, text)
+
+
+@mcp.tool(
+    description="Recommend sources from catalog_inventory matching a keyword. "
+    "Searches item_name, title, tags, organization, notes_excerpt. "
+    "Returns top matching sources with item counts and organizations.",
+    structured_output=True,
+)
+def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
+    return _guard(recommend_sources, keyword, limit)
+
+
+@mcp.tool(
+    description="Compare current inventory against baseline for a source. "
+    "Shows item count delta, baseline date, and current count. "
+    "Uses catalog_inventory_latest.parquet + catalog_inventory_report.json.",
+    structured_output=True,
+)
+def so_inventory_diff(source_id: str) -> dict[str, Any]:
+    return _guard(inventory_diff, source_id)
 
 
 if __name__ == "__main__":
