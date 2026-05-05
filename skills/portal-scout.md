@@ -65,10 +65,12 @@ Poi testa i protocolli noti nell'ordine:
    → se 200 + XML/JSON: SDMX confermato
 ```
 
-**SPARQL** — verifica endpoint:
+**SPARQL** — verifica endpoint su path standard:
 ```
-8. so_probe_url(<base_url>)
-   → se content-type RDF o HTML con endpoint SPARQL: sparql confermato
+8. so_probe_url(<base_url>/sparql?query=SELECT+1)
+   → se 200 + content-type application/sparql-results+json: sparql confermato
+   → se 200 + text/html: prova <base_url>/query o <base_url>/sparql
+   → se 400 + JSON: sparql presente (richiede query valida)
 ```
 
 **HTML generico** — se CKAN/SPARQL/SDMX falliti ma `so_html_extract_links` trova link CSV/JSON/XLSX:

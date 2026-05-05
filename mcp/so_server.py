@@ -39,6 +39,8 @@ try:
         recommend_sources,
         registry_query,
         _ckan_package_show,
+        _html_extract_links,
+        _sparql_query_raw,
     )
 except ImportError:
     if str(_MCP_DIR) not in sys.path:
@@ -47,6 +49,8 @@ except ImportError:
         catalog_inventory_search,
         discover_sdmx,
         find_by_url,
+        infer_topic,
+        inventory_diff,
         inventory_status,
         probe_url,
         query_inventory,
@@ -54,6 +58,7 @@ except ImportError:
         radar_history,
         radar_status_md,
         radar_summary,
+        recommend_sources,
         registry_query,
         _ckan_package_show,
         _html_extract_links,
@@ -243,12 +248,11 @@ def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
 @mcp.tool(
     description="Compare current inventory against baseline for a source. "
     "Shows item count delta, baseline date, and current count. "
-    "Uses catalog_inventory_latest.parquet + catalog_inventory_report.json. "
-    "days: window for baseline comparison (default 7, max 90).",
+    "Uses catalog_inventory_latest.parquet + catalog_inventory_report.json.",
     structured_output=True,
 )
-def so_inventory_diff(source_id: str, days: int = 7) -> dict[str, Any]:
-    return _guard(inventory_diff, source_id, days)
+def so_inventory_diff(source_id: str) -> dict[str, Any]:
+    return _guard(inventory_diff, source_id)
 
 
 if __name__ == "__main__":

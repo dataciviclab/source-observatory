@@ -608,6 +608,8 @@ def radar_status_md() -> dict[str, Any]:
     }
 
 
+# DEPRECATED: so_radar_delta tool removed — function kept for potential future use
+# but not exposed via MCP. The same logic is available via so_radar_history + so_radar_summary.
 def radar_delta() -> dict[str, Any]:
     """Compare latest and previous probe to return only changed sources."""
     if not _RADAR_HISTORY_JSON.exists():
@@ -1190,12 +1192,12 @@ def discover_sdmx(keywords: list[str] | str, limit: int = 30) -> dict[str, Any]:
 
 
 _TOPIC_KEYWORDS = {
-    "lavoro": ["lavoro", "occupazione", "disoccupazione", "forze_lavoro", "OECD", "LAU", "ISTAT", "tasso", "disaoccupazione", "impiego"],
+    "lavoro": ["lavoro", "occupazione", "disoccupazione", "forze_lavoro", "OECD", "LAU", "ISTAT", "disaoccupazione", "impiego"],
     "economia": ["PIL", "GDP", "produzione", "valore_aggiunto", "conti_economici", "reddito", "economia", "crisi", "inflazione", "prezzi"],
     "sanita": ["sanita", "salute", "ospedal", "medico", "SSN", " ASL", "patologie", "mortalita", "natalita", "speranza_vita"],
     "istruzione": ["istruzione", "scuola", "universita", "studenti", "docenti", "iscritti", "laurea", "formazione", "educazione"],
     "trasporti": ["trasporti", "mobilita", "traffico", "ferrovier", "aeroporto", "porto", " merci", "passeggeri", "veicoli"],
-    "ambiente": ["ambiente", "emissioni", "aria", "acqua", "rifiuti", "energia", "verde", "inquinamento", "clima"],
+    "ambiente": ["ambiente", "emissioni", "aria", "acqua", "rifiuti", "verde", "inquinamento", "clima"],
     "agricoltura": ["agricoltura", "coltivaz", "allevamento", "pesca", "agro", "SEMI", "superficie", "produzione_agricola"],
     "turismo": ["turismo", "flussi", "presenze", "arrivi", "strutture_ricettive", "viaggiatori", "pernottamenti"],
     "giustizia": ["giustizia", "reati", "crimini", "carceri", "procedimenti", "tribunali", "denunce"],
@@ -1317,17 +1319,14 @@ def recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
 # ─── Inventory Diff (read-only, on-demand) ──────────────────────────────────
 
 
-def inventory_diff(source_id: str, days: int = 7) -> dict[str, Any]:
+def inventory_diff(source_id: str) -> dict[str, Any]:
     """Compare current inventory against baseline for a source.
 
-    Shows item count delta, new items, disappeared items since baseline.
+    Shows item count delta, baseline_date, and current_count.
     Uses catalog_inventory_latest.parquet + catalog_inventory_report.json.
-    days: window for baseline comparison (default 7).
     """
     if not source_id:
         return {"error": "invalid_params", "message": "source_id is required"}
-
-    safe_days = max(1, min(int(days or 7), 90))
 
     # Load report for baseline
     report_loaded = _load_inventory_report()
@@ -1375,7 +1374,6 @@ def inventory_diff(source_id: str, days: int = 7) -> dict[str, Any]:
         "current_count": current_count,
         "delta": delta,
         "delta_pct": round((delta / baseline_value * 100), 1) if baseline_value else None,
-        "days_window": safe_days,
         "cache": cache,
         "note": "delta calcolato vs baseline nel registry; verificare se baseline_value è aggiornato",
     }

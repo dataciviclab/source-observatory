@@ -153,7 +153,6 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 - `so_inventory_diff`
   - confronta inventory attuale vs baseline per source_id
   - mostra delta righe, baseline_date, current_count
-  - parametro `days`: finestra confronto (default 7, max 90)
 
 - `so_discover_sdmx`
   - discovery tematico ISTAT SDMX da artifact locali
