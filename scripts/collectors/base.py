@@ -109,7 +109,7 @@ def observatory_ssl_fallback_get(
                     verify=False,
                     **kwargs,
                 )
-            return response, exc
+            return response, None
         except requests.exceptions.RequestException as fallback_exc:
             return None, SslFallbackFailed(ssl_error=exc, fallback_error=fallback_exc)
 
@@ -121,16 +121,30 @@ def observatory_head(
     headers: dict[str, str] | None = None,
     **kwargs: Any,
 ) -> requests.Response:
+    """HEAD request with SSL fallback: tries verify=True first, falls back to verify=False on SSLError."""
     request_headers = dict(headers or {})
-    with get_observatory_session() as session:
-        response = session.head(
-            url,
-            timeout=timeout,
-            headers=request_headers or None,
-            allow_redirects=True,
-            **kwargs,
-        )
-    return response
+    try:
+        with get_observatory_session() as session:
+            response = session.head(
+                url,
+                timeout=timeout,
+                headers=request_headers or None,
+                allow_redirects=True,
+                **kwargs,
+            )
+        return response
+    except requests.exceptions.SSLError:
+        urllib3.disable_warnings(category=InsecureRequestWarning)
+        with requests.Session() as session:
+            session.headers.update({"User-Agent": USER_AGENT})
+            return session.head(
+                url,
+                timeout=timeout,
+                headers=request_headers or None,
+                allow_redirects=True,
+                verify=False,
+                **kwargs,
+            )
 
 
 def strip_query(url: str) -> str:
