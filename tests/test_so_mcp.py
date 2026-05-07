@@ -548,3 +548,66 @@ def test_infer_topic_tasso_not_false_positive(monkeypatch) -> None:
     result = core.infer_topic("tassazione دخل دخل")
     # No topic keywords match "tassazione" - not lavoro, not economia
     assert "lavoro" not in result["topics"]
+
+
+class _FakeSSLFallbackResponse:
+    """Fake response returned by SSL fallback when verify=False succeeds."""
+    status_code = 200
+
+    def __init__(self) -> None:
+        self.headers = {"content-type": "text/html; charset=utf-8", "content-length": "100"}
+
+
+def test_probe_url_ssl_fallback_used_when_fallback_succeeds(monkeypatch) -> None:
+    """When HEAD and GET both fail but SSL-fallback GET succeeds, ssl_fallback_used is True."""
+    ssl_fallback_called = False
+
+    def fake_head_factory():
+        def fake_head(url, **kwargs):
+            raise core.requests.RequestException("head failed")
+        return fake_head
+
+    def fake_get_factory():
+        def fake_get(url, **kwargs):
+            raise core.requests.RequestException("get failed")
+        return fake_get
+
+    def fake_ssl_fallback_factory():
+        def fake_ssl_fallback_get(url, **kwargs):
+            nonlocal ssl_fallback_called
+            ssl_fallback_called = True
+            return _FakeSSLFallbackResponse(), None  # (response, no_error)
+        return fake_ssl_fallback_get
+
+    monkeypatch.setattr(core, "_get_observatory_head", fake_head_factory)
+    monkeypatch.setattr(core, "_get_observatory_get", fake_get_factory)
+    monkeypatch.setattr(core, "_get_observatory_ssl_fallback_get", fake_ssl_fallback_factory)
+
+    result = core.probe_url("https://expired-cert.example.com/file.csv")
+
+    assert ssl_fallback_called, "SSL fallback should have been called"
+    assert result["is_reachable"] is True
+    assert result["ssl_fallback_used"] is True
+    assert result["http_status"] == 200
+
+
+def test_html_extract_links_ssl_fallback_failure_returns_reachable_false(monkeypatch) -> None:
+    """When _get_observatory_get fails and SSL fallback raises non-RequestException, returns is_reachable=False without exploding."""
+    def fake_get_factory():
+        def fake_get(url, **kwargs):
+            raise core.requests.RequestException("get failed")
+        return fake_get
+
+    def fake_ssl_fallback_factory():
+        def fake_ssl_fallback_raises(url, **kwargs):
+            raise ValueError("unexpected internal error")  # non-RequestException
+        return fake_ssl_fallback_raises
+
+    monkeypatch.setattr(core, "_get_observatory_get", fake_get_factory)
+    monkeypatch.setattr(core, "_get_observatory_ssl_fallback_get", fake_ssl_fallback_factory)
+
+    result = core._html_extract_links("https://expired-cert.example.com/page.html")
+
+    assert result["is_reachable"] is False
+    assert "error" in result
+    assert result["message"] == "unexpected internal error"
