@@ -394,7 +394,7 @@ def _scan_area_pages(
 
     if page_url_template:
         page = page_start
-        while page <= page_max:
+        while pages_scanned < page_max:
             area_url = page_url_template.format(page=page)
             time.sleep(page_delay)
             response, err = observatory_ssl_fallback_get(area_url, timeout=15)
@@ -402,9 +402,9 @@ def _scan_area_pages(
                 break
             parser = _DataLinksParser(area_url, response.text)
             links_this_page = [link for link in parser.links if link["url"] not in seen_data_urls]
-            if not links_this_page:
-                if page_stop_on_empty:
-                    break
+            if not parser.links and page_stop_on_empty:
+                pages_scanned += 1
+                break
             for link in links_this_page:
                 seen_data_urls.add(link["url"])
                 all_data_links.append(link)
