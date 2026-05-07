@@ -29,6 +29,38 @@ class CollectorResult:
     rows: list[dict[str, Any]]
     warning: dict[str, Any] | None = None
     summary: dict[str, Any] | None = None
+    # Tracks whether the primary SSL attempt failed but fallback succeeded.
+    # None means no fallback; True means fallback was used and succeeded.
+    ssl_fallback_used: bool | None = None
+
+
+@dataclass
+class SslFallbackResult:
+    """Result of observatory_ssl_fallback_get.
+
+    Attributes:
+        response: the HTTP response if request succeeded (primary or fallback), None otherwise
+        err: Exception if both primary and fallback failed, None otherwise
+        ssl_fallback_used: True if primary SSL failed but fallback succeeded,
+                          False if primary SSL failed and fallback also failed,
+                          None if primary succeeded (no fallback needed)
+
+    Supports tuple unpacking: response, err = result
+    """
+    response: requests.Response | None
+    err: Exception | None
+    ssl_fallback_used: bool | None = None
+
+    def __iter__(self):
+        """Support tuple unpacking: response, err = result"""
+        return iter((self.response, self.err))
+
+    def __getitem__(self, index):
+        return (self.response, self.err)[index]
+
+    def tuple(self) -> tuple[requests.Response | None, Exception | None]:
+        """Explicit tuple conversion."""
+        return (self.response, self.err)
 
 
 def now_utc_iso() -> str:
@@ -80,13 +112,14 @@ def observatory_ssl_fallback_get(
     timeout: int | float | tuple[float, float] = DEFAULT_TIMEOUT_SECONDS,
     headers: dict[str, str] | None = None,
     **kwargs: Any,
-) -> tuple[requests.Response | None, Exception | bool | None]:
+) -> SslFallbackResult:
     """Get with SSL fallback: tries verify=True first, falls back to verify=False on SSLError.
 
-    Returns (response, exc):
-    - (response, None): primary GET succeeded
-    - (response, True): primary SSL failed, fallback with verify=False succeeded
-    - (None, Exception): both attempts failed — exc carries the final error
+    Returns SslFallbackResult:
+    - response not None, err=None: request succeeded (primary or fallback) — response is usable
+    - response None, err=Exception: both attempts failed — err carries the final error
+
+    Use .tuple() for backward-compatible (response, err) unpacking.
     """
     request_headers = dict(headers or {})
     try:
@@ -97,7 +130,7 @@ def observatory_ssl_fallback_get(
                 headers=request_headers or None,
                 **kwargs,
             )
-        return response, None
+        return SslFallbackResult(response=response, err=None, ssl_fallback_used=None)
     except requests.exceptions.SSLError as exc:
         urllib3.disable_warnings(category=InsecureRequestWarning)
         try:
@@ -110,9 +143,14 @@ def observatory_ssl_fallback_get(
                     verify=False,
                     **kwargs,
                 )
-            return response, True  # SSL fallback was used and succeeded
+            # fallback succeeded — response is usable
+            return SslFallbackResult(response=response, err=None, ssl_fallback_used=True)
         except requests.exceptions.RequestException as fallback_exc:
-            return None, SslFallbackFailed(ssl_error=exc, fallback_error=fallback_exc)
+            return SslFallbackResult(
+                response=None,
+                err=SslFallbackFailed(ssl_error=exc, fallback_error=fallback_exc),
+                ssl_fallback_used=False,
+            )
 
 
 def observatory_head(

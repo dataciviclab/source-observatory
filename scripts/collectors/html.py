@@ -26,7 +26,7 @@ from collections import Counter
 from typing import Any
 from urllib.parse import urljoin
 
-from .base import CollectorResult, observatory_ssl_fallback_get
+from .base import CollectorResult, SslFallbackResult, observatory_ssl_fallback_get
 
 
 DATA_EXTENSIONS = {".csv", ".json", ".xlsx", ".xls", ".ods", ".zip", ".xml", ".geojson"}
@@ -567,7 +567,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         )
     else:
         # Homepage only probe
-        response, fetch_err = observatory_ssl_fallback_get(base_url, timeout=15)
+        response, fetch_err = observatory_ssl_fallback_get(base_url, timeout=15).tuple()
         if fetch_err or response is None:
             return CollectorResult(
                 rows=[],

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import json
+from typing import Literal
 
 import radar_check
+from collectors.base import SslFallbackFailed, SslFallbackResult
 
 
 class FakeResponse:
@@ -125,10 +127,14 @@ def test_is_sdmx_url() -> None:
 
 def test_probe_url_success(monkeypatch) -> None:
     def fake_ssl_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
-        return FakeResponse(
-            status_code=200,
-            json_payload={"success": True, "result": []},
-        ), None
+        return SslFallbackResult(
+            response=FakeResponse(
+                status_code=200,
+                json_payload={"success": True, "result": []},
+            ),
+            err=None,
+            ssl_fallback_used=None,
+        )
 
     monkeypatch.setattr(radar_check, "observatory_ssl_fallback_get", fake_ssl_get)
     result = radar_check.probe_url("https://demo.test/api/3/action/package_list")
@@ -141,7 +147,11 @@ def test_probe_url_timeout(monkeypatch) -> None:
     import requests as real_requests
 
     def fake_ssl_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
-        return None, real_requests.exceptions.Timeout("Connection timed out")
+        return SslFallbackResult(
+            response=None,
+            err=real_requests.exceptions.Timeout("Connection timed out"),
+            ssl_fallback_used=False,
+        )
 
     monkeypatch.setattr(radar_check, "observatory_ssl_fallback_get", fake_ssl_get)
     result = radar_check.probe_url("https://slow.test/api/3/action")
@@ -153,7 +163,11 @@ def test_probe_url_connection_error(monkeypatch) -> None:
     import requests as real_requests
 
     def fake_ssl_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
-        return None, real_requests.exceptions.ConnectionError("Connection refused")
+        return SslFallbackResult(
+            response=None,
+            err=real_requests.exceptions.ConnectionError("Connection refused"),
+            ssl_fallback_used=False,
+        )
 
     monkeypatch.setattr(radar_check, "observatory_ssl_fallback_get", fake_ssl_get)
     result = radar_check.probe_url("https://dead.test/api/3/action")
@@ -164,12 +178,12 @@ def test_probe_url_connection_error(monkeypatch) -> None:
 def test_probe_url_ssl_fallback(monkeypatch) -> None:
     """SSL error first, fallback succeeds — ssl_fallback_used=True.
 
-    New contract: observatory_ssl_fallback_get returns (response, True) when
-    primary SSL failed but fallback with verify=False succeeded.
+    observatory_ssl_fallback_get now returns SslFallbackResult with
+    ssl_fallback_used=True when primary SSL failed but fallback succeeded.
     """
     def fake_ssl_fallback_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
         response = FakeResponse(status_code=200, json_payload={"success": True})
-        return response, True  # True = SSL fallback was used and succeeded
+        return SslFallbackResult(response=response, err=None, ssl_fallback_used=True)
 
     monkeypatch.setattr(
         radar_check, "observatory_ssl_fallback_get", fake_ssl_fallback_get
@@ -244,9 +258,10 @@ def test_observatory_ssl_fallback_get_returns_true_on_fallback_success(monkeypat
     monkeypatch.setattr(base.requests, "Session", FakeFallbackSessionClass())
     monkeypatch.setattr(base.urllib3, "disable_warnings", lambda *a, **k: None)
 
-    resp, flag = base.observatory_ssl_fallback_get("https://ssl-broken.test/file.csv", timeout=10)
-    assert resp is not None
-    assert flag is True  # True = fallback succeeded (new contract)
+    result = base.observatory_ssl_fallback_get("https://ssl-broken.test/file.csv", timeout=10)
+    assert result.response is not None
+    assert result.err is None
+    assert result.ssl_fallback_used is True  # fallback was used and succeeded
     assert len(fake_primary_sessions) == 1  # Only primary was called (fallback uses requests.Session)
 
     base.get_observatory_session = orig_session
@@ -315,14 +330,23 @@ def test_observatory_head_retries_verify_false_on_ssl_error(monkeypatch) -> None
 
 
 def test_probe_url_ssl_fallback_double_failure(monkeypatch) -> None:
-    """SSL error first, fallback also fails — ssl_fallback_used=True, both errors preserved."""
+    """SSL error first, fallback also fails — ssl_fallback_used=True, both errors preserved.
+
+    Both primary SSL and fallback failed. result.ssl_fallback_used=False but
+    ssl_failure_err is set (from the primary SSLError), so ssl_fallback_used=True
+    in the ProbeResult (it correctly reflects that an SSL error occurred).
+    """
     import requests as real_requests
     from collectors.base import SslFallbackFailed
 
     def fake_ssl_fallback_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
         ssl_exc = real_requests.exceptions.SSLError("SSL cert verify failed")
         fallback_exc = real_requests.exceptions.ConnectionError("Connection refused after fallback")
-        return None, SslFallbackFailed(ssl_error=ssl_exc, fallback_error=fallback_exc)
+        return SslFallbackResult(
+            response=None,
+            err=SslFallbackFailed(ssl_error=ssl_exc, fallback_error=fallback_exc),
+            ssl_fallback_used=False,
+        )
 
     monkeypatch.setattr(
         radar_check, "observatory_ssl_fallback_get", fake_ssl_fallback_get
@@ -334,6 +358,7 @@ def test_probe_url_ssl_fallback_double_failure(monkeypatch) -> None:
     )
 
     result = radar_check._probe_once("https://ssl-broken.test/api/3/action")
+    # ssl_failure_err is the primary SSLError → ssl_fallback_used=True in ProbeResult
     assert result.ssl_fallback_used is True
     assert "SSL verify failed" in (result.note or "")
 

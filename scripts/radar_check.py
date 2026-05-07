@@ -24,7 +24,7 @@ from _constants import (
     save_radar_history,
     append_radar_probe,
 )
-from collectors.base import SslFallbackFailed, observatory_ssl_fallback_get
+from collectors.base import SslFallbackFailed, SslFallbackResult, observatory_ssl_fallback_get
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
@@ -146,19 +146,23 @@ def _build_probe_result(
 
 def _probe_once(base_url: str) -> ProbeResult:
     """Single probe attempt (no retry). Uses shared SSL fallback from base.py."""
-    response, exc = observatory_ssl_fallback_get(
+    result = observatory_ssl_fallback_get(
         base_url,
         timeout=TIMEOUT_SECONDS,
         allow_redirects=True,
         stream=True,
     )
-    if response is not None:
-        # exc=True signals SSL fallback was used and succeeded
-        # exc=None means primary request succeeded directly
-        ssl_failure = exc if exc is True else None
-        return _build_probe_result(base_url, response, ssl_failure=ssl_failure)
-    # exc is not None — both attempts failed
-    if exc is None:
+    # ssl_fallback_used=True → primary SSL failed, fallback succeeded → GREEN
+    # ssl_fallback_used=False → both failed
+    # ssl_fallback_used=None → primary succeeded (no fallback needed)
+    if result.response is not None:
+        return _build_probe_result(
+            base_url,
+            result.response,
+            ssl_failure=result.ssl_fallback_used if result.ssl_fallback_used else None,
+        )
+    # Both failed — result.err carries the final error
+    if result.err is None:
         # response=None with no exception — should not happen, treat as hard error
         return ProbeResult(
             status="RED",
@@ -167,20 +171,20 @@ def _probe_once(base_url: str) -> ProbeResult:
         )
     ssl_failure_err: requests.exceptions.SSLError | None = None
     error_exc: requests.exceptions.RequestException
-    if isinstance(exc, SslFallbackFailed):
-        ssl_failure_err = exc.ssl_error
-        error_exc = exc.fallback_error
-    elif isinstance(exc, requests.exceptions.SSLError):
-        ssl_failure_err = exc
-        error_exc = exc
-    elif isinstance(exc, requests.exceptions.RequestException):
-        error_exc = exc
+    if isinstance(result.err, SslFallbackFailed):
+        ssl_failure_err = result.err.ssl_error
+        error_exc = result.err.fallback_error
+    elif isinstance(result.err, requests.exceptions.SSLError):
+        ssl_failure_err = result.err
+        error_exc = result.err
+    elif isinstance(result.err, requests.exceptions.RequestException):
+        error_exc = result.err
     else:
         # Non-RequestException escaped observatory_ssl_fallback_get — treat as RED
         return ProbeResult(
             status="RED",
             http_code="-",
-            note=f"Unexpected exception type in _probe_once: {type(exc).__name__}: {exc}",
+            note=f"Unexpected exception type in _probe_once: {type(result.err).__name__}: {result.err}",
         )
     return _make_error_result(
         error_exc,
