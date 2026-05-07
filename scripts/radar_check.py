@@ -8,7 +8,7 @@ from datetime import date, datetime, timezone
 import json
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import requests
 
@@ -124,13 +124,14 @@ def _build_probe_result(
     base_url: str,
     response: requests.Response,
     *,
-    ssl_failure: requests.exceptions.SSLError | None = None,
+    ssl_failure: requests.exceptions.SSLError | Literal[True] | None = None,
 ) -> ProbeResult:
     status, probe_note = validate_ckan_action_response(base_url, response)
     note = probe_note
     ssl_fallback_used = ssl_failure is not None
     if ssl_failure is not None:
-        note = f"SSL verify failed; fallback verify=False used ({ssl_failure.__class__.__name__})"
+        failure_type = "SSLError" if ssl_failure is True else ssl_failure.__class__.__name__
+        note = f"SSL verify failed; fallback verify=False used ({failure_type})"
         if probe_note:
             note = f"{note} | {probe_note}"
     return ProbeResult(
@@ -164,13 +165,13 @@ def _probe_once(base_url: str) -> ProbeResult:
             http_code="-",
             note="Unexpected: response=None without exception from observatory_ssl_fallback_get",
         )
-    ssl_failure = None
+    ssl_failure_err: requests.exceptions.SSLError | None = None
     error_exc: requests.exceptions.RequestException
     if isinstance(exc, SslFallbackFailed):
-        ssl_failure = exc.ssl_error
+        ssl_failure_err = exc.ssl_error
         error_exc = exc.fallback_error
     elif isinstance(exc, requests.exceptions.SSLError):
-        ssl_failure = exc
+        ssl_failure_err = exc
         error_exc = exc
     elif isinstance(exc, requests.exceptions.RequestException):
         error_exc = exc
@@ -183,8 +184,8 @@ def _probe_once(base_url: str) -> ProbeResult:
         )
     return _make_error_result(
         error_exc,
-        ssl_fallback_used=ssl_failure is not None,
-        ssl_failure=ssl_failure,
+        ssl_fallback_used=ssl_failure_err is not None,
+        ssl_failure=ssl_failure_err,
     )
 
 
