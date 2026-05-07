@@ -26,7 +26,7 @@ from collections import Counter
 from typing import Any
 from urllib.parse import urljoin
 
-from .base import CollectorResult, SslFallbackResult, observatory_ssl_fallback_get
+from .base import CollectorResult, observatory_ssl_fallback_get
 
 
 DATA_EXTENSIONS = {".csv", ".json", ".xlsx", ".xls", ".ods", ".zip", ".xml", ".geojson"}

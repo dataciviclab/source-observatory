@@ -24,7 +24,7 @@ from _constants import (
     save_radar_history,
     append_radar_probe,
 )
-from collectors.base import SslFallbackFailed, SslFallbackResult, observatory_ssl_fallback_get
+from collectors.base import SslFallbackFailed, observatory_ssl_fallback_get
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]

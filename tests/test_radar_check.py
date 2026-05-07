@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from typing import Literal
 
 import radar_check
 from collectors.base import SslFallbackFailed, SslFallbackResult
@@ -337,7 +336,6 @@ def test_probe_url_ssl_fallback_double_failure(monkeypatch) -> None:
     in the ProbeResult (it correctly reflects that an SSL error occurred).
     """
     import requests as real_requests
-    from collectors.base import SslFallbackFailed
 
     def fake_ssl_fallback_get(url, *, timeout=None, allow_redirects=None, stream=None, **kwargs):
         ssl_exc = real_requests.exceptions.SSLError("SSL cert verify failed")
