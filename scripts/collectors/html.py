@@ -385,6 +385,11 @@ def _scan_area_pages(
     enumera le pagine automaticamente partendo da page_start, fermandosi
     quando trova una pagina vuota (nessun link data) o raggiunge page_max.
 
+    Error handling: nel branch paginato si usa break su errore (perché le
+    pagine sono URL sequenziali sullo stesso server — se una cade, cadono
+    tutte). Nel branch area_pages legacy si usa continue (ogni URL è
+    indipendente, un errore non implica gli altri).
+
     Returns:
         summary dict, rows list
     """
