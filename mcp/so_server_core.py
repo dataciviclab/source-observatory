@@ -1047,6 +1047,7 @@ def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
         }
 
     safe_timeout = max(1, min(int(timeout or 15), 60))
+    ssl_fallback_used = False
     try:
         response = _get_observatory_head()(clean_url, timeout=safe_timeout)
     except requests.RequestException:
@@ -1067,6 +1068,7 @@ def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
                 )
                 if ssl_response is not None:
                     response = ssl_response
+                    ssl_fallback_used = True
                 else:
                     return {
                         "url": clean_url,
@@ -1104,6 +1106,7 @@ def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
         "format": _guess_format(clean_url, content_type),
         "size": size,
         "is_reachable": response.status_code < 400,
+        "ssl_fallback_used": ssl_fallback_used,
     }
 
 
@@ -1542,16 +1545,26 @@ def _html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
         return {"error": "invalid_url", "message": f"Invalid URL: {url}"}
 
     safe_timeout = max(1, min(int(timeout or 20), 60))
+    ssl_fallback_used = False
 
     try:
         response = _get_observatory_get()(url, timeout=safe_timeout)
         content_type = response.headers.get("content-type", "")
     except Exception as exc:
         # Retry with SSL fallback
-        ssl_response, ssl_err = _get_observatory_ssl_fallback_get()(url, timeout=safe_timeout)
+        try:
+            ssl_response, ssl_err = _get_observatory_ssl_fallback_get()(url, timeout=safe_timeout)
+        except Exception as ssl_exc:
+            return {
+                "url": url,
+                "is_reachable": False,
+                "error": type(ssl_exc).__name__,
+                "message": str(ssl_exc)[:200],
+            }
         if ssl_response is not None:
             response = ssl_response
             content_type = response.headers.get("content-type", "")
+            ssl_fallback_used = True
         else:
             return {
                 "url": url,
@@ -1576,4 +1589,5 @@ def _html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
         "links": links,
         "total": len(links),
         "formats": sorted({link["format"] for link in links}),
+        "ssl_fallback_used": ssl_fallback_used,
     }
