@@ -8,7 +8,7 @@ from datetime import date, datetime, timezone
 import json
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import requests
 
@@ -124,13 +124,14 @@ def _build_probe_result(
     base_url: str,
     response: requests.Response,
     *,
-    ssl_failure: requests.exceptions.SSLError | None = None,
+    ssl_failure: requests.exceptions.SSLError | Literal[True] | None = None,
 ) -> ProbeResult:
     status, probe_note = validate_ckan_action_response(base_url, response)
     note = probe_note
     ssl_fallback_used = ssl_failure is not None
     if ssl_failure is not None:
-        note = f"SSL verify failed; fallback verify=False used ({ssl_failure.__class__.__name__})"
+        failure_type = "SSLError" if ssl_failure is True else ssl_failure.__class__.__name__
+        note = f"SSL verify failed; fallback verify=False used ({failure_type})"
         if probe_note:
             note = f"{note} | {probe_note}"
     return ProbeResult(
@@ -145,45 +146,50 @@ def _build_probe_result(
 
 def _probe_once(base_url: str) -> ProbeResult:
     """Single probe attempt (no retry). Uses shared SSL fallback from base.py."""
-    response, exc = observatory_ssl_fallback_get(
+    result = observatory_ssl_fallback_get(
         base_url,
         timeout=TIMEOUT_SECONDS,
         allow_redirects=True,
         stream=True,
     )
-    if response is not None:
-        # If exc is not None, we had an SSLError first then fallback succeeded
-        ssl_failure = exc if isinstance(exc, requests.exceptions.SSLError) else None
-        return _build_probe_result(base_url, response, ssl_failure=ssl_failure)
-    # exc is not None — both attempts failed
-    if exc is None:
+    # ssl_fallback_used=True → primary SSL failed, fallback succeeded → GREEN
+    # ssl_fallback_used=False → both failed
+    # ssl_fallback_used=None → primary succeeded (no fallback needed)
+    if result.response is not None:
+        return _build_probe_result(
+            base_url,
+            result.response,
+            ssl_failure=result.ssl_fallback_used if result.ssl_fallback_used else None,
+        )
+    # Both failed — result.err carries the final error
+    if result.err is None:
         # response=None with no exception — should not happen, treat as hard error
         return ProbeResult(
             status="RED",
             http_code="-",
             note="Unexpected: response=None without exception from observatory_ssl_fallback_get",
         )
-    ssl_failure = None
+    ssl_failure_err: requests.exceptions.SSLError | None = None
     error_exc: requests.exceptions.RequestException
-    if isinstance(exc, SslFallbackFailed):
-        ssl_failure = exc.ssl_error
-        error_exc = exc.fallback_error
-    elif isinstance(exc, requests.exceptions.SSLError):
-        ssl_failure = exc
-        error_exc = exc
-    elif isinstance(exc, requests.exceptions.RequestException):
-        error_exc = exc
+    if isinstance(result.err, SslFallbackFailed):
+        ssl_failure_err = result.err.ssl_error
+        error_exc = result.err.fallback_error
+    elif isinstance(result.err, requests.exceptions.SSLError):
+        ssl_failure_err = result.err
+        error_exc = result.err
+    elif isinstance(result.err, requests.exceptions.RequestException):
+        error_exc = result.err
     else:
         # Non-RequestException escaped observatory_ssl_fallback_get — treat as RED
         return ProbeResult(
             status="RED",
             http_code="-",
-            note=f"Unexpected exception type in _probe_once: {type(exc).__name__}: {exc}",
+            note=f"Unexpected exception type in _probe_once: {type(result.err).__name__}: {result.err}",
         )
     return _make_error_result(
         error_exc,
-        ssl_fallback_used=ssl_failure is not None,
-        ssl_failure=ssl_failure,
+        ssl_fallback_used=ssl_failure_err is not None,
+        ssl_failure=ssl_failure_err,
     )
 
 

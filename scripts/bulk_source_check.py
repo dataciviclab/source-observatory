@@ -179,10 +179,25 @@ def _http_head_with_retry(
                 time.sleep(0.5 * (attempt + 1))
                 continue
             return None, False, "timeout", None
+        except requests.exceptions.SSLError:
+            # observatory_head has SSL fallback built-in — use it instead of GET
+            try:
+                fallback_resp = observatory_head(url, timeout=HTTP_TIMEOUT)
+                ct = fallback_resp.headers.get("Content-Type", "") or ""
+                content_type = None
+                for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
+                    if fmt.lower() in ct.lower():
+                        content_type = fmt
+                        break
+                if content_type is None and "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
+                    content_type = "XLS"
+                elif content_type is None and "spreadsheetml" in ct.lower():
+                    content_type = "XLSX"
+                return fallback_resp.status_code, fallback_resp.status_code < 400, "", content_type
+            except requests.exceptions.RequestException:
+                return None, False, "ssl_error", None
         except requests.exceptions.ConnectionError:
             return None, False, "connection_error", None
-        except requests.exceptions.SSLError:
-            return None, False, "ssl_error", None
         except Exception as exc:
             return None, False, str(exc)[:120], None
 
