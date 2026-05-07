@@ -568,3 +568,122 @@ class TestErrorToStaleReason:
     def test_unknown_fallback(self):
         exc = Exception("Something completely unexpected")
         assert self._call(exc) == "unknown"
+
+
+class TestScanAreaPagesPagination:
+    """Tests for _scan_area_pages with page_url_template (pagination)."""
+
+    def test_page_url_template_stops_on_empty_page(self, monkeypatch):
+        """Collector stops when a page has no links at all (empty HTML, no <a> tags)."""
+        import collectors.html as html_collector
+
+        call_count = [0]
+
+        def fake_ssl_fallback_get(url, **kwargs):
+            call_count[0] += 1
+            page = call_count[0]
+            if page == 1:
+                # Page 0: has links
+                html = '<a href="https://docs.example.com/file1.csv">file1.csv</a>'
+            elif page == 2:
+                # Page 1: has links (different from page 0)
+                html = '<a href="https://docs.example.com/file2.csv">file2.csv</a>'
+            else:
+                # Page 2+: empty — no <a> tags at all
+                html = "<html><body><p>No results</p></body></html>"
+            response = FakeJsonResponse(payload=None, text=html, headers={"content-type": "text/html"})
+            return response, None
+
+        monkeypatch.setattr(html_collector, "observatory_ssl_fallback_get", fake_ssl_fallback_get)
+
+        summary, rows = html_collector._scan_area_pages(
+            area_pages=[],
+            topic_hint=None,
+            source_id="test_source",
+            base_url="https://example.com",
+            page_delay=0,
+            page_url_template="https://example.com/data?page={page}",
+            page_start=0,
+            page_max=10,
+            page_stop_on_empty=True,
+        )
+
+        # page 0 (links) + page 1 (links) + page 2 (empty, stop) = 3 pages scanned
+        assert summary["area_pages_scanned"] == 3
+        assert summary["method"] == "csv_magnet_area_pages_paginated"
+        assert summary["total_links_exact"] == 2
+        assert len(rows) == 2
+        urls = {r["url"] for r in rows}
+        assert urls == {"https://docs.example.com/file1.csv", "https://docs.example.com/file2.csv"}
+
+    def test_page_url_template_continues_when_all_links_are_duplicates(self, monkeypatch):
+        """Collector continues past pages where all links are duplicates of previous pages
+        (because parser.links is non-empty even if all are duplicates)."""
+        import collectors.html as html_collector
+
+        call_count = [0]
+
+        def fake_ssl_fallback_get(url, **kwargs):
+            call_count[0] += 1
+            page = call_count[0]
+            if page == 1:
+                html = '<a href="https://docs.example.com/file1.csv">file1.csv</a>'
+            elif page == 2:
+                # Page 1: same links as page 0 — all duplicates, page NOT empty
+                html = '<a href="https://docs.example.com/file1.csv">file1.csv</a>'
+            elif page == 3:
+                # Page 2: new link
+                html = '<a href="https://docs.example.com/file2.csv">file2.csv</a>'
+            else:
+                html = "<html><body></body></html>"
+            response = FakeJsonResponse(payload=None, text=html, headers={"content-type": "text/html"})
+            return response, None
+
+        monkeypatch.setattr(html_collector, "observatory_ssl_fallback_get", fake_ssl_fallback_get)
+
+        summary, rows = html_collector._scan_area_pages(
+            area_pages=[],
+            topic_hint=None,
+            source_id="test_source",
+            base_url="https://example.com",
+            page_delay=0,
+            page_url_template="https://example.com/data?page={page}",
+            page_start=0,
+            page_max=10,
+            page_stop_on_empty=True,
+        )
+
+        # page 0 (links) + page 1 (duplicates, continue) + page 2 (new links) + page 3 (empty, stop) = 4
+        assert summary["area_pages_scanned"] == 4
+        assert summary["total_links_exact"] == 2
+        assert len(rows) == 2
+
+    def test_page_url_template_respects_page_max(self, monkeypatch):
+        """Collector stops at page_max even if pages still have links."""
+        import collectors.html as html_collector
+
+        call_count = [0]
+
+        def fake_ssl_fallback_get(url, **kwargs):
+            call_count[0] += 1
+            html = f'<a href="https://docs.example.com/file{call_count[0]}.csv">file.csv</a>'
+            response = FakeJsonResponse(payload=None, text=html, headers={"content-type": "text/html"})
+            return response, None
+
+        monkeypatch.setattr(html_collector, "observatory_ssl_fallback_get", fake_ssl_fallback_get)
+
+        summary, rows = html_collector._scan_area_pages(
+            area_pages=[],
+            topic_hint=None,
+            source_id="test_source",
+            base_url="https://example.com",
+            page_delay=0,
+            page_url_template="https://example.com/data?page={page}",
+            page_start=0,
+            page_max=3,
+            page_stop_on_empty=True,
+        )
+
+        # Should have scanned exactly page_max pages
+        assert summary["area_pages_scanned"] == 3
+        assert len(rows) == 3

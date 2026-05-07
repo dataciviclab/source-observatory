@@ -371,28 +371,63 @@ def _scan_area_pages(
     base_url: str,
     *,
     page_delay: float = 0.2,
+    page_url_template: str | None = None,
+    page_start: int = 0,
+    page_max: int = 200,
+    page_stop_on_empty: bool = True,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Scan portale HTML via area_pages (nessun second-level crawl).
 
     Fetch ogni area page direttamente → estrae tutti i link data.
     Tutto il contenido è sulla pagina area, no pagine figlie.
 
+    Se page_url_template è impostato (es. "https://site.it/page={page}"),
+    enumera le pagine automaticamente partendo da page_start, fermandosi
+    quando trova una pagina vuota (nessun link data) o raggiunge page_max.
+
+    Error handling: nel branch paginato si usa break su errore (perché le
+    pagine sono URL sequenziali sullo stesso server — se una cade, cadono
+    tutte). Nel branch area_pages legacy si usa continue (ogni URL è
+    indipendente, un errore non implica gli altri).
+
     Returns:
         summary dict, rows list
     """
     all_data_links: list[dict[str, str]] = []
     seen_data_urls: set[str] = set()
+    pages_scanned = 0
 
-    for area_url in area_pages:
-        time.sleep(page_delay)
-        response, err = observatory_ssl_fallback_get(area_url, timeout=15)
-        if err or response is None:
-            continue
-        parser = _DataLinksParser(area_url, response.text)
-        for link in parser.links:
-            if link["url"] not in seen_data_urls:
+    if page_url_template:
+        page = page_start
+        while pages_scanned < page_max:
+            area_url = page_url_template.format(page=page)
+            time.sleep(page_delay)
+            response, err = observatory_ssl_fallback_get(area_url, timeout=15)
+            if err or response is None:
+                break
+            parser = _DataLinksParser(area_url, response.text)
+            links_this_page = [link for link in parser.links if link["url"] not in seen_data_urls]
+            if not parser.links and page_stop_on_empty:
+                pages_scanned += 1
+                break
+            for link in links_this_page:
                 seen_data_urls.add(link["url"])
                 all_data_links.append(link)
+            pages_scanned += 1
+            page += 1
+        area_pages_scanned = pages_scanned
+    else:
+        for area_url in area_pages:
+            time.sleep(page_delay)
+            response, err = observatory_ssl_fallback_get(area_url, timeout=15)
+            if err or response is None:
+                continue
+            parser = _DataLinksParser(area_url, response.text)
+            for link in parser.links:
+                if link["url"] not in seen_data_urls:
+                    seen_data_urls.add(link["url"])
+                    all_data_links.append(link)
+        area_pages_scanned = len(area_pages)
 
     # Stats
     prefix_matrix: dict[str, int] = {}
@@ -465,13 +500,13 @@ def _scan_area_pages(
 
     summary = {
         "total_links_exact": len(all_data_links),
-        "area_pages_scanned": len(area_pages),
+        "area_pages_scanned": area_pages_scanned,
         "by_format": by_format,
         "prefix_matrix": prefix_matrix,
         "series": series_serializable,
         "years_range": [min(years_set), max(years_set)] if years_set else [],
         "topics": dict(Counter(_guess_topic(link["url"], topic_hint) for link in all_data_links)),
-        "method": "csv_magnet_area_pages_direct",
+        "method": "csv_magnet_area_pages_paginated" if page_url_template else "csv_magnet_area_pages_direct",
     }
 
     return summary, rows
@@ -503,6 +538,10 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     area_pages = html_portal_cfg.get("area_pages", [])
     topic_hint = html_portal_cfg.get("topic_hint")
     delay = html_portal_cfg.get("delay_seconds", 0.2)
+    page_url_template = html_portal_cfg.get("page_url_template")
+    page_start = html_portal_cfg.get("page_start", 0)
+    page_max = html_portal_cfg.get("page_max", 200)
+    page_stop_on_empty = html_portal_cfg.get("page_stop_on_empty", True)
 
     if sitemap_url:
         sample = html_portal_cfg.get("sample_pages", 30)
@@ -514,13 +553,17 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             sample_pages=sample,
             page_delay=delay,
         )
-    elif area_pages:
+    elif area_pages or page_url_template:
         summary, rows = _scan_area_pages(
             area_pages,
             topic_hint,
             source_id,
             base_url,
             page_delay=delay,
+            page_url_template=page_url_template,
+            page_start=page_start,
+            page_max=page_max,
+            page_stop_on_empty=page_stop_on_empty,
         )
     else:
         # Homepage only probe

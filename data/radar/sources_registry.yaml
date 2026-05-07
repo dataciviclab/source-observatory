@@ -337,3 +337,26 @@ mef_irpef:
     homepage: https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
     delay_seconds: 0.2
   datasets_in_use: []
+opencivitas:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://www.opencivitas.it/it/open-data
+  last_probed: '2026-05-07'
+  catalog_baseline:
+    captured_at: '2026-05-07'
+    metric: csv_magnet_total_links
+    value: 1084
+    method: csv_magnet_area_pages_paginated
+    reliability: medium
+    note: Sondaggio CSV magnet via page_url_template (page=0..54). SSL fallback necessario per cert invalido.
+  verdict: go
+  note: Portale OpenCivitas — csv_magnet scan via page_url_template. SSL fallback attivo. ZIP con CSV/XLSX dentro.
+  html_portal:
+    topic_hint: trasparenza
+    page_url_template: https://www.opencivitas.it/it/open-data?page={page}
+    page_start: 0
+    page_max: 100
+    page_stop_on_empty: true
+    delay_seconds: 0.3
+  datasets_in_use: []
