@@ -80,12 +80,13 @@ def observatory_ssl_fallback_get(
     timeout: int | float | tuple[float, float] = DEFAULT_TIMEOUT_SECONDS,
     headers: dict[str, str] | None = None,
     **kwargs: Any,
-) -> tuple[requests.Response | None, Exception | None]:
+) -> tuple[requests.Response | None, Exception | bool | None]:
     """Get with SSL fallback: tries verify=True first, falls back to verify=False on SSLError.
 
-    Returns (response, exc). If response is not None, exc is None.
-    If exc is not None, response is None and exc carries both the original
-    SSLError and the fallback failure (SslFallbackFailed).
+    Returns (response, exc):
+    - (response, None): primary GET succeeded
+    - (response, True): primary SSL failed, fallback with verify=False succeeded
+    - (None, Exception): both attempts failed — exc carries the final error
     """
     request_headers = dict(headers or {})
     try:
@@ -109,7 +110,7 @@ def observatory_ssl_fallback_get(
                     verify=False,
                     **kwargs,
                 )
-            return response, None
+            return response, True  # SSL fallback was used and succeeded
         except requests.exceptions.RequestException as fallback_exc:
             return None, SslFallbackFailed(ssl_error=exc, fallback_error=fallback_exc)
 

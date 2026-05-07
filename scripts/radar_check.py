@@ -152,8 +152,9 @@ def _probe_once(base_url: str) -> ProbeResult:
         stream=True,
     )
     if response is not None:
-        # If exc is not None, we had an SSLError first then fallback succeeded
-        ssl_failure = exc if isinstance(exc, requests.exceptions.SSLError) else None
+        # exc=True signals SSL fallback was used and succeeded
+        # exc=None means primary request succeeded directly
+        ssl_failure = exc if exc is True else None
         return _build_probe_result(base_url, response, ssl_failure=ssl_failure)
     # exc is not None — both attempts failed
     if exc is None:

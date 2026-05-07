@@ -40,7 +40,7 @@ import requests
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from collectors.base import observatory_get, observatory_head, observatory_ssl_fallback_get, get_pooled_session
+from collectors.base import observatory_get, observatory_head, get_pooled_session
 
 logger = logging.getLogger(__name__)
 
@@ -180,9 +180,9 @@ def _http_head_with_retry(
                 continue
             return None, False, "timeout", None
         except requests.exceptions.SSLError:
-            # Fallback: retry with observatory_head (which has SSL fallback built-in)
-            fallback_resp, fallback_err = observatory_ssl_fallback_get(url, timeout=HTTP_TIMEOUT)
-            if fallback_err is None and fallback_resp is not None:
+            # observatory_head has SSL fallback built-in — use it instead of GET
+            try:
+                fallback_resp = observatory_head(url, timeout=HTTP_TIMEOUT)
                 ct = fallback_resp.headers.get("Content-Type", "") or ""
                 content_type = None
                 for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
@@ -194,7 +194,8 @@ def _http_head_with_retry(
                 elif content_type is None and "spreadsheetml" in ct.lower():
                     content_type = "XLSX"
                 return fallback_resp.status_code, fallback_resp.status_code < 400, "", content_type
-            return None, False, "ssl_error", None
+            except requests.exceptions.RequestException:
+                return None, False, "ssl_error", None
         except requests.exceptions.ConnectionError:
             return None, False, "connection_error", None
         except Exception as exc:
