@@ -22,10 +22,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
-import csv
-import io
 import logging
-import re
 import sys
 import time
 import urllib.parse
@@ -33,14 +30,32 @@ import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
-import requests
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from collectors.base import observatory_get, observatory_head, get_pooled_session
+
+from source_check_fetch import (
+    SDMX_NS,
+    _EMPTY_ENRICH,
+    _content_type_format,
+    _fetch_ckan_package,
+    _fetch_data_preview,
+    _fetch_html_metadata,
+    _fetch_sdmx_dataflow,
+    _fetch_sdmx_years,
+    _http_head_with_retry,
+)
+from source_check_analyze import (
+    _infer_granularity,
+    _infer_years,
+    _parse_ckan_package,
+    _fallback_infer,
+    _normalize_format,
+    _finalize_scores,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,16 +64,8 @@ DEFAULT_IN = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_i
 DEFAULT_OUT = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
 REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 
-HTTP_TIMEOUT = (5, 10)  # (connect_timeout, read_timeout) — fail fast su host irraggiungibili
 MAX_WORKERS = 8
 _NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
-
-SDMX_NS = {
-    "message": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message",
-    "structure": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure",
-    "common": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common",
-    "generic": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic",
-}
 
 
 # ── registry ─────────────────────────────────────────────────────────────────
@@ -70,339 +77,7 @@ def _load_registry() -> dict[str, Any]:
         return yaml.safe_load(fh) or {}
 
 
-# ── euristica granularità ─────────────────────────────────────────────────────
-
-_GRAN_PATTERNS: list[tuple[str, str]] = [
-    (r"\bcomun[ei]\b|\bmunicip", "comune"),
-    (r"\bprovinc", "provincia"),
-    (
-        r"\bregion[ei]\b|\bregioni\b|piemonte|lombardia|veneto|emilia|toscana|lazio|campania|puglia|sicilia|sardegna|abruzzo|umbria|marche|molise|calabria|basilicata|friuli|trentin|liguria|valle d['\s]aosta",
-        "regione",
-    ),
-    (r"\bnazional[ei]\b|\bitali[ae]\b|\bnazione\b|\bnational\b|\bregional\b", "nazionale"),
-    (r"(?<![a-zA-Z])(REG|reg)(?![a-zA-Z])", "regione"),
-    (r"\beurope[ao]\b|\bue\b|\beuropa\b|\beuropean\b", "europeo"),
-]
-
-def _infer_granularity(text: str) -> str:
-    low = text.lower()
-    for pattern, label in _GRAN_PATTERNS:
-        if re.search(pattern, low):
-            return label
-    return "non_determinato"
-
-
-# ── euristica anni ────────────────────────────────────────────────────────────
-
-# Anni isolati classici: boundary non-digit su entrambi i lati
-_YEAR_RE = re.compile(r"(?<!\d)(19\d{2}|20[012]\d)(?!\d)")
-# Anni in blocchi compatti: boundary non-digit solo a sinistra (202122 → cattura 2021)
-_YEAR_START_RE = re.compile(r"(?:^|(?<!\d))(20[012]\d)")
-# Per year pair: 4 cifre 20XX seguite da 2 cifre YY che sembrano anno (202122 → 2021+2022)
-# Prova a scomporre quando le due cifre finale < 30 (anno 20YY)
-_COMPACT_YEAR_PAIR_RE = re.compile(r"(20[012]\d)(\d{2})(?=20|$|\D)")
-
-
-def _infer_years(text: str) -> tuple[Optional[int], Optional[int]]:
-    years: set[int] = set()
-
-    # Anni isolati classici: boundary non-digit su entrambi i lati
-    for y in _YEAR_RE.findall(text):
-        years.add(int(y))
-
-    # Anni in blocchi compatti: in "202122" cattura 2021 anche se seguito da cifre
-    # (ma solo 2000-2029 per evitare 2030+)
-    for y in _YEAR_START_RE.findall(text):
-        years.add(int(y))
-
-    # Prova a scomporre pattern compatto AABBCC = 20XX + YY: 202122 → 2021 + 2022
-    # 2 cifre finali < 30 → probabile anno 20YY
-    for first_str, second_str in _COMPACT_YEAR_PAIR_RE.findall(text):
-        y1 = int(first_str)
-        y2_2digit = int(second_str)
-        if y2_2digit <= 30:  # anno 20YY
-            y2 = 2000 + y2_2digit
-            if y2 > y1 and y2 - y1 <= 10:  # solo coppie adiacenti (2021+2022, 2025+2026)
-                years.add(y1)
-                years.add(y2)
-
-    if not years:
-        return None, None
-    return min(years), max(years)
-
-
-# ── HTTP check ────────────────────────────────────────────────────────────────
-
-def _http_head_with_retry(
-    url: str,
-    session: Optional[requests.Session] = None,
-    max_retries: int = 1,
-) -> tuple[Optional[int], bool, str, Optional[str]]:
-    """HTTP HEAD with 1 retry on transient errors. Returns (status, reachable, note, content_type)."""
-    if not isinstance(url, str) or not url.startswith("http"):
-        return None, False, "url_missing_or_invalid", None
-
-    last_error = ""
-    for attempt in range(max_retries + 1):
-        try:
-            if session is not None:
-                resp = session.head(url, timeout=HTTP_TIMEOUT)
-            else:
-                resp = observatory_head(url, timeout=HTTP_TIMEOUT)
-
-            # 5xx → retry
-            if resp.status_code >= 500 and attempt < max_retries:
-                last_error = f"server_error_{resp.status_code}"
-                time.sleep(0.5 * (attempt + 1))
-                continue
-
-            # Estrarre Content-Type dalla response
-            ct = resp.headers.get("Content-Type", "") or ""
-            content_type = None
-            for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
-                if fmt.lower() in ct.lower():
-                    content_type = fmt
-                    break
-            # application/vnd.ms-excel → XLS; spreadsheetml → XLSX
-            if content_type is None:
-                if "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
-                    content_type = "XLS"
-                elif "spreadsheetml" in ct.lower():
-                    content_type = "XLSX"
-
-            reachable = resp.status_code < 400
-            return resp.status_code, reachable, "", content_type
-
-        except requests.exceptions.Timeout:
-            if attempt < max_retries:
-                last_error = "timeout"
-                time.sleep(0.5 * (attempt + 1))
-                continue
-            return None, False, "timeout", None
-        except requests.exceptions.SSLError:
-            # observatory_head has SSL fallback built-in — use it instead of GET
-            try:
-                fallback_resp = observatory_head(url, timeout=HTTP_TIMEOUT)
-                ct = fallback_resp.headers.get("Content-Type", "") or ""
-                content_type = None
-                for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
-                    if fmt.lower() in ct.lower():
-                        content_type = fmt
-                        break
-                if content_type is None and "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
-                    content_type = "XLS"
-                elif content_type is None and "spreadsheetml" in ct.lower():
-                    content_type = "XLSX"
-                return fallback_resp.status_code, fallback_resp.status_code < 400, "", content_type
-            except requests.exceptions.RequestException:
-                return None, False, "ssl_error", None
-        except requests.exceptions.ConnectionError:
-            return None, False, "connection_error", None
-        except Exception as exc:
-            return None, False, str(exc)[:120], None
-
-    return None, False, last_error or "transient_error", None
-
-
-def _content_type_format(url: str, session: Optional[requests.Session] = None) -> Optional[str]:
-    """Extract format from Content-Type header via a quick HEAD request."""
-    if not isinstance(url, str) or not url.startswith("http"):
-        return None
-    try:
-        if session is not None:
-            resp = session.head(url, timeout=HTTP_TIMEOUT)
-        else:
-            resp = observatory_head(url, timeout=HTTP_TIMEOUT)
-        ct = resp.headers.get("Content-Type", "") or ""
-        # application/json → JSON; CSV; XLSX; XML; PDF; SDMX; PARQUET
-        for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
-            if fmt.lower() in ct.lower():
-                return fmt
-        # application/vnd.ms-excel → XLS (legacy binary format)
-        if "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
-            return "XLS"
-        # application/vnd.openxmlformats...spreadsheetml.sheet → XLSX (OOXML)
-        if "spreadsheetml" in ct.lower():
-            return "XLSX"
-    except Exception:
-        pass
-    return None
-
-
-# ── CKAN enrichment ───────────────────────────────────────────────────────────
-
-def _fetch_ckan_package(base_api: str, item_name: str, session: Optional[requests.Session] = None) -> Optional[dict]:
-    url = f"{base_api}/package_show?id={item_name}"
-    try:
-        if session is not None:
-            with session.get(url, timeout=HTTP_TIMEOUT) as r:
-                if r.status_code != 200:
-                    return None
-                data = r.json()
-        else:
-            r = observatory_get(url, timeout=HTTP_TIMEOUT)
-            if r.status_code != 200:
-                return None
-            data = r.json()
-        if not data.get("success"):
-            return None
-        return data.get("result") or None
-    except Exception:
-        return None
-
-
-def _parse_ckan_package(pkg: dict) -> dict:
-    """Estrae i campi utili da un package CKAN."""
-    tags = [
-        (t.get("display_name") or t.get("name") or "")
-        for t in (pkg.get("tags") or [])
-        if isinstance(t, dict)
-    ]
-
-    # estrai groups per arricchire l'inferenza di granularità
-    groups = [
-        (g.get("display_name") or g.get("name") or "")
-        for g in (pkg.get("groups") or [])
-        if isinstance(g, dict)
-    ]
-
-    resources = pkg.get("resources") or []
-    resource_url = None
-    resource_format = None
-    for res in resources:
-        u = res.get("url") or ""
-        if u.startswith("http"):
-            resource_url = u
-            resource_format = res.get("format") or None
-            break
-
-    # copertura temporale dagli extras (DCAT-AP)
-    extras = {e["key"]: e["value"] for e in (pkg.get("extras") or []) if isinstance(e, dict)}
-    temporal_start = extras.get("temporal_coverage_from") or extras.get("issued")
-    temporal_end = extras.get("temporal_coverage_to") or extras.get("modified")
-
-    # fallback DCAT-IT: "Periodo di riferimento: YYYY - YYYY"
-    # presente in molti CKAN italiani (MEF/Consip, Regioni, etc.)
-    if temporal_start is None and temporal_end is None:
-        periodo = extras.get("Periodo di riferimento") or extras.get("periodo di riferimento")
-        if periodo:
-            years = _YEAR_RE.findall(str(periodo))
-            if len(years) >= 2:
-                temporal_start, temporal_end = years[0], years[-1]
-
-    notes = (pkg.get("notes") or "").strip()
-    title = pkg.get("title") or None
-
-    # groups hanno precedenza: concatena prima di notes per influenzare l'inferenza
-    combined = " ".join(filter(None, [title, ", ".join(groups), ", ".join(tags), notes[:500]]))
-    granularity = _infer_granularity(combined)
-
-    # anni: prima dagli extras, poi dal testo
-    year_min, year_max = None, None
-    if temporal_start:
-        ys, _ = _infer_years(temporal_start)
-        year_min = ys
-    if temporal_end:
-        _, ye = _infer_years(temporal_end)
-        year_max = ye
-    if year_min is None or year_max is None:
-        yt_min, yt_max = _infer_years(combined)
-        year_min = year_min or yt_min
-        year_max = year_max or yt_max
-
-    return {
-        "enriched_title": title,
-        "enriched_tags": ", ".join(tags) if tags else None,
-        "enriched_notes": notes[:300] if notes else None,
-        "resource_url": resource_url,
-        "resource_format": resource_format,
-        "granularity": granularity,
-        "year_min": year_min,
-        "year_max": year_max,
-        "enrich_method": "ckan_package_show",
-    }
-
-
 # ── SDMX enrichment ───────────────────────────────────────────────────────────
-
-def _fetch_sdmx_years(base_url: str, flow_id: str, session: Optional[requests.Session] = None) -> tuple[Optional[int], Optional[int]]:
-    """Chiama l'endpoint dati SDMX per ricavare year_min/year_max dalla dimensione TIME_PERIOD."""
-    # Skip if --no-sdmx-years flag was set
-    if _NO_SDMX_YEARS:
-        return None, None
-    try:
-        # ricava la root SDMX togliendo /dataflow/IT1 (o simile) dal base_url
-        base = base_url.split("?")[0].rstrip("/")
-        # risali fino alla root del servizio REST (prima di /dataflow)
-        if "/dataflow/" in base:
-            sdmx_root = base[: base.index("/dataflow/")]
-        elif base.endswith("/dataflow"):
-            sdmx_root = base[: -len("/dataflow")]
-        else:
-            sdmx_root = base
-        url = f"{sdmx_root}/data/{flow_id}?lastNObservations=1"
-        if session is not None:
-            with session.get(url, timeout=HTTP_TIMEOUT) as r:
-                if r.status_code != 200:
-                    return None, None
-                content = r.content
-        else:
-            r = observatory_get(url, timeout=HTTP_TIMEOUT)
-            if r.status_code != 200:
-                return None, None
-            content = r.content
-        root = ET.fromstring(content)
-        time_values: list[str] = []
-        # pattern 1: <generic:Value id="TIME_PERIOD" value="..."/> dentro <generic:ObsKey>
-        for val_el in root.findall(".//generic:ObsKey/generic:Value", SDMX_NS):
-            if val_el.get("id") == "TIME_PERIOD":
-                v = val_el.get("value")
-                if v:
-                    time_values.append(v)
-        # pattern 2: attributo TIME_PERIOD su <generic:Obs> o <generic:ObsValue>
-        for obs_el in root.findall(".//generic:Obs", SDMX_NS):
-            v = obs_el.get("TIME_PERIOD")
-            if v:
-                time_values.append(v)
-        for obs_el in root.findall(".//generic:ObsValue", SDMX_NS):
-            v = obs_el.get("TIME_PERIOD")
-            if v:
-                time_values.append(v)
-        years: list[int] = []
-        for tv in time_values:
-            found = _YEAR_RE.findall(tv)
-            years.extend(int(y) for y in found)
-        if not years:
-            return None, None
-        return min(years), max(years)
-    except Exception:
-        return None, None
-
-
-def _fetch_sdmx_dataflow(base_url: str, flow_id: str, session: Optional[requests.Session] = None) -> Optional[ET.Element]:
-    # rimuovi query string e normalizza
-    base = base_url.split("?")[0].rstrip("/")
-    # risali alla root se l'url punta al listing completo
-    if base.endswith("/IT1"):
-        root_url = base
-    else:
-        root_url = base.rsplit("/", 1)[0]
-    url = f"{root_url}/{flow_id}"
-    try:
-        if session is not None:
-            with session.get(url, timeout=HTTP_TIMEOUT) as r:
-                if r.status_code != 200:
-                    return None
-                content = r.content
-        else:
-            r = observatory_get(url, timeout=HTTP_TIMEOUT)
-            if r.status_code != 200:
-                return None
-            content = r.content
-        return ET.fromstring(content)
-    except Exception:
-        return None
-
 
 def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -> dict:
     annotations: dict[str, str] = {}
@@ -422,7 +97,7 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 
     # se le annotations non contengono anni, prova a ricavarli dall'endpoint dati
     if year_min is None:
-        year_min, year_max = _fetch_sdmx_years(base_url, flow_id)
+        year_min, year_max = _fetch_sdmx_years(base_url, flow_id, allow_fetch=not _NO_SDMX_YEARS)
 
     metadata_url = annotations.get("METADATA_URL")
 
@@ -441,259 +116,12 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 
 # ── HTML enrichment (fallback per landing_page) ───────────────────────────────
 
-def _fetch_html_metadata(url: str, session: Optional[requests.Session] = None) -> dict:
-    """Estrae metadati leggeri da una landing_page HTML.
-
-    Ricerca:
-      - Link a file scaricabili (.csv, .json, .xlsx, .xls, .xml, .zip, .pdf)
-      - Meta tag DCAT (dcterms.temporal, dcterms.spatial)
-
-    Restituisce dict con resource_format (primo formato trovato o None),
-    enriched_notes (None), enrich_method.
-    """
-    if not isinstance(url, str) or not url.startswith("http"):
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "html_scrape_failed"
-        return result
-
-    try:
-        if session is not None:
-            with session.get(url, timeout=HTTP_TIMEOUT, stream=False) as resp:
-                resp.raise_for_status()
-                # resp.text uses requests encoding detection (Content-Type charset),
-                # which may differ from the UTF-8 fallback used when session is None.
-                # Divergence is acceptable for regex-based link extraction.
-                html = resp.text
-        else:
-            resp = observatory_get(url, timeout=HTTP_TIMEOUT, stream=False)
-            resp.raise_for_status()
-            html = resp.text
-
-        # Limita a 200KB (usa len(stringa) come proxy ragionevole per UTF-8)
-        if len(html) > 200000:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "html_scrape_failed"
-            return result
-
-        # Cerca link a file scaricabili: regex su href
-        file_patterns = [r'href=["\']([^"\']*\.csv)["\']',
-                        r'href=["\']([^"\']*\.json)["\']',
-                        r'href=["\']([^"\']*\.xlsx)["\']',
-                        r'href=["\']([^"\']*\.xls)["\']',
-                        r'href=["\']([^"\']*\.xml)["\']',
-                        r'href=["\']([^"\']*\.zip)["\']',
-                        r'href=["\']([^"\']*\.pdf)["\']']
-
-        resource_format = None
-        for pattern in file_patterns:
-            matches = re.findall(pattern, html, re.IGNORECASE)
-            if matches:
-                # Prendi il primo formato trovato
-                filename = matches[0]
-                ext = filename.rsplit(".", 1)[-1].upper() if "." in filename else None
-                if ext:
-                    resource_format = ext
-                    break
-
-        return {
-            "enriched_title": None,
-            "enriched_tags": None,
-            "enriched_notes": None,
-            "resource_url": None,
-            "resource_format": resource_format,
-            "granularity": None,
-            "year_min": None,
-            "year_max": None,
-            "enrich_method": "html_scrape",
-        }
-    except Exception:
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "html_scrape_failed"
-        return result
-
-
-# ── CSV/JSON/XLS content preview ───────────────────────────────────────────────
-
-YEAR_COLUMNS = ["anno", "year", "data", "date", "periodo", "period", "mese", "month"]
-REGION_COLUMNS = ["regione", "region", "provincia", "province", "area", "territorio"]
-COMUNE_COLUMNS = ["comune", "municip", "localita", "citta", "city"]
-
-
-def _fetch_data_preview(url: str, session: Optional[requests.Session] = None) -> dict:
-    """Fetch e parse content preview da un URL CSV/JSON/XLS.
-
-    Estrae: column names, year_min/year_max (da colonna anno),
-    granularity (da column names + sample data).
-
-    Returns dict in formato _EMPTY_ENRICH con campi aggiuntivi:
-    - columns: list[str]
-    - year_min, year_max
-    - granularity
-    - enrich_method: "csv_preview"
-    """
-    if not isinstance(url, str) or not url.startswith("http"):
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "csv_preview_failed"
-        return result
-
-    parsed = urllib.parse.urlparse(url)
-    path = parsed.path or ""
-    fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
-    if fmt not in ("csv", "json", "xlsx", "xls"):
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "csv_preview_skipped"
-        return result
-
-    def _do_get() -> requests.Response:
-        if session is not None:
-            return session.get(url, timeout=HTTP_TIMEOUT)
-        return observatory_get(url, timeout=HTTP_TIMEOUT)
-
-    try:
-        # Fetch ~5 KB (enough for headers + a few rows)
-        # Retry once on timeout (transient network issues)
-        resp = None
-        for attempt in range(2):
-            try:
-                resp = _do_get()
-                break
-            except requests.exceptions.Timeout:
-                if attempt == 0:
-                    continue  # retry once
-                else:
-                    result = _EMPTY_ENRICH.copy()
-                    result["enrich_method"] = "csv_preview_timeout"
-                    return result
-            except requests.exceptions.ConnectionError:
-                if attempt == 0:
-                    continue  # retry once
-                else:
-                    result = _EMPTY_ENRICH.copy()
-                    result["enrich_method"] = "csv_preview_connection_error"
-                    return result
-        if resp is None:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "csv_preview_failed"
-            return result
-        if resp.status_code >= 400:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "csv_preview_http_error"
-            return result
-
-        content = resp.content
-        if len(content) > 100 * 1024:
-            content = content[:100 * 1024]
-        text = content.decode("utf-8", errors="replace")
-
-        columns: list[str] = []
-        year_min: Optional[int] = None
-        year_max: Optional[int] = None
-        granularity = "non_determinato"
-        year_values: list[int] = []  # defined outside if/elif so JSON branch can use it
-
-        if fmt == "csv":
-            try:
-                lines = text.splitlines()[:10]
-                if not lines:
-                    raise ValueError("Empty CSV")
-                sample_text = "\n".join(lines)
-                reader = csv.reader(io.StringIO(sample_text))
-                rows = list(reader)
-                if not rows:
-                    raise ValueError("No rows parsed")
-                headers = [h.strip() for h in rows[0]]
-                columns = [h for h in headers if h]
-
-                # Find year column
-                year_col_idx = None
-                for i, h in enumerate(columns):
-                    h_lower = h.lower()
-                    if any(y in h_lower for y in YEAR_COLUMNS):
-                        year_col_idx = i
-                        break
-
-                for row in rows[1:6]:
-                    if year_col_idx is not None and year_col_idx < len(row):
-                        found = _YEAR_RE.findall(row[year_col_idx])
-                        year_values.extend(int(y) for y in found)
-                    # Also scan all cells
-                    for cell in row:
-                        found = _YEAR_RE.findall(cell)
-                        year_values.extend(int(y) for y in found)
-
-                if year_values:
-                    year_min = min(year_values)
-                    year_max = max(year_values)
-            except Exception:
-                # CSV parse failed — try raw text scan
-                found = _YEAR_RE.findall(text[:5000])
-                years = [int(y) for y in found]
-                if years:
-                    year_min, year_max = min(years), max(years)
-
-        elif fmt == "json":
-            try:
-                import json
-                data = json.loads(text)
-                if isinstance(data, list):
-                    rows_sample = data[:5]
-                    if rows_sample and isinstance(rows_sample[0], dict):
-                        columns = [str(k) for k in rows_sample[0].keys()]
-                        for row in rows_sample:
-                            for v in row.values() if isinstance(row, dict) else []:
-                                found = _YEAR_RE.findall(str(v))
-                                year_values.extend(int(y) for y in found)
-                elif isinstance(data, dict):
-                    columns = [str(k) for k in data.keys()]
-            except Exception:
-                found = _YEAR_RE.findall(text[:5000])
-                years = [int(y) for y in found]
-                if years:
-                    year_min, year_max = min(years), max(years)
-
-        # Infer granularity from column names
-        columns_lower = [c.lower() for c in columns]
-        if any(c in " ".join(columns_lower) for c in COMUNE_COLUMNS):
-            granularity = "comune"
-        elif any(c in " ".join(columns_lower) for c in REGION_COLUMNS):
-            granularity = "regione"
-        elif year_min is not None and year_max is not None:
-            # If we have temporal but no geographic granularity, non_determinato
-            granularity = "non_determinato"
-
-        return {
-            "enriched_title": None,
-            "enriched_tags": None,
-            "enriched_notes": None,
-            "resource_url": url,
-            "resource_format": fmt.upper(),
-            "granularity": granularity,
-            "year_min": year_min,
-            "year_max": year_max,
-            "enrich_method": "csv_preview",
-        }
-    except Exception:
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "csv_preview_failed"
-        return result
+# (importato da source_check_fetch)
 
 
 # ── dispatcher per protocollo ─────────────────────────────────────────────────
 
-_EMPTY_ENRICH = {
-    "enriched_title": None,
-    "enriched_tags": None,
-    "enriched_notes": None,
-    "resource_url": None,
-    "resource_format": None,
-    "granularity": None,
-    "year_min": None,
-    "year_max": None,
-    "enrich_method": "none",
-}
-
-
-def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests.Session] = None) -> dict:
+def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
     source_id = row.get("source_id") or ""
     source_cfg = registry.get(source_id, {})
     protocol = source_cfg.get("protocol") or row.get("protocol") or ""
@@ -713,7 +141,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
             # usa api_base_url pre-calcolata dal layer 1 (gestisce endpoint non-standard come INPS /odapi/)
             api_base_url = row.get("api_base_url")
             base_api = api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http") else base_url
-            pkg = _fetch_ckan_package(base_api, item_name, session=session)
+            pkg = _fetch_ckan_package(base_api, item_name)
             if pkg:
                 return _parse_ckan_package(pkg)
         # CKAN senza slug valido → skip package_show, passa a HTML fallback sotto
@@ -724,7 +152,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
         api_base_url = row.get("api_base_url")
         if isinstance(api_base_url, str) and api_base_url.startswith("http"):
             sdmx_base = api_base_url
-        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name, session=session)
+        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name)
         if xml_root is not None:
             return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
 
@@ -736,7 +164,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
             path = parsed.path or ""
             fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
             if fmt in ("csv", "json", "xlsx", "xls"):
-                return _fetch_data_preview(data_url, session=session)
+                return _fetch_data_preview(data_url)
 
     # HTML fallback: per tutti i source con landing_page raggiungibile
     # dati_camera ha scraping_blocked=true → salta HTML se CKAN package_show già provato
@@ -749,111 +177,14 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
             result = _EMPTY_ENRICH.copy()
             result["enrich_method"] = "scraping_blocked"
             return result
-        return _fetch_html_metadata(landing, session=session)
+        return _fetch_html_metadata(landing)
 
     return _EMPTY_ENRICH.copy()
 
 
 # ── fallback euristica su campi catalogo ──────────────────────────────────────
 
-def _fallback_infer(row: pd.Series) -> tuple[str, Optional[int], Optional[int]]:
-    # Composizione di campi: title, tags, notes_excerpt, prefix, url
-    # prefix è il segmento iniziale del filename (es. "REG", "cla", "Redditi")
-    # url completo può contenere hint geografici o di contenuto
-    parts = []
-    for col in ("title", "tags", "notes_excerpt", "prefix", "url"):
-        v = row.get(col)
-        if v and str(v) not in ("nan", "None", ""):
-            parts.append(str(v))
-
-    combined = " ".join(parts)
-    return _infer_granularity(combined), *_infer_years(combined)
-
-
-# ── intake scoring ────────────────────────────────────────────────────────────
-
-_GRAN_SCORE = {"comune": 40, "provincia": 30, "regione": 20, "nazionale": 10, "europeo": 5, "non_determinato": 0}
-_FORMAT_SCORE = {"CSV": 20, "JSON": 20, "XLSX": 12, "XLS": 10, "XML": 8, "SDMX": 8, "PDF": 2}
-_YEAR_SPAN_MAX = 20  # anni di copertura oltre i quali il bonus è al massimo
-
-
-def _normalize_format(raw: str) -> str:
-    """Extract first clean format from a raw format string like 'csv,xml' or 'xls,csv,xml'.
-    Priority order: CSV > JSON > XLSX > XLS > XML > PDF > SDMX > ZIP > PARQUET."""
-    if not isinstance(raw, str):
-        return ""
-    # List = guaranteed iteration order (unlike set)
-    valid_priority = ["CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"]
-    up = raw.upper()
-    for v in valid_priority:
-        if v in up:
-            return v
-    return ""
-
-
-def _intake_score(
-    granularity: Optional[str],
-    year_min: Optional[int],
-    year_max: Optional[int],
-    reachable: bool,
-    resource_format: Optional[str],
-    enrich_method: str,
-    needs_review: bool,
-    source_status: Optional[str] = None,
-) -> tuple[int, bool]:
-    """Restituisce (score 0-100, intake_candidate)."""
-    score = 0
-
-    # granularità — 0..40
-    score += _GRAN_SCORE.get(granularity or "non_determinato", 0)
-
-    # copertura anni — 0..20 (lineare fino a _YEAR_SPAN_MAX anni)
-    if year_min is not None and year_max is not None:
-        span = max(0, year_max - year_min)
-        score += min(20, int(span / _YEAR_SPAN_MAX * 20))
-    elif year_min is not None or year_max is not None:
-        score += 5  # almeno un anno noto
-
-    # raggiungibile — 0..20
-    score += 20 if reachable else 0
-
-    # formato — 0..20 (normalizza: estrai estensione se il campo è un nome file
-    # o una stringa concatenata come "csv,xml" → prendi il primo formato valido)
-    fmt_raw = ("" if not isinstance(resource_format, str) else resource_format).strip()
-    fmt = ""
-    if fmt_raw:
-        # Estrai primo formato valido (CSV, JSON, XLSX, XLS, XML, PDF, SDMX)
-        valid = ["CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"]
-        if "." in fmt_raw and len(fmt_raw) > 6:
-            # Caso filename: estrae estensione (es. "metadati.xls" → "XLS")
-            fmt_ext = fmt_raw.rsplit(".", 1)[-1].upper()
-            if fmt_ext in valid:
-                fmt = fmt_ext
-        else:
-            # Caso lista: "csv,xml" → prendi il primo match (CSV)
-            up = fmt_raw.upper()
-            for v in valid:
-                if v in up:
-                    fmt = v
-                    break
-    score += _FORMAT_SCORE.get(fmt, 0)
-
-    # qualità enrichment — 0..5 bonus, -5 penalità
-    enrich_str = enrich_method if isinstance(enrich_method, str) else ""
-    if enrich_str in ("ckan_package_show", "sdmx_dataflow_annotations"):
-        score += 5
-    if needs_review:
-        score -= 5
-
-    # penalità per source stale — fonte down, dati potrebbero essere outdated
-    if source_status == "stale":
-        score -= 10
-        needs_review = True  # force review per stale
-
-    score = max(0, min(100, score))
-    candidate = score >= 40 and not needs_review
-
-    return score, candidate
+# (importato da source_check_analyze)
 
 
 # ── inventory-aware enrich ───────────────────────────────────────────────────
@@ -861,7 +192,6 @@ def _intake_score(
 def _enrich_with_inventory(
     row: pd.Series,
     registry: dict[str, Any],
-    session: Optional[requests.Session] = None,
 ) -> dict:
     """
     Enrich item using inventory as primary source.
@@ -908,7 +238,7 @@ def _enrich_with_inventory(
     if needs_ckan_refetch:
         api_base_url = row.get("api_base_url")
         base_api = api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http") else base_url
-        pkg = _fetch_ckan_package(base_api, item_name, session=session)
+        pkg = _fetch_ckan_package(base_api, item_name)
         if pkg:
             return _parse_ckan_package(pkg)
 
@@ -918,7 +248,7 @@ def _enrich_with_inventory(
         api_base_url = row.get("api_base_url")
         if isinstance(api_base_url, str) and api_base_url.startswith("http"):
             sdmx_base = api_base_url
-        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name, session=session)
+        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name)
         if xml_root is not None:
             return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
 
@@ -926,7 +256,7 @@ def _enrich_with_inventory(
     if protocol == "html":
         data_url = row.get("url")
         if isinstance(data_url, str):
-            fmt = _content_type_format(data_url, session=session)
+            fmt = _content_type_format(data_url)
             if fmt:
                 return {
                     "enriched_title": inv_title,
@@ -948,7 +278,7 @@ def _enrich_with_inventory(
             path = parsed.path or ""
             fmt_ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
             if fmt_ext in ("csv", "json", "xlsx", "xls"):
-                return _fetch_data_preview(data_url, session=session)
+                return _fetch_data_preview(data_url)
 
     # HTML fallback: landing_page reachable
     landing = row.get("landing_page")
@@ -958,7 +288,7 @@ def _enrich_with_inventory(
             result["enrich_method"] = "scraping_blocked"
             return result
         # use content-type format from landing page
-        fmt = _content_type_format(landing, session=session)
+        fmt = _content_type_format(landing)
         if fmt:
             return {
                 "enriched_title": inv_title,
@@ -986,8 +316,8 @@ def _enrich_with_inventory(
     }
 
 
-def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session: Optional[requests.Session] = None) -> dict:
-    enrich = _enrich_with_inventory(row, registry, session=session)
+def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
+    enrich = _enrich_with_inventory(row, registry)
 
     # granularità e anni: da enrichment, poi fallback su campi catalogo
     granularity = enrich["granularity"]
@@ -1021,7 +351,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
         note = None
         content_type = None
     else:
-        http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "", session=session)
+        http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "")
         http_status = http_status_raw if http_status_raw is not None else 0
 
     # Content-type format as primary detection (now unified in _http_head_with_retry)
@@ -1052,34 +382,13 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
     }
 
 
-def _finalize_scores(result: dict) -> dict:
-    score, candidate = _intake_score(
-        granularity=result.get("granularity"),
-        year_min=result.get("year_min"),
-        year_max=result.get("year_max"),
-        reachable=result.get("reachable", False),
-        resource_format=result.get("resource_format"),
-        enrich_method=result.get("enrich_method", "none"),
-        needs_review=result.get("needs_review", True),
-        source_status=result.get("source_status"),
-    )
-    result["intake_score"] = score
-    result["intake_candidate"] = candidate
-    return result
-
-
 def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame:
     registry = _load_registry()
     check_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     results = []
 
-    # Shared session with connection pooling — reused across all HTTP calls in the pool.
-    # Thread-safe for read-only usage: headers are set at creation and never mutated,
-    # no cookies are modified, the adapter pool is append-only.
-    # Do NOT add cookie/header mutations after creation — that would introduce races.
-    session = get_pooled_session(pool_connections=16, pool_maxsize=32)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        future_to_idx = {pool.submit(_check_row, row, check_ts, registry, session): i for i, row in df.iterrows()}
+        future_to_idx = {pool.submit(_check_row, row, check_ts, registry): i for i, row in df.iterrows()}
         done = 0
         total = len(future_to_idx)
         for future in as_completed(future_to_idx):
@@ -1093,7 +402,6 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
             if done % 50 == 0 or done == total:
                 logger.info("  %d/%d completed", done, total)
 
-    session.close()
     return pd.DataFrame(results)
 
 

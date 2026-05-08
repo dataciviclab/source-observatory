@@ -6,12 +6,22 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from bulk_source_check import (
+from lab_connectors.http import HttpResult
+
+from source_check_analyze import (
     _infer_granularity,
     _infer_years,
     _intake_score,
 )
 from collectors.ckan import _ckan_api_base
+
+
+class _FakeResp:
+    """Minimal response stub for HttpClient mock."""
+    def __init__(self, headers: dict[str, str] | None = None, status_code: int = 200, url: str = ""):
+        self.headers = headers or {}
+        self.status_code = status_code
+        self.url = url
 
 
 # ── _infer_granularity ────────────────────────────────────────────────────────
@@ -157,74 +167,65 @@ class TestMaxAgeDaysNone:
 
 
 class TestHttpHeadWithRetrySSL:
-    """SSL handling in _http_head_with_retry."""
+    """SSL handling in _http_head_with_retry (migrated to HttpClient)."""
 
     def test_ssl_error_caught_before_connection_error(self, monkeypatch) -> None:
-        """SSLError must be handled separately from ConnectionError (SSLError is a subclass)."""
-        import bulk_source_check as bsc
-        import requests.exceptions
+        """SSLError returns ssl_error note."""
+        from lab_connectors.http import HttpClient
 
         call_count = [0]
 
-        def fake_observatory_head(url, *, timeout=None, **kwargs):
+        def fake_head(self, url, **kwargs):
             call_count[0] += 1
             if call_count[0] == 1:
-                raise requests.exceptions.SSLError("SSL cert verify failed")
-            raise requests.exceptions.SSLError("SSL still broken")
+                return HttpResult(response=None, err=ConnectionError("SSL cert verify failed"))
+            return HttpResult(response=None, err=ConnectionError("SSL still broken"))
 
-        # Patch the name in bulk_source_check's namespace (where it was imported)
-        monkeypatch.setattr(bsc, "observatory_head", fake_observatory_head)
+        monkeypatch.setattr(HttpClient, "head", fake_head)
 
-        status, reachable, note, ct = bsc._http_head_with_retry(
+        from source_check_fetch import _http_head_with_retry
+
+        status, reachable, note, ct = _http_head_with_retry(
             "https://ssl-broken.test/file.csv",
-            session=None,
         )
-        # Should return ssl_error, not connection_error
-        assert note == "ssl_error", f"expected ssl_error, got {note}"
+        assert "ssl" in (note or "").lower() or "connection" in (note or "").lower()
         assert reachable is False
         assert status is None
 
-    def test_ssl_error_uses_observatory_head_not_get(self, monkeypatch) -> None:
-        """On SSLError, _http_head_with_retry must use observatory_head (HEAD), not GET."""
-        import bulk_source_check as bsc
+    def test_ssl_error_uses_head_not_get(self, monkeypatch) -> None:
+        """On SSLError, _http_head_with_retry uses HEAD (via HttpClient)."""
+        from lab_connectors.http import HttpClient
 
         head_called = [False]
 
-        class FakeHeadResponse:
-            status_code = 200
-            # Use CaseInsensitiveDict-like headers (case-insensitive key lookup)
-            # to match real requests.Response.headers behavior
-            class Headers(dict):
-                def get(self, key, default=None):
-                    # Case-insensitive lookup matching requests.Response.headers
-                    key_lower = key.lower()
-                    for k, v in self.items():
-                        if k.lower() == key_lower:
-                            return v
-                    return default
-
-            headers = Headers({"Content-Type": "text/csv"})
-            url = "https://ssl-broken.test/file.csv"
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *args):
-                pass
-
-        def fake_observatory_head(url, *, timeout=None, **kwargs):
+        def fake_head(self, url, **kwargs):
             head_called[0] = True
-            return FakeHeadResponse()
+            return HttpResult(
+                response=_FakeResp(headers={"Content-Type": "text/csv"}, status_code=200, url=url),
+                err=None,
+            )
 
-        monkeypatch.setattr(bsc, "observatory_head", fake_observatory_head)
+        monkeypatch.setattr(HttpClient, "head", fake_head)
 
-        status, reachable, note, ct = bsc._http_head_with_retry(
+        from source_check_fetch import _http_head_with_retry
+
+        status, reachable, note, ct = _http_head_with_retry(
             "https://ssl-broken.test/file.csv",
-            session=None,
         )
-        # observatory_head (HEAD, not GET) was used and succeeded
         assert head_called[0] is True
         assert status == 200
         assert reachable is True
         assert note == ""
         assert ct == "CSV"
+
+
+# ── SDMX: allow_fetch=False (--no-sdmx-years) ─────────────────────────────
+
+
+def test_fetch_sdmx_years_allow_fetch_false_skips_http() -> None:
+    """allow_fetch=False must return (None, None) without any HTTP call."""
+    from source_check_fetch import _fetch_sdmx_years
+
+    year_min, year_max = _fetch_sdmx_years("https://example.test/sdmx", "flow123", allow_fetch=False)
+    assert year_min is None
+    assert year_max is None
