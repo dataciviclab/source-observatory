@@ -22,7 +22,6 @@ from __future__ import annotations
 import random
 import re
 import time
-from collections import Counter
 from typing import Any
 from urllib.parse import urljoin
 
@@ -196,6 +195,126 @@ def _fetch_sitemap(sitemap_url: str, timeout: int = 15) -> tuple[list[str] | Non
         return None, str(e)
 
 
+# ─── Shared row building & stats ─────────────────────────────────────────────
+
+
+def _build_row(
+    link: dict[str, str],
+    source_id: str,
+    base_url: str,
+    topic_hint: str | None,
+    *,
+    page_meta: dict[str, dict[str, str]] | None = None,
+    data_page_url: str | None = None,
+) -> dict[str, Any]:
+    """Costruisce una riga per source-check da un data link."""
+    url = link["url"]
+    filename = url.split("/")[-1].rsplit(".", 1)[0]
+    prefix = _extract_prefix(filename)
+    years = _extract_years(filename)
+    topic = _guess_topic(url, topic_hint)
+
+    page_title: str | None = None
+    page_desc: str | None = None
+    if page_meta and data_page_url:
+        meta = page_meta.get(data_page_url)
+        if meta:
+            page_title = meta.get("title")
+            page_desc = meta.get("description")
+
+    return {
+        "source_id": source_id,
+        "source_kind": "catalog",
+        "protocol": "html",
+        "source_url": base_url,
+        "item_id": filename[:100],
+        "item_name": prefix,
+        "item_slug": filename[:100],
+        "title": page_title or f"{prefix} {topic}",
+        "organization": None,
+        "tags": None,
+        "notes_excerpt": page_desc,
+        "landing_page": data_page_url,
+        "distribution_url": url,
+        "datastore_active": False,
+        "resource_count": 1,
+        "issued": None,
+        "modified": None,
+        "url": url,
+        "format": link.get("format", "?"),
+        "prefix": prefix,
+        "year_signal": years[0] if years else None,
+        "topic": topic,
+    }
+
+
+def _compute_summary(
+    all_data_links: list[dict[str, str]],
+    topic_hint: str | None,
+    *,
+    method: str,
+    total_pages: int | None = None,
+    pages_probed: int | None = None,
+    pages_sampled: int | None = None,
+    area_pages_scanned: int | None = None,
+) -> dict[str, Any]:
+    """Calcola le statistiche aggregate da una lista di data link."""
+    from collections import Counter
+
+    prefix_matrix: dict[str, int] = {}
+    by_format: dict[str, int] = {}
+    years_set: set[int] = set()
+    series: dict[str, dict[str, Any]] = {}
+
+    for link in all_data_links:
+        url = link["url"]
+        filename = url.split("/")[-1].rsplit(".", 1)[0]
+        prefix = _extract_prefix(filename)
+        prefix_matrix[prefix] = prefix_matrix.get(prefix, 0) + 1
+
+        fmt = link.get("format", "?")
+        by_format[fmt] = by_format.get(fmt, 0) + 1
+
+        years = _extract_years(filename)
+        for y in years:
+            years_set.add(y)
+
+        if prefix not in series:
+            series[prefix] = {"years": set(), "count": 0, "sample": filename}
+        series[prefix]["count"] += 1
+        for y in years:
+            series[prefix]["years"].add(y)
+
+    series_serializable = {
+        prefix: {"years": sorted(list(info["years"])), "count": info["count"], "sample": info["sample"]}
+        for prefix, info in series.items()
+    }
+
+    summary: dict[str, Any] = {
+        "by_format": by_format,
+        "prefix_matrix": prefix_matrix,
+        "series": series_serializable,
+        "years_range": [min(years_set), max(years_set)] if years_set else [],
+        "topics": dict(Counter(_guess_topic(link["url"], topic_hint) for link in all_data_links)),
+        "method": method,
+    }
+
+    if total_pages is not None:
+        summary["total_pages_in_sitemap"] = total_pages
+    if pages_probed is not None and pages_sampled is not None:
+        links_per_page = len(all_data_links) / pages_probed if pages_probed > 0 else 0
+        summary["pages_probed"] = pages_probed
+        summary["pages_sampled"] = pages_sampled
+        summary["links_found_in_sample"] = len(all_data_links)
+        summary["links_per_page_estimate"] = round(links_per_page, 2)
+        summary["total_links_estimate"] = int(links_per_page * total_pages) if total_pages else 0
+    if area_pages_scanned is not None:
+        summary["area_pages_scanned"] = area_pages_scanned
+        summary["total_links_exact"] = len(all_data_links)
+
+    return summary
+
+
 # ─── Core Scan ───────────────────────────────────────────────────────────────
 
 
@@ -273,98 +392,16 @@ def _scan_sitemap(
             deduped_links.append(link)
     all_data_links = deduped_links
 
-    prefix_matrix: dict[str, int] = {}
-    by_format: dict[str, int] = {}
-    years_set: set[int] = set()
-    series: dict[str, dict[str, Any]] = {}
+    rows = [_build_row(link, source_id, base_url, topic_hint, page_meta=page_meta, data_page_url=link.get("_page_url")) for link in all_data_links]
 
-    for link in all_data_links:
-        url = link["url"]
-        filename = url.split("/")[-1].rsplit(".", 1)[0]
-        prefix = _extract_prefix(filename)
-        prefix_matrix[prefix] = prefix_matrix.get(prefix, 0) + 1
-
-        fmt = link.get("format", "?")
-        by_format[fmt] = by_format.get(fmt, 0) + 1
-
-        years = _extract_years(filename)
-        for y in years:
-            years_set.add(y)
-
-        if prefix not in series:
-            series[prefix] = {"years": set(), "count": 0, "sample": filename}
-        series[prefix]["count"] += 1
-        for y in years:
-            series[prefix]["years"].add(y)
-
-    # Estimate total from sample
-    links_per_page = len(all_data_links) / pages_probed if pages_probed > 0 else 0
-    estimated_total = int(links_per_page * total_pages)
-
-    series_serializable = {}
-    for prefix, info in series.items():
-        series_serializable[prefix] = {
-            "years": sorted(list(info["years"])),
-            "count": info["count"],
-            "sample": info["sample"],
-        }
-
-    # Rows: uno per data link URL — per source-check
-    rows = []
-    for link in all_data_links:
-        url = link["url"]
-        filename = url.split("/")[-1].rsplit(".", 1)[0]
-        prefix = _extract_prefix(filename)
-        years = _extract_years(filename)
-        topic = _guess_topic(url, topic_hint)
-        item_id = filename[:100]  # truncate per safety
-
-        # Enrich from page metadata (provenance-aware)
-        data_page_url: str | None = link.get("_page_url")
-        page_meta_row = page_meta.get(data_page_url) if data_page_url else {}
-        page_title = page_meta_row.get("title") if page_meta_row else None
-
-        rows.append({
-            # canonical columns (per bulk_source_check e inventario)
-            "source_id": source_id,
-            "source_kind": "catalog",
-            "protocol": "html",
-            "source_url": base_url,
-            "item_id": item_id,
-            "item_name": prefix,
-            "item_slug": item_id,
-            "title": page_title or f"{prefix} {topic}",
-            "organization": None,
-            "tags": None,
-            "notes_excerpt": page_meta_row.get("description") if page_meta_row else None,
-            "landing_page": data_page_url,
-            "distribution_url": url,
-            "datastore_active": False,
-            "resource_count": 1,
-            "issued": None,
-            "modified": None,
-            # custom columns (informative per csv_magnet)
-            "url": url,
-            "format": link.get("format", "?"),
-            "prefix": prefix,
-            "year_signal": years[0] if years else None,
-            "topic": topic,
-        })
-
-    summary = {
-        "total_links_estimate": estimated_total,
-        "total_pages_in_sitemap": total_pages,
-        "pages_probed": pages_probed,
-        "pages_sampled": sample_size,
-        "links_found_in_sample": len(all_data_links),
-        "links_per_page_estimate": round(links_per_page, 2),
-        "by_format": by_format,
-        "prefix_matrix": prefix_matrix,
-        "series": series_serializable,
-        "years_range": [min(years_set), max(years_set)] if years_set else [],
-        "topics": dict(Counter(_guess_topic(link["url"], topic_hint) for link in all_data_links)),
-        "method": "csv_magnet_sitemap_sample",
-    }
+    summary = _compute_summary(
+        all_data_links, topic_hint,
+        method="csv_magnet_sitemap_sample",
+        total_pages=total_pages,
+        pages_probed=pages_probed,
+        pages_sampled=sample_size,
+    )
+    summary["total_pages_in_sitemap"] = total_pages
 
     return summary, rows
 
@@ -436,85 +473,14 @@ def _scan_area_pages(
                     all_data_links.append(link)
         area_pages_scanned = len(area_pages)
 
-    # Stats
-    prefix_matrix: dict[str, int] = {}
-    by_format: dict[str, int] = {}
-    years_set: set[int] = set()
-    series: dict[str, dict[str, Any]] = {}
+    rows = [_build_row(link, source_id, base_url, topic_hint) for link in all_data_links]
 
-    for link in all_data_links:
-        url = link["url"]
-        filename = url.split("/")[-1].rsplit(".", 1)[0]
-        prefix = _extract_prefix(filename)
-        prefix_matrix[prefix] = prefix_matrix.get(prefix, 0) + 1
-
-        fmt = link.get("format", "?")
-        by_format[fmt] = by_format.get(fmt, 0) + 1
-
-        years = _extract_years(filename)
-        for y in years:
-            years_set.add(y)
-
-        if prefix not in series:
-            series[prefix] = {"years": set(), "count": 0, "sample": filename}
-        series[prefix]["count"] += 1
-        for y in years:
-            series[prefix]["years"].add(y)
-
-    series_serializable = {}
-    for prefix, info in series.items():
-        series_serializable[prefix] = {
-            "years": sorted(list(info["years"])),
-            "count": info["count"],
-            "sample": info["sample"],
-        }
-
-    # Rows for source-check
-    rows = []
-    for link in all_data_links:
-        url = link["url"]
-        filename = url.split("/")[-1].rsplit(".", 1)[0]
-        prefix = _extract_prefix(filename)
-        years = _extract_years(filename)
-        topic = _guess_topic(url, topic_hint)
-        item_id = filename[:100]
-        rows.append({
-            # canonical columns
-            "source_id": source_id,
-            "source_kind": "catalog",
-            "protocol": "html",
-            "source_url": base_url,
-            "item_id": item_id,
-            "item_name": prefix,
-            "item_slug": item_id,
-            "title": f"{prefix} {topic}",
-            "organization": None,
-            "tags": None,
-            "notes_excerpt": None,
-            "landing_page": None,
-            "distribution_url": url,
-            "datastore_active": False,
-            "resource_count": 1,
-            "issued": None,
-            "modified": None,
-            # custom columns
-            "url": url,
-            "format": link.get("format", "?"),
-            "prefix": prefix,
-            "year_signal": years[0] if years else None,
-            "topic": topic,
-        })
-
-    summary = {
-        "total_links_exact": len(all_data_links),
-        "area_pages_scanned": area_pages_scanned,
-        "by_format": by_format,
-        "prefix_matrix": prefix_matrix,
-        "series": series_serializable,
-        "years_range": [min(years_set), max(years_set)] if years_set else [],
-        "topics": dict(Counter(_guess_topic(link["url"], topic_hint) for link in all_data_links)),
-        "method": "csv_magnet_area_pages_paginated" if page_url_template else "csv_magnet_area_pages_direct",
-    }
+    method = "csv_magnet_area_pages_paginated" if page_url_template else "csv_magnet_area_pages_direct"
+    summary = _compute_summary(
+        all_data_links, topic_hint,
+        method=method,
+        area_pages_scanned=area_pages_scanned,
+    )
 
     return summary, rows
 
@@ -582,40 +548,9 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 rows=[],
                 summary={"type": "csv_magnet_error", "message": err_msg},
             )
-        parser = _DataLinksParser(base_url, result.response.text)
-        rows = []
-        for link in parser.links:
-            url = link["url"]
-            filename = url.split("/")[-1].rsplit(".", 1)[0]
-            years = _extract_years(filename)
-            topic = _guess_topic(url, topic_hint)
-            item_id = filename[:100]
-            rows.append({
-                # canonical columns
-                "source_id": source_id,
-                "source_kind": "catalog",
-                "protocol": "html",
-                "source_url": base_url,
-                "item_id": item_id,
-                "item_name": _extract_prefix(filename),
-                "item_slug": item_id,
-                "title": f"{_extract_prefix(filename)} {topic}",
-                "organization": None,
-                "tags": None,
-                "notes_excerpt": None,
-                "landing_page": None,
-                "distribution_url": url,
-                "datastore_active": False,
-                "resource_count": 1,
-                "issued": None,
-                "modified": None,
-                # custom columns
-                "url": url,
-                "format": link.get("format", "?"),
-                "prefix": _extract_prefix(filename),
-                "year_signal": years[0] if years else None,
-                "topic": topic,
-            })
+        parsed = _DataLinksParser(base_url, result.response.text)
+        all_links = [_build_row(link, source_id, base_url, topic_hint) for link in parsed.links]
+        rows = all_links
         summary = {
             "total_links_exact": len(rows),
             "method": "csv_magnet_homepage_only",
