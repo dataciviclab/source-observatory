@@ -6,22 +6,11 @@ from datetime import datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
-import urllib3
 from requests.adapters import HTTPAdapter
-from urllib3.exceptions import InsecureRequestWarning
 
 
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 DEFAULT_TIMEOUT_SECONDS = 60
-
-
-class SslFallbackFailed(Exception):
-    """Raised when both the SSL attempt and the fallback (verify=False) fail."""
-
-    def __init__(self, ssl_error: requests.exceptions.SSLError, fallback_error: requests.exceptions.RequestException):
-        self.ssl_error = ssl_error
-        self.fallback_error = fallback_error
-        super().__init__(f"SSL failed ({ssl_error}) then fallback failed ({fallback_error})")
 
 
 @dataclass
@@ -32,35 +21,6 @@ class CollectorResult:
     # Tracks whether the primary SSL attempt failed but fallback succeeded.
     # None means no fallback; True means fallback was used and succeeded.
     ssl_fallback_used: bool | None = None
-
-
-@dataclass
-class SslFallbackResult:
-    """Result of observatory_ssl_fallback_get.
-
-    Attributes:
-        response: the HTTP response if request succeeded (primary or fallback), None otherwise
-        err: Exception if both primary and fallback failed, None otherwise
-        ssl_fallback_used: True if primary SSL failed but fallback succeeded,
-                          False if primary SSL failed and fallback also failed,
-                          None if primary succeeded (no fallback needed)
-
-    Supports tuple unpacking: response, err = result
-    """
-    response: requests.Response | None
-    err: Exception | None
-    ssl_fallback_used: bool | None = None
-
-    def __iter__(self):
-        """Support tuple unpacking: response, err = result"""
-        return iter((self.response, self.err))
-
-    def __getitem__(self, index):
-        return (self.response, self.err)[index]
-
-    def tuple(self) -> tuple[requests.Response | None, Exception | None]:
-        """Explicit tuple conversion."""
-        return (self.response, self.err)
 
 
 def now_utc_iso() -> str:
@@ -106,53 +66,6 @@ def observatory_get(
     return response
 
 
-def observatory_ssl_fallback_get(
-    url: str,
-    *,
-    timeout: int | float | tuple[float, float] = DEFAULT_TIMEOUT_SECONDS,
-    headers: dict[str, str] | None = None,
-    **kwargs: Any,
-) -> SslFallbackResult:
-    """Get with SSL fallback: tries verify=True first, falls back to verify=False on SSLError.
-
-    Returns SslFallbackResult:
-    - response not None, err=None: request succeeded (primary or fallback) — response is usable
-    - response None, err=Exception: both attempts failed — err carries the final error
-
-    Use .tuple() for backward-compatible (response, err) unpacking.
-    """
-    request_headers = dict(headers or {})
-    try:
-        with get_observatory_session() as session:
-            response = session.get(
-                url,
-                timeout=timeout,
-                headers=request_headers or None,
-                **kwargs,
-            )
-        return SslFallbackResult(response=response, err=None, ssl_fallback_used=None)
-    except requests.exceptions.SSLError as exc:
-        urllib3.disable_warnings(category=InsecureRequestWarning)
-        try:
-            with requests.Session() as session:
-                session.headers.update({"User-Agent": USER_AGENT})
-                response = session.get(
-                    url,
-                    timeout=timeout,
-                    headers=request_headers or None,
-                    verify=False,
-                    **kwargs,
-                )
-            # fallback succeeded — response is usable
-            return SslFallbackResult(response=response, err=None, ssl_fallback_used=True)
-        except requests.exceptions.RequestException as fallback_exc:
-            return SslFallbackResult(
-                response=None,
-                err=SslFallbackFailed(ssl_error=exc, fallback_error=fallback_exc),
-                ssl_fallback_used=False,
-            )
-
-
 def observatory_head(
     url: str,
     *,
@@ -161,29 +74,14 @@ def observatory_head(
     **kwargs: Any,
 ) -> requests.Response:
     """HEAD request with SSL fallback: tries verify=True first, falls back to verify=False on SSLError."""
-    request_headers = dict(headers or {})
-    try:
-        with get_observatory_session() as session:
-            response = session.head(
-                url,
-                timeout=timeout,
-                headers=request_headers or None,
-                allow_redirects=True,
-                **kwargs,
-            )
-        return response
-    except requests.exceptions.SSLError:
-        urllib3.disable_warnings(category=InsecureRequestWarning)
-        with requests.Session() as session:
-            session.headers.update({"User-Agent": USER_AGENT})
-            return session.head(
-                url,
-                timeout=timeout,
-                headers=request_headers or None,
-                allow_redirects=True,
-                verify=False,
-                **kwargs,
-            )
+    from lab_connectors.http import HttpClient
+
+    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
+    result = client.head(url, headers=headers or {}, **kwargs)
+    if result.is_ok:
+        return result.response
+    # Should not happen — observatory_head was used when we expected success
+    raise result.err if result.err else RuntimeError(f"HEAD failed for {url}")
 
 
 def strip_query(url: str) -> str:

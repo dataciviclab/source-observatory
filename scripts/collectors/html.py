@@ -26,7 +26,8 @@ from collections import Counter
 from typing import Any
 from urllib.parse import urljoin
 
-from .base import CollectorResult, observatory_ssl_fallback_get
+from .base import CollectorResult
+from lab_connectors.http import HttpClient
 
 
 DATA_EXTENSIONS = {".csv", ".json", ".xlsx", ".xls", ".ods", ".zip", ".xml", ".geojson"}
@@ -170,9 +171,12 @@ def _fetch_sitemap(sitemap_url: str, timeout: int = 15) -> tuple[list[str] | Non
     import xml.etree.ElementTree as ET
 
     try:
-        response, exc = observatory_ssl_fallback_get(sitemap_url, timeout=timeout)
-        if response is None:
-            return None, str(exc)
+        client = HttpClient(timeout=timeout)
+        result = client.get(sitemap_url)
+        if not result.is_ok or result.response is None:
+            err_str = str(result.err) if result.err else "unknown"
+            return None, err_str
+        response = result.response
         if response.status_code >= 400:
             return None, f"HTTP {response.status_code}"
         root = ET.fromstring(response.text)
@@ -243,15 +247,16 @@ def _scan_sitemap(
     for page_url in sampled:
         time.sleep(page_delay)
         # Fetch page directly — no separate HEAD probe (saves one round-trip)
-        response, page_err = observatory_ssl_fallback_get(page_url, timeout=10)
-        if page_err or response is None:
+        client = HttpClient(timeout=10)
+        result = client.get(page_url)
+        if not result.is_ok or result.response is None:
             continue
         pages_probed += 1
 
         # Extract page metadata (title, description) for enrichment
-        page_meta[page_url] = _extract_page_meta(response.text)
+        page_meta[page_url] = _extract_page_meta(result.response.text)
 
-        parser = _DataLinksParser(page_url, response.text)
+        parser = _DataLinksParser(page_url, result.response.text)
         for link in parser.links:
             if link["url"] not in seen_data_urls:
                 seen_data_urls.add(link["url"])
@@ -402,10 +407,11 @@ def _scan_area_pages(
         while pages_scanned < page_max:
             area_url = page_url_template.format(page=page)
             time.sleep(page_delay)
-            response, err = observatory_ssl_fallback_get(area_url, timeout=15)
-            if err or response is None:
+            client = HttpClient(timeout=15)
+            result = client.get(area_url)
+            if not result.is_ok or result.response is None:
                 break
-            parser = _DataLinksParser(area_url, response.text)
+            parser = _DataLinksParser(area_url, result.response.text)
             links_this_page = [link for link in parser.links if link["url"] not in seen_data_urls]
             if not parser.links and page_stop_on_empty:
                 pages_scanned += 1
@@ -419,10 +425,11 @@ def _scan_area_pages(
     else:
         for area_url in area_pages:
             time.sleep(page_delay)
-            response, err = observatory_ssl_fallback_get(area_url, timeout=15)
-            if err or response is None:
+            client = HttpClient(timeout=15)
+            result = client.get(area_url)
+            if not result.is_ok or result.response is None:
                 continue
-            parser = _DataLinksParser(area_url, response.text)
+            parser = _DataLinksParser(area_url, result.response.text)
             for link in parser.links:
                 if link["url"] not in seen_data_urls:
                     seen_data_urls.add(link["url"])
@@ -567,13 +574,15 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         )
     else:
         # Homepage only probe
-        response, fetch_err = observatory_ssl_fallback_get(base_url, timeout=15).tuple()
-        if fetch_err or response is None:
+        client = HttpClient(timeout=15)
+        result = client.get(base_url)
+        if not result.is_ok or result.response is None:
+            err_msg = str(result.err) if result.err else "unknown"
             return CollectorResult(
                 rows=[],
-                summary={"type": "csv_magnet_error", "message": fetch_err},
+                summary={"type": "csv_magnet_error", "message": err_msg},
             )
-        parser = _DataLinksParser(base_url, response.text)
+        parser = _DataLinksParser(base_url, result.response.text)
         rows = []
         for link in parser.links:
             url = link["url"]
