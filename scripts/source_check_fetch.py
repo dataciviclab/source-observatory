@@ -20,6 +20,7 @@ from lab_connectors.http import HttpClient
 logger = logging.getLogger(__name__)
 
 HTTP_TIMEOUT: tuple[float, float] = (5, 10)
+_YEAR_RE = re.compile(r"(?<!\d)(19\d{2}|20[012]\d)(?!\d)")
 
 SDMX_NS = {
     "message": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message",
@@ -139,19 +140,60 @@ def _fetch_ckan_package(base_api: str, item_name: str) -> Optional[dict]:
 
 
 def _fetch_sdmx_years(base_url: str, flow_id: str) -> tuple[Optional[int], Optional[int]]:
-    """Fetch SDMX dataflow annotations and extract year range."""
-    xml_root = _fetch_sdmx_dataflow(base_url, flow_id)
-    if xml_root is None:
+    """Chiama l'endpoint dati SDMX per ricavare year_min/year_max dalla dimensione TIME_PERIOD."""
+    try:
+        base = base_url.split("?")[0].rstrip("/")
+        if "/dataflow/" in base:
+            sdmx_root = base[: base.index("/dataflow/")]
+        elif base.endswith("/dataflow"):
+            sdmx_root = base[: -len("/dataflow")]
+        else:
+            sdmx_root = base
+        url = f"{sdmx_root}/data/{flow_id}?lastNObservations=1"
+        client = HttpClient(timeout=20)  # keep original timeout (not HTTP_TIMEOUT)
+        result = client.get(url, headers={"Accept": "application/xml"})
+        if not result.is_ok or result.response is None:
+            return None, None
+        r = result.response
+        if r.status_code != 200:
+            return None, None
+        root = ET.fromstring(r.text)
+        time_values: list[str] = []
+        for val_el in root.findall(".//generic:ObsKey/generic:Value", SDMX_NS):
+            if val_el.get("id") == "TIME_PERIOD":
+                v = val_el.get("value")
+                if v:
+                    time_values.append(v)
+        for obs_el in root.findall(".//generic:Obs", SDMX_NS):
+            v = obs_el.get("TIME_PERIOD")
+            if v:
+                time_values.append(v)
+        for obs_el in root.findall(".//generic:ObsValue", SDMX_NS):
+            v = obs_el.get("TIME_PERIOD")
+            if v:
+                time_values.append(v)
+        years: list[int] = []
+        for tv in time_values:
+            found = _YEAR_RE.findall(tv)
+            years.extend(int(y) for y in found)
+        if not years:
+            return None, None
+        return min(years), max(years)
+    except Exception:
         return None, None
-    annotations = _parse_sdmx_annotations(xml_root, base_url, flow_id)
-    ymin = annotations.get("year_min")
-    ymax = annotations.get("year_max")
-    return ymin, ymax
 
 
 def _fetch_sdmx_dataflow(base_url: str, flow_id: str) -> Optional[ET.Element]:
-    """Fetch SDMX dataflow XML."""
-    url = f"{_normalize_base_url(base_url)}/dataflow/{flow_id}"
+    """
+    Fetch SDMX dataflow definition XML (contiene annotations con keywords).
+    Mantiene la stessa logica URL dell'originale.
+    """
+    base = base_url.split("?")[0].rstrip("/")
+    if base.endswith("/IT1"):
+        root_url = base
+    else:
+        root_url = base.rsplit("/", 1)[0]
+    url = f"{root_url}/{flow_id}"
     try:
         client = HttpClient(timeout=HTTP_TIMEOUT[0])
         result = client.get(url, headers={"Accept": "application/xml"})
@@ -163,22 +205,6 @@ def _fetch_sdmx_dataflow(base_url: str, flow_id: str) -> Optional[ET.Element]:
     except Exception:
         pass
     return None
-
-
-def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -> dict:
-    """Estrae annotazioni SDMX (granularità, anno_min, anno_max)."""
-    annotations: dict[str, Any] = {}
-    for anno in xml_root.iter(f"{{{SDMX_NS['structure']}}}Annotation"):
-        title_el = anno.find(f"{{{SDMX_NS['common']}}}AnnotationTitle")
-        text_el = anno.find(f"{{{SDMX_NS['common']}}}AnnotationText")
-        if title_el is not None and text_el is not None:
-            annotations[title_el.text] = text_el.text
-
-    result: dict[str, Any] = {}
-    result["granularity"] = annotations.get("GRANULARITY")
-    result["year_min"] = _safe_int(annotations.get("YEAR_MIN"))
-    result["year_max"] = _safe_int(annotations.get("YEAR_MAX"))
-    return result
 
 
 # ── HTML fetch ─────────────────────────────────────────────────────────────
