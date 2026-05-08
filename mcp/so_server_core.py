@@ -22,6 +22,8 @@ from urllib.parse import urlparse
 import duckdb
 import requests
 
+from lab_connectors.http import HttpClient
+
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 _COLLECTORS_BASE = _REPO_ROOT / "scripts" / "collectors" / "base.py"
 _CHECK_PARQUET = (
@@ -55,8 +57,12 @@ def _ckan_action_endpoint(base_url: str, action: str) -> str:
 
 
 def _ckan_get_json(url: str, timeout: int = 30, params: dict | None = None) -> dict[str, Any]:
-    """Simple HTTP GET returning JSON — uses observatory_get for consistent UA."""
-    response = _get_observatory_get()(url, timeout=timeout, params=params)
+    """Simple HTTP GET returning JSON — uses HttpClient with SSL fallback."""
+    client = HttpClient(timeout=timeout)
+    result = client.get(url, params=params or {})
+    if not result.is_ok:
+        raise result.err
+    response = result.response
     response.raise_for_status()
     content_type = (response.headers.get("content-type") or "").lower()
     if "json" not in content_type:
@@ -205,12 +211,11 @@ _ENV_LOADED = False
 
 _collectors_base = None
 observatory_get = None
-observatory_head = None
-observatory_ssl_fallback_get = None
 
 
 def _get_observatory_get() -> Any:
-    global _collectors_base, observatory_get, observatory_head, observatory_ssl_fallback_get
+    """Lazy-load observatory_get from collectors.base (used only for POST cases like SPARQL)."""
+    global _collectors_base, observatory_get
     if _collectors_base is None:
         spec = importlib.util.spec_from_file_location("_so_collectors_base", _COLLECTORS_BASE)
         if spec is None or spec.loader is None:
@@ -219,25 +224,7 @@ def _get_observatory_get() -> Any:
         sys.modules[spec.name] = _collectors_base
         spec.loader.exec_module(_collectors_base)
         observatory_get = _collectors_base.observatory_get
-        observatory_head = _collectors_base.observatory_head
     return observatory_get
-
-
-def _get_observatory_head() -> Any:
-    _get_observatory_get()  # ensure initialized
-    return observatory_head
-
-
-def _get_observatory_ssl_fallback_get() -> Any:
-    from lab_connectors.http import HttpClient
-
-    def ssl_fallback_get(url: str, *, timeout: int | float | tuple[int, int] | None = None, headers: dict | None = None, **kwargs: Any) -> tuple[Any, Any]:
-        client = HttpClient(timeout=timeout or 60)
-        kwargs.pop("timeout", None)
-        result = client.get(url, headers=headers or {}, **kwargs)
-        return (result.response, result.err)
-
-    return ssl_fallback_get
 
 
 @dataclass(frozen=True)
@@ -1053,50 +1040,72 @@ def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
         }
 
     safe_timeout = max(1, min(int(timeout or 15), 60))
-    ssl_fallback_used = False
-    try:
-        response = _get_observatory_head()(clean_url, timeout=safe_timeout)
-    except requests.RequestException:
-        try:
-            response = _get_observatory_get()(
-                clean_url,
-                timeout=safe_timeout,
-                headers={"Range": "bytes=0-0"},
-                stream=True,
-            )
-        except requests.RequestException as fallback_exc:
-            # Third attempt: SSL-fallback GET (handles certs expired/invalid)
-            try:
-                ssl_response, ssl_err = _get_observatory_ssl_fallback_get()(
-                    clean_url,
-                    timeout=safe_timeout,
-                    headers={"Range": "bytes=0-0"},
-                )
-                if ssl_response is not None:
-                    response = ssl_response
-                    ssl_fallback_used = True
-                else:
-                    return {
-                        "url": clean_url,
-                        "http_status": None,
-                        "content_type": None,
-                        "format": _guess_format(clean_url, None),
-                        "size": None,
-                        "is_reachable": False,
-                        "error": "ssl_fallback_failed",
-                        "message": str(ssl_err)[:200] if ssl_err else str(fallback_exc)[:200],
-                    }
-            except Exception as ssl_third_exc:
-                return {
-                    "url": clean_url,
-                    "http_status": None,
-                    "content_type": None,
-                    "format": _guess_format(clean_url, None),
-                    "size": None,
-                    "is_reachable": False,
-                    "error": type(ssl_third_exc).__name__,
-                    "message": str(ssl_third_exc)[:200] or str(fallback_exc)[:200],
-                }
+
+    # Attempt 1: HEAD via HttpClient (SSL fallback built-in)
+    client = HttpClient(timeout=safe_timeout)
+    result = client.head(clean_url)
+
+    if result.is_ok:
+        response = result.response
+    elif result.is_ssl_fallback_failed:
+        # Both primary SSL and fallback failed
+        return {
+            "url": clean_url,
+            "http_status": None,
+            "content_type": None,
+            "format": _guess_format(clean_url, None),
+            "size": None,
+            "is_reachable": False,
+            "error": "ssl_fallback_failed",
+            "message": str(result.err)[:200],
+        }
+    elif result.ssl_fallback_used and result.response is not None:
+        # Primary SSL failed, fallback succeeded — GREEN with ssl_fallback_used
+        response = result.response
+    elif result.err is not None:
+        # Non-SSL error (4xx/5xx) — try GET with Range
+        result2 = client.get(
+            clean_url,
+            headers={"Range": "bytes=0-0"},
+        )
+        if result2.is_ok:
+            response = result2.response
+        elif result2.is_ssl_fallback_failed:
+            return {
+                "url": clean_url,
+                "http_status": None,
+                "content_type": None,
+                "format": _guess_format(clean_url, None),
+                "size": None,
+                "is_reachable": False,
+                "error": "ssl_fallback_failed",
+                "message": str(result2.err)[:200],
+            }
+        elif result2.ssl_fallback_used and result2.response is not None:
+            response = result2.response
+        else:
+            return {
+                "url": clean_url,
+                "http_status": None,
+                "content_type": None,
+                "format": _guess_format(clean_url, None),
+                "size": None,
+                "is_reachable": False,
+                "error": type(result2.err).__name__,
+                "message": str(result2.err)[:200],
+            }
+    else:
+        # Unknown state — should not happen
+        return {
+            "url": clean_url,
+            "http_status": None,
+            "content_type": None,
+            "format": _guess_format(clean_url, None),
+            "size": None,
+            "is_reachable": False,
+            "error": "unknown_error",
+            "message": "unexpected state in probe_url",
+        }
 
     content_type = response.headers.get("content-type")
     content_length = response.headers.get("content-length")
@@ -1112,7 +1121,7 @@ def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
         "format": _guess_format(clean_url, content_type),
         "size": size,
         "is_reachable": response.status_code < 400,
-        "ssl_fallback_used": ssl_fallback_used,
+        "ssl_fallback_used": result.ssl_fallback_used,
     }
 
 
@@ -1428,7 +1437,7 @@ def _sparql_query_raw(
     """Execute a SPARQL SELECT query against any public endpoint.
 
     Returns dict with rows, columns, and bindings count.
-    Uses observatory_get for consistent User-Agent header.
+    Uses HttpClient (POST not supported — falls back to observatory_get for SPARQL POST).
     """
     if not endpoint or not query:
         return {"error": "invalid_params", "message": "endpoint and query are required"}
@@ -1443,6 +1452,7 @@ def _sparql_query_raw(
     if "LIMIT" not in clean_query.upper():
         clean_query = f"{clean_query}\nLIMIT {safe_max_rows}"
 
+    # SPARQL POST is not supported by HttpClient — use requests directly for this case
     try:
         response = _get_observatory_get()(
             endpoint,
@@ -1542,7 +1552,7 @@ def _html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
     """Extract file download links from an HTML page.
 
     Returns {url, links: [{url, format, title}], total, content_type, is_reachable}.
-    Uses observatory_get with proper UA.
+    Uses HttpClient with SSL fallback built-in.
     """
     if not url:
         return {"error": "invalid_url", "message": "url is required"}
@@ -1551,33 +1561,19 @@ def _html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
         return {"error": "invalid_url", "message": f"Invalid URL: {url}"}
 
     safe_timeout = max(1, min(int(timeout or 20), 60))
-    ssl_fallback_used = False
+    client = HttpClient(timeout=safe_timeout)
+    result = client.get(url)
 
-    try:
-        response = _get_observatory_get()(url, timeout=safe_timeout)
-        content_type = response.headers.get("content-type", "")
-    except Exception as exc:
-        # Retry with SSL fallback
-        try:
-            ssl_response, ssl_err = _get_observatory_ssl_fallback_get()(url, timeout=safe_timeout)
-        except Exception as ssl_exc:
-            return {
-                "url": url,
-                "is_reachable": False,
-                "error": type(ssl_exc).__name__,
-                "message": str(ssl_exc)[:200],
-            }
-        if ssl_response is not None:
-            response = ssl_response
-            content_type = response.headers.get("content-type", "")
-            ssl_fallback_used = True
-        else:
-            return {
-                "url": url,
-                "is_reachable": False,
-                "error": type(exc).__name__,
-                "message": str(exc)[:200],
-            }
+    if not result.is_ok:
+        return {
+            "url": url,
+            "is_reachable": False,
+            "error": type(result.err).__name__,
+            "message": str(result.err)[:200],
+        }
+
+    response = result.response
+    content_type = response.headers.get("content-type", "")
 
     text_html = "text/html" in content_type.lower()
     try:
@@ -1595,5 +1591,5 @@ def _html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
         "links": links,
         "total": len(links),
         "formats": sorted({link["format"] for link in links}),
-        "ssl_fallback_used": ssl_fallback_used,
+        "ssl_fallback_used": result.ssl_fallback_used,
     }

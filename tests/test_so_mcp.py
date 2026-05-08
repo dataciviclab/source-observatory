@@ -558,53 +558,69 @@ class _FakeSSLFallbackResponse:
         self.headers = {"content-type": "text/html; charset=utf-8", "content-length": "100"}
 
 
-def test_probe_url_ssl_fallback_used_when_fallback_succeeds(monkeypatch) -> None:
-    """When HEAD and GET both fail but SSL-fallback GET succeeds, ssl_fallback_used is True."""
-    ssl_fallback_called = False
+def test_probe_url_ssl_fallback_used_when_head_fallback_succeeds(monkeypatch) -> None:
+    """When HttpClient.head() primary SSL fails but fallback succeeds, ssl_fallback_used is True."""
+    class _FakeSSLResponse:
+        status_code = 200
+        headers = {"content-type": "text/html; charset=utf-8", "content-length": "100"}
 
-    def fake_head_factory():
-        def fake_head(url, **kwargs):
-            raise core.requests.RequestException("head failed")
-        return fake_head
+    class _FakeHttpResult:
+        """Simulates HttpClient.head() when primary SSL failed but fallback succeeded."""
+        def __init__(self):
+            self.response = _FakeSSLResponse()
+            self.err = None
+            self.ssl_fallback_used = True
 
-    def fake_get_factory():
-        def fake_get(url, **kwargs):
-            raise core.requests.RequestException("get failed")
-        return fake_get
+        @property
+        def is_ok(self):
+            return True  # fallback succeeded, response usable
 
-    def fake_ssl_fallback_factory():
-        def fake_ssl_fallback_get(url, **kwargs):
-            nonlocal ssl_fallback_called
-            ssl_fallback_called = True
-            return _FakeSSLFallbackResponse(), None  # (response, no_error)
-        return fake_ssl_fallback_get
+        @property
+        def is_ssl_fallback_failed(self):
+            return False
 
-    monkeypatch.setattr(core, "_get_observatory_head", fake_head_factory)
-    monkeypatch.setattr(core, "_get_observatory_get", fake_get_factory)
-    monkeypatch.setattr(core, "_get_observatory_ssl_fallback_get", fake_ssl_fallback_factory)
+    class _FakeHttpClient:
+        def __init__(self, timeout=None):
+            pass
+
+        def head(self, url):
+            # HttpClient catches SSLError internally, returns result with ssl_fallback_used=True
+            return _FakeHttpResult()
+
+    monkeypatch.setattr(core, "HttpClient", _FakeHttpClient)
 
     result = core.probe_url("https://expired-cert.example.com/file.csv")
 
-    assert ssl_fallback_called, "SSL fallback should have been called"
     assert result["is_reachable"] is True
     assert result["ssl_fallback_used"] is True
     assert result["http_status"] == 200
 
 
 def test_html_extract_links_ssl_fallback_failure_returns_reachable_false(monkeypatch) -> None:
-    """When _get_observatory_get fails and SSL fallback raises non-RequestException, returns is_reachable=False without exploding."""
-    def fake_get_factory():
-        def fake_get(url, **kwargs):
-            raise core.requests.RequestException("get failed")
-        return fake_get
+    """When HttpClient.get fails with non-SSL error, returns is_reachable=False."""
 
-    def fake_ssl_fallback_factory():
-        def fake_ssl_fallback_raises(url, **kwargs):
-            raise ValueError("unexpected internal error")  # non-RequestException
-        return fake_ssl_fallback_raises
+    class _FakeHttpResultError:
+        def __init__(self, err):
+            self.response = None
+            self.err = err
+            self.ssl_fallback_used = False
 
-    monkeypatch.setattr(core, "_get_observatory_get", fake_get_factory)
-    monkeypatch.setattr(core, "_get_observatory_ssl_fallback_get", fake_ssl_fallback_factory)
+        @property
+        def is_ok(self):
+            return False
+
+        @property
+        def is_ssl_fallback_failed(self):
+            return False
+
+    class _FakeHttpClient:
+        def __init__(self, timeout=None):
+            pass
+
+        def get(self, url, headers=None, params=None):
+            return _FakeHttpResultError(ValueError("unexpected internal error"))
+
+    monkeypatch.setattr(core, "HttpClient", _FakeHttpClient)
 
     result = core._html_extract_links("https://expired-cert.example.com/page.html")
 
