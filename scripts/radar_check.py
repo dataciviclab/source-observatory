@@ -24,7 +24,6 @@ from _constants import (
     save_radar_history,
     append_radar_probe,
 )
-from collectors.base import observatory_get
 from lab_connectors.http import HttpClient, HttpFallbackError
 
 

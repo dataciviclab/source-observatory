@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 import radar_check
-from lab_connectors.http import HttpClient, HttpFallbackError, HttpResult
+from lab_connectors.http import HttpFallbackError, HttpResult
 
 
 class FakeResponse:
