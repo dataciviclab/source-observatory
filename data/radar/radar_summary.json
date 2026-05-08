@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-05-07T06:18:11.111485+00:00",
-  "probe_date": "2026-05-07",
-  "sources_total": 15,
+  "generated_at": "2026-05-08T05:35:31.282114+00:00",
+  "probe_date": "2026-05-08",
+  "sources_total": 16,
   "status_counts": {
-    "GREEN": 10,
+    "GREEN": 9,
     "YELLOW": 3,
-    "RED": 2
+    "RED": 4
   },
   "persistent_red": 2,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Probe exception non gestita: ReadTimeout: HTTPSConnectionPool(host='esploradati.istat.it', port=443): Read timed out. (read timeout=10)"
     },
     {
       "id": "anac",
@@ -43,7 +43,7 @@
       "protocol": "html",
       "http_code": "-",
       "note": "SSL verify failed; fallback connection error (SSLError)",
-      "red_streak": 7
+      "red_streak": 8
     },
     {
       "id": "inail_opendata",
@@ -61,9 +61,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null
     },
     {
@@ -99,8 +99,8 @@
       "status": "RED",
       "protocol": "ckan",
       "http_code": "-",
-      "note": "Probe exception non gestita: ConnectTimeout: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list?limit=1 (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7f4589662ae0>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=10)'))",
-      "red_streak": 7
+      "note": "Probe exception non gestita: ConnectTimeout: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list?limit=1 (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7fa7de546840>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=10)'))",
+      "red_streak": 8
     },
     {
       "id": "opencoesione",
@@ -115,6 +115,13 @@
       "protocol": "html",
       "http_code": "200",
       "note": null
+    },
+    {
+      "id": "opencivitas",
+      "status": "GREEN",
+      "protocol": "html",
+      "http_code": "200",
+      "note": "SSL verify failed; fallback verify=False used (SSLError)"
     }
   ]
 }
