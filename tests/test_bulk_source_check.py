@@ -3,13 +3,12 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from lab_connectors.http import HttpResult
 
-from bulk_source_check import (
+from source_check_analyze import (
     _infer_granularity,
     _infer_years,
     _intake_score,

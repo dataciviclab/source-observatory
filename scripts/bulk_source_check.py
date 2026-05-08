@@ -22,10 +22,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
-import csv
-import io
 import logging
-import re
 import sys
 import time
 import urllib.parse
@@ -33,7 +30,7 @@ import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pandas as pd
 import yaml
@@ -41,11 +38,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from source_check_fetch import (
-    HTTP_TIMEOUT,
     SDMX_NS,
-    YEAR_COLUMNS,
-    REGION_COLUMNS,
-    COMUNE_COLUMNS,
     _EMPTY_ENRICH,
     _content_type_format,
     _fetch_ckan_package,
@@ -53,7 +46,6 @@ from source_check_fetch import (
     _fetch_html_metadata,
     _fetch_sdmx_dataflow,
     _fetch_sdmx_years,
-    _format_from_content_type,
     _http_head_with_retry,
 )
 from source_check_analyze import (
@@ -62,7 +54,6 @@ from source_check_analyze import (
     _parse_ckan_package,
     _fallback_infer,
     _normalize_format,
-    _intake_score,
     _finalize_scores,
 )
 

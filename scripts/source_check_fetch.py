@@ -13,7 +13,6 @@ import re
 import time
 import urllib.parse
 import xml.etree.ElementTree as ET
-from pathlib import Path
 from typing import Any, Optional
 
 from lab_connectors.http import HttpClient

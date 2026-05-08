@@ -7,11 +7,10 @@ Estratto da bulk_source_check.py.
 from __future__ import annotations
 
 import re
-from typing import Any, Optional
+from typing import Optional
 
 import pandas as pd
 
-from source_check_fetch import _EMPTY_ENRICH, _fetch_sdmx_years
 
 # ── euristica granularità ─────────────────────────────────────────────────────
 
