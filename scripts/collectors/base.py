@@ -27,17 +27,6 @@ def now_utc_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-def get_observatory_session() -> requests.Session:
-    session = requests.Session()
-    session.headers.update(
-        {
-            "User-Agent": USER_AGENT,
-            "Connection": "close",
-        }
-    )
-    return session
-
-
 def get_pooled_session(pool_connections: int = 16, pool_maxsize: int = 32) -> requests.Session:
     """Session with HTTPAdapter connection pooling — reuse across calls."""
     session = requests.Session()
@@ -55,15 +44,14 @@ def observatory_get(
     headers: dict[str, str] | None = None,
     **kwargs: Any,
 ) -> requests.Response:
-    request_headers = dict(headers or {})
-    with get_observatory_session() as session:
-        response = session.get(
-            url,
-            timeout=timeout,
-            headers=request_headers or None,
-            **kwargs,
-        )
-    return response
+    """GET request with SSL fallback via HttpClient."""
+    from lab_connectors.http import HttpClient
+
+    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
+    result = client.get(url, headers=headers or {}, **kwargs)
+    if result.is_ok and result.response is not None:
+        return result.response
+    raise result.err if result.err else RuntimeError(f"GET failed for {url}")
 
 
 def observatory_head(
