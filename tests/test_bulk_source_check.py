@@ -217,3 +217,15 @@ class TestHttpHeadWithRetrySSL:
         assert reachable is True
         assert note == ""
         assert ct == "CSV"
+
+
+# ── SDMX: allow_fetch=False (--no-sdmx-years) ─────────────────────────────
+
+
+def test_fetch_sdmx_years_allow_fetch_false_skips_http() -> None:
+    """allow_fetch=False must return (None, None) without any HTTP call."""
+    from source_check_fetch import _fetch_sdmx_years
+
+    year_min, year_max = _fetch_sdmx_years("https://example.test/sdmx", "flow123", allow_fetch=False)
+    assert year_min is None
+    assert year_max is None

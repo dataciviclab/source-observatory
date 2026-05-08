@@ -163,7 +163,7 @@ def _fetch_sdmx_years(
         else:
             sdmx_root = base
         url = f"{sdmx_root}/data/{flow_id}?lastNObservations=1"
-        client = HttpClient(timeout=20)  # keep original timeout (not HTTP_TIMEOUT)
+        client = HttpClient(timeout=HTTP_TIMEOUT)
         result = client.get(url, headers={"Accept": "application/xml"})
         if not result.is_ok or result.response is None:
             return None, None
