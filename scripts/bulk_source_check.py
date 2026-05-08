@@ -40,7 +40,23 @@ import requests
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from collectors.base import observatory_get, observatory_head, get_pooled_session
+from collectors.base import get_pooled_session
+from source_check_fetch import (
+    HTTP_TIMEOUT,
+    SDMX_NS,
+    YEAR_COLUMNS,
+    REGION_COLUMNS,
+    COMUNE_COLUMNS,
+    _EMPTY_ENRICH,
+    _content_type_format,
+    _fetch_ckan_package,
+    _fetch_data_preview,
+    _fetch_html_metadata,
+    _fetch_sdmx_dataflow,
+    _fetch_sdmx_years,
+    _format_from_content_type,
+    _http_head_with_retry,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,16 +65,8 @@ DEFAULT_IN = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_i
 DEFAULT_OUT = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
 REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 
-HTTP_TIMEOUT = (5, 10)  # (connect_timeout, read_timeout) — fail fast su host irraggiungibili
 MAX_WORKERS = 8
 _NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
-
-SDMX_NS = {
-    "message": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message",
-    "structure": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure",
-    "common": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common",
-    "generic": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic",
-}
 
 
 # ── registry ─────────────────────────────────────────────────────────────────
@@ -131,125 +139,7 @@ def _infer_years(text: str) -> tuple[Optional[int], Optional[int]]:
     return min(years), max(years)
 
 
-# ── HTTP check ────────────────────────────────────────────────────────────────
-
-def _http_head_with_retry(
-    url: str,
-    session: Optional[requests.Session] = None,
-    max_retries: int = 1,
-) -> tuple[Optional[int], bool, str, Optional[str]]:
-    """HTTP HEAD with 1 retry on transient errors. Returns (status, reachable, note, content_type)."""
-    if not isinstance(url, str) or not url.startswith("http"):
-        return None, False, "url_missing_or_invalid", None
-
-    last_error = ""
-    for attempt in range(max_retries + 1):
-        try:
-            if session is not None:
-                resp = session.head(url, timeout=HTTP_TIMEOUT)
-            else:
-                resp = observatory_head(url, timeout=HTTP_TIMEOUT)
-
-            # 5xx → retry
-            if resp.status_code >= 500 and attempt < max_retries:
-                last_error = f"server_error_{resp.status_code}"
-                time.sleep(0.5 * (attempt + 1))
-                continue
-
-            # Estrarre Content-Type dalla response
-            ct = resp.headers.get("Content-Type", "") or ""
-            content_type = None
-            for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
-                if fmt.lower() in ct.lower():
-                    content_type = fmt
-                    break
-            # application/vnd.ms-excel → XLS; spreadsheetml → XLSX
-            if content_type is None:
-                if "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
-                    content_type = "XLS"
-                elif "spreadsheetml" in ct.lower():
-                    content_type = "XLSX"
-
-            reachable = resp.status_code < 400
-            return resp.status_code, reachable, "", content_type
-
-        except requests.exceptions.Timeout:
-            if attempt < max_retries:
-                last_error = "timeout"
-                time.sleep(0.5 * (attempt + 1))
-                continue
-            return None, False, "timeout", None
-        except requests.exceptions.SSLError:
-            # observatory_head has SSL fallback built-in — use it instead of GET
-            try:
-                fallback_resp = observatory_head(url, timeout=HTTP_TIMEOUT)
-                ct = fallback_resp.headers.get("Content-Type", "") or ""
-                content_type = None
-                for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
-                    if fmt.lower() in ct.lower():
-                        content_type = fmt
-                        break
-                if content_type is None and "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
-                    content_type = "XLS"
-                elif content_type is None and "spreadsheetml" in ct.lower():
-                    content_type = "XLSX"
-                return fallback_resp.status_code, fallback_resp.status_code < 400, "", content_type
-            except requests.exceptions.RequestException:
-                return None, False, "ssl_error", None
-        except requests.exceptions.ConnectionError:
-            return None, False, "connection_error", None
-        except Exception as exc:
-            return None, False, str(exc)[:120], None
-
-    return None, False, last_error or "transient_error", None
-
-
-def _content_type_format(url: str, session: Optional[requests.Session] = None) -> Optional[str]:
-    """Extract format from Content-Type header via a quick HEAD request."""
-    if not isinstance(url, str) or not url.startswith("http"):
-        return None
-    try:
-        if session is not None:
-            resp = session.head(url, timeout=HTTP_TIMEOUT)
-        else:
-            resp = observatory_head(url, timeout=HTTP_TIMEOUT)
-        ct = resp.headers.get("Content-Type", "") or ""
-        # application/json → JSON; CSV; XLSX; XML; PDF; SDMX; PARQUET
-        for fmt in ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET"):
-            if fmt.lower() in ct.lower():
-                return fmt
-        # application/vnd.ms-excel → XLS (legacy binary format)
-        if "excel" in ct.lower() and "spreadsheetml" not in ct.lower():
-            return "XLS"
-        # application/vnd.openxmlformats...spreadsheetml.sheet → XLSX (OOXML)
-        if "spreadsheetml" in ct.lower():
-            return "XLSX"
-    except Exception:
-        pass
-    return None
-
-
 # ── CKAN enrichment ───────────────────────────────────────────────────────────
-
-def _fetch_ckan_package(base_api: str, item_name: str, session: Optional[requests.Session] = None) -> Optional[dict]:
-    url = f"{base_api}/package_show?id={item_name}"
-    try:
-        if session is not None:
-            with session.get(url, timeout=HTTP_TIMEOUT) as r:
-                if r.status_code != 200:
-                    return None
-                data = r.json()
-        else:
-            r = observatory_get(url, timeout=HTTP_TIMEOUT)
-            if r.status_code != 200:
-                return None
-            data = r.json()
-        if not data.get("success"):
-            return None
-        return data.get("result") or None
-    except Exception:
-        return None
-
 
 def _parse_ckan_package(pkg: dict) -> dict:
     """Estrae i campi utili da un package CKAN."""
@@ -325,85 +215,6 @@ def _parse_ckan_package(pkg: dict) -> dict:
 
 # ── SDMX enrichment ───────────────────────────────────────────────────────────
 
-def _fetch_sdmx_years(base_url: str, flow_id: str, session: Optional[requests.Session] = None) -> tuple[Optional[int], Optional[int]]:
-    """Chiama l'endpoint dati SDMX per ricavare year_min/year_max dalla dimensione TIME_PERIOD."""
-    # Skip if --no-sdmx-years flag was set
-    if _NO_SDMX_YEARS:
-        return None, None
-    try:
-        # ricava la root SDMX togliendo /dataflow/IT1 (o simile) dal base_url
-        base = base_url.split("?")[0].rstrip("/")
-        # risali fino alla root del servizio REST (prima di /dataflow)
-        if "/dataflow/" in base:
-            sdmx_root = base[: base.index("/dataflow/")]
-        elif base.endswith("/dataflow"):
-            sdmx_root = base[: -len("/dataflow")]
-        else:
-            sdmx_root = base
-        url = f"{sdmx_root}/data/{flow_id}?lastNObservations=1"
-        if session is not None:
-            with session.get(url, timeout=HTTP_TIMEOUT) as r:
-                if r.status_code != 200:
-                    return None, None
-                content = r.content
-        else:
-            r = observatory_get(url, timeout=HTTP_TIMEOUT)
-            if r.status_code != 200:
-                return None, None
-            content = r.content
-        root = ET.fromstring(content)
-        time_values: list[str] = []
-        # pattern 1: <generic:Value id="TIME_PERIOD" value="..."/> dentro <generic:ObsKey>
-        for val_el in root.findall(".//generic:ObsKey/generic:Value", SDMX_NS):
-            if val_el.get("id") == "TIME_PERIOD":
-                v = val_el.get("value")
-                if v:
-                    time_values.append(v)
-        # pattern 2: attributo TIME_PERIOD su <generic:Obs> o <generic:ObsValue>
-        for obs_el in root.findall(".//generic:Obs", SDMX_NS):
-            v = obs_el.get("TIME_PERIOD")
-            if v:
-                time_values.append(v)
-        for obs_el in root.findall(".//generic:ObsValue", SDMX_NS):
-            v = obs_el.get("TIME_PERIOD")
-            if v:
-                time_values.append(v)
-        years: list[int] = []
-        for tv in time_values:
-            found = _YEAR_RE.findall(tv)
-            years.extend(int(y) for y in found)
-        if not years:
-            return None, None
-        return min(years), max(years)
-    except Exception:
-        return None, None
-
-
-def _fetch_sdmx_dataflow(base_url: str, flow_id: str, session: Optional[requests.Session] = None) -> Optional[ET.Element]:
-    # rimuovi query string e normalizza
-    base = base_url.split("?")[0].rstrip("/")
-    # risali alla root se l'url punta al listing completo
-    if base.endswith("/IT1"):
-        root_url = base
-    else:
-        root_url = base.rsplit("/", 1)[0]
-    url = f"{root_url}/{flow_id}"
-    try:
-        if session is not None:
-            with session.get(url, timeout=HTTP_TIMEOUT) as r:
-                if r.status_code != 200:
-                    return None
-                content = r.content
-        else:
-            r = observatory_get(url, timeout=HTTP_TIMEOUT)
-            if r.status_code != 200:
-                return None
-            content = r.content
-        return ET.fromstring(content)
-    except Exception:
-        return None
-
-
 def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -> dict:
     annotations: dict[str, str] = {}
     for ann in xml_root.findall(".//common:Annotation", SDMX_NS):
@@ -441,257 +252,10 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 
 # ── HTML enrichment (fallback per landing_page) ───────────────────────────────
 
-def _fetch_html_metadata(url: str, session: Optional[requests.Session] = None) -> dict:
-    """Estrae metadati leggeri da una landing_page HTML.
-
-    Ricerca:
-      - Link a file scaricabili (.csv, .json, .xlsx, .xls, .xml, .zip, .pdf)
-      - Meta tag DCAT (dcterms.temporal, dcterms.spatial)
-
-    Restituisce dict con resource_format (primo formato trovato o None),
-    enriched_notes (None), enrich_method.
-    """
-    if not isinstance(url, str) or not url.startswith("http"):
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "html_scrape_failed"
-        return result
-
-    try:
-        if session is not None:
-            with session.get(url, timeout=HTTP_TIMEOUT, stream=False) as resp:
-                resp.raise_for_status()
-                # resp.text uses requests encoding detection (Content-Type charset),
-                # which may differ from the UTF-8 fallback used when session is None.
-                # Divergence is acceptable for regex-based link extraction.
-                html = resp.text
-        else:
-            resp = observatory_get(url, timeout=HTTP_TIMEOUT, stream=False)
-            resp.raise_for_status()
-            html = resp.text
-
-        # Limita a 200KB (usa len(stringa) come proxy ragionevole per UTF-8)
-        if len(html) > 200000:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "html_scrape_failed"
-            return result
-
-        # Cerca link a file scaricabili: regex su href
-        file_patterns = [r'href=["\']([^"\']*\.csv)["\']',
-                        r'href=["\']([^"\']*\.json)["\']',
-                        r'href=["\']([^"\']*\.xlsx)["\']',
-                        r'href=["\']([^"\']*\.xls)["\']',
-                        r'href=["\']([^"\']*\.xml)["\']',
-                        r'href=["\']([^"\']*\.zip)["\']',
-                        r'href=["\']([^"\']*\.pdf)["\']']
-
-        resource_format = None
-        for pattern in file_patterns:
-            matches = re.findall(pattern, html, re.IGNORECASE)
-            if matches:
-                # Prendi il primo formato trovato
-                filename = matches[0]
-                ext = filename.rsplit(".", 1)[-1].upper() if "." in filename else None
-                if ext:
-                    resource_format = ext
-                    break
-
-        return {
-            "enriched_title": None,
-            "enriched_tags": None,
-            "enriched_notes": None,
-            "resource_url": None,
-            "resource_format": resource_format,
-            "granularity": None,
-            "year_min": None,
-            "year_max": None,
-            "enrich_method": "html_scrape",
-        }
-    except Exception:
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "html_scrape_failed"
-        return result
-
-
-# ── CSV/JSON/XLS content preview ───────────────────────────────────────────────
-
-YEAR_COLUMNS = ["anno", "year", "data", "date", "periodo", "period", "mese", "month"]
-REGION_COLUMNS = ["regione", "region", "provincia", "province", "area", "territorio"]
-COMUNE_COLUMNS = ["comune", "municip", "localita", "citta", "city"]
-
-
-def _fetch_data_preview(url: str, session: Optional[requests.Session] = None) -> dict:
-    """Fetch e parse content preview da un URL CSV/JSON/XLS.
-
-    Estrae: column names, year_min/year_max (da colonna anno),
-    granularity (da column names + sample data).
-
-    Returns dict in formato _EMPTY_ENRICH con campi aggiuntivi:
-    - columns: list[str]
-    - year_min, year_max
-    - granularity
-    - enrich_method: "csv_preview"
-    """
-    if not isinstance(url, str) or not url.startswith("http"):
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "csv_preview_failed"
-        return result
-
-    parsed = urllib.parse.urlparse(url)
-    path = parsed.path or ""
-    fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
-    if fmt not in ("csv", "json", "xlsx", "xls"):
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "csv_preview_skipped"
-        return result
-
-    def _do_get() -> requests.Response:
-        if session is not None:
-            return session.get(url, timeout=HTTP_TIMEOUT)
-        return observatory_get(url, timeout=HTTP_TIMEOUT)
-
-    try:
-        # Fetch ~5 KB (enough for headers + a few rows)
-        # Retry once on timeout (transient network issues)
-        resp = None
-        for attempt in range(2):
-            try:
-                resp = _do_get()
-                break
-            except requests.exceptions.Timeout:
-                if attempt == 0:
-                    continue  # retry once
-                else:
-                    result = _EMPTY_ENRICH.copy()
-                    result["enrich_method"] = "csv_preview_timeout"
-                    return result
-            except requests.exceptions.ConnectionError:
-                if attempt == 0:
-                    continue  # retry once
-                else:
-                    result = _EMPTY_ENRICH.copy()
-                    result["enrich_method"] = "csv_preview_connection_error"
-                    return result
-        if resp is None:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "csv_preview_failed"
-            return result
-        if resp.status_code >= 400:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "csv_preview_http_error"
-            return result
-
-        content = resp.content
-        if len(content) > 100 * 1024:
-            content = content[:100 * 1024]
-        text = content.decode("utf-8", errors="replace")
-
-        columns: list[str] = []
-        year_min: Optional[int] = None
-        year_max: Optional[int] = None
-        granularity = "non_determinato"
-        year_values: list[int] = []  # defined outside if/elif so JSON branch can use it
-
-        if fmt == "csv":
-            try:
-                lines = text.splitlines()[:10]
-                if not lines:
-                    raise ValueError("Empty CSV")
-                sample_text = "\n".join(lines)
-                reader = csv.reader(io.StringIO(sample_text))
-                rows = list(reader)
-                if not rows:
-                    raise ValueError("No rows parsed")
-                headers = [h.strip() for h in rows[0]]
-                columns = [h for h in headers if h]
-
-                # Find year column
-                year_col_idx = None
-                for i, h in enumerate(columns):
-                    h_lower = h.lower()
-                    if any(y in h_lower for y in YEAR_COLUMNS):
-                        year_col_idx = i
-                        break
-
-                for row in rows[1:6]:
-                    if year_col_idx is not None and year_col_idx < len(row):
-                        found = _YEAR_RE.findall(row[year_col_idx])
-                        year_values.extend(int(y) for y in found)
-                    # Also scan all cells
-                    for cell in row:
-                        found = _YEAR_RE.findall(cell)
-                        year_values.extend(int(y) for y in found)
-
-                if year_values:
-                    year_min = min(year_values)
-                    year_max = max(year_values)
-            except Exception:
-                # CSV parse failed — try raw text scan
-                found = _YEAR_RE.findall(text[:5000])
-                years = [int(y) for y in found]
-                if years:
-                    year_min, year_max = min(years), max(years)
-
-        elif fmt == "json":
-            try:
-                import json
-                data = json.loads(text)
-                if isinstance(data, list):
-                    rows_sample = data[:5]
-                    if rows_sample and isinstance(rows_sample[0], dict):
-                        columns = [str(k) for k in rows_sample[0].keys()]
-                        for row in rows_sample:
-                            for v in row.values() if isinstance(row, dict) else []:
-                                found = _YEAR_RE.findall(str(v))
-                                year_values.extend(int(y) for y in found)
-                elif isinstance(data, dict):
-                    columns = [str(k) for k in data.keys()]
-            except Exception:
-                found = _YEAR_RE.findall(text[:5000])
-                years = [int(y) for y in found]
-                if years:
-                    year_min, year_max = min(years), max(years)
-
-        # Infer granularity from column names
-        columns_lower = [c.lower() for c in columns]
-        if any(c in " ".join(columns_lower) for c in COMUNE_COLUMNS):
-            granularity = "comune"
-        elif any(c in " ".join(columns_lower) for c in REGION_COLUMNS):
-            granularity = "regione"
-        elif year_min is not None and year_max is not None:
-            # If we have temporal but no geographic granularity, non_determinato
-            granularity = "non_determinato"
-
-        return {
-            "enriched_title": None,
-            "enriched_tags": None,
-            "enriched_notes": None,
-            "resource_url": url,
-            "resource_format": fmt.upper(),
-            "granularity": granularity,
-            "year_min": year_min,
-            "year_max": year_max,
-            "enrich_method": "csv_preview",
-        }
-    except Exception:
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "csv_preview_failed"
-        return result
+# (importato da source_check_fetch)
 
 
 # ── dispatcher per protocollo ─────────────────────────────────────────────────
-
-_EMPTY_ENRICH = {
-    "enriched_title": None,
-    "enriched_tags": None,
-    "enriched_notes": None,
-    "resource_url": None,
-    "resource_format": None,
-    "granularity": None,
-    "year_min": None,
-    "year_max": None,
-    "enrich_method": "none",
-}
-
 
 def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests.Session] = None) -> dict:
     source_id = row.get("source_id") or ""
