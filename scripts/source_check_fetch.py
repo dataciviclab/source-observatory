@@ -69,7 +69,7 @@ def _http_head_with_retry(url: str, max_retries: int = 1) -> tuple[Optional[int]
     if not isinstance(url, str) or not url.startswith("http"):
         return None, False, "url_missing_or_invalid", None
 
-    client = HttpClient(timeout=HTTP_TIMEOUT[0])
+    client = HttpClient(timeout=HTTP_TIMEOUT)
     last_error = ""
 
     for attempt in range(max_retries + 1):
@@ -104,7 +104,7 @@ def _content_type_format(url: str) -> Optional[str]:
     if not isinstance(url, str) or not url.startswith("http"):
         return None
     try:
-        client = HttpClient(timeout=HTTP_TIMEOUT[0])
+        client = HttpClient(timeout=HTTP_TIMEOUT)
         result = client.head(url)
         if result.is_ok and result.response is not None:
             ct = result.response.headers.get("Content-Type", "") or ""
@@ -121,7 +121,7 @@ def _fetch_ckan_package(base_api: str, item_name: str) -> Optional[dict]:
     """Fetch CKAN package_show."""
     url = f"{base_api}/package_show?id={item_name}"
     try:
-        client = HttpClient(timeout=HTTP_TIMEOUT[0])
+        client = HttpClient(timeout=HTTP_TIMEOUT)
         result = client.get(url)
         if result.is_ok and result.response is not None:
             r = result.response
@@ -139,8 +139,21 @@ def _fetch_ckan_package(base_api: str, item_name: str) -> Optional[dict]:
 # ── SDMX fetch ─────────────────────────────────────────────────────────────
 
 
-def _fetch_sdmx_years(base_url: str, flow_id: str) -> tuple[Optional[int], Optional[int]]:
-    """Chiama l'endpoint dati SDMX per ricavare year_min/year_max dalla dimensione TIME_PERIOD."""
+def _fetch_sdmx_years(
+    base_url: str,
+    flow_id: str,
+    *,
+    allow_fetch: bool = True,
+) -> tuple[Optional[int], Optional[int]]:
+    """Chiama l'endpoint dati SDMX per ricavare year_min/year_max dalla dimensione TIME_PERIOD.
+
+    Args:
+        base_url: URL base del servizio SDMX.
+        flow_id: Identificativo del flusso SDMX.
+        allow_fetch: Se False, salta la chiamata HTTP (rispetta --no-sdmx-years).
+    """
+    if not allow_fetch:
+        return None, None
     try:
         base = base_url.split("?")[0].rstrip("/")
         if "/dataflow/" in base:
@@ -195,7 +208,7 @@ def _fetch_sdmx_dataflow(base_url: str, flow_id: str) -> Optional[ET.Element]:
         root_url = base.rsplit("/", 1)[0]
     url = f"{root_url}/{flow_id}"
     try:
-        client = HttpClient(timeout=HTTP_TIMEOUT[0])
+        client = HttpClient(timeout=HTTP_TIMEOUT)
         result = client.get(url, headers={"Accept": "application/xml"})
         if result.is_ok and result.response is not None:
             r = result.response
@@ -218,7 +231,7 @@ def _fetch_html_metadata(url: str) -> dict:
         return result
 
     try:
-        client = HttpClient(timeout=HTTP_TIMEOUT[0])
+        client = HttpClient(timeout=HTTP_TIMEOUT)
         result = client.get(url)
         if not result.is_ok or result.response is None:
             err = _EMPTY_ENRICH.copy()
@@ -292,7 +305,7 @@ def _fetch_data_preview(url: str) -> dict:
         return result
 
     try:
-        client = HttpClient(timeout=HTTP_TIMEOUT[0])
+        client = HttpClient(timeout=HTTP_TIMEOUT)
         fetch_result = client.get(url)
         if not fetch_result.is_ok or fetch_result.response is None:
             err = _EMPTY_ENRICH.copy()

@@ -97,7 +97,7 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 
     # se le annotations non contengono anni, prova a ricavarli dall'endpoint dati
     if year_min is None:
-        year_min, year_max = _fetch_sdmx_years(base_url, flow_id)
+        year_min, year_max = _fetch_sdmx_years(base_url, flow_id, allow_fetch=not _NO_SDMX_YEARS)
 
     metadata_url = annotations.get("METADATA_URL")
 
