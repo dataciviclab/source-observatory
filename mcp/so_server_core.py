@@ -1041,12 +1041,16 @@ def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
 
     safe_timeout = max(1, min(int(timeout or 15), 60))
 
+    # Track ssl_fallback_used from the result we actually use
+    ssl_used: bool | None = None
+
     # Attempt 1: HEAD via HttpClient (SSL fallback built-in)
     client = HttpClient(timeout=safe_timeout)
     result = client.head(clean_url)
 
     if result.is_ok:
         response = result.response
+        ssl_used = result.ssl_fallback_used
     elif result.is_ssl_fallback_failed:
         # Both primary SSL and fallback failed
         return {
@@ -1062,14 +1066,16 @@ def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
     elif result.ssl_fallback_used and result.response is not None:
         # Primary SSL failed, fallback succeeded — GREEN with ssl_fallback_used
         response = result.response
+        ssl_used = True
     elif result.err is not None:
-        # Non-SSL error (4xx/5xx) — try GET with Range
+        # Non-SSL error (connection error, etc.) — try GET with Range
         result2 = client.get(
             clean_url,
             headers={"Range": "bytes=0-0"},
         )
         if result2.is_ok:
             response = result2.response
+            ssl_used = result2.ssl_fallback_used
         elif result2.is_ssl_fallback_failed:
             return {
                 "url": clean_url,
@@ -1083,6 +1089,7 @@ def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
             }
         elif result2.ssl_fallback_used and result2.response is not None:
             response = result2.response
+            ssl_used = True
         else:
             return {
                 "url": clean_url,
@@ -1121,7 +1128,7 @@ def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
         "format": _guess_format(clean_url, content_type),
         "size": size,
         "is_reachable": response.status_code < 400,
-        "ssl_fallback_used": result.ssl_fallback_used,
+        "ssl_fallback_used": ssl_used,
     }
 
 

@@ -596,6 +596,63 @@ def test_probe_url_ssl_fallback_used_when_head_fallback_succeeds(monkeypatch) ->
     assert result["http_status"] == 200
 
 
+def test_probe_url_ssl_fallback_from_get_fallback(monkeypatch) -> None:
+    """When HEAD fails with non-SSL error and GET fallback succeeds, ssl_fallback_used reflects result2."""
+    class _FakeOKResponse:
+        status_code = 200
+        headers = {"content-type": "text/csv", "content-length": "1024"}
+
+    class _FakeHeadResult:
+        """Simulates HttpClient.head() returning a non-SSL error."""
+        def __init__(self):
+            self.response = None
+            self.err = Exception("connection refused")  # non-SSL error
+            self.ssl_fallback_used = None
+
+        @property
+        def is_ok(self):
+            return False
+
+        @property
+        def is_ssl_fallback_failed(self):
+            return False
+
+    class _FakeGetWithSSLFallbackResult:
+        """Simulates HttpClient.get() succeeding via SSL fallback."""
+        def __init__(self):
+            self.response = _FakeOKResponse()
+            self.err = None
+            self.ssl_fallback_used = True  # SSL fallback was used
+
+        @property
+        def is_ok(self):
+            return True
+
+        @property
+        def is_ssl_fallback_failed(self):
+            return False
+
+    class _FakeHttpClient:
+        def __init__(self, timeout=None):
+            pass
+
+        def head(self, url):
+            return _FakeHeadResult()
+
+        def get(self, url, headers=None, params=None):
+            return _FakeGetWithSSLFallbackResult()
+
+    monkeypatch.setattr(core, "HttpClient", _FakeHttpClient)
+
+    result = core.probe_url("https://expired-cert.example.com/file.csv")
+
+    # Response comes from result2 (GET), ssl_fallback_used must reflect result2
+    assert result["is_reachable"] is True
+    assert result["ssl_fallback_used"] is True, "ssl_fallback_used must come from GET result2"
+    assert result["http_status"] == 200
+    assert result["content_type"] == "text/csv"
+
+
 def test_html_extract_links_ssl_fallback_failure_returns_reachable_false(monkeypatch) -> None:
     """When HttpClient.get fails with non-SSL error, returns is_reachable=False."""
 
