@@ -1,15 +1,15 @@
 {
-  "captured_at": "2026-05-04T07:59:47+00:00",
-  "sources_checked": 12,
+  "captured_at": "2026-05-08T18:15:59+00:00",
+  "sources_checked": 13,
   "signals": [
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
-      "signal_type": "endpoint unstable",
-      "result": "endpoint unstable",
-      "metric_value": 4835,
-      "detail": "4835 item (dataflow_count), ma radar RED — endpoint irraggiungibile o errore. Dati potrebbero essere stale. Verificare radar_summary.json.",
-      "suggested_action": "verificare radar RED; non fidarsi dell'inventario se non confermato da run recente"
+      "signal_type": "inventory change",
+      "result": "inventory change",
+      "metric_value": 4836,
+      "detail": "4836 item (dataflow_count), delta +1 rispetto al run precedente (4835).",
+      "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset"
     },
     {
       "source": "inps",
@@ -34,7 +34,7 @@
       "protocol": "html",
       "signal_type": "csv_magnet",
       "result": "error",
-      "detail": "sitemap failed: SSL failed (HTTPSConnectionPool(host='www.dati.salute.gov.it', port=443): Max retries exceeded with url: /sitemap-0.xml (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)')))) then fallback failed (HTTPSConnectionPool(host='www.dati.salute.gov.it', port=443): Max retries exceeded with url: /sitemap-0.xml (Caused by SSLError(SSLError(1, '[SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)'))))",
+      "detail": "sitemap failed: primary failed with SSLError; fallback failed with SSLError",
       "suggested_action": "verificare raggiungibilità del portale"
     },
     {
@@ -643,18 +643,16 @@
       "source": "dati_camera",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 104,
-      "detail": "104 item (sparql_query), in linea con la baseline.",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {
       "source": "dati_cultura",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 213,
-      "detail": "213 item (sparql_query), in linea con la baseline.",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {
@@ -669,11 +667,11 @@
     {
       "source": "consip_open_data",
       "protocol": "ckan",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 17,
-      "detail": "17 item (package_list), in linea con la baseline.",
-      "suggested_action": "nessuna"
+      "signal_type": "inventory change",
+      "result": "inventory change",
+      "metric_value": 16,
+      "detail": "16 item (package_list), delta -1 rispetto al run precedente (17).",
+      "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset"
     },
     {
       "source": "lavoro_opendata",
@@ -702,6 +700,411 @@
       "series": {},
       "topics": {},
       "years_range": [],
+      "suggested_action": "catalog-watch-ready"
+    },
+    {
+      "source": "opencivitas",
+      "protocol": "html",
+      "signal_type": "csv_magnet",
+      "result": "scan_completed",
+      "metric_value": 748,
+      "detail": "748 link data (ZIP 748), years 2010-2025 — top prefixes: 2010=90, 2013=72, Metadati=64, 2022=63, 2018=59",
+      "prefix_matrix": {
+        "2022": 63,
+        "Metadati": 64,
+        "2025": 6,
+        "FC80B": 6,
+        "FC80A": 5,
+        "2024": 3,
+        "2021": 26,
+        "FC70B": 6,
+        "FC70A": 5,
+        "2019": 21,
+        "FC60B": 6,
+        "FC60A": 6,
+        "2023": 6,
+        "2018": 59,
+        "FP20U": 3,
+        "2020": 5,
+        "2017": 27,
+        "FC50B": 7,
+        "FC50A": 5,
+        "FC40B": 6,
+        "FC40A": 6,
+        "2016": 55,
+        "FC30B": 10,
+        "FC30A": 10,
+        "Ind": 23,
+        "2015": 10,
+        "FC20B": 5,
+        "FC20A": 5,
+        "CP01U": 3,
+        "RIFIUTI-Determinanti": 2,
+        "2013": 72,
+        "2012": 24,
+        "2011": 24,
+        "FC10E": 1,
+        "FC10D": 2,
+        "FC10C": 2,
+        "FC10B": 2,
+        "FC10A": 2,
+        "2010": 90,
+        "2009": 42,
+        "FP07U": 1,
+        "FP05U": 1,
+        "FP04U": 1,
+        "FP03U": 1,
+        "FP02U": 1,
+        "FP06U": 1,
+        "FP01U": 1,
+        "FC06U": 2,
+        "FC05U": 2,
+        "FC04U": 2,
+        "FC03U": 1,
+        "FC02U": 2,
+        "FC01D": 2,
+        "FC01C": 2,
+        "FC01B": 2,
+        "FC01A": 1
+      },
+      "series": {
+        "2022": {
+          "years": [
+            2022,
+            2023
+          ],
+          "count": 63,
+          "sample": "2022_Ind_FC80TOT_2_csv"
+        },
+        "Metadati": {
+          "years": [
+            2013,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 64,
+          "sample": "Metadati_Enti_2022_xlsx"
+        },
+        "2025": {
+          "years": [
+            2025
+          ],
+          "count": 6,
+          "sample": "2025_VAR_FSC_1_2025_csv"
+        },
+        "FC80B": {
+          "years": [],
+          "count": 6,
+          "sample": "FC80B_UNIONI_1_csv"
+        },
+        "FC80A": {
+          "years": [],
+          "count": 5,
+          "sample": "FC80A_UNIONI_1_csv"
+        },
+        "2024": {
+          "years": [
+            2024
+          ],
+          "count": 3,
+          "sample": "2024_VAR_FSC_1_2024_csv"
+        },
+        "2021": {
+          "years": [
+            2021,
+            2022
+          ],
+          "count": 26,
+          "sample": "2021_Ind_FC70TOT_1_csv"
+        },
+        "FC70B": {
+          "years": [],
+          "count": 6,
+          "sample": "FC70B_UNIONI_1_csv"
+        },
+        "FC70A": {
+          "years": [],
+          "count": 5,
+          "sample": "FC70A_UNIONI_1_csv"
+        },
+        "2019": {
+          "years": [
+            2019
+          ],
+          "count": 21,
+          "sample": "2019_Ind_FC60TOT_2_csv"
+        },
+        "FC60B": {
+          "years": [],
+          "count": 6,
+          "sample": "FC60B_UNIONI_1_csv"
+        },
+        "FC60A": {
+          "years": [],
+          "count": 6,
+          "sample": "FC60A_UNIONI_1_csv"
+        },
+        "2023": {
+          "years": [
+            2023
+          ],
+          "count": 6,
+          "sample": "2023_VAR_FSC_1_2023_csv"
+        },
+        "2018": {
+          "years": [
+            2018,
+            2022
+          ],
+          "count": 59,
+          "sample": "2018_Ind_FP20U_TOT_PROV_1_csv"
+        },
+        "FP20U": {
+          "years": [],
+          "count": 3,
+          "sample": "FP20U_1_csv"
+        },
+        "2020": {
+          "years": [
+            2020,
+            2022
+          ],
+          "count": 5,
+          "sample": "2020_VAR_FSC_1_2022_csv"
+        },
+        "2017": {
+          "years": [
+            2017,
+            2022
+          ],
+          "count": 27,
+          "sample": "2017_VAR_FSC_1_2022_csv"
+        },
+        "FC50B": {
+          "years": [],
+          "count": 7,
+          "sample": "FC50B_UNIONI_1_csv"
+        },
+        "FC50A": {
+          "years": [],
+          "count": 5,
+          "sample": "FC50A_UNIONI_1_csv"
+        },
+        "FC40B": {
+          "years": [],
+          "count": 6,
+          "sample": "FC40B_UNIONI_1_csv"
+        },
+        "FC40A": {
+          "years": [],
+          "count": 6,
+          "sample": "FC40A_UNIONI_1_csv"
+        },
+        "2016": {
+          "years": [
+            2016
+          ],
+          "count": 55,
+          "sample": "2016_Ind_FC30TOT_2_csv"
+        },
+        "FC30B": {
+          "years": [],
+          "count": 10,
+          "sample": "FC30B_UNIONI_2_csv"
+        },
+        "FC30A": {
+          "years": [],
+          "count": 10,
+          "sample": "FC30A_UNIONI_2_csv"
+        },
+        "Ind": {
+          "years": [],
+          "count": 23,
+          "sample": "Ind_FC20TOT_3_csv"
+        },
+        "2015": {
+          "years": [
+            2015
+          ],
+          "count": 10,
+          "sample": "2015_FC20TOT_3_rdf"
+        },
+        "FC20B": {
+          "years": [],
+          "count": 5,
+          "sample": "FC20B_UNIONI_csv"
+        },
+        "FC20A": {
+          "years": [],
+          "count": 5,
+          "sample": "FC20A_UNIONI_csv"
+        },
+        "CP01U": {
+          "years": [],
+          "count": 3,
+          "sample": "CP01U_csv"
+        },
+        "RIFIUTI-Determinanti": {
+          "years": [
+            2013
+          ],
+          "count": 2,
+          "sample": "RIFIUTI-Determinanti_FS_2013_csv"
+        },
+        "2013": {
+          "years": [
+            2013
+          ],
+          "count": 72,
+          "sample": "2013_Spesa_storica_generale_csv"
+        },
+        "2012": {
+          "years": [
+            2012
+          ],
+          "count": 24,
+          "sample": "2012_FC06B_Comuni_Spesa_storica_csv"
+        },
+        "2011": {
+          "years": [
+            2011
+          ],
+          "count": 24,
+          "sample": "2011_FC06B_Comuni_Spesa_storica_csv"
+        },
+        "FC10E": {
+          "years": [],
+          "count": 1,
+          "sample": "FC10E_Metadati_Variabili_xlsx"
+        },
+        "FC10D": {
+          "years": [],
+          "count": 2,
+          "sample": "FC10D_Metadati_Variabili_xlsx"
+        },
+        "FC10C": {
+          "years": [],
+          "count": 2,
+          "sample": "FC10C_Metadati_Variabili_xlsx"
+        },
+        "FC10B": {
+          "years": [],
+          "count": 2,
+          "sample": "FC10B_Metadati_Variabili_xlsx"
+        },
+        "FC10A": {
+          "years": [],
+          "count": 2,
+          "sample": "FC10A_Metadati_Variabili_xlsx"
+        },
+        "2010": {
+          "years": [
+            2010
+          ],
+          "count": 90,
+          "sample": "2010_Comuni_Spesa_storica_generale_csv"
+        },
+        "2009": {
+          "years": [],
+          "count": 42,
+          "sample": "2009_FP06U_Province_Spesa_storica_csv"
+        },
+        "FP07U": {
+          "years": [],
+          "count": 1,
+          "sample": "FP07U_Metadati_Variabili_xlsx"
+        },
+        "FP05U": {
+          "years": [],
+          "count": 1,
+          "sample": "FP05U_Metadati_Variabili_xlsx"
+        },
+        "FP04U": {
+          "years": [],
+          "count": 1,
+          "sample": "FP04U_Metadati_Variabili_xlsx"
+        },
+        "FP03U": {
+          "years": [],
+          "count": 1,
+          "sample": "FP03U_Metadati_Variabili_xlsx"
+        },
+        "FP02U": {
+          "years": [],
+          "count": 1,
+          "sample": "FP02U_Metadati_Variabili_xlsx"
+        },
+        "FP06U": {
+          "years": [],
+          "count": 1,
+          "sample": "FP06U_Metadati_Variabili_xlsx"
+        },
+        "FP01U": {
+          "years": [],
+          "count": 1,
+          "sample": "FP01U_Metadati_Variabili_xlsx"
+        },
+        "FC06U": {
+          "years": [],
+          "count": 2,
+          "sample": "FC06U_Metadati_Variabili_xlsx"
+        },
+        "FC05U": {
+          "years": [],
+          "count": 2,
+          "sample": "FC05U_Metadati_Variabili_xlsx"
+        },
+        "FC04U": {
+          "years": [],
+          "count": 2,
+          "sample": "FC04U_Metadati_Variabili_xlsx"
+        },
+        "FC03U": {
+          "years": [],
+          "count": 1,
+          "sample": "FC03U_Metadati_Variabili_xlsx"
+        },
+        "FC02U": {
+          "years": [],
+          "count": 2,
+          "sample": "FC02U_Metadati_Variabili_xlsx"
+        },
+        "FC01D": {
+          "years": [],
+          "count": 2,
+          "sample": "FC01D_Metadati_Variabili_xlsx"
+        },
+        "FC01C": {
+          "years": [],
+          "count": 2,
+          "sample": "FC01C_Metadati_Variabili_xlsx"
+        },
+        "FC01B": {
+          "years": [],
+          "count": 2,
+          "sample": "FC01B_Metadati_Variabili_xlsx"
+        },
+        "FC01A": {
+          "years": [],
+          "count": 1,
+          "sample": "FC01A_Metadati_Variabili_xlsx"
+        }
+      },
+      "topics": {
+        "trasparenza": 748
+      },
+      "years_range": [
+        2010,
+        2025
+      ],
       "suggested_action": "catalog-watch-ready"
     }
   ]
