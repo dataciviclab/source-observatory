@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-05-08T05:35:31.282114+00:00",
+  "generated_at": "2026-05-08T18:15:53.102244+00:00",
   "probe_date": "2026-05-08",
   "sources_total": 16,
   "status_counts": {
-    "GREEN": 9,
-    "YELLOW": 3,
-    "RED": 4
+    "GREEN": 10,
+    "YELLOW": 5,
+    "RED": 1
   },
-  "persistent_red": 2,
+  "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "sdmx",
-      "http_code": "-",
-      "note": "Probe exception non gestita: ReadTimeout: HTTPSConnectionPool(host='esploradati.istat.it', port=443): Read timed out. (read timeout=10)"
+      "http_code": "200",
+      "note": null
     },
     {
       "id": "anac",
@@ -43,7 +43,7 @@
       "protocol": "html",
       "http_code": "-",
       "note": "SSL verify failed; fallback connection error (SSLError)",
-      "red_streak": 8
+      "red_streak": 9
     },
     {
       "id": "inail_opendata",
@@ -61,17 +61,17 @@
     },
     {
       "id": "dati_camera",
-      "status": "RED",
-      "protocol": "sparql",
-      "http_code": "503",
-      "note": null
-    },
-    {
-      "id": "dati_cultura",
       "status": "GREEN",
       "protocol": "sparql",
       "http_code": "200",
       "note": null
+    },
+    {
+      "id": "dati_cultura",
+      "status": "YELLOW",
+      "protocol": "sparql",
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
     },
     {
       "id": "ispra_linked_data",
@@ -96,11 +96,10 @@
     },
     {
       "id": "mur_ustat",
-      "status": "RED",
+      "status": "YELLOW",
       "protocol": "ckan",
       "http_code": "-",
-      "note": "Probe exception non gestita: ConnectTimeout: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list?limit=1 (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7fa7de546840>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=10)'))",
-      "red_streak": 8
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
     },
     {
       "id": "opencoesione",
