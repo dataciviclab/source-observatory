@@ -16,7 +16,6 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Optional
 
-import requests
 from lab_connectors.http import HttpClient
 
 logger = logging.getLogger(__name__)

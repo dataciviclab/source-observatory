@@ -36,11 +36,10 @@ from pathlib import Path
 from typing import Any, Optional
 
 import pandas as pd
-import requests
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from collectors.base import get_pooled_session
+
 from source_check_fetch import (
     HTTP_TIMEOUT,
     SDMX_NS,
@@ -131,7 +130,7 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 
 # ── dispatcher per protocollo ─────────────────────────────────────────────────
 
-def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests.Session] = None) -> dict:
+def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
     source_id = row.get("source_id") or ""
     source_cfg = registry.get(source_id, {})
     protocol = source_cfg.get("protocol") or row.get("protocol") or ""
@@ -151,7 +150,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
             # usa api_base_url pre-calcolata dal layer 1 (gestisce endpoint non-standard come INPS /odapi/)
             api_base_url = row.get("api_base_url")
             base_api = api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http") else base_url
-            pkg = _fetch_ckan_package(base_api, item_name, session=session)
+            pkg = _fetch_ckan_package(base_api, item_name)
             if pkg:
                 return _parse_ckan_package(pkg)
         # CKAN senza slug valido → skip package_show, passa a HTML fallback sotto
@@ -162,7 +161,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
         api_base_url = row.get("api_base_url")
         if isinstance(api_base_url, str) and api_base_url.startswith("http"):
             sdmx_base = api_base_url
-        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name, session=session)
+        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name)
         if xml_root is not None:
             return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
 
@@ -174,7 +173,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
             path = parsed.path or ""
             fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
             if fmt in ("csv", "json", "xlsx", "xls"):
-                return _fetch_data_preview(data_url, session=session)
+                return _fetch_data_preview(data_url)
 
     # HTML fallback: per tutti i source con landing_page raggiungibile
     # dati_camera ha scraping_blocked=true → salta HTML se CKAN package_show già provato
@@ -187,7 +186,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
             result = _EMPTY_ENRICH.copy()
             result["enrich_method"] = "scraping_blocked"
             return result
-        return _fetch_html_metadata(landing, session=session)
+        return _fetch_html_metadata(landing)
 
     return _EMPTY_ENRICH.copy()
 
@@ -202,7 +201,6 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
 def _enrich_with_inventory(
     row: pd.Series,
     registry: dict[str, Any],
-    session: Optional[requests.Session] = None,
 ) -> dict:
     """
     Enrich item using inventory as primary source.
@@ -249,7 +247,7 @@ def _enrich_with_inventory(
     if needs_ckan_refetch:
         api_base_url = row.get("api_base_url")
         base_api = api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http") else base_url
-        pkg = _fetch_ckan_package(base_api, item_name, session=session)
+        pkg = _fetch_ckan_package(base_api, item_name)
         if pkg:
             return _parse_ckan_package(pkg)
 
@@ -259,7 +257,7 @@ def _enrich_with_inventory(
         api_base_url = row.get("api_base_url")
         if isinstance(api_base_url, str) and api_base_url.startswith("http"):
             sdmx_base = api_base_url
-        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name, session=session)
+        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name)
         if xml_root is not None:
             return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
 
@@ -267,7 +265,7 @@ def _enrich_with_inventory(
     if protocol == "html":
         data_url = row.get("url")
         if isinstance(data_url, str):
-            fmt = _content_type_format(data_url, session=session)
+            fmt = _content_type_format(data_url)
             if fmt:
                 return {
                     "enriched_title": inv_title,
@@ -289,7 +287,7 @@ def _enrich_with_inventory(
             path = parsed.path or ""
             fmt_ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
             if fmt_ext in ("csv", "json", "xlsx", "xls"):
-                return _fetch_data_preview(data_url, session=session)
+                return _fetch_data_preview(data_url)
 
     # HTML fallback: landing_page reachable
     landing = row.get("landing_page")
@@ -299,7 +297,7 @@ def _enrich_with_inventory(
             result["enrich_method"] = "scraping_blocked"
             return result
         # use content-type format from landing page
-        fmt = _content_type_format(landing, session=session)
+        fmt = _content_type_format(landing)
         if fmt:
             return {
                 "enriched_title": inv_title,
@@ -327,8 +325,8 @@ def _enrich_with_inventory(
     }
 
 
-def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session: Optional[requests.Session] = None) -> dict:
-    enrich = _enrich_with_inventory(row, registry, session=session)
+def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
+    enrich = _enrich_with_inventory(row, registry)
 
     # granularità e anni: da enrichment, poi fallback su campi catalogo
     granularity = enrich["granularity"]
@@ -362,7 +360,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
         note = None
         content_type = None
     else:
-        http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "", session=session)
+        http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "")
         http_status = http_status_raw if http_status_raw is not None else 0
 
     # Content-type format as primary detection (now unified in _http_head_with_retry)
@@ -398,13 +396,8 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
     check_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     results = []
 
-    # Shared session with connection pooling — reused across all HTTP calls in the pool.
-    # Thread-safe for read-only usage: headers are set at creation and never mutated,
-    # no cookies are modified, the adapter pool is append-only.
-    # Do NOT add cookie/header mutations after creation — that would introduce races.
-    session = get_pooled_session(pool_connections=16, pool_maxsize=32)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        future_to_idx = {pool.submit(_check_row, row, check_ts, registry, session): i for i, row in df.iterrows()}
+        future_to_idx = {pool.submit(_check_row, row, check_ts, registry): i for i, row in df.iterrows()}
         done = 0
         total = len(future_to_idx)
         for future in as_completed(future_to_idx):
@@ -418,7 +411,6 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
             if done % 50 == 0 or done == total:
                 logger.info("  %d/%d completed", done, total)
 
-    session.close()
     return pd.DataFrame(results)
 
 
