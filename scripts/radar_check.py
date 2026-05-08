@@ -24,7 +24,7 @@ from _constants import (
     save_radar_history,
     append_radar_probe,
 )
-from collectors.base import SslFallbackFailed, observatory_ssl_fallback_get
+from lab_connectors.http import HttpClient, HttpFallbackError
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
@@ -145,17 +145,17 @@ def _build_probe_result(
 
 
 def _probe_once(base_url: str) -> ProbeResult:
-    """Single probe attempt (no retry). Uses shared SSL fallback from base.py."""
-    result = observatory_ssl_fallback_get(
+    """Single probe attempt (no retry). Uses lab_connectors HttpClient with SSL fallback."""
+    client = HttpClient(timeout=TIMEOUT_SECONDS, user_agent=USER_AGENT)
+    result = client.get(
         base_url,
-        timeout=TIMEOUT_SECONDS,
         allow_redirects=True,
         stream=True,
     )
     # ssl_fallback_used=True → primary SSL failed, fallback succeeded → GREEN
     # ssl_fallback_used=False → both failed
     # ssl_fallback_used=None → primary succeeded (no fallback needed)
-    if result.response is not None:
+    if result.is_ok and result.response is not None:
         return _build_probe_result(
             base_url,
             result.response,
@@ -167,12 +167,12 @@ def _probe_once(base_url: str) -> ProbeResult:
         return ProbeResult(
             status="RED",
             http_code="-",
-            note="Unexpected: response=None without exception from observatory_ssl_fallback_get",
+            note="Unexpected: response=None without exception from HttpClient.get",
         )
     ssl_failure_err: requests.exceptions.SSLError | None = None
     error_exc: requests.exceptions.RequestException
-    if isinstance(result.err, SslFallbackFailed):
-        ssl_failure_err = result.err.ssl_error
+    if isinstance(result.err, HttpFallbackError):
+        ssl_failure_err = result.err.primary_error
         error_exc = result.err.fallback_error
     elif isinstance(result.err, requests.exceptions.SSLError):
         ssl_failure_err = result.err
@@ -180,7 +180,7 @@ def _probe_once(base_url: str) -> ProbeResult:
     elif isinstance(result.err, requests.exceptions.RequestException):
         error_exc = result.err
     else:
-        # Non-RequestException escaped observatory_ssl_fallback_get — treat as RED
+        # Non-RequestException escaped HttpClient.get — treat as RED
         return ProbeResult(
             status="RED",
             http_code="-",

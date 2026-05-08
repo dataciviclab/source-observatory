@@ -220,7 +220,6 @@ def _get_observatory_get() -> Any:
         spec.loader.exec_module(_collectors_base)
         observatory_get = _collectors_base.observatory_get
         observatory_head = _collectors_base.observatory_head
-        observatory_ssl_fallback_get = _collectors_base.observatory_ssl_fallback_get
     return observatory_get
 
 
@@ -230,8 +229,15 @@ def _get_observatory_head() -> Any:
 
 
 def _get_observatory_ssl_fallback_get() -> Any:
-    _get_observatory_get()  # ensure initialized
-    return observatory_ssl_fallback_get
+    from lab_connectors.http import HttpClient
+
+    def ssl_fallback_get(url: str, *, timeout: int | float | tuple[int, int] | None = None, headers: dict | None = None, **kwargs: Any) -> tuple[Any, Any]:
+        client = HttpClient(timeout=timeout or 60)
+        kwargs.pop("timeout", None)
+        result = client.get(url, headers=headers or {}, **kwargs)
+        return (result.response, result.err)
+
+    return ssl_fallback_get
 
 
 @dataclass(frozen=True)
