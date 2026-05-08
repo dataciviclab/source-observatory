@@ -57,6 +57,15 @@ from source_check_fetch import (
     _format_from_content_type,
     _http_head_with_retry,
 )
+from source_check_analyze import (
+    _infer_granularity,
+    _infer_years,
+    _parse_ckan_package,
+    _fallback_infer,
+    _normalize_format,
+    _intake_score,
+    _finalize_scores,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,141 +85,6 @@ def _load_registry() -> dict[str, Any]:
         return {}
     with REGISTRY_PATH.open(encoding="utf-8") as fh:
         return yaml.safe_load(fh) or {}
-
-
-# ── euristica granularità ─────────────────────────────────────────────────────
-
-_GRAN_PATTERNS: list[tuple[str, str]] = [
-    (r"\bcomun[ei]\b|\bmunicip", "comune"),
-    (r"\bprovinc", "provincia"),
-    (
-        r"\bregion[ei]\b|\bregioni\b|piemonte|lombardia|veneto|emilia|toscana|lazio|campania|puglia|sicilia|sardegna|abruzzo|umbria|marche|molise|calabria|basilicata|friuli|trentin|liguria|valle d['\s]aosta",
-        "regione",
-    ),
-    (r"\bnazional[ei]\b|\bitali[ae]\b|\bnazione\b|\bnational\b|\bregional\b", "nazionale"),
-    (r"(?<![a-zA-Z])(REG|reg)(?![a-zA-Z])", "regione"),
-    (r"\beurope[ao]\b|\bue\b|\beuropa\b|\beuropean\b", "europeo"),
-]
-
-def _infer_granularity(text: str) -> str:
-    low = text.lower()
-    for pattern, label in _GRAN_PATTERNS:
-        if re.search(pattern, low):
-            return label
-    return "non_determinato"
-
-
-# ── euristica anni ────────────────────────────────────────────────────────────
-
-# Anni isolati classici: boundary non-digit su entrambi i lati
-_YEAR_RE = re.compile(r"(?<!\d)(19\d{2}|20[012]\d)(?!\d)")
-# Anni in blocchi compatti: boundary non-digit solo a sinistra (202122 → cattura 2021)
-_YEAR_START_RE = re.compile(r"(?:^|(?<!\d))(20[012]\d)")
-# Per year pair: 4 cifre 20XX seguite da 2 cifre YY che sembrano anno (202122 → 2021+2022)
-# Prova a scomporre quando le due cifre finale < 30 (anno 20YY)
-_COMPACT_YEAR_PAIR_RE = re.compile(r"(20[012]\d)(\d{2})(?=20|$|\D)")
-
-
-def _infer_years(text: str) -> tuple[Optional[int], Optional[int]]:
-    years: set[int] = set()
-
-    # Anni isolati classici: boundary non-digit su entrambi i lati
-    for y in _YEAR_RE.findall(text):
-        years.add(int(y))
-
-    # Anni in blocchi compatti: in "202122" cattura 2021 anche se seguito da cifre
-    # (ma solo 2000-2029 per evitare 2030+)
-    for y in _YEAR_START_RE.findall(text):
-        years.add(int(y))
-
-    # Prova a scomporre pattern compatto AABBCC = 20XX + YY: 202122 → 2021 + 2022
-    # 2 cifre finali < 30 → probabile anno 20YY
-    for first_str, second_str in _COMPACT_YEAR_PAIR_RE.findall(text):
-        y1 = int(first_str)
-        y2_2digit = int(second_str)
-        if y2_2digit <= 30:  # anno 20YY
-            y2 = 2000 + y2_2digit
-            if y2 > y1 and y2 - y1 <= 10:  # solo coppie adiacenti (2021+2022, 2025+2026)
-                years.add(y1)
-                years.add(y2)
-
-    if not years:
-        return None, None
-    return min(years), max(years)
-
-
-# ── CKAN enrichment ───────────────────────────────────────────────────────────
-
-def _parse_ckan_package(pkg: dict) -> dict:
-    """Estrae i campi utili da un package CKAN."""
-    tags = [
-        (t.get("display_name") or t.get("name") or "")
-        for t in (pkg.get("tags") or [])
-        if isinstance(t, dict)
-    ]
-
-    # estrai groups per arricchire l'inferenza di granularità
-    groups = [
-        (g.get("display_name") or g.get("name") or "")
-        for g in (pkg.get("groups") or [])
-        if isinstance(g, dict)
-    ]
-
-    resources = pkg.get("resources") or []
-    resource_url = None
-    resource_format = None
-    for res in resources:
-        u = res.get("url") or ""
-        if u.startswith("http"):
-            resource_url = u
-            resource_format = res.get("format") or None
-            break
-
-    # copertura temporale dagli extras (DCAT-AP)
-    extras = {e["key"]: e["value"] for e in (pkg.get("extras") or []) if isinstance(e, dict)}
-    temporal_start = extras.get("temporal_coverage_from") or extras.get("issued")
-    temporal_end = extras.get("temporal_coverage_to") or extras.get("modified")
-
-    # fallback DCAT-IT: "Periodo di riferimento: YYYY - YYYY"
-    # presente in molti CKAN italiani (MEF/Consip, Regioni, etc.)
-    if temporal_start is None and temporal_end is None:
-        periodo = extras.get("Periodo di riferimento") or extras.get("periodo di riferimento")
-        if periodo:
-            years = _YEAR_RE.findall(str(periodo))
-            if len(years) >= 2:
-                temporal_start, temporal_end = years[0], years[-1]
-
-    notes = (pkg.get("notes") or "").strip()
-    title = pkg.get("title") or None
-
-    # groups hanno precedenza: concatena prima di notes per influenzare l'inferenza
-    combined = " ".join(filter(None, [title, ", ".join(groups), ", ".join(tags), notes[:500]]))
-    granularity = _infer_granularity(combined)
-
-    # anni: prima dagli extras, poi dal testo
-    year_min, year_max = None, None
-    if temporal_start:
-        ys, _ = _infer_years(temporal_start)
-        year_min = ys
-    if temporal_end:
-        _, ye = _infer_years(temporal_end)
-        year_max = ye
-    if year_min is None or year_max is None:
-        yt_min, yt_max = _infer_years(combined)
-        year_min = year_min or yt_min
-        year_max = year_max or yt_max
-
-    return {
-        "enriched_title": title,
-        "enriched_tags": ", ".join(tags) if tags else None,
-        "enriched_notes": notes[:300] if notes else None,
-        "resource_url": resource_url,
-        "resource_format": resource_format,
-        "granularity": granularity,
-        "year_min": year_min,
-        "year_max": year_max,
-        "enrich_method": "ckan_package_show",
-    }
 
 
 # ── SDMX enrichment ───────────────────────────────────────────────────────────
@@ -320,104 +194,7 @@ def _enrich(row: pd.Series, registry: dict[str, Any], session: Optional[requests
 
 # ── fallback euristica su campi catalogo ──────────────────────────────────────
 
-def _fallback_infer(row: pd.Series) -> tuple[str, Optional[int], Optional[int]]:
-    # Composizione di campi: title, tags, notes_excerpt, prefix, url
-    # prefix è il segmento iniziale del filename (es. "REG", "cla", "Redditi")
-    # url completo può contenere hint geografici o di contenuto
-    parts = []
-    for col in ("title", "tags", "notes_excerpt", "prefix", "url"):
-        v = row.get(col)
-        if v and str(v) not in ("nan", "None", ""):
-            parts.append(str(v))
-
-    combined = " ".join(parts)
-    return _infer_granularity(combined), *_infer_years(combined)
-
-
-# ── intake scoring ────────────────────────────────────────────────────────────
-
-_GRAN_SCORE = {"comune": 40, "provincia": 30, "regione": 20, "nazionale": 10, "europeo": 5, "non_determinato": 0}
-_FORMAT_SCORE = {"CSV": 20, "JSON": 20, "XLSX": 12, "XLS": 10, "XML": 8, "SDMX": 8, "PDF": 2}
-_YEAR_SPAN_MAX = 20  # anni di copertura oltre i quali il bonus è al massimo
-
-
-def _normalize_format(raw: str) -> str:
-    """Extract first clean format from a raw format string like 'csv,xml' or 'xls,csv,xml'.
-    Priority order: CSV > JSON > XLSX > XLS > XML > PDF > SDMX > ZIP > PARQUET."""
-    if not isinstance(raw, str):
-        return ""
-    # List = guaranteed iteration order (unlike set)
-    valid_priority = ["CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"]
-    up = raw.upper()
-    for v in valid_priority:
-        if v in up:
-            return v
-    return ""
-
-
-def _intake_score(
-    granularity: Optional[str],
-    year_min: Optional[int],
-    year_max: Optional[int],
-    reachable: bool,
-    resource_format: Optional[str],
-    enrich_method: str,
-    needs_review: bool,
-    source_status: Optional[str] = None,
-) -> tuple[int, bool]:
-    """Restituisce (score 0-100, intake_candidate)."""
-    score = 0
-
-    # granularità — 0..40
-    score += _GRAN_SCORE.get(granularity or "non_determinato", 0)
-
-    # copertura anni — 0..20 (lineare fino a _YEAR_SPAN_MAX anni)
-    if year_min is not None and year_max is not None:
-        span = max(0, year_max - year_min)
-        score += min(20, int(span / _YEAR_SPAN_MAX * 20))
-    elif year_min is not None or year_max is not None:
-        score += 5  # almeno un anno noto
-
-    # raggiungibile — 0..20
-    score += 20 if reachable else 0
-
-    # formato — 0..20 (normalizza: estrai estensione se il campo è un nome file
-    # o una stringa concatenata come "csv,xml" → prendi il primo formato valido)
-    fmt_raw = ("" if not isinstance(resource_format, str) else resource_format).strip()
-    fmt = ""
-    if fmt_raw:
-        # Estrai primo formato valido (CSV, JSON, XLSX, XLS, XML, PDF, SDMX)
-        valid = ["CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"]
-        if "." in fmt_raw and len(fmt_raw) > 6:
-            # Caso filename: estrae estensione (es. "metadati.xls" → "XLS")
-            fmt_ext = fmt_raw.rsplit(".", 1)[-1].upper()
-            if fmt_ext in valid:
-                fmt = fmt_ext
-        else:
-            # Caso lista: "csv,xml" → prendi il primo match (CSV)
-            up = fmt_raw.upper()
-            for v in valid:
-                if v in up:
-                    fmt = v
-                    break
-    score += _FORMAT_SCORE.get(fmt, 0)
-
-    # qualità enrichment — 0..5 bonus, -5 penalità
-    enrich_str = enrich_method if isinstance(enrich_method, str) else ""
-    if enrich_str in ("ckan_package_show", "sdmx_dataflow_annotations"):
-        score += 5
-    if needs_review:
-        score -= 5
-
-    # penalità per source stale — fonte down, dati potrebbero essere outdated
-    if source_status == "stale":
-        score -= 10
-        needs_review = True  # force review per stale
-
-    score = max(0, min(100, score))
-    candidate = score >= 40 and not needs_review
-
-    return score, candidate
+# (importato da source_check_analyze)
 
 
 # ── inventory-aware enrich ───────────────────────────────────────────────────
@@ -614,22 +391,6 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], session:
         "intake_score": None,  # placeholder, calcolato sotto
         "intake_candidate": None,
     }
-
-
-def _finalize_scores(result: dict) -> dict:
-    score, candidate = _intake_score(
-        granularity=result.get("granularity"),
-        year_min=result.get("year_min"),
-        year_max=result.get("year_max"),
-        reachable=result.get("reachable", False),
-        resource_format=result.get("resource_format"),
-        enrich_method=result.get("enrich_method", "none"),
-        needs_review=result.get("needs_review", True),
-        source_status=result.get("source_status"),
-    )
-    result["intake_score"] = score
-    result["intake_candidate"] = candidate
-    return result
 
 
 def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame:
