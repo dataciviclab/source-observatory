@@ -328,9 +328,10 @@ def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
 
 
 def test_normalize_preview_columns_for_parquet_handles_existing_nested_rows(tmp_path: Path) -> None:
-    """Final parquet write must handle old incremental rows with dict/list cells."""
+    """Final parquet write must handle old incremental rows with nested cells."""
     import json
 
+    import numpy as np
     import pandas as pd
 
     from bulk_source_check import _normalize_preview_columns_for_parquet
@@ -345,7 +346,7 @@ def test_normalize_preview_columns_for_parquet_handles_existing_nested_rows(tmp_
             {
                 "item_id": "old",
                 "col_types": {"b": "object"},
-                "columns": ["b"],
+                "columns": np.array(["b"]),
             },
         ]
     )
