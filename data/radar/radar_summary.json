@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-05-09T12:39:03.809111+00:00",
+  "generated_at": "2026-05-09T13:03:48.543836+00:00",
   "probe_date": "2026-05-09",
   "sources_total": 16,
   "status_counts": {
-    "GREEN": 10,
-    "YELLOW": 5,
+    "GREEN": 11,
+    "YELLOW": 4,
     "RED": 1
   },
   "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sdmx",
-      "http_code": "-",
-      "note": "Timeout (ReadTimeout)"
+      "http_code": "200",
+      "note": null
     },
     {
       "id": "anac",
@@ -43,7 +43,7 @@
       "protocol": "html",
       "http_code": "-",
       "note": "SSL verify failed; fallback connection error (SSLError)",
-      "red_streak": 13
+      "red_streak": 14
     },
     {
       "id": "inail_opendata",
