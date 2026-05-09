@@ -257,5 +257,72 @@ def test_fetch_data_preview_returns_new_fields(monkeypatch) -> None:
     assert result.get("file_size") == len(b"col1,col2,col3\n1,2,3\n4,5,6")
     assert result.get("preview_row_count") == 2
     import json
+    import json
     assert json.loads(result.get("col_types") or "{}") == {"col1": "int64", "col2": "int64", "col3": "int64"}
     assert json.loads(result.get("columns") or "[]") == ["col1", "col2", "col3"]
+
+
+# ── _parse_ckan_package: preferisce URL file diretto ─────────────────────
+
+
+def test_parse_ckan_package_prefers_file_url() -> None:
+    """_parse_ckan_package must prefer resources with file extensions."""
+    from source_check_analyze import _parse_ckan_package
+
+    pkg = {
+        "resources": [
+            {"url": "https://portal.it/dataset/123", "format": "HTML"},
+            {"url": "https://portal.it/download/data.csv", "format": "CSV"},
+            {"url": "https://portal.it/download/data.xls", "format": "XLS"},
+        ]
+    }
+    result = _parse_ckan_package(pkg)
+    assert result["resource_url"] == "https://portal.it/download/data.csv"
+    assert result["resource_format"] == "CSV"
+
+
+def test_parse_ckan_package_fallback_first_http_url() -> None:
+    """Without file extensions, must fallback to first HTTP URL."""
+    from source_check_analyze import _parse_ckan_package
+
+    pkg = {
+        "resources": [
+            {"url": "https://portal.it/api/action?id=123", "format": "api"},
+            {"url": "https://portal.it/download/file", "format": "CSV"},
+        ]
+    }
+    result = _parse_ckan_package(pkg)
+    assert result["resource_url"] == "https://portal.it/api/action?id=123"
+
+
+# ── XLS falso: TSV/Latin-1 fallback ─────────────────────────────────────
+
+
+def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
+    """Fake .xls with TSV content + Latin-1 encoding must recover columns."""
+    from lab_connectors.http import HttpClient
+    from source_check_fetch import _fetch_data_preview
+
+    # TSV content with Latin-1 byte 0xf9 (non UTF-8)
+    tsv_content = "col1\tcol2\tcol3\n1\t2\t3\n4\t5\t6".encode("latin-1")
+
+    def fake_get(self, url, **kwargs):
+        return HttpResult(
+            response=_FakeResp(
+                content=tsv_content,
+                headers={"Content-Type": "application/octet-stream"},
+                status_code=200,
+                url=url,
+            ),
+            err=None,
+        )
+
+    monkeypatch.setattr(HttpClient, "get", fake_get)
+
+    result = _fetch_data_preview("https://example.test/data.xls")
+    assert result.get("enrich_method") == "csv_preview"
+    import json
+    cols = json.loads(result.get("columns") or "[]")
+    assert len(cols) == 3
+    assert cols == ["col1", "col2", "col3"]
+    assert result.get("preview_row_count") == 2
