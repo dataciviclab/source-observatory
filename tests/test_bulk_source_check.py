@@ -325,3 +325,68 @@ def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
     assert len(cols) == 3
     assert cols == ["col1", "col2", "col3"]
     assert result.get("preview_row_count") == 2
+
+
+# ── _preview_meta_from_enrich: dict/col_types → JSON string parquet-safe ──────
+
+
+def test_preview_meta_from_enrich_dict_col_types_to_json() -> None:
+    """_preview_meta_from_enrich must JSON-encode dict col_types to string."""
+    import json
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    from bulk_source_check import _preview_meta_from_enrich
+
+    enrich_dict = {
+        "file_size": 1024,
+        "preview_row_count": 50,
+        "col_types": {"col1": "int64", "col2": "str"},
+        "columns": ["col1", "col2"],
+        "enrich_method": "csv_preview",
+    }
+    result = _preview_meta_from_enrich(enrich_dict)
+
+    # col_types must be a JSON string, not a dict
+    assert isinstance(result["col_types"], str), f"col_types should be string, got {type(result['col_types'])}"
+    assert json.loads(result["col_types"]) == {"col1": "int64", "col2": "str"}
+
+
+def test_preview_meta_from_enrich_list_columns_to_json() -> None:
+    """_preview_meta_from_enrich must JSON-encode list columns to string."""
+    import json
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    from bulk_source_check import _preview_meta_from_enrich
+
+    enrich_dict = {
+        "file_size": 1024,
+        "preview_row_count": 50,
+        "col_types": {"col1": "int64"},
+        "columns": ["col1", "col2", "col3"],
+        "enrich_method": "csv_preview",
+    }
+    result = _preview_meta_from_enrich(enrich_dict)
+
+    # columns must be a JSON string, not a list
+    assert isinstance(result["columns"], str), f"columns should be string, got {type(result['columns'])}"
+    assert json.loads(result["columns"]) == ["col1", "col2", "col3"]
+
+
+def test_preview_meta_from_enrich_already_string_unchanged() -> None:
+    """_preview_meta_from_enrich must leave string col_types/columns as-is."""
+    import json
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    from bulk_source_check import _preview_meta_from_enrich
+
+    already_string = json.dumps({"col1": "int64"})
+    already_columns = json.dumps(["col1", "col2"])
+    enrich_dict = {
+        "file_size": 1024,
+        "preview_row_count": 50,
+        "col_types": already_string,
+        "columns": already_columns,
+        "enrich_method": "csv_preview",
+    }
+    result = _preview_meta_from_enrich(enrich_dict)
+
+    # Must be unchanged (string stays string)
+    assert result["col_types"] == already_string
+    assert result["columns"] == already_columns

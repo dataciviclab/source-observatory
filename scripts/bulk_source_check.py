@@ -323,6 +323,30 @@ def _safe_str(v: Any) -> str | None:
     return str(v)
 
 
+def _preview_meta_from_enrich(enrich: dict[str, Any]) -> dict[str, Any]:
+    """Build preview_meta from enrich, ensuring col_types and columns are parquet-safe.
+
+    Both col_types (dict) and columns (list) must be JSON-encoded as strings
+    before写入 DataFrame to avoid ArrowTypeError on to_parquet.
+    """
+    import json as _json
+
+    col_types_val = enrich.get("col_types")
+    if isinstance(col_types_val, dict):
+        col_types_val = _json.dumps(col_types_val)
+
+    columns_val = enrich.get("columns")
+    if isinstance(columns_val, list):
+        columns_val = _json.dumps(columns_val)
+
+    return {
+        "file_size": enrich.get("file_size"),
+        "preview_row_count": enrich.get("preview_row_count"),
+        "col_types": col_types_val,
+        "columns": columns_val,
+    }
+
+
 def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
     enrich = _enrich_with_inventory(row, registry)
 
@@ -360,23 +384,13 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
                     year_min = preview["year_min"]
                 if pd.isna(year_max) and preview.get("year_max") is not None:
                     year_max = preview["year_max"]
-                preview_meta = {
-                    "file_size": preview.get("file_size"),
-                    "preview_row_count": preview.get("preview_row_count"),
-                    "col_types": preview.get("col_types"),
-                    "columns": preview.get("columns"),
-                }
+                preview_meta = _preview_meta_from_enrich(preview)
 
     # Se l'enrich ha gia' chiamato _fetch_data_preview ma non siamo rientrati
     # nel blocco sopra (perche' granularita' era gia' determinata),
     # propaga comunque i campi preview dall'enrich.
     if not preview_meta and enrich.get("enrich_method") == "csv_preview":
-        preview_meta = {
-            "file_size": enrich.get("file_size"),
-            "preview_row_count": enrich.get("preview_row_count"),
-            "col_types": enrich.get("col_types"),
-            "columns": enrich.get("columns"),
-        }
+        preview_meta = _preview_meta_from_enrich(enrich)
 
     # URL da controllare: enrichment resource > catalogo landing_page > distribution_url
     url_to_check = (
