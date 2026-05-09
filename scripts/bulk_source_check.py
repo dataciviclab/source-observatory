@@ -316,6 +316,13 @@ def _enrich_with_inventory(
     }
 
 
+def _safe_str(v: Any) -> str | None:
+    """Convert a value to string, handling pandas NaN."""
+    if v is None or (isinstance(v, float) and pd.isna(v)):
+        return None
+    return str(v)
+
+
 def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
     enrich = _enrich_with_inventory(row, registry)
 
@@ -333,11 +340,38 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         if pd.isna(year_max):
             year_max = fb_ymax
 
+    # Preview dati reali: se granularità ancora non determinata e abbiamo URL diretto
+    # a un file CSV/XLSX/XLS, scarica le prime righe per estrarre colonne reali.
+    # Questo funziona per qualsiasi protocollo (CKAN, SDMX, html) purché l'URL
+    # sia un file dati diretto, non una landing page.
+    preview_meta: dict[str, Any] = {}
+    if granularity in (None, "non_determinato") or pd.isna(year_min):
+        preview_url: Any = (
+            enrich.get("resource_url")
+            or _safe_str(row.get("distribution_url"))
+            or _safe_str(row.get("url"))
+        )
+        if isinstance(preview_url, str) and preview_url.startswith("http"):
+            preview = _fetch_data_preview(preview_url)
+            if preview.get("enrich_method") == "csv_preview":
+                if granularity in (None, "non_determinato") and preview.get("granularity"):
+                    granularity = preview["granularity"]
+                if pd.isna(year_min) and preview.get("year_min") is not None:
+                    year_min = preview["year_min"]
+                if pd.isna(year_max) and preview.get("year_max") is not None:
+                    year_max = preview["year_max"]
+                preview_meta = {
+                    "file_size": preview.get("file_size"),
+                    "preview_row_count": preview.get("preview_row_count"),
+                    "col_types": preview.get("col_types"),
+                    "columns": preview.get("columns"),
+                }
+
     # URL da controllare: enrichment resource > catalogo landing_page > distribution_url
     url_to_check = (
         enrich.get("resource_url")
-        or row.get("landing_page")
-        or row.get("distribution_url")
+        or _safe_str(row.get("landing_page"))
+        or _safe_str(row.get("distribution_url"))
     )
     # per SDMX la metadata_url non è un dato, usiamo la base_url per il check
     if enrich["enrich_method"] in ("sdmx_dataflow_annotations", "inventory_only"):
@@ -354,7 +388,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "")
         http_status = http_status_raw if http_status_raw is not None else 0
 
-    # Content-type format as primary detection (now unified in _http_head_with_retry)
+        # Content-type format as primary detection (now unified in _http_head_with_retry)
     fmt_from_content = content_type
 
     return {
@@ -375,6 +409,10 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "year_max": year_max,
         "resource_format": fmt_from_content or _normalize_format(enrich["resource_format"] or "") or _normalize_format(row.get("format") or ""),
         "enrich_method": enrich["enrich_method"],
+        "file_size": preview_meta.get("file_size"),
+        "preview_row_count": preview_meta.get("preview_row_count"),
+        "col_types": preview_meta.get("col_types"),
+        "columns": preview_meta.get("columns"),
         "source_status": row.get("source_status", "unknown"),
         "needs_review": (granularity == "non_determinato") or pd.isna(year_min),
         "intake_score": None,  # placeholder, calcolato sotto

@@ -18,10 +18,11 @@ from collectors.ckan import _ckan_api_base
 
 class _FakeResp:
     """Minimal response stub for HttpClient mock."""
-    def __init__(self, headers: dict[str, str] | None = None, status_code: int = 200, url: str = ""):
+    def __init__(self, headers: dict[str, str] | None = None, status_code: int = 200, url: str = "", content: bytes = b""):
         self.headers = headers or {}
         self.status_code = status_code
         self.url = url
+        self.content = content
 
 
 # ── _infer_granularity ────────────────────────────────────────────────────────
@@ -229,3 +230,31 @@ def test_fetch_sdmx_years_allow_fetch_false_skips_http() -> None:
     year_min, year_max = _fetch_sdmx_years("https://example.test/sdmx", "flow123", allow_fetch=False)
     assert year_min is None
     assert year_max is None
+
+
+# ── _fetch_data_preview new fields ────────────────────────────────────────
+
+
+def test_fetch_data_preview_returns_new_fields(monkeypatch) -> None:
+    """_fetch_data_preview must return file_size, preview_row_count, col_types, columns."""
+    from lab_connectors.http import HttpClient
+    from source_check_fetch import _fetch_data_preview
+
+    def fake_get(self, url, **kwargs):
+        return HttpResult(
+            response=_FakeResp(
+                content=b"col1,col2,col3\n1,2,3\n4,5,6",
+                headers={"Content-Type": "text/csv"},
+                status_code=200,
+                url=url,
+            ),
+            err=None,
+        )
+
+    monkeypatch.setattr(HttpClient, "get", fake_get)
+
+    result = _fetch_data_preview("https://example.test/data.csv")
+    assert result.get("file_size") == len(b"col1,col2,col3\n1,2,3\n4,5,6")
+    assert result.get("preview_row_count") == 2
+    assert result.get("col_types") == {"col1": "int64", "col2": "int64", "col3": "int64"}
+    assert result.get("columns") == ["col1", "col2", "col3"]
