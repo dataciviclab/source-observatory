@@ -82,12 +82,26 @@ def _parse_ckan_package(pkg: dict) -> dict:
     resources = pkg.get("resources") or []
     resource_url = None
     resource_format = None
+    # Preferisci risorse con URL diretto a file (CSV/XLSX/XLS/JSON/ZIP)
+    _FILE_EXTS = (".csv", ".xlsx", ".xls", ".json", ".zip", ".parquet", ".xml")
+    direct_url = None
+    direct_fmt = None
     for res in resources:
         u = res.get("url") or ""
-        if u.startswith("http"):
+        if not u.startswith("http"):
+            continue
+        low_url = u.lower()
+        if any(ext in low_url for ext in _FILE_EXTS):
+            direct_url = u
+            direct_fmt = res.get("format") or None
+            break
+        if resource_url is None:
             resource_url = u
             resource_format = res.get("format") or None
-            break
+    # Se trovato URL diretto, usalo; altrimenti usa il primo URL HTTP
+    if direct_url:
+        resource_url = direct_url
+        resource_format = direct_fmt
 
     extras = {e["key"]: e["value"] for e in (pkg.get("extras") or []) if isinstance(e, dict)}
     temporal_start = extras.get("temporal_coverage_from") or extras.get("issued")
