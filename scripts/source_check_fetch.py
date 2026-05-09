@@ -289,7 +289,7 @@ def _fetch_data_preview(url: str) -> dict:
     - year_min, year_max
     - granularity
     - file_size: int (bytes)
-    - row_count: int | None (righe parse)
+    - preview_row_count: int | None (righe parse, campione limitato a 1000)
     - enrich_method: "csv_preview"
     """
     if not isinstance(url, str) or not url.startswith("http"):
@@ -319,13 +319,20 @@ def _fetch_data_preview(url: str) -> dict:
             result["enrich_method"] = "csv_preview_http_error"
             return result
 
-        content = resp.content
-        file_size = len(content)
+        # Usa solo primi ~100KB per preview (limitato).
+        # file_size da Content-Length se disponibile, altrimenti dal download effettivo
+        content = resp.content[:100 * 1024]
+        try:
+            file_size = int(resp.headers.get("Content-Length", "0"))
+        except (ValueError, TypeError):
+            file_size = 0
+        if file_size <= 0:
+            file_size = len(resp.content)
         text = content.decode("utf-8", errors="replace")
 
         columns: list[str] = []
         col_types: dict[str, str] = {}
-        row_count: int | None = None
+        preview_row_count: int | None = None
         year_min: Optional[int] = None
         year_max: Optional[int] = None
         granularity = "non_determinato"
@@ -349,7 +356,7 @@ def _fetch_data_preview(url: str) -> dict:
             if df is not None:
                 columns = [str(c) for c in df.columns]
                 col_types = {str(c): str(dtype) for c, dtype in df.dtypes.items()}
-                row_count = len(df)
+                preview_row_count = len(df)
                 for c in columns:
                     if c.lower() in YEAR_COLUMNS:
                         try:
@@ -368,7 +375,7 @@ def _fetch_data_preview(url: str) -> dict:
                     df = pd.read_excel(excel, sheet_name=excel.sheet_names[0], nrows=1000)
                     columns = [str(c) for c in df.columns]
                     col_types = {str(c): str(dtype) for c, dtype in df.dtypes.items()}
-                    row_count = len(df)
+                    preview_row_count = len(df)
                     for c in columns:
                         if c.lower() in YEAR_COLUMNS:
                             try:
@@ -387,7 +394,7 @@ def _fetch_data_preview(url: str) -> dict:
                 if isinstance(data, list) and data and isinstance(data[0], dict):
                     columns = list(data[0].keys())
                     col_types = {str(k): type(v).__name__ for k, v in data[0].items()}
-                    row_count = len(data)
+                    preview_row_count = len(data)
                 elif isinstance(data, dict):
                     columns = list(data.keys())
             except Exception:
@@ -410,7 +417,7 @@ def _fetch_data_preview(url: str) -> dict:
             "columns": columns,
             "col_types": col_types,
             "file_size": file_size,
-            "row_count": row_count,
+            "preview_row_count": preview_row_count,
             "year_min": year_min,
             "year_max": year_max,
             "granularity": granularity,

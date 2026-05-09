@@ -362,7 +362,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
                     year_max = preview["year_max"]
                 preview_meta = {
                     "file_size": preview.get("file_size"),
-                    "row_count": preview.get("row_count"),
+                    "preview_row_count": preview.get("preview_row_count"),
                     "col_types": preview.get("col_types"),
                     "columns": preview.get("columns"),
                 }
@@ -410,7 +410,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "resource_format": fmt_from_content or _normalize_format(enrich["resource_format"] or "") or _normalize_format(row.get("format") or ""),
         "enrich_method": enrich["enrich_method"],
         "file_size": preview_meta.get("file_size"),
-        "row_count": preview_meta.get("row_count"),
+        "preview_row_count": preview_meta.get("preview_row_count"),
         "col_types": preview_meta.get("col_types"),
         "columns": preview_meta.get("columns"),
         "source_status": row.get("source_status", "unknown"),
