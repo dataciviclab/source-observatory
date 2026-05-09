@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-05-09T05:54:42.632557+00:00",
+  "generated_at": "2026-05-09T08:12:13.096798+00:00",
   "probe_date": "2026-05-09",
   "sources_total": 16,
   "status_counts": {
     "GREEN": 10,
-    "YELLOW": 5,
-    "RED": 1
+    "YELLOW": 4,
+    "RED": 2
   },
   "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sdmx",
-      "http_code": "-",
-      "note": "Timeout (ReadTimeout)"
+      "http_code": "200",
+      "note": null
     },
     {
       "id": "anac",
@@ -43,7 +43,7 @@
       "protocol": "html",
       "http_code": "-",
       "note": "SSL verify failed; fallback connection error (SSLError)",
-      "red_streak": 10
+      "red_streak": 11
     },
     {
       "id": "inail_opendata",
@@ -61,9 +61,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null
     },
     {
