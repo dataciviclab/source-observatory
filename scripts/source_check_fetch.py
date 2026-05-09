@@ -413,9 +413,10 @@ def _fetch_data_preview(url: str) -> dict:
             year_max = max(year_values)
 
         result = _EMPTY_ENRICH.copy()
+        import json as _json
         result.update({
-            "columns": columns,
-            "col_types": col_types,
+            "columns": _json.dumps(columns) if columns else None,
+            "col_types": _json.dumps(col_types) if col_types else None,
             "file_size": file_size,
             "preview_row_count": preview_row_count,
             "year_min": year_min,

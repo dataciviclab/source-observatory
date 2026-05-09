@@ -367,6 +367,17 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
                     "columns": preview.get("columns"),
                 }
 
+    # Se l'enrich ha gia' chiamato _fetch_data_preview ma non siamo rientrati
+    # nel blocco sopra (perche' granularita' era gia' determinata),
+    # propaga comunque i campi preview dall'enrich.
+    if not preview_meta and enrich.get("enrich_method") == "csv_preview":
+        preview_meta = {
+            "file_size": enrich.get("file_size"),
+            "preview_row_count": enrich.get("preview_row_count"),
+            "col_types": enrich.get("col_types"),
+            "columns": enrich.get("columns"),
+        }
+
     # URL da controllare: enrichment resource > catalogo landing_page > distribution_url
     url_to_check = (
         enrich.get("resource_url")
