@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-05-09T08:12:20+00:00",
+  "captured_at": "2026-05-09T10:01:32+00:00",
   "sources_checked": 13,
   "signals": [
     {
@@ -643,8 +643,9 @@
       "source": "dati_camera",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 104,
+      "detail": "104 item (sparql_query), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
