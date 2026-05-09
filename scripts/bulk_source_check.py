@@ -351,23 +351,33 @@ def _normalize_preview_columns_for_parquet(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize preview metadata columns before parquet writes.
 
     Incremental runs concatenate new checks with previous parquet rows. Older
-    rows may still contain Arrow struct/list values loaded back as dict/list,
-    so normalize the final DataFrame, not only newly-built row payloads.
+    rows may still contain Arrow struct/list values loaded back as dict/list or
+    array-like values, so normalize the final DataFrame, not only newly-built
+    row payloads.
     """
     import json as _json
 
+    def _preview_cell_for_parquet(value: Any) -> Any:
+        if isinstance(value, str) or value is None:
+            return value
+        if isinstance(value, dict):
+            return _json.dumps(value, ensure_ascii=False)
+        if isinstance(value, (list, tuple, set)):
+            return _json.dumps(list(value), ensure_ascii=False)
+        tolist = getattr(value, "tolist", None)
+        if callable(tolist):
+            converted = tolist()
+            if isinstance(converted, dict):
+                return _json.dumps(converted, ensure_ascii=False)
+            if isinstance(converted, list):
+                return _json.dumps(converted, ensure_ascii=False)
+        return value
+
     normalized = df.copy()
-    for column, nested_types in {
-        "col_types": (dict,),
-        "columns": (list,),
-    }.items():
+    for column in ("col_types", "columns"):
         if column not in normalized.columns:
             continue
-        normalized[column] = normalized[column].map(
-            lambda value: _json.dumps(value)
-            if isinstance(value, nested_types)
-            else value
-        )
+        normalized[column] = normalized[column].map(_preview_cell_for_parquet)
     return normalized
 
 
