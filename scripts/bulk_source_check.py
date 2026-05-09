@@ -371,10 +371,14 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
     # nel blocco sopra (perche' granularita' era gia' determinata),
     # propaga comunque i campi preview dall'enrich.
     if not preview_meta and enrich.get("enrich_method") == "csv_preview":
+        import json as _json
+        col_types_val = enrich.get("col_types")
+        if isinstance(col_types_val, dict):
+            col_types_val = _json.dumps(col_types_val)
         preview_meta = {
             "file_size": enrich.get("file_size"),
             "preview_row_count": enrich.get("preview_row_count"),
-            "col_types": enrich.get("col_types"),
+            "col_types": col_types_val,
             "columns": enrich.get("columns"),
         }
 
