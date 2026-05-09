@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-08T18:15:53.102244+00:00",
-  "probe_date": "2026-05-08",
+  "generated_at": "2026-05-09T05:54:42.632557+00:00",
+  "probe_date": "2026-05-09",
   "sources_total": 16,
   "status_counts": {
     "GREEN": 10,
@@ -11,10 +11,10 @@
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)"
     },
     {
       "id": "anac",
@@ -43,7 +43,7 @@
       "protocol": "html",
       "http_code": "-",
       "note": "SSL verify failed; fallback connection error (SSLError)",
-      "red_streak": 9
+      "red_streak": 10
     },
     {
       "id": "inail_opendata",
@@ -68,10 +68,10 @@
     },
     {
       "id": "dati_cultura",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sparql",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
+      "http_code": "200",
+      "note": null
     },
     {
       "id": "ispra_linked_data",
