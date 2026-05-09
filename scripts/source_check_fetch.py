@@ -6,8 +6,6 @@ Usa lab_connectors.http (HttpClient) per le richieste HTTP, con SSL fallback bui
 """
 from __future__ import annotations
 
-import csv
-import io
 import logging
 import re
 import time
@@ -287,8 +285,11 @@ def _fetch_data_preview(url: str) -> dict:
 
     Returns dict in formato _EMPTY_ENRICH con campi aggiuntivi:
     - columns: list[str]
+    - col_types: dict[str, str] (nomi colonna → tipo pandas)
     - year_min, year_max
     - granularity
+    - file_size: int (bytes)
+    - row_count: int | None (righe parse)
     - enrich_method: "csv_preview"
     """
     if not isinstance(url, str) or not url.startswith("http"):
@@ -318,70 +319,87 @@ def _fetch_data_preview(url: str) -> dict:
             result["enrich_method"] = "csv_preview_http_error"
             return result
 
-        # Use only first ~5KB for preview
-        content = resp.content[:100 * 1024]
+        content = resp.content
+        file_size = len(content)
         text = content.decode("utf-8", errors="replace")
 
         columns: list[str] = []
+        col_types: dict[str, str] = {}
+        row_count: int | None = None
         year_min: Optional[int] = None
         year_max: Optional[int] = None
         granularity = "non_determinato"
         year_values: list[int] = []
 
         if fmt == "csv":
-            try:
-                lines = text.splitlines()[:10]
-                if not lines:
-                    raise ValueError("Empty CSV")
-                sample_text = "\n".join(lines)
-                reader = csv.reader(io.StringIO(sample_text))
-                rows = list(reader)
-                if not rows:
-                    raise ValueError("No rows parsed")
-                headers = [h.strip() for h in rows[0]]
-                columns = [h for h in headers if h]
+            import pandas as pd
+            import io
 
-                year_col_idx = None
-                for idx, h in enumerate(headers):
-                    if h.lower() in YEAR_COLUMNS:
-                        year_col_idx = idx
+            df = None
+            for sep in [None, ",", ";", "\t", "|"]:
+                try:
+                    kwargs: dict[str, Any] = {"nrows": 1000}
+                    if isinstance(sep, str):
+                        kwargs["sep"] = sep
+                    df = pd.read_csv(io.StringIO(text), **kwargs)
+                    if len(df.columns) > 1:
                         break
-                if year_col_idx is not None and len(rows) > 1:
-                    for row in rows[1:]:
-                        if year_col_idx < len(row):
-                            val = row[year_col_idx].strip()
-                            try:
-                                year_values.append(int(val[:4]))
-                            except (ValueError, IndexError):
-                                pass
-
-                reg_col = next((i for i, h in enumerate(headers) if h.lower() in REGION_COLUMNS), None)
-                com_col = next((i for i, h in enumerate(headers) if h.lower() in COMUNE_COLUMNS), None)
-                if com_col is not None:
-                    granularity = "comune"
-                elif reg_col is not None:
-                    granularity = "regione"
-
-            except Exception as exc:
-                logger.debug("CSV preview parse error: %s", exc)
-
-        elif fmt in ("xlsx", "xls"):
-            try:
-                import pandas as pd
-                excel = pd.ExcelFile(io.BytesIO(content))
-                if excel.sheet_names:
-                    df = pd.read_excel(excel, sheet_name=excel.sheet_names[0], nrows=5)
-                    columns = [str(c) for c in df.columns]
-                    for c in columns:
-                        if c.lower() in YEAR_COLUMNS:
+                except Exception:
+                    continue
+            if df is not None:
+                columns = [str(c) for c in df.columns]
+                col_types = {str(c): str(dtype) for c, dtype in df.dtypes.items()}
+                row_count = len(df)
+                for c in columns:
+                    if c.lower() in YEAR_COLUMNS:
+                        try:
                             vals = pd.to_numeric(df[c], errors="coerce").dropna()
                             if not vals.empty:
                                 year_values = [int(v) for v in vals]
-                                break
+                        except Exception:
+                            pass
+
+        elif fmt in ("xlsx", "xls"):
+            import pandas as pd
+            import io
+            try:
+                excel = pd.ExcelFile(io.BytesIO(content))
+                if excel.sheet_names:
+                    df = pd.read_excel(excel, sheet_name=excel.sheet_names[0], nrows=1000)
+                    columns = [str(c) for c in df.columns]
+                    col_types = {str(c): str(dtype) for c, dtype in df.dtypes.items()}
+                    row_count = len(df)
+                    for c in columns:
+                        if c.lower() in YEAR_COLUMNS:
+                            try:
+                                vals = pd.to_numeric(df[c], errors="coerce").dropna()
+                                if not vals.empty:
+                                    year_values = [int(v) for v in vals]
+                            except Exception:
+                                pass
             except ImportError:
                 pass
-            except Exception as exc:
-                logger.debug("XLSX preview parse error: %s", exc)
+
+        elif fmt == "json":
+            import json as _json
+            try:
+                data = _json.loads(text)
+                if isinstance(data, list) and data and isinstance(data[0], dict):
+                    columns = list(data[0].keys())
+                    col_types = {str(k): type(v).__name__ for k, v in data[0].items()}
+                    row_count = len(data)
+                elif isinstance(data, dict):
+                    columns = list(data.keys())
+            except Exception:
+                pass
+
+        # Granularità da nomi colonna
+        if columns:
+            cols_lower = [c.lower() for c in columns]
+            if any(c in " ".join(cols_lower) for c in COMUNE_COLUMNS):
+                granularity = "comune"
+            elif any(c in " ".join(cols_lower) for c in REGION_COLUMNS):
+                granularity = "regione"
 
         if year_values:
             year_min = min(year_values)
@@ -390,6 +408,9 @@ def _fetch_data_preview(url: str) -> dict:
         result = _EMPTY_ENRICH.copy()
         result.update({
             "columns": columns,
+            "col_types": col_types,
+            "file_size": file_size,
+            "row_count": row_count,
             "year_min": year_min,
             "year_max": year_max,
             "granularity": granularity,
