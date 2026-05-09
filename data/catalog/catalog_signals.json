@@ -1,15 +1,15 @@
 {
-  "captured_at": "2026-05-08T18:15:59+00:00",
+  "captured_at": "2026-05-09T08:12:20+00:00",
   "sources_checked": 13,
   "signals": [
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
-      "signal_type": "inventory change",
-      "result": "inventory change",
+      "signal_type": "no signal",
+      "result": "stabile",
       "metric_value": 4836,
-      "detail": "4836 item (dataflow_count), delta +1 rispetto al run precedente (4835).",
-      "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset"
+      "detail": "4836 item (dataflow_count), in linea con la baseline.",
+      "suggested_action": "nessuna"
     },
     {
       "source": "inps",
@@ -651,8 +651,9 @@
       "source": "dati_cultura",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 213,
+      "detail": "213 item (sparql_query), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -667,11 +668,11 @@
     {
       "source": "consip_open_data",
       "protocol": "ckan",
-      "signal_type": "inventory change",
-      "result": "inventory change",
+      "signal_type": "no signal",
+      "result": "stabile",
       "metric_value": 16,
-      "detail": "16 item (package_list), delta -1 rispetto al run precedente (17).",
-      "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset"
+      "detail": "16 item (package_list), in linea con la baseline.",
+      "suggested_action": "nessuna"
     },
     {
       "source": "lavoro_opendata",
