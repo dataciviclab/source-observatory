@@ -386,6 +386,25 @@ def _fetch_data_preview(url: str) -> dict:
                                 pass
             except ImportError:
                 pass
+            except Exception:
+                # XLS falso (es. file TSV mascherato da .xls con encoding Latin-1)
+                # Prova come CSV con encoding fallback
+                try:
+                    csv_df = None
+                    for enc in ["latin-1", "windows-1252", "iso-8859-1"]:
+                        try:
+                            text_latin = content.decode(enc, errors="replace")
+                            csv_df = pd.read_csv(io.StringIO(text_latin), nrows=1000)
+                            if csv_df is not None and len(csv_df.columns) > 1:
+                                break
+                        except Exception:
+                            continue
+                    if csv_df is not None and len(csv_df.columns) > 1:
+                        columns = [str(c) for c in csv_df.columns]
+                        col_types = {str(c): str(dtype) for c, dtype in csv_df.dtypes.items()}
+                        preview_row_count = len(csv_df)
+                except Exception:
+                    pass
 
         elif fmt == "json":
             import json as _json
