@@ -395,10 +395,10 @@ def _fetch_data_preview(url: str) -> dict:
                         text_latin = content.decode(enc, errors="replace")
                         for sep in [None, ",", ";", "\t", "|"]:
                             try:
-                                kwargs: dict[str, Any] = {"nrows": 1000}
+                                csv_kwargs: dict[str, Any] = {"nrows": 1000}
                                 if isinstance(sep, str):
-                                    kwargs["sep"] = sep
-                                csv_df = pd.read_csv(io.StringIO(text_latin), **kwargs)
+                                    csv_kwargs["sep"] = sep
+                                csv_df = pd.read_csv(io.StringIO(text_latin), **csv_kwargs)
                                 if csv_df is not None and len(csv_df.columns) > 1:
                                     break
                             except Exception:
