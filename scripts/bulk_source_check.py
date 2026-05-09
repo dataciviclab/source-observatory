@@ -327,7 +327,7 @@ def _preview_meta_from_enrich(enrich: dict[str, Any]) -> dict[str, Any]:
     """Build preview_meta from enrich, ensuring col_types and columns are parquet-safe.
 
     Both col_types (dict) and columns (list) must be JSON-encoded as strings
-    before写入 DataFrame to avoid ArrowTypeError on to_parquet.
+    before writing the DataFrame to avoid ArrowTypeError on to_parquet.
     """
     import json as _json
 
@@ -345,6 +345,30 @@ def _preview_meta_from_enrich(enrich: dict[str, Any]) -> dict[str, Any]:
         "col_types": col_types_val,
         "columns": columns_val,
     }
+
+
+def _normalize_preview_columns_for_parquet(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalize preview metadata columns before parquet writes.
+
+    Incremental runs concatenate new checks with previous parquet rows. Older
+    rows may still contain Arrow struct/list values loaded back as dict/list,
+    so normalize the final DataFrame, not only newly-built row payloads.
+    """
+    import json as _json
+
+    normalized = df.copy()
+    for column, nested_types in {
+        "col_types": (dict,),
+        "columns": (list,),
+    }.items():
+        if column not in normalized.columns:
+            continue
+        normalized[column] = normalized[column].map(
+            lambda value: _json.dumps(value)
+            if isinstance(value, nested_types)
+            else value
+        )
+    return normalized
 
 
 def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
@@ -712,6 +736,7 @@ def main() -> None:
             logger.info("Top candidates:\n%s", top.to_string(index=False))
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
+    results = _normalize_preview_columns_for_parquet(results)
     results.to_parquet(args.out, index=False)
     logger.info("Results: %s", args.out)
 
