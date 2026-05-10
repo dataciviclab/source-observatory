@@ -14,11 +14,11 @@ Config canonica workspace:
 {
   "mcpServers": {
     "source-observatory": {
-      "command": "/home/gabry/dev/dataciviclab-workspace/source-observatory/.venv/bin/python",
+      "command": "python",
       "args": [
-        "/home/gabry/dev/dataciviclab-workspace/source-observatory/mcp/so_server.py"
+        "mcp/so_server.py"
       ],
-      "cwd": "/tmp"
+      "cwd": "/path/to/source-observatory"
     }
   }
 }

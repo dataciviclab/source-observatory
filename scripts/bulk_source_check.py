@@ -517,7 +517,7 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
                 # Mantieni item_id e source_id anche in caso di fallimento,
                 # altrimenti il merge upsert (riga 743) crasha su results["item_id"]
                 # quando TUTTI i check falliscono (es. fonte temporaneamente down).
-                fallback_row = df.iloc[i] if i < len(df) else {}
+                fallback_row = df.loc[i] if i in df.index else {}
                 results.append({
                     "item_id": str(fallback_row.get("item_id", "")),
                     "source_id": str(fallback_row.get("source_id", "")),
