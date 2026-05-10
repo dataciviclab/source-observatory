@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-05-10T06:19:14.169557+00:00",
+  "generated_at": "2026-05-10T19:48:54.617753+00:00",
   "probe_date": "2026-05-10",
   "sources_total": 16,
   "status_counts": {
-    "GREEN": 10,
-    "YELLOW": 4,
+    "GREEN": 8,
+    "YELLOW": 6,
     "RED": 2
   },
-  "persistent_red": 1,
+  "persistent_red": 2,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)"
     },
     {
       "id": "anac",
@@ -64,14 +64,15 @@
       "status": "RED",
       "protocol": "sparql",
       "http_code": "503",
-      "note": null
+      "note": null,
+      "red_streak": 2
     },
     {
       "id": "dati_cultura",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sparql",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
     },
     {
       "id": "ispra_linked_data",
