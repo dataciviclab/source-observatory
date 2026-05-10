@@ -72,6 +72,86 @@ def _collect_source(
         return source_id, [], None, None, exc
 
 
+# Formati per cui vale la pena fare sniff leggero del file dati
+_SNIFFABLE_FORMATS = {"csv", "xlsx", "xls", "tsv"}
+
+
+def _is_sniffable(format_str: Any) -> bool:
+    """True se format contiene uno dei formati sniffabili (es. 'csv', 'csv,xml')."""
+    if not isinstance(format_str, str):
+        return False
+    return any(f in format_str.lower() for f in _SNIFFABLE_FORMATS)
+
+
+def _sniff_csv_rows(rows: list[dict[str, Any]], logger: logging.Logger) -> None:
+    """Lightweight CSV sniff per item con URL diretto a file dati.
+
+    Scarica primi ~10KB, sniffa encoding/delim/decimal/skip con
+    ``toolkit.profile.raw.sniff_source_file`` (puro Python, nessun DuckDB).
+    I risultati aggiornano direttamente le righe (encoding_suggested, ecc.).
+
+    Costo: ~0.5s per download + ~0.02s per sniff. Skip per formati non sniffabili
+    o URL non HTTP.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from pathlib import Path
+    import tempfile
+
+    from lab_connectors.http import HttpClient
+    from toolkit.profile.raw import sniff_source_file
+
+    # Filtra righe con formato sniffabile e URL diretto
+    targets = [
+        (i, row) for i, row in enumerate(rows)
+        if _is_sniffable(row.get("format"))
+        and isinstance(row.get("distribution_url"), str)
+        and row["distribution_url"].startswith("http")
+    ]
+    if not targets:
+        return
+
+    # Limita sniff a 100 item per fonte per evitare rallentamenti eccessivi
+    # su fonti con migliaia di CSV. 100 item × ~1s = ~100s con 8 workers ≈ 12s.
+    targets = targets[:100]
+
+    logger.info("  sniff CSV: %d items", len(targets))
+    sniffed = 0
+
+    def _sniff_one(dist_url: str) -> dict[str, Any]:
+        client = HttpClient(timeout=(3, 5))
+        fetch = client.get(dist_url, headers={"Range": "bytes=0-10239"})
+        if not fetch.is_ok or fetch.response is None or fetch.response.status_code >= 400:
+            return {}
+        content = fetch.response.content[:10 * 1024]  # 10KB max
+        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = Path(tmp.name)
+        try:
+            sniff = sniff_source_file(tmp_path)
+            return {
+                "encoding_suggested": sniff.get("encoding_suggested"),
+                "delim_suggested": sniff.get("delim_suggested"),
+                "decimal_suggested": sniff.get("decimal_suggested"),
+                "skip_suggested": sniff.get("skip_suggested", 0),
+            }
+        finally:
+            tmp_path.unlink(missing_ok=True)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        fut_to_idx = {pool.submit(_sniff_one, row["distribution_url"]): idx for idx, row in targets}
+        for fut in as_completed(fut_to_idx):
+            idx = fut_to_idx[fut]
+            try:
+                result = fut.result()
+                if result and result.get("encoding_suggested"):
+                    rows[idx].update(result)
+                    sniffed += 1
+            except Exception:
+                pass
+
+    logger.info("  sniff CSV OK: %d/%d", sniffed, len(targets))
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Costruisce il catalog inventory derivato dal registry di source-observatory."
@@ -155,8 +235,15 @@ def main() -> None:
             executor.submit(_collect_source, source_id, source_cfg, captured_at): source_id
             for source_id, source_cfg in inventoriable
         }
+        _SOURCE_TIMEOUT = 300  # 5 minuti per fonte — evita che fonti lente/bloccate tengano il workflow in stallo
         for future in as_completed(future_to_id):
-            sid, rows, warning, summary, exc = future.result()
+            try:
+                sid, rows, warning, summary, exc = future.result(timeout=_SOURCE_TIMEOUT)
+            except TimeoutError:
+                sid = future_to_id[future]
+                logger.warning("Source %s timed out after %ds, treating as failed", sid, _SOURCE_TIMEOUT)
+                exc = TimeoutError(f"Source timed out after {_SOURCE_TIMEOUT}s")
+                rows, warning, summary = [], None, None
             collected[sid] = (rows, warning, summary, exc)
 
     # Load existing inventory for merge (always, not just with --source-ids filter)
@@ -201,6 +288,15 @@ def main() -> None:
             row["source_status"] = "active"
             row["stale_reason"] = None
             row["last_successful_fetch"] = captured_at
+
+        # Lightweight CSV sniff: per ogni item con URL diretto a file dati,
+        # scarica ~10KB e sniffa encoding/delim/decimal/skip.
+        # Non usa DuckDB — solo puro Python, ~0.02s per sniff + ~0.5s per download.
+        # I risultati (encoding_suggested, delim_suggested, ...) vengono scritti
+        # direttamente nel catalog inventory, pronti per source-check e scoring.
+        if rows:
+            _sniff_csv_rows(rows, logger)
+
         all_rows.extend(rows)
 
         source_report: dict[str, Any] = {
