@@ -530,7 +530,7 @@ def _fetch_data_preview(url: str) -> dict:
             "decimal_suggested": decimal_suggested,
             "skip_suggested": skip_suggested,
             "robust_read_suggested": robust_read_suggested,
-            "mapping_suggestions": _json.dumps(mapping_suggestions) if mapping_suggestions else None,
+            "mapping_suggestions": _json.dumps(mapping_suggestions) if isinstance(mapping_suggestions, dict) else "{}",
         })
         return result
 

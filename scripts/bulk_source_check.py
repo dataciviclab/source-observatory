@@ -344,6 +344,10 @@ def _preview_meta_from_enrich(enrich: dict[str, Any]) -> dict[str, Any]:
     mapping_val = enrich.get("mapping_suggestions")
     if isinstance(mapping_val, dict):
         mapping_val = _json.dumps(mapping_val)
+    elif not isinstance(mapping_val, str):
+        # Forza "{}" invece di None per evitare che DuckDB inferisca
+        # DOUBLE per la colonna (quando tutti i valori sono None).
+        mapping_val = "{}"
 
     return {
         "file_size": enrich.get("file_size"),
