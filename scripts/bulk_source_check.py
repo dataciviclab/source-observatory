@@ -505,19 +505,25 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
     results = []
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        future_to_idx = {pool.submit(_check_row, row, check_ts, registry): i for i, row in df.iterrows()}
+        # Usa enumerate per avere un indice posizionale garantito come int.
+        # df.iterrows() restituisce un indice generico (Hashable) che mypy
+        # non accetta per df.loc/df.iloc — con enumerate pos abbiamo int certo.
+        future_to_idx = {
+            pool.submit(_check_row, row, check_ts, registry): pos
+            for pos, (_idx, row) in enumerate(df.iterrows())
+        }
         done = 0
         total = len(future_to_idx)
         for future in as_completed(future_to_idx):
-            i = future_to_idx[future]
+            pos = future_to_idx[future]
             try:
                 results.append(_finalize_scores(future.result()))
             except Exception as exc:
-                logger.warning("Row check failed for index %d: %s", i, exc)
+                logger.warning("Row check failed for index %d: %s", pos, exc)
                 # Mantieni item_id e source_id anche in caso di fallimento,
                 # altrimenti il merge upsert (riga 743) crasha su results["item_id"]
                 # quando TUTTI i check falliscono (es. fonte temporaneamente down).
-                fallback_row = df.loc[i] if i in df.index else {}
+                fallback_row = df.iloc[pos] if pos < len(df) else {}
                 results.append({
                     "item_id": str(fallback_row.get("item_id", "")),
                     "source_id": str(fallback_row.get("source_id", "")),
