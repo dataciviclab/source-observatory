@@ -2,119 +2,6 @@
   "probes": [
     {
       "probe_date": "2026-05-04",
-      "captured_at": "2026-05-04T06:21:30.947809+00:00",
-      "sources": [
-        {
-          "id": "istat_sdmx",
-          "status": "RED",
-          "protocol": "sdmx",
-          "http_code": "-",
-          "note": "Probe exception non gestita: ReadTimeout: HTTPSConnectionPool(host='esploradati.istat.it', port=443): Read timed out. (read timeout=10)"
-        },
-        {
-          "id": "anac",
-          "status": "YELLOW",
-          "protocol": "ckan",
-          "http_code": "403",
-          "note": null
-        },
-        {
-          "id": "inps",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "openbdap",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "dati_salute",
-          "status": "RED",
-          "protocol": "html",
-          "http_code": "-",
-          "note": "SSL verify failed; fallback connection error (SSLError)",
-          "red_streak": 2
-        },
-        {
-          "id": "inail_opendata",
-          "status": "GREEN",
-          "protocol": "aem",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "mim_opendata",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "dati_camera",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "dati_cultura",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "ispra_linked_data",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "consip_open_data",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "lavoro_opendata",
-          "status": "YELLOW",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": "CKAN API returned non-JSON content"
-        },
-        {
-          "id": "mur_ustat",
-          "status": "RED",
-          "protocol": "ckan",
-          "http_code": "-",
-          "note": "Probe exception non gestita: ConnectTimeout: HTTPSConnectionPool(host='dati-ustat.mur.gov.it', port=443): Max retries exceeded with url: /api/3/action/package_list?limit=1 (Caused by ConnectTimeoutError(<HTTPSConnection(host='dati-ustat.mur.gov.it', port=443) at 0x7f5351f45d90>, 'Connection to dati-ustat.mur.gov.it timed out. (connect timeout=10)'))",
-          "red_streak": 2
-        },
-        {
-          "id": "opencoesione",
-          "status": "YELLOW",
-          "protocol": "rest",
-          "http_code": "403",
-          "note": null
-        },
-        {
-          "id": "mef_irpef",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null
-        }
-      ]
-    },
-    {
-      "probe_date": "2026-05-04",
       "captured_at": "2026-05-04T07:59:40.787149+00:00",
       "sources": [
         {
@@ -1581,6 +1468,126 @@
           "protocol": "sparql",
           "http_code": "503",
           "note": null
+        },
+        {
+          "id": "dati_cultura",
+          "status": "YELLOW",
+          "protocol": "sparql",
+          "http_code": "-",
+          "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
+        },
+        {
+          "id": "ispra_linked_data",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "consip_open_data",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "lavoro_opendata",
+          "status": "YELLOW",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": "CKAN API returned non-JSON content"
+        },
+        {
+          "id": "mur_ustat",
+          "status": "YELLOW",
+          "protocol": "ckan",
+          "http_code": "-",
+          "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
+        },
+        {
+          "id": "opencoesione",
+          "status": "YELLOW",
+          "protocol": "rest",
+          "http_code": "403",
+          "note": null
+        },
+        {
+          "id": "mef_irpef",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "opencivitas",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": "SSL verify failed; fallback verify=False used (SSLError)"
+        }
+      ]
+    },
+    {
+      "probe_date": "2026-05-10",
+      "captured_at": "2026-05-10T20:27:49.918826+00:00",
+      "sources": [
+        {
+          "id": "istat_sdmx",
+          "status": "YELLOW",
+          "protocol": "sdmx",
+          "http_code": "-",
+          "note": "Timeout (ReadTimeout)"
+        },
+        {
+          "id": "anac",
+          "status": "YELLOW",
+          "protocol": "ckan",
+          "http_code": "403",
+          "note": null
+        },
+        {
+          "id": "inps",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "openbdap",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "dati_salute",
+          "status": "RED",
+          "protocol": "html",
+          "http_code": "-",
+          "note": "SSL verify failed; fallback connection error (SSLError)",
+          "red_streak": 14
+        },
+        {
+          "id": "inail_opendata",
+          "status": "GREEN",
+          "protocol": "aem",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "mim_opendata",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "dati_camera",
+          "status": "RED",
+          "protocol": "sparql",
+          "http_code": "503",
+          "note": null,
+          "red_streak": 2
         },
         {
           "id": "dati_cultura",
