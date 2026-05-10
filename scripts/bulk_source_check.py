@@ -514,7 +514,16 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
                 results.append(_finalize_scores(future.result()))
             except Exception as exc:
                 logger.warning("Row check failed for index %d: %s", i, exc)
-                results.append({"check_notes": f"check failed: {exc}", "enrich_method": "error"})
+                # Mantieni item_id e source_id anche in caso di fallimento,
+                # altrimenti il merge upsert (riga 743) crasha su results["item_id"]
+                # quando TUTTI i check falliscono (es. fonte temporaneamente down).
+                fallback_row = df.iloc[i] if i < len(df) else {}
+                results.append({
+                    "item_id": str(fallback_row.get("item_id", "")),
+                    "source_id": str(fallback_row.get("source_id", "")),
+                    "check_notes": f"check failed: {exc}",
+                    "enrich_method": "error",
+                })
             done += 1
             if done % 50 == 0 or done == total:
                 logger.info("  %d/%d completed", done, total)
