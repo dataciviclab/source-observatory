@@ -110,15 +110,19 @@ def _sniff_csv_rows(rows: list[dict[str, Any]], logger: logging.Logger) -> None:
     if not targets:
         return
 
+    # Limita sniff a 100 item per fonte per evitare rallentamenti eccessivi
+    # su fonti con migliaia di CSV. 100 item × ~1s = ~100s con 8 workers ≈ 12s.
+    targets = targets[:100]
+
     logger.info("  sniff CSV: %d items", len(targets))
     sniffed = 0
 
     def _sniff_one(dist_url: str) -> dict[str, Any]:
-        client = HttpClient(timeout=(3, 10))
-        fetch = client.get(dist_url, headers={"Range": "bytes=0-15359"})
+        client = HttpClient(timeout=(3, 5))
+        fetch = client.get(dist_url, headers={"Range": "bytes=0-10239"})
         if not fetch.is_ok or fetch.response is None or fetch.response.status_code >= 400:
             return {}
-        content = fetch.response.content[:15 * 1024]  # 15KB max
+        content = fetch.response.content[:10 * 1024]  # 10KB max
         with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
             tmp.write(content)
             tmp_path = Path(tmp.name)
