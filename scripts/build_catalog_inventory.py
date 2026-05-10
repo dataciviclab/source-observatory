@@ -235,8 +235,15 @@ def main() -> None:
             executor.submit(_collect_source, source_id, source_cfg, captured_at): source_id
             for source_id, source_cfg in inventoriable
         }
+        _SOURCE_TIMEOUT = 300  # 5 minuti per fonte — evita che fonti lente/bloccate tengano il workflow in stallo
         for future in as_completed(future_to_id):
-            sid, rows, warning, summary, exc = future.result()
+            try:
+                sid, rows, warning, summary, exc = future.result(timeout=_SOURCE_TIMEOUT)
+            except TimeoutError:
+                sid = future_to_id[future]
+                logger.warning("Source %s timed out after %ds, treating as failed", sid, _SOURCE_TIMEOUT)
+                exc = TimeoutError(f"Source timed out after {_SOURCE_TIMEOUT}s")
+                rows, warning, summary = [], None, None
             collected[sid] = (rows, warning, summary, exc)
 
     # Load existing inventory for merge (always, not just with --source-ids filter)
