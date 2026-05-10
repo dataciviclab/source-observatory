@@ -415,27 +415,40 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         if pd.isna(year_max):
             year_max = fb_ymax
 
-    # Preview dati reali: se granularità ancora non determinata e abbiamo URL diretto
-    # a un file CSV/XLSX/XLS, scarica le prime righe per estrarre colonne reali.
-    # Questo funziona per qualsiasi protocollo (CKAN, SDMX, html) purché l'URL
-    # sia un file dati diretto, non una landing page.
+    # Preview dati reali: per ogni item con URL a file CSV/XLSX/XLS, scarica
+    # un sample e profila con toolkit (encoding, delim, colonne, mapping).
+    # Anni/granularità vengono aggiornati solo se i metadati non li hanno
+    # già determinati — ma i campi di profiling (encoding_suggested, ecc.)
+    # vengono SEMPRE popolati.
     preview_meta: dict[str, Any] = {}
-    if granularity in (None, "non_determinato") or pd.isna(year_min):
-        preview_url: Any = (
+    # Per inventory_only e content_type_landing, enrich["resource_url"] è
+    # una landing page, non un file dati. In quei casi, distribution_url
+    # dal catalogo è più probabile sia un URL diretto a file CSV/XLSX.
+    # Per CKAN/SDMX/HTML, resource_url è già il file dati corretto.
+    if enrich["enrich_method"] in ("inventory_only", "content_type_landing"):
+        preview_url = (
+            _safe_str(row.get("distribution_url"))
+            or enrich.get("resource_url")
+            or _safe_str(row.get("url"))
+        )
+    else:
+        preview_url = (
             enrich.get("resource_url")
             or _safe_str(row.get("distribution_url"))
             or _safe_str(row.get("url"))
         )
-        if isinstance(preview_url, str) and preview_url.startswith("http"):
-            preview = _fetch_data_preview(preview_url)
-            if preview.get("enrich_method") == "csv_preview":
-                if granularity in (None, "non_determinato") and preview.get("granularity"):
-                    granularity = preview["granularity"]
-                if pd.isna(year_min) and preview.get("year_min") is not None:
-                    year_min = preview["year_min"]
-                if pd.isna(year_max) and preview.get("year_max") is not None:
-                    year_max = preview["year_max"]
-                preview_meta = _preview_meta_from_enrich(preview)
+    if isinstance(preview_url, str) and preview_url.startswith("http"):
+        preview = _fetch_data_preview(preview_url)
+        if preview.get("enrich_method") == "csv_preview":
+            # Anni/granularità: solo se metadati non bastano
+            if granularity in (None, "non_determinato") and preview.get("granularity"):
+                granularity = preview["granularity"]
+            if pd.isna(year_min) and preview.get("year_min") is not None:
+                year_min = preview["year_min"]
+            if pd.isna(year_max) and preview.get("year_max") is not None:
+                year_max = preview["year_max"]
+            # Campi profiling: SEMPRE popolati (encoding, delim, mapping, ecc.)
+            preview_meta = _preview_meta_from_enrich(preview)
 
     # Se l'enrich ha gia' chiamato _fetch_data_preview ma non siamo rientrati
     # nel blocco sopra (perche' granularita' era gia' determinata),
