@@ -328,6 +328,8 @@ def _preview_meta_from_enrich(enrich: dict[str, Any]) -> dict[str, Any]:
 
     Both col_types (dict) and columns (list) must be JSON-encoded as strings
     before writing the DataFrame to avoid ArrowTypeError on to_parquet.
+    Nuovi campi toolkit (encoding_suggested, delim_suggested, ecc.) vengono
+    propagati direttamente — sono già tipi semplici (str, int, bool, None).
     """
     import json as _json
 
@@ -339,11 +341,22 @@ def _preview_meta_from_enrich(enrich: dict[str, Any]) -> dict[str, Any]:
     if isinstance(columns_val, list):
         columns_val = _json.dumps(columns_val)
 
+    mapping_val = enrich.get("mapping_suggestions")
+    if isinstance(mapping_val, dict):
+        mapping_val = _json.dumps(mapping_val)
+
     return {
         "file_size": enrich.get("file_size"),
         "preview_row_count": enrich.get("preview_row_count"),
         "col_types": col_types_val,
         "columns": columns_val,
+        # Nuovi campi dal toolkit profiler
+        "encoding_suggested": enrich.get("encoding_suggested"),
+        "delim_suggested": enrich.get("delim_suggested"),
+        "decimal_suggested": enrich.get("decimal_suggested"),
+        "skip_suggested": enrich.get("skip_suggested"),
+        "robust_read_suggested": enrich.get("robust_read_suggested"),
+        "mapping_suggestions": mapping_val,
     }
 
 
@@ -374,7 +387,7 @@ def _normalize_preview_columns_for_parquet(df: pd.DataFrame) -> pd.DataFrame:
         return value
 
     normalized = df.copy()
-    for column in ("col_types", "columns"):
+    for column in ("col_types", "columns", "mapping_suggestions"):
         if column not in normalized.columns:
             continue
         normalized[column] = normalized[column].map(_preview_cell_for_parquet)
@@ -472,6 +485,13 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "preview_row_count": preview_meta.get("preview_row_count"),
         "col_types": preview_meta.get("col_types"),
         "columns": preview_meta.get("columns"),
+        # Nuovi campi dal toolkit profiler (solo csv_preview)
+        "encoding_suggested": preview_meta.get("encoding_suggested"),
+        "delim_suggested": preview_meta.get("delim_suggested"),
+        "decimal_suggested": preview_meta.get("decimal_suggested"),
+        "skip_suggested": preview_meta.get("skip_suggested"),
+        "robust_read_suggested": preview_meta.get("robust_read_suggested"),
+        "mapping_suggestions": preview_meta.get("mapping_suggestions"),
         "source_status": row.get("source_status", "unknown"),
         "needs_review": (granularity == "non_determinato") or pd.isna(year_min),
         "intake_score": None,  # placeholder, calcolato sotto

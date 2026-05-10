@@ -449,6 +449,40 @@ def _fetch_data_preview(url: str) -> dict:
                                 year_values = y_vals
                                 break
 
+            elif fmt in ("xlsx", "xls") and not is_binary:
+                # XLS/XLSX falso: magic bytes non corrispondono a Excel.
+                # Prova a trattarlo come CSV con sniff (es. file TSV mascherato
+                # da estensione .xls con encoding Latin-1).
+                effective_read_cfg = {
+                    "encoding": encoding_suggested,
+                    "delim": delim_suggested,
+                    "decimal": decimal_suggested,
+                    "skip": skip_suggested,
+                    "header": True,
+                }
+                try:
+                    profile = profile_with_read_cfg(tmp_path, sniff, effective_read_cfg)
+                    columns = profile.get("columns_raw", [])
+                    types_map = profile.get("duckdb_types", [])
+                    if columns and types_map and len(columns) == len(types_map):
+                        col_types = dict(zip(columns, types_map))
+                    else:
+                        col_types = {}
+                    sample = profile.get("sample_rows", [])
+                    preview_row_count = len(sample) if sample else None
+                    robust_read_suggested = profile.get("robust_read_suggested", False)
+                    # Year detection (same as CSV branch)
+                    if sample:
+                        for col in columns:
+                            vals = [r.get(col) for r in sample if isinstance(r.get(col), (int, float))]
+                            if vals:
+                                y_vals = [int(v) for v in vals if v and 1900 <= int(v) <= 2100]
+                                if len(y_vals) >= 2:
+                                    year_values = y_vals
+                                    break
+                except Exception:
+                    pass
+
             elif fmt == "json":
                 # JSON: keep existing logic (toolkit doesn't profile JSON)
                 text = content.decode("utf-8", errors="replace")
