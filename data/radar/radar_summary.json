@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-05-10T21:41:15.974702+00:00",
+  "generated_at": "2026-05-10T22:24:37.426392+00:00",
   "probe_date": "2026-05-10",
   "sources_total": 16,
   "status_counts": {
-    "GREEN": 8,
-    "YELLOW": 6,
-    "RED": 2
+    "GREEN": 10,
+    "YELLOW": 5,
+    "RED": 1
   },
-  "persistent_red": 2,
+  "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sdmx",
-      "http_code": "-",
-      "note": "Timeout (ReadTimeout)"
+      "http_code": "200",
+      "note": null
     },
     {
       "id": "anac",
@@ -61,11 +61,10 @@
     },
     {
       "id": "dati_camera",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "sparql",
-      "http_code": "503",
-      "note": null,
-      "red_streak": 4
+      "http_code": "200",
+      "note": null
     },
     {
       "id": "dati_cultura",
