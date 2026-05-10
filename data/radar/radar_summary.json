@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-10T20:27:49.918835+00:00",
+  "generated_at": "2026-05-10T21:41:15.974702+00:00",
   "probe_date": "2026-05-10",
   "sources_total": 16,
   "status_counts": {
@@ -65,7 +65,7 @@
       "protocol": "sparql",
       "http_code": "503",
       "note": null,
-      "red_streak": 3
+      "red_streak": 4
     },
     {
       "id": "dati_cultura",
