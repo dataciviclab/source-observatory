@@ -328,6 +328,8 @@ def _preview_meta_from_enrich(enrich: dict[str, Any]) -> dict[str, Any]:
 
     Both col_types (dict) and columns (list) must be JSON-encoded as strings
     before writing the DataFrame to avoid ArrowTypeError on to_parquet.
+    Nuovi campi toolkit (encoding_suggested, delim_suggested, ecc.) vengono
+    propagati direttamente — sono già tipi semplici (str, int, bool, None).
     """
     import json as _json
 
@@ -339,11 +341,26 @@ def _preview_meta_from_enrich(enrich: dict[str, Any]) -> dict[str, Any]:
     if isinstance(columns_val, list):
         columns_val = _json.dumps(columns_val)
 
+    mapping_val = enrich.get("mapping_suggestions")
+    if isinstance(mapping_val, dict):
+        mapping_val = _json.dumps(mapping_val)
+    elif not isinstance(mapping_val, str):
+        # Forza "{}" invece di None per evitare che DuckDB inferisca
+        # DOUBLE per la colonna (quando tutti i valori sono None).
+        mapping_val = "{}"
+
     return {
         "file_size": enrich.get("file_size"),
         "preview_row_count": enrich.get("preview_row_count"),
         "col_types": col_types_val,
         "columns": columns_val,
+        # Nuovi campi dal toolkit profiler
+        "encoding_suggested": enrich.get("encoding_suggested"),
+        "delim_suggested": enrich.get("delim_suggested"),
+        "decimal_suggested": enrich.get("decimal_suggested"),
+        "skip_suggested": enrich.get("skip_suggested"),
+        "robust_read_suggested": enrich.get("robust_read_suggested"),
+        "mapping_suggestions": mapping_val,
     }
 
 
@@ -374,7 +391,7 @@ def _normalize_preview_columns_for_parquet(df: pd.DataFrame) -> pd.DataFrame:
         return value
 
     normalized = df.copy()
-    for column in ("col_types", "columns"):
+    for column in ("col_types", "columns", "mapping_suggestions"):
         if column not in normalized.columns:
             continue
         normalized[column] = normalized[column].map(_preview_cell_for_parquet)
@@ -398,27 +415,40 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         if pd.isna(year_max):
             year_max = fb_ymax
 
-    # Preview dati reali: se granularità ancora non determinata e abbiamo URL diretto
-    # a un file CSV/XLSX/XLS, scarica le prime righe per estrarre colonne reali.
-    # Questo funziona per qualsiasi protocollo (CKAN, SDMX, html) purché l'URL
-    # sia un file dati diretto, non una landing page.
+    # Preview dati reali: per ogni item con URL a file CSV/XLSX/XLS, scarica
+    # un sample e profila con toolkit (encoding, delim, colonne, mapping).
+    # Anni/granularità vengono aggiornati solo se i metadati non li hanno
+    # già determinati — ma i campi di profiling (encoding_suggested, ecc.)
+    # vengono SEMPRE popolati.
     preview_meta: dict[str, Any] = {}
-    if granularity in (None, "non_determinato") or pd.isna(year_min):
-        preview_url: Any = (
+    # Per inventory_only e content_type_landing, enrich["resource_url"] è
+    # una landing page, non un file dati. In quei casi, distribution_url
+    # dal catalogo è più probabile sia un URL diretto a file CSV/XLSX.
+    # Per CKAN/SDMX/HTML, resource_url è già il file dati corretto.
+    if enrich["enrich_method"] in ("inventory_only", "content_type_landing"):
+        preview_url = (
+            _safe_str(row.get("distribution_url"))
+            or enrich.get("resource_url")
+            or _safe_str(row.get("url"))
+        )
+    else:
+        preview_url = (
             enrich.get("resource_url")
             or _safe_str(row.get("distribution_url"))
             or _safe_str(row.get("url"))
         )
-        if isinstance(preview_url, str) and preview_url.startswith("http"):
-            preview = _fetch_data_preview(preview_url)
-            if preview.get("enrich_method") == "csv_preview":
-                if granularity in (None, "non_determinato") and preview.get("granularity"):
-                    granularity = preview["granularity"]
-                if pd.isna(year_min) and preview.get("year_min") is not None:
-                    year_min = preview["year_min"]
-                if pd.isna(year_max) and preview.get("year_max") is not None:
-                    year_max = preview["year_max"]
-                preview_meta = _preview_meta_from_enrich(preview)
+    if isinstance(preview_url, str) and preview_url.startswith("http"):
+        preview = _fetch_data_preview(preview_url)
+        if preview.get("enrich_method") == "csv_preview":
+            # Anni/granularità: solo se metadati non bastano
+            if granularity in (None, "non_determinato") and preview.get("granularity"):
+                granularity = preview["granularity"]
+            if pd.isna(year_min) and preview.get("year_min") is not None:
+                year_min = preview["year_min"]
+            if pd.isna(year_max) and preview.get("year_max") is not None:
+                year_max = preview["year_max"]
+            # Campi profiling: SEMPRE popolati (encoding, delim, mapping, ecc.)
+            preview_meta = _preview_meta_from_enrich(preview)
 
     # Se l'enrich ha gia' chiamato _fetch_data_preview ma non siamo rientrati
     # nel blocco sopra (perche' granularita' era gia' determinata),
@@ -472,6 +502,13 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "preview_row_count": preview_meta.get("preview_row_count"),
         "col_types": preview_meta.get("col_types"),
         "columns": preview_meta.get("columns"),
+        # Nuovi campi dal toolkit profiler (solo csv_preview)
+        "encoding_suggested": preview_meta.get("encoding_suggested"),
+        "delim_suggested": preview_meta.get("delim_suggested"),
+        "decimal_suggested": preview_meta.get("decimal_suggested"),
+        "skip_suggested": preview_meta.get("skip_suggested"),
+        "robust_read_suggested": preview_meta.get("robust_read_suggested"),
+        "mapping_suggestions": preview_meta.get("mapping_suggestions"),
         "source_status": row.get("source_status", "unknown"),
         "needs_review": (granularity == "non_determinato") or pd.isna(year_min),
         "intake_score": None,  # placeholder, calcolato sotto
@@ -485,16 +522,31 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
     results = []
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        future_to_idx = {pool.submit(_check_row, row, check_ts, registry): i for i, row in df.iterrows()}
+        # Usa enumerate per avere un indice posizionale garantito come int.
+        # df.iterrows() restituisce un indice generico (Hashable) che mypy
+        # non accetta per df.loc/df.iloc — con enumerate pos abbiamo int certo.
+        future_to_idx = {
+            pool.submit(_check_row, row, check_ts, registry): pos
+            for pos, (_idx, row) in enumerate(df.iterrows())
+        }
         done = 0
         total = len(future_to_idx)
         for future in as_completed(future_to_idx):
-            i = future_to_idx[future]
+            pos = future_to_idx[future]
             try:
                 results.append(_finalize_scores(future.result()))
             except Exception as exc:
-                logger.warning("Row check failed for index %d: %s", i, exc)
-                results.append({"check_notes": f"check failed: {exc}", "enrich_method": "error"})
+                logger.warning("Row check failed for index %d: %s", pos, exc)
+                # Mantieni item_id e source_id anche in caso di fallimento,
+                # altrimenti il merge upsert (riga 743) crasha su results["item_id"]
+                # quando TUTTI i check falliscono (es. fonte temporaneamente down).
+                fallback_row = dict(df.iloc[pos]) if pos < len(df) else {}
+                results.append({
+                    "item_id": str(fallback_row.get("item_id", "")),
+                    "source_id": str(fallback_row.get("source_id", "")),
+                    "check_notes": f"check failed: {exc}",
+                    "enrich_method": "error",
+                })
             done += 1
             if done % 50 == 0 or done == total:
                 logger.info("  %d/%d completed", done, total)
