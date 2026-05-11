@@ -522,11 +522,12 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "preview_row_count": preview_meta.get("preview_row_count"),
         "col_types": preview_meta.get("col_types"),
         "columns": preview_meta.get("columns"),
-        # Nuovi campi dal toolkit profiler (solo csv_preview)
-        "encoding_suggested": preview_meta.get("encoding_suggested"),
-        "delim_suggested": preview_meta.get("delim_suggested"),
-        "decimal_suggested": preview_meta.get("decimal_suggested"),
-        "skip_suggested": preview_meta.get("skip_suggested"),
+        # Campi dal toolkit profiler: preview_meta se presente (da csv_preview),
+        # altrimenti dall'enrich (da inventory sniff per content_type/landing/inventory_only)
+        "encoding_suggested": preview_meta.get("encoding_suggested") or enrich.get("encoding_suggested"),
+        "delim_suggested": preview_meta.get("delim_suggested") or enrich.get("delim_suggested"),
+        "decimal_suggested": preview_meta.get("decimal_suggested") or enrich.get("decimal_suggested"),
+        "skip_suggested": preview_meta.get("skip_suggested") or enrich.get("skip_suggested"),
         "robust_read_suggested": preview_meta.get("robust_read_suggested"),
         "mapping_suggestions": preview_meta.get("mapping_suggestions"),
         "source_status": row.get("source_status", "unknown"),
