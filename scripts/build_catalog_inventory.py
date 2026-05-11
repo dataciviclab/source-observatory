@@ -69,22 +69,33 @@ def _collect_source(
 ) -> tuple[str, list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]:
     """Worker per ThreadPoolExecutor: raccoglie una fonte e cattura eccezioni.
 
-    Usa un ThreadPoolExecutor interno per timeout individuale per fonte.
-    Se dispatch() non completa in _SOURCE_TIMEOUT secondi, la fonte viene
-    marcata come fallita per timeout e il worker passa alla successiva.
+    Usa threading.Thread(daemon=True) per timeout reale. Se dispatch() non
+    completa in _SOURCE_TIMEOUT secondi, la fonte viene marcata fallita.
+    Il thread va in timeout ma non blocca l'uscita dello script (daemon=True).
     """
-    _pool = ThreadPoolExecutor(max_workers=1)
-    try:
-        fut = _pool.submit(dispatch, source_id, source_cfg, captured_at)
+    import threading as _threading
+
+    _result: list = []
+    _error: list = []
+
+    def _run() -> None:
         try:
-            result = fut.result(timeout=_SOURCE_TIMEOUT)
-            return source_id, result.rows, result.warning, result.summary, None
-        except TimeoutError:
-            return source_id, [], None, None, TimeoutError(
-                f"Source {source_id} timed out after {_SOURCE_TIMEOUT}s"
-            )
-    finally:
-        _pool.shutdown(wait=False)
+            _result.append(dispatch(source_id, source_cfg, captured_at))
+        except Exception as exc:
+            _error.append(exc)
+
+    t = _threading.Thread(target=_run, daemon=True)
+    t.start()
+    t.join(timeout=_SOURCE_TIMEOUT)
+
+    if t.is_alive():
+        return source_id, [], None, None, TimeoutError(
+            f"Source {source_id} timed out after {_SOURCE_TIMEOUT}s"
+        )
+    if _error:
+        return source_id, [], None, None, _error[0]
+    res = _result[0]
+    return source_id, res.rows, res.warning, res.summary, None
 
 
 # Formati per cui vale la pena fare sniff leggero del file dati

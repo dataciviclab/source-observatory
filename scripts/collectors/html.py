@@ -439,7 +439,6 @@ def _scan_area_pages(
     seen_data_urls: set[str] = set()
     pages_scanned = 0
 
-    _consecutive_ssl_errors = 0
     if page_url_template:
         page = page_start
         while pages_scanned < page_max:
@@ -449,16 +448,6 @@ def _scan_area_pages(
             result = client.get(area_url)
             if not result.is_ok or result.response is None:
                 break
-            # SSL fallback consecutivi: se il server ha un certificato rotto
-            # (es. OpenCivitas), ogni pagina fa 2 tentativi (normale + fallback).
-            # Dopo 10 pagine consecutive con fallback, fermiamo il loop —
-            # raccogliamo abbastanza dati (~150 item) senza sprecare minuti.
-            if getattr(result, 'ssl_fallback_used', None):
-                _consecutive_ssl_errors += 1
-                if _consecutive_ssl_errors >= 10:
-                    break
-            else:
-                _consecutive_ssl_errors = 0
             parser = _DataLinksParser(area_url, result.response.text)
             links_this_page = [link for link in parser.links if link["url"] not in seen_data_urls]
             if not parser.links and page_stop_on_empty:
