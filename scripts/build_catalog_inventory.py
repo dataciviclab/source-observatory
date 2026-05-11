@@ -122,6 +122,12 @@ def parse_args() -> argparse.Namespace:
         metavar="SOURCE_ID",
         help="Limita il build a queste source_id (spazio-separato).",
     )
+    parser.add_argument(
+        "--skip-red-sources",
+        action="store_true",
+        default=False,
+        help="Skip fonti con status RED in radar_summary.json (evita timeout su fonti down).",
+    )
     return parser.parse_args()
 
 
@@ -174,6 +180,25 @@ def main() -> None:
             continue
 
         inventoriable.append((source_id, source_cfg))
+
+    # ── Skip RED sources da radar ─────────────────────────────────────────────
+    if args.skip_red_sources:
+        radar_path = REPO_ROOT / "data" / "radar" / "radar_summary.json"
+        if radar_path.exists():
+            try:
+                with radar_path.open() as fh:
+                    radar = json.load(fh)
+                red_ids = [s["id"] for s in radar.get("sources", []) if s.get("status") == "RED"]
+                if red_ids:
+                    before = len(inventoriable)
+                    inventoriable = [(sid, cfg) for sid, cfg in inventoriable if sid not in red_ids]
+                    skipped = before - len(inventoriable)
+                    if skipped:
+                        print(f"  skip RED sources (radar): {red_ids} — {skipped} fonti saltate", file=sys.stderr)
+            except Exception as exc:
+                print(f"  skip-red-sources: cannot read radar_summary: {exc}", file=sys.stderr)
+        else:
+            print(f"  skip-red-sources: radar_summary.json not found", file=sys.stderr)
 
     collected: dict[str, tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]] = {}
     source_timing: dict[str, float] = {}
