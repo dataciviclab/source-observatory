@@ -61,15 +61,30 @@ DEFAULT_OUT_PARQUET = "catalog_inventory_latest.parquet"
 DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
 
 
+_SOURCE_TIMEOUT = 300  # timeout individuale per fonte (5 min)
+
+
 def _collect_source(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[str, list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]:
-    """Worker per ThreadPoolExecutor: raccoglie una fonte e cattura eccezioni."""
+    """Worker per ThreadPoolExecutor: raccoglie una fonte e cattura eccezioni.
+
+    Usa un ThreadPoolExecutor interno per timeout individuale per fonte.
+    Se dispatch() non completa in _SOURCE_TIMEOUT secondi, la fonte viene
+    marcata come fallita per timeout e il worker passa alla successiva.
+    """
+    _pool = ThreadPoolExecutor(max_workers=1)
     try:
-        result = dispatch(source_id, source_cfg, captured_at)
-        return source_id, result.rows, result.warning, result.summary, None
-    except Exception as exc:
-        return source_id, [], None, None, exc
+        fut = _pool.submit(dispatch, source_id, source_cfg, captured_at)
+        try:
+            result = fut.result(timeout=_SOURCE_TIMEOUT)
+            return source_id, result.rows, result.warning, result.summary, None
+        except TimeoutError:
+            return source_id, [], None, None, TimeoutError(
+                f"Source {source_id} timed out after {_SOURCE_TIMEOUT}s"
+            )
+    finally:
+        _pool.shutdown(wait=False)
 
 
 # Formati per cui vale la pena fare sniff leggero del file dati
@@ -240,10 +255,9 @@ def main() -> None:
             executor.submit(_collect_source, source_id, source_cfg, captured_at): source_id
             for source_id, source_cfg in inventoriable
         }
-        # wait() timeout globale per tutto il batch. Con 4 workers e 12 fonti,
-        # ogni worker processa ~3 fonti in serie. 2000s = 33 min è sufficiente
-        # per coprire anche fonti lente (OpenCivitas ~3min, INPS ~2min).
-        _BATCH_TIMEOUT = 2000
+        # wait() timeout globale per il batch (rete di sicurezza). Il timeout
+        # reale per fonte è in _collect_source (_SOURCE_TIMEOUT = 300s).
+        _BATCH_TIMEOUT = 3600
         done, not_done = wait(future_to_id, timeout=_BATCH_TIMEOUT)
         for f in not_done:
             sid = future_to_id[f]
