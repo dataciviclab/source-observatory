@@ -5,7 +5,7 @@ import json
 import logging
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed, wait
+from concurrent.futures import ThreadPoolExecutor, wait
 from pathlib import Path
 from typing import Any, cast
 
@@ -198,7 +198,7 @@ def main() -> None:
             except Exception as exc:
                 print(f"  skip-red-sources: cannot read radar_summary: {exc}", file=sys.stderr)
         else:
-            print(f"  skip-red-sources: radar_summary.json not found", file=sys.stderr)
+            print("  skip-red-sources: radar_summary.json not found", file=sys.stderr)
 
     collected: dict[str, tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]] = {}
     source_timing: dict[str, float] = {}
@@ -229,10 +229,10 @@ def main() -> None:
             logger.warning("Source %s non completato entro %ds (batch timeout), treat as failed", sid, _BATCH_TIMEOUT)
             collected[sid] = ([], None, None, TimeoutError(f"Batch timeout after {_BATCH_TIMEOUT}s"))
         for f in done:
-            sid, rows, warning, summary, exc = f.result()
+            sid, rows, warning, summary, err = f.result()
             if sid not in source_timing:
                 source_timing[sid] = time.time() - submit_times[sid]
-            collected[sid] = (rows, warning, summary, exc)
+            collected[sid] = (rows, warning, summary, err)
     finally:
         # shutdown(wait=False) non aspetta task bloccati — il timeout HTTP
         # (5s) li terminerà prima o poi, ma non blocca il workflow.
@@ -258,20 +258,20 @@ def main() -> None:
             )
 
     for source_id, source_cfg in inventoriable:
-        rows, warning, summary, exc = collected[source_id]
-        if exc is not None:
+        rows, warning, summary, err = collected[source_id]
+        if err is not None:
             # Source failed: preserve existing rows as stale
             report["sources"][source_id] = {
                 "status": "error",
                 "protocol": source_cfg.get("protocol"),
-                "error": str(exc),
+                "error": str(err),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
             }
             if existing_df is not None:
                 stale_rows = existing_df[existing_df["source_id"] == source_id].copy()
                 if not stale_rows.empty:
                     stale_rows["source_status"] = "stale"
-                    stale_rows["stale_reason"] = stale_reason_from_exception(exc)
+                    stale_rows["stale_reason"] = stale_reason_from_exception(err)
                     all_rows.extend(cast(list[dict[str, Any]], stale_rows.to_dict(orient="records")))
             continue
 
@@ -350,16 +350,16 @@ def main() -> None:
     print(f"{'Source':<24} {'Status':<12} {'Items':<8} {'Time':<8}  {'Note'}")
     print("-" * 72)
     for source_id, source_cfg in inventoriable:
-        rows_count, _warning, _summary, exc = collected[source_id]
+        rows_count, _warning, _summary, err = collected[source_id]
         elapsed = source_timing.get(source_id, 0)
-        if exc is not None:
-            err_str = str(exc)
+        if err is not None:
+            err_str = str(err)
             if "timed out" in err_str.lower():
                 status = "TIMEOUT"
                 note = err_str[:70]
             else:
                 status = "ERROR"
-                note = type(exc).__name__
+                note = type(err).__name__
         else:
             status = "OK"
             note = f"{len(rows_count)} items" if rows_count else "empty"
