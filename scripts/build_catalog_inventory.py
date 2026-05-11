@@ -116,8 +116,9 @@ def _sniff_csv_rows(rows: list[dict[str, Any]], logger: logging.Logger) -> None:
     sniffed = 0
 
     def _infer_sniff_ext(dist_url: str) -> str:
-        """Inferisce estensione per tempfile dall'URL."""
-        ext = Path(dist_url).suffix.lower()
+        """Inferisce estensione per tempfile dall'URL (gestisce query string)."""
+        from urllib.parse import urlparse
+        ext = Path(urlparse(dist_url).path).suffix.lower()
         return ext if ext in (".csv", ".tsv", ".xlsx", ".xls") else ".csv"
 
     def _sniff_one(dist_url: str) -> dict[str, Any]:
@@ -233,14 +234,15 @@ def main() -> None:
         inventoriable.append((source_id, source_cfg))
 
     collected: dict[str, tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]] = {}
-    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+    executor = ThreadPoolExecutor(max_workers=args.workers)
+    try:
         future_to_id = {
             executor.submit(_collect_source, source_id, source_cfg, captured_at): source_id
             for source_id, source_cfg in inventoriable
         }
-        # wait() con timeout = timeout REALE per fonte. as_completed() non funziona
-        # perché restituisce solo future già completati — future.result(timeout=...)
-        # su un future già completato è istantaneo e non fa mai timeout.
+        # wait() con timeout reale. I future not_done vengono cancellati e il
+        # ThreadPoolExecutor chiuso con wait=False per non bloccare su thread
+        # già partiti che potrebbero essere bloccati su I/O.
         _SOURCE_TIMEOUT = 300
         done, not_done = wait(future_to_id, timeout=_SOURCE_TIMEOUT)
         for f in not_done:
@@ -251,6 +253,10 @@ def main() -> None:
         for f in done:
             sid, rows, warning, summary, exc = f.result()
             collected[sid] = (rows, warning, summary, exc)
+    finally:
+        # shutdown(wait=False) non aspetta task bloccati — il timeout HTTP
+        # (5s) li terminerà prima o poi, ma non blocca il workflow.
+        executor.shutdown(wait=False, cancel_futures=True)
 
     # Load existing inventory for merge (always, not just with --source-ids filter)
     existing_df: pd.DataFrame | None = None
