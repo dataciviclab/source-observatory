@@ -329,7 +329,18 @@ def _fetch_data_preview(
 
     try:
         client = HttpClient(timeout=HTTP_TIMEOUT)
-        fetch_result = client.get(url, headers={"Range": "bytes=0-1048575"})  # 1MB max
+
+        # CSV/JSON: sample 100KB basta per sniffare encoding/colonne.
+        # XLS/XLSX: serve il file intero (e' uno ZIP con XML dentro).
+        # Il Range header limita il download a 1MB o 5MB rispettivamente.
+        if fmt in ("csv", "json"):
+            range_limit = 1 * 1024 * 1024  # 1MB
+            sample_size = 100 * 1024        # 100KB sample
+        else:
+            range_limit = 5 * 1024 * 1024   # 5MB per XLSX/XLS
+            sample_size = None              # usa tutto
+
+        fetch_result = client.get(url, headers={"Range": f"bytes=0-{range_limit - 1}"})
         if not fetch_result.is_ok or fetch_result.response is None:
             err = _EMPTY_ENRICH.copy()
             err["enrich_method"] = "csv_preview_fetch_failed"
@@ -341,8 +352,15 @@ def _fetch_data_preview(
             result["enrich_method"] = "csv_preview_http_error"
             return result
 
-        # Usa solo primi ~100KB per preview.
-        content = resp.content[:100 * 1024]
+        content = resp.content
+        # CSV/JSON: sample 100KB. XLSX/XLS: intero contenuto scaricato.
+        if sample_size is not None:
+            content = content[:sample_size]
+        elif len(content) > range_limit:
+            # XLSX troppo grande anche dopo Range — skippa
+            result = _EMPTY_ENRICH.copy()
+            result["enrich_method"] = "csv_preview_skipped_too_large"
+            return result
         try:
             file_size = int(resp.headers.get("Content-Length", "0"))
         except (ValueError, TypeError):
