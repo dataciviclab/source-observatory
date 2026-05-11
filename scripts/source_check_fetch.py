@@ -283,12 +283,24 @@ COMUNE_COLUMNS = ["comune", "municip", "localita", "citta", "city"]
 _YEAR_COLUMN_HINTS = ["anno", "year", "data", "date", "periodo", "period", "mese", "month"]
 
 
-def _fetch_data_preview(url: str) -> dict:
+def _fetch_data_preview(
+    url: str,
+    *,
+    known_encoding: str | None = None,
+    known_delim: str | None = None,
+    known_decimal: str | None = None,
+    known_skip: int | None = None,
+) -> dict:
     """Fetch e parse content preview usando il profiler del toolkit.
 
     Usa sniff_source_file + profile_with_read_cfg (DuckDB) invece di pandas
     diretto. Gestisce encoding, delimitatore, decimale e skip in modo robusto,
     anche per CSV italiani (latin-1, ; come delim, , come decimale).
+
+    Se known_encoding è fornito (es. dall'inventory sniff), salta la fase di
+    sniff (Phase 1) e va direttamente a DuckDB profiling con parametri noti.
+    Questo evita di re-downloadare e re-sniffare item giá processati in fase
+    di inventory build.
 
     Returns dict in formato _EMPTY_ENRICH con campi aggiuntivi:
     - columns: list[str] (JSON-encoded)
@@ -365,13 +377,21 @@ def _fetch_data_preview(url: str) -> dict:
 
         try:
             # Phase 1: sniff — encoding, delim, decimal, skip, binary detection
-            sniff = sniff_source_file(tmp_path)
-            encoding_suggested = sniff.get("encoding_suggested")
-            delim_suggested = sniff.get("delim_suggested")
-            decimal_suggested = sniff.get("decimal_suggested")
-            skip_suggested = sniff.get("skip_suggested", 0)
-
-            is_binary = sniff.get("is_binary_file")
+            # Se known_encoding è fornito (dall'inventory), salta lo sniff
+            # e usa i parametri noti. Il download del sample è già stato fatto.
+            if known_encoding:
+                encoding_suggested = known_encoding
+                delim_suggested = known_delim
+                decimal_suggested = known_decimal
+                skip_suggested = known_skip or 0
+                is_binary = None
+            else:
+                sniff = sniff_source_file(tmp_path)
+                encoding_suggested = sniff.get("encoding_suggested")
+                delim_suggested = sniff.get("delim_suggested")
+                decimal_suggested = sniff.get("decimal_suggested")
+                skip_suggested = sniff.get("skip_suggested", 0)
+                is_binary = sniff.get("is_binary_file")
 
             if fmt == "csv" and not is_binary:
                 # CSV: profiling DuckDB con sniff

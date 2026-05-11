@@ -252,13 +252,21 @@ def _enrich_with_inventory(
         if xml_root is not None:
             return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
 
+    def _enc(r: dict) -> dict:
+        """Aggiunge encoding dall'inventory row a qualsiasi result dict."""
+        r["encoding_suggested"] = _safe_str(row.get("encoding_suggested"))
+        r["delim_suggested"] = _safe_str(row.get("delim_suggested"))
+        r["decimal_suggested"] = _safe_str(row.get("decimal_suggested"))
+        r["skip_suggested"] = int(row.get("skip_suggested") or 0)
+        return r
+
     # HTML: use inventory url + content-type format detection
     if protocol == "html":
         data_url = row.get("url")
         if isinstance(data_url, str):
             fmt = _content_type_format(data_url)
             if fmt:
-                return {
+                return _enc({
                     "enriched_title": inv_title,
                     "enriched_tags": inv_tags,
                     "enriched_notes": inv_notes,
@@ -268,7 +276,7 @@ def _enrich_with_inventory(
                     "year_min": row.get("year_signal"),
                     "year_max": row.get("year_signal"),
                     "enrich_method": "content_type",
-                }
+                })
 
     # HTML fallback via direct fetch for CSV/JSON/XLS
     if protocol == "html":
@@ -290,7 +298,7 @@ def _enrich_with_inventory(
         # use content-type format from landing page
         fmt = _content_type_format(landing)
         if fmt:
-            return {
+            return _enc({
                 "enriched_title": inv_title,
                 "enriched_tags": inv_tags,
                 "enriched_notes": inv_notes,
@@ -300,10 +308,10 @@ def _enrich_with_inventory(
                 "year_min": row.get("year_signal"),
                 "year_max": row.get("year_signal"),
                 "enrich_method": "content_type_landing",
-            }
+            })
 
     # No re-enrich possible — use inventory as-is
-    return {
+    return _enc({
         "enriched_title": inv_title,
         "enriched_tags": inv_tags,
         "enriched_notes": inv_notes,
@@ -313,7 +321,7 @@ def _enrich_with_inventory(
         "year_min": row.get("year_signal"),
         "year_max": row.get("year_signal"),
         "enrich_method": "inventory_only",
-    }
+    })
 
 
 def _safe_str(v: Any) -> str | None:
@@ -438,7 +446,19 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
             or _safe_str(row.get("url"))
         )
     if isinstance(preview_url, str) and preview_url.startswith("http"):
-        preview = _fetch_data_preview(preview_url)
+        # Se l'inventory ha già sniffato encoding, passa i parametri noti
+        # a _fetch_data_preview per saltare la fase di re-sniff.
+        known_enc = enrich.get("encoding_suggested")
+        if known_enc:
+            preview = _fetch_data_preview(
+                preview_url,
+                known_encoding=known_enc,
+                known_delim=enrich.get("delim_suggested"),
+                known_decimal=enrich.get("decimal_suggested"),
+                known_skip=enrich.get("skip_suggested"),
+            )
+        else:
+            preview = _fetch_data_preview(preview_url)
         if preview.get("enrich_method") == "csv_preview":
             # Anni/granularità: solo se metadati non bastano
             if granularity in (None, "non_determinato") and preview.get("granularity"):
