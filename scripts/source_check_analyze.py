@@ -244,7 +244,7 @@ def _intake_score(
             ms = _json.loads(mapping_suggestions) if isinstance(mapping_suggestions, str) else mapping_suggestions
             if isinstance(ms, dict) and len(ms) >= 2:
                 score += 5  # almeno 2 colonne con tipo inferito
-            if isinstance(ms, dict) and len(ms) >= 1:
+            elif isinstance(ms, dict) and len(ms) >= 1:
                 score += 3  # almeno 1 colonna
         except Exception:
             pass
