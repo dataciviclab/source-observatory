@@ -110,10 +110,9 @@ def _sniff_csv_rows(rows: list[dict[str, Any]], logger: logging.Logger) -> None:
     if not targets:
         return
 
-    # Limita sniff a 100 item per fonte per evitare rallentamenti eccessivi
-    # su fonti con migliaia di CSV. 100 item × ~1s = ~100s con 8 workers ≈ 12s.
-    targets = targets[:100]
-
+    # Nessun limite — il timeout 5s per download e 8 workers rendono il costo
+    # irrisorio (~0.5s per item con 8 workers). Il vero rallentamento era il
+    # timeout 15s sulle pagine HTML, fixato separatamente.
     logger.info("  sniff CSV: %d items", len(targets))
     sniffed = 0
 
