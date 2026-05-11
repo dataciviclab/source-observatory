@@ -167,9 +167,11 @@ def _sniff_csv_rows(rows: list[dict[str, Any]], logger: logging.Logger) -> None:
         finally:
             tmp_path.unlink(missing_ok=True)
 
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    _SNIFF_BATCH_TIMEOUT = 60  # 60s per batch sniff CSV
+    pool = ThreadPoolExecutor(max_workers=8)
+    try:
         fut_to_idx = {pool.submit(_sniff_one, row["distribution_url"]): idx for idx, row in targets}
-        for fut in as_completed(fut_to_idx):
+        for fut in as_completed(fut_to_idx, timeout=_SNIFF_BATCH_TIMEOUT):
             idx = fut_to_idx[fut]
             try:
                 result = fut.result()
@@ -178,6 +180,11 @@ def _sniff_csv_rows(rows: list[dict[str, Any]], logger: logging.Logger) -> None:
                     sniffed += 1
             except Exception:
                 pass
+    except TimeoutError:
+        logger.warning("  sniff CSV timeout after %ds (%d/%d processed)",
+                       _SNIFF_BATCH_TIMEOUT, sniffed, len(targets))
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
     logger.info("  sniff CSV OK: %d/%d", sniffed, len(targets))
 

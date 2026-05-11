@@ -542,7 +542,9 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
     check_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     results = []
 
-    with ThreadPoolExecutor(max_workers=workers) as pool:
+    _BULK_CHECK_TIMEOUT = 900  # 15 minuti per batch source-check (safety net)
+    pool = ThreadPoolExecutor(max_workers=workers)
+    try:
         # Usa enumerate per avere un indice posizionale garantito come int.
         # df.iterrows() restituisce un indice generico (Hashable) che mypy
         # non accetta per df.loc/df.iloc — con enumerate pos abbiamo int certo.
@@ -552,7 +554,7 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
         }
         done = 0
         total = len(future_to_idx)
-        for future in as_completed(future_to_idx):
+        for future in as_completed(future_to_idx, timeout=_BULK_CHECK_TIMEOUT):
             pos = future_to_idx[future]
             try:
                 results.append(_finalize_scores(future.result()))
@@ -571,6 +573,11 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
             done += 1
             if done % 50 == 0 or done == total:
                 logger.info("  %d/%d completed", done, total)
+    except TimeoutError:
+        logger.warning("Source-check timeout after %ds (%d/%d items processed)",
+                       _BULK_CHECK_TIMEOUT, done, total)
+    finally:
+        pool.shutdown(wait=False, cancel_futures=True)
 
     return pd.DataFrame(results)
 
