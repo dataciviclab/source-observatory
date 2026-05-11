@@ -257,7 +257,10 @@ def test_fetch_data_preview_returns_new_fields(monkeypatch) -> None:
     assert result.get("file_size") == len(b"col1,col2,col3\n1,2,3\n4,5,6")
     assert result.get("preview_row_count") == 2
     import json
-    assert json.loads(result.get("col_types") or "{}") == {"col1": "int64", "col2": "int64", "col3": "int64"}
+    # DuckDB restituisce BIGINT per interi (non int64 come pandas)
+    ct = json.loads(result.get("col_types") or "{}")
+    assert all(v.upper() in ("BIGINT", "INTEGER", "INT64") for v in ct.values()), f"Unexpected types: {ct}"
+    assert list(ct.keys()) == ["col1", "col2", "col3"]
     assert json.loads(result.get("columns") or "[]") == ["col1", "col2", "col3"]
 
 

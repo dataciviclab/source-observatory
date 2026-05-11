@@ -186,6 +186,10 @@ def _intake_score(
     enrich_method: str,
     needs_review: bool,
     source_status: Optional[str] = None,
+    encoding_suggested: Optional[str] = None,
+    mapping_suggestions: Optional[str] = None,
+    robust_read_suggested: Optional[bool] = None,
+    delim_suggested: Optional[str] = None,
 ) -> tuple[int, bool]:
     score = 0
     score += _GRAN_SCORE.get(granularity or "non_determinato", 0)
@@ -224,6 +228,27 @@ def _intake_score(
         score -= 10
         needs_review = True
 
+    # Segnali di qualita' reali dal toolkit profiler
+    if encoding_suggested:
+        score += 5  # file esiste, encoding rilevato == leggibile e parsabile
+    if delim_suggested:
+        score += 2  # delimitatore rilevato (formato strutturato)
+    if robust_read_suggested:
+        score -= 10  # CSV sporco (righe irregolari, padding necessario)
+        needs_review = True
+
+    # mapping_suggestions: JSON con colonne → dati ben strutturati
+    if mapping_suggestions:
+        import json as _json
+        try:
+            ms = _json.loads(mapping_suggestions) if isinstance(mapping_suggestions, str) else mapping_suggestions
+            if isinstance(ms, dict) and len(ms) >= 2:
+                score += 5  # almeno 2 colonne con tipo inferito
+            elif isinstance(ms, dict) and len(ms) >= 1:
+                score += 3  # almeno 1 colonna
+        except Exception:
+            pass
+
     score = max(0, min(100, score))
     candidate = score >= 40 and not needs_review
     return score, candidate
@@ -239,6 +264,10 @@ def _finalize_scores(result: dict) -> dict:
         enrich_method=result.get("enrich_method", "none"),
         needs_review=result.get("needs_review", True),
         source_status=result.get("source_status"),
+        encoding_suggested=result.get("encoding_suggested"),
+        mapping_suggestions=result.get("mapping_suggestions"),
+        robust_read_suggested=result.get("robust_read_suggested"),
+        delim_suggested=result.get("delim_suggested"),
     )
     result["intake_score"] = score
     result["intake_candidate"] = candidate

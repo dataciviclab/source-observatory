@@ -7,3 +7,4 @@ ddgs>=9.14.2,<10.0
 mcp>=1.27.0
 fastmcp>=3.2.4
 lab-connectors @ git+https://github.com/dataciviclab/lab-connectors.git@v0.2.0
+dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@481b05e5af34974ac7c65b4a65a3fc59596c1002

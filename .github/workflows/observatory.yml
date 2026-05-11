@@ -118,7 +118,7 @@ jobs:
         run: |
           python scripts/build_catalog_inventory.py \
             --out-dir data/catalog_inventory/generated \
-            --workers 4
+            --workers 8
 
       - name: Build catalog signals
         if: ${{ env.IS_INVENTORY_RUN == 'true' }}

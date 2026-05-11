@@ -441,11 +441,19 @@ def _scan_area_pages(
 
     if page_url_template:
         page = page_start
+        # SSL probe: se la prima pagina va in fallback SSL, usa verify=False
+        # per tutte le successive (evita overhead SSL per ogni pagina).
+        _ssl_bypass = False
         while pages_scanned < page_max:
             area_url = page_url_template.format(page=page)
             time.sleep(page_delay)
-            client = HttpClient(timeout=15)
-            result = client.get(area_url)
+            client = HttpClient(timeout=5)
+            if _ssl_bypass:
+                result = client.get(area_url, verify=False)
+            else:
+                result = client.get(area_url)
+                if result.ssl_fallback_used:
+                    _ssl_bypass = True
             if not result.is_ok or result.response is None:
                 break
             parser = _DataLinksParser(area_url, result.response.text)
@@ -540,7 +548,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         )
     else:
         # Homepage only probe
-        client = HttpClient(timeout=15)
+        client = HttpClient(timeout=5)
         result = client.get(base_url)
         if not result.is_ok or result.response is None:
             err_msg = str(result.err) if result.err else "unknown"
