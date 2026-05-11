@@ -21,8 +21,8 @@ def build_issue(gcs_prefix: str) -> None:
     diff_path = Path("diff.md")
     raw = diff_path.read_text(encoding="utf-8") if diff_path.exists() else ""
 
-    if raw == "NO_BASELINE":
-        print("No baseline — skipping issue creation.")
+    if raw.strip() in ("", "NO_BASELINE"):
+        print("Nessuna variazione o nessun baseline — skipping issue creation.")
         return
 
     new_report = json.loads(
@@ -43,7 +43,7 @@ def build_issue(gcs_prefix: str) -> None:
             recoveries = len(re.findall(r"^- `([^`]+)`", section_body, re.M))
         elif heading == "Nuove fonti rilevate":
             new_sources = len(re.findall(r"^- `([^`]+)`", section_body, re.M))
-        elif heading == "Fonti rimosse o non piu raggiungibili":
+        elif heading == "Fonti rimosse o non più raggiungibili":
             removed = len(re.findall(r"^- `([^`]+)`", section_body, re.M))
 
     total_items_new = sum(v.get("rows", 0) for v in new_report.get("sources", {}).values())
