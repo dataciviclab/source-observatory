@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed, wait
 from pathlib import Path
 from typing import Any, cast
@@ -167,7 +168,7 @@ def _sniff_csv_rows(rows: list[dict[str, Any]], logger: logging.Logger) -> None:
         finally:
             tmp_path.unlink(missing_ok=True)
 
-    _SNIFF_BATCH_TIMEOUT = 60  # 60s per batch sniff CSV
+    _SNIFF_BATCH_TIMEOUT = 300  # 5 min per batch sniff CSV (matcha _SOURCE_TIMEOUT)
     pool = ThreadPoolExecutor(max_workers=8)
     try:
         fut_to_idx = {pool.submit(_sniff_one, row["distribution_url"]): idx for idx, row in targets}
@@ -267,23 +268,30 @@ def main() -> None:
         inventoriable.append((source_id, source_cfg))
 
     collected: dict[str, tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]] = {}
+    source_timing: dict[str, float] = {}
     executor = ThreadPoolExecutor(max_workers=args.workers)
     try:
-        future_to_id = {
-            executor.submit(_collect_source, source_id, source_cfg, captured_at): source_id
-            for source_id, source_cfg in inventoriable
-        }
+        future_to_id: dict[Any, str] = {}
+        submit_times: dict[str, float] = {}
+        for source_id, source_cfg in inventoriable:
+            f = executor.submit(_collect_source, source_id, source_cfg, captured_at)
+            future_to_id[f] = source_id
+            submit_times[source_id] = time.time()
+
         # wait() timeout globale per il batch (rete di sicurezza). Il timeout
         # reale per fonte è in _collect_source (_SOURCE_TIMEOUT = 300s).
         _BATCH_TIMEOUT = 3600
         done, not_done = wait(future_to_id, timeout=_BATCH_TIMEOUT)
+        now = time.time()
         for f in not_done:
             sid = future_to_id[f]
+            source_timing[sid] = now - submit_times[sid]
             f.cancel()
             logger.warning("Source %s non completato entro %ds (batch timeout), treat as failed", sid, _BATCH_TIMEOUT)
             collected[sid] = ([], None, None, TimeoutError(f"Batch timeout after {_BATCH_TIMEOUT}s"))
         for f in done:
             sid, rows, warning, summary, exc = f.result()
+            source_timing[sid] = time.time() - submit_times[sid]
             collected[sid] = (rows, warning, summary, exc)
     finally:
         # shutdown(wait=False) non aspetta task bloccati — il timeout HTTP
@@ -404,6 +412,27 @@ def main() -> None:
 
     with out_report.open("w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=2, ensure_ascii=False)
+
+    # ── Summary table ──────────────────────────────────────────────────────────
+    print()
+    print(f"{'Source':<24} {'Status':<12} {'Items':<8} {'Time':<8}  {'Note'}")
+    print("-" * 72)
+    for source_id, source_cfg in inventoriable:
+        rows_count, _warning, _summary, exc = collected[source_id]
+        elapsed = source_timing.get(source_id, 0)
+        if exc is not None:
+            err_str = str(exc)
+            if "timed out" in err_str.lower():
+                status = "TIMEOUT"
+                note = err_str[:70]
+            else:
+                status = "ERROR"
+                note = type(exc).__name__
+        else:
+            status = "OK"
+            note = f"{len(rows_count)} items" if rows_count else "empty"
+        print(f"{source_id:<24} {status:<12} {len(rows_count):<8} {elapsed:>6.1f}s  {note}")
+    print()
 
     print(f"Wrote {len(all_rows)} rows to {out_parquet}")
     print(f"Wrote report to {out_report}")
