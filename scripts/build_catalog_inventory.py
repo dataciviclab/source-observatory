@@ -240,16 +240,16 @@ def main() -> None:
             executor.submit(_collect_source, source_id, source_cfg, captured_at): source_id
             for source_id, source_cfg in inventoriable
         }
-        # wait() con timeout reale. I future not_done vengono cancellati e il
-        # ThreadPoolExecutor chiuso con wait=False per non bloccare su thread
-        # già partiti che potrebbero essere bloccati su I/O.
-        _SOURCE_TIMEOUT = 300
-        done, not_done = wait(future_to_id, timeout=_SOURCE_TIMEOUT)
+        # wait() timeout globale per tutto il batch. Con 4 workers e 12 fonti,
+        # ogni worker processa ~3 fonti in serie. 2000s = 33 min è sufficiente
+        # per coprire anche fonti lente (OpenCivitas ~3min, INPS ~2min).
+        _BATCH_TIMEOUT = 2000
+        done, not_done = wait(future_to_id, timeout=_BATCH_TIMEOUT)
         for f in not_done:
             sid = future_to_id[f]
             f.cancel()
-            logger.warning("Source %s timed out after %ds, treating as failed", sid, _SOURCE_TIMEOUT)
-            collected[sid] = ([], None, None, TimeoutError(f"Source timed out after {_SOURCE_TIMEOUT}s"))
+            logger.warning("Source %s non completato entro %ds (batch timeout), treat as failed", sid, _BATCH_TIMEOUT)
+            collected[sid] = ([], None, None, TimeoutError(f"Batch timeout after {_BATCH_TIMEOUT}s"))
         for f in done:
             sid, rows, warning, summary, exc = f.result()
             collected[sid] = (rows, warning, summary, exc)
