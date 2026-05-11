@@ -257,7 +257,8 @@ def _enrich_with_inventory(
         r["encoding_suggested"] = _safe_str(row.get("encoding_suggested"))
         r["delim_suggested"] = _safe_str(row.get("delim_suggested"))
         r["decimal_suggested"] = _safe_str(row.get("decimal_suggested"))
-        r["skip_suggested"] = int(row.get("skip_suggested") or 0)
+        _skip = row.get("skip_suggested")
+        r["skip_suggested"] = 0 if pd.isna(_skip) else int(_skip)
         return r
 
     # HTML: use inventory url + content-type format detection
