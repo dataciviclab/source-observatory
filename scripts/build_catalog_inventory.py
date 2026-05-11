@@ -277,6 +277,13 @@ def main() -> None:
             f = executor.submit(_collect_source, source_id, source_cfg, captured_at)
             future_to_id[f] = source_id
             submit_times[source_id] = time.time()
+            # Timing per-fonte: registra quando il future completa,
+            # non quando wait() ritorna (che e' il tempo del piu' lento)
+            f.add_done_callback(
+                lambda fut, sid=source_id: source_timing.setdefault(
+                    sid, time.time() - submit_times[sid]
+                )
+            )
 
         # wait() timeout globale per il batch (rete di sicurezza). Il timeout
         # reale per fonte è in _collect_source (_SOURCE_TIMEOUT = 300s).
@@ -285,13 +292,15 @@ def main() -> None:
         now = time.time()
         for f in not_done:
             sid = future_to_id[f]
-            source_timing[sid] = now - submit_times[sid]
+            if sid not in source_timing:
+                source_timing[sid] = now - submit_times[sid]
             f.cancel()
             logger.warning("Source %s non completato entro %ds (batch timeout), treat as failed", sid, _BATCH_TIMEOUT)
             collected[sid] = ([], None, None, TimeoutError(f"Batch timeout after {_BATCH_TIMEOUT}s"))
         for f in done:
             sid, rows, warning, summary, exc = f.result()
-            source_timing[sid] = time.time() - submit_times[sid]
+            if sid not in source_timing:
+                source_timing[sid] = time.time() - submit_times[sid]
             collected[sid] = (rows, warning, summary, exc)
     finally:
         # shutdown(wait=False) non aspetta task bloccati — il timeout HTTP
