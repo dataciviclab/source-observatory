@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Build GitHub issue body for catalog alerts.
 
-Legge diff.md (da catalog_diff.py), catalog_inventory_report.json,
-radar_summary.json e scrive issue_title.txt, issue_body.md, issue_labels.json.
+Legge diff.md (da catalog_diff.py) e catalog_inventory_report.json.
+Scrive issue_title.txt, issue_body.md, issue_labels.json.
 
 Uso:
     python scripts/gha/build_issue_body.py --gcs-prefix gs://bucket/path
@@ -28,8 +28,6 @@ def build_issue(gcs_prefix: str) -> None:
     new_report = json.loads(
         Path("data/catalog_inventory/generated/catalog_inventory_report.json").read_text(encoding="utf-8")
     )
-    radar_path = Path("data/radar/radar_summary.json")
-    radar = json.loads(radar_path.read_text(encoding="utf-8")) if radar_path.exists() else {}
 
     sections = re.split(r"^#### ", raw, flags=re.M)
     regressions = recoveries = new_sources = removed = 0
@@ -76,20 +74,8 @@ def build_issue(gcs_prefix: str) -> None:
         title += " — variazioni"
 
     gcs_path = gcs_prefix.replace("gs://", "").rstrip("/")
-    counts = radar.get("status_counts", {})
 
-    body = [
-        f"## Radar status (@ {captured[:19]} UTC)",
-        "",
-        f"- Fonti totali: {radar.get('sources_total', '?')}",
-        f"- GREEN: {counts.get('GREEN', 0)}",
-        f"- YELLOW: {counts.get('YELLOW', 0)}",
-        f"- RED: {counts.get('RED', 0)}",
-    ]
-    if radar.get("persistent_red"):
-        body.append(f"- persistent red: {radar['persistent_red']}")
-    body.append("")
-    body.append("## Sommario inventario")
+    body = ["## Sommario inventario"]
     body.append(f"- Nuove fonti: **{new_sources}**")
     body.append(f"- Rimosse: **{removed}**")
     body.append(f"- Regressioni: **{regressions}**")
@@ -97,7 +83,11 @@ def build_issue(gcs_prefix: str) -> None:
     body.append(f"- Variazione item: **{delta_items:+d}** (totale: {total_items_new})")
     body.append("")
     body.append("## Dettaglio")
-    body.append(raw)
+    # Tronca le righe troppo lunghe (es. SPARQL query, traceback Python) a 200 caratteri
+    _truncated_lines = []
+    for _line in raw.splitlines():
+        _truncated_lines.append(_line if len(_line) <= 200 else _line[:200] + "...")
+    body.append("\n".join(_truncated_lines))
     body.append("")
     stamp = captured[:10].replace("-", "")
     body.append("## Risorse")
