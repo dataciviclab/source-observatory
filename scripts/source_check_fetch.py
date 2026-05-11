@@ -329,7 +329,7 @@ def _fetch_data_preview(
 
     try:
         client = HttpClient(timeout=HTTP_TIMEOUT)
-        fetch_result = client.get(url)
+        fetch_result = client.get(url, headers={"Range": "bytes=0-1048575"})  # 1MB max
         if not fetch_result.is_ok or fetch_result.response is None:
             err = _EMPTY_ENRICH.copy()
             err["enrich_method"] = "csv_preview_fetch_failed"
@@ -385,6 +385,8 @@ def _fetch_data_preview(
                 decimal_suggested = known_decimal
                 skip_suggested = known_skip or 0
                 is_binary = None
+                # sniff_hints minimale per profile_with_read_cfg (serve true_header_line + warnings)
+                sniff: dict[str, Any] = {"true_header_line": None, "warnings": []}
             else:
                 sniff = sniff_source_file(tmp_path)
                 encoding_suggested = sniff.get("encoding_suggested")

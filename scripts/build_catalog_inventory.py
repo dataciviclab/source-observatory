@@ -4,7 +4,7 @@ import argparse
 import json
 import logging
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed, wait
 from pathlib import Path
 from typing import Any, cast
 
@@ -93,7 +93,6 @@ def _sniff_csv_rows(rows: list[dict[str, Any]], logger: logging.Logger) -> None:
     Costo: ~0.5s per download + ~0.02s per sniff. Skip per formati non sniffabili
     o URL non HTTP.
     """
-    from concurrent.futures import ThreadPoolExecutor, as_completed
     from pathlib import Path
     import tempfile
 
@@ -116,13 +115,18 @@ def _sniff_csv_rows(rows: list[dict[str, Any]], logger: logging.Logger) -> None:
     logger.info("  sniff CSV: %d items", len(targets))
     sniffed = 0
 
+    def _infer_sniff_ext(dist_url: str) -> str:
+        """Inferisce estensione per tempfile dall'URL."""
+        ext = Path(dist_url).suffix.lower()
+        return ext if ext in (".csv", ".tsv", ".xlsx", ".xls") else ".csv"
+
     def _sniff_one(dist_url: str) -> dict[str, Any]:
         client = HttpClient(timeout=(3, 5))
         fetch = client.get(dist_url, headers={"Range": "bytes=0-10239"})
         if not fetch.is_ok or fetch.response is None or fetch.response.status_code >= 400:
             return {}
         content = fetch.response.content[:10 * 1024]  # 10KB max
-        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
+        with tempfile.NamedTemporaryFile(suffix=_infer_sniff_ext(dist_url), delete=False) as tmp:
             tmp.write(content)
             tmp_path = Path(tmp.name)
         try:
@@ -234,15 +238,18 @@ def main() -> None:
             executor.submit(_collect_source, source_id, source_cfg, captured_at): source_id
             for source_id, source_cfg in inventoriable
         }
-        _SOURCE_TIMEOUT = 300  # 5 minuti per fonte — evita che fonti lente/bloccate tengano il workflow in stallo
-        for future in as_completed(future_to_id):
-            try:
-                sid, rows, warning, summary, exc = future.result(timeout=_SOURCE_TIMEOUT)
-            except TimeoutError:
-                sid = future_to_id[future]
-                logger.warning("Source %s timed out after %ds, treating as failed", sid, _SOURCE_TIMEOUT)
-                exc = TimeoutError(f"Source timed out after {_SOURCE_TIMEOUT}s")
-                rows, warning, summary = [], None, None
+        # wait() con timeout = timeout REALE per fonte. as_completed() non funziona
+        # perché restituisce solo future già completati — future.result(timeout=...)
+        # su un future già completato è istantaneo e non fa mai timeout.
+        _SOURCE_TIMEOUT = 300
+        done, not_done = wait(future_to_id, timeout=_SOURCE_TIMEOUT)
+        for f in not_done:
+            sid = future_to_id[f]
+            f.cancel()
+            logger.warning("Source %s timed out after %ds, treating as failed", sid, _SOURCE_TIMEOUT)
+            collected[sid] = ([], None, None, TimeoutError(f"Source timed out after {_SOURCE_TIMEOUT}s"))
+        for f in done:
+            sid, rows, warning, summary, exc = f.result()
             collected[sid] = (rows, warning, summary, exc)
 
     # Load existing inventory for merge (always, not just with --source-ids filter)
