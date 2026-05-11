@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-05-11T06:49:42+00:00",
+  "captured_at": "2026-05-11T20:35:03+00:00",
   "sources_checked": 13,
   "signals": [
     {
@@ -7,8 +7,8 @@
       "protocol": "sdmx",
       "signal_type": "no signal",
       "result": "stabile",
-      "metric_value": 4836,
-      "detail": "4836 item (dataflow_count), in linea con la baseline.",
+      "metric_value": 4839,
+      "detail": "4839 item (dataflow_count), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -24,9 +24,8 @@
       "source": "openbdap",
       "protocol": "ckan",
       "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 3773,
-      "detail": "3773 item (package_list), in linea con la baseline.",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {
@@ -652,9 +651,8 @@
       "source": "dati_cultura",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 213,
-      "detail": "213 item (sparql_query), in linea con la baseline.",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {
