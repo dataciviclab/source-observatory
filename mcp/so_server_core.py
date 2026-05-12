@@ -20,6 +20,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 import duckdb
+import requests
 from lab_connectors.duckdb import safe_connect
 
 from lab_connectors.http import HttpClient
