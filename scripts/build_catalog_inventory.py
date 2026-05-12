@@ -9,9 +9,9 @@ from concurrent.futures import ThreadPoolExecutor, wait
 from pathlib import Path
 from typing import Any, cast
 
-import duckdb
 import pandas as pd
 
+from lab_connectors.duckdb import safe_connect
 from collectors import dispatch, supported_protocols
 from collectors.base import inventory_cfg, now_utc_iso
 from collectors.ckan import (
@@ -336,11 +336,10 @@ def main() -> None:
             if sid not in report["sources"]:
                 report["sources"][sid] = info
 
-    con = duckdb.connect()
-    con.register("inventory_df", df)
-    con.execute("CREATE TABLE inventory AS SELECT * FROM inventory_df")
-    con.execute("COPY inventory TO ? (FORMAT PARQUET)", [str(out_parquet)])
-    con.close()
+    with safe_connect() as con:
+        con.register("inventory_df", df)
+        con.execute("CREATE TABLE inventory AS SELECT * FROM inventory_df")
+        con.execute("COPY inventory TO ? (FORMAT PARQUET)", [str(out_parquet)])
 
     with out_report.open("w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=2, ensure_ascii=False)

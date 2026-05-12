@@ -21,6 +21,7 @@ from urllib.parse import urlparse
 
 import duckdb
 import requests
+from lab_connectors.duckdb import safe_connect
 
 from lab_connectors.http import HttpClient
 
@@ -701,8 +702,7 @@ def find_by_url(url: str) -> dict[str, Any]:
     try:
         with _resolved_parquet(source_check_artifact) as (resolved_path, cache):
             parquet_path = str(resolved_path)
-            con = duckdb.connect()
-            try:
+            with safe_connect() as con:
                 cols = _table_columns(con, parquet_path)
                 url_cols = [c for c in cols if c in ("url", "url_checked", "distribution_url", "landing_page", "source_url")]
                 if not url_cols:
@@ -717,8 +717,6 @@ def find_by_url(url: str) -> dict[str, Any]:
                     rows = con.execute(sql, [like] * len(url_cols)).fetchall()
                     results["source_check_results"] = [dict(zip(cols, row)) for row in rows]
                     results["source_check_cache"] = cache
-            finally:
-                con.close()
     except FileNotFoundError:
         results["source_check_error"] = f"{source_check_artifact.name} not found"
 
@@ -726,8 +724,7 @@ def find_by_url(url: str) -> dict[str, Any]:
     try:
         with _resolved_parquet(catalog_artifact) as (resolved_path, cache):
             parquet_path = str(resolved_path)
-            con = duckdb.connect()
-            try:
+            with safe_connect() as con:
                 cols = _table_columns(con, parquet_path)
                 url_cols = [c for c in cols if c in ("url", "url_checked", "distribution_url", "landing_page", "source_url")]
                 if not url_cols:
@@ -742,8 +739,6 @@ def find_by_url(url: str) -> dict[str, Any]:
                     rows = con.execute(sql, [like] * len(url_cols)).fetchall()
                     results["catalog_inventory"] = [dict(zip(cols, row)) for row in rows]
                     results["catalog_inventory_cache"] = cache
-            finally:
-                con.close()
     except FileNotFoundError:
         results["catalog_inventory_error"] = f"{catalog_artifact.name} not found"
 
@@ -814,8 +809,7 @@ def query_inventory(
     try:
         with _resolved_parquet(artifact) as (resolved_path, cache):
             parquet_path = str(resolved_path)
-            con = duckdb.connect()
-            try:
+            with safe_connect() as con:
                 cols = _table_columns(con, parquet_path)
                 query = f'SELECT * FROM "{parquet_path}"'
                 filters: list[str] = []
@@ -837,8 +831,6 @@ def query_inventory(
                 query += f" ORDER BY intake_score DESC NULLS LAST LIMIT {safe_limit}"
 
                 rows = con.execute(query, params).fetchall()
-            finally:
-                con.close()
     except FileNotFoundError:
         return _parquet_not_found(artifact)
 
@@ -929,8 +921,7 @@ def catalog_inventory_search(
     try:
         with _resolved_parquet(artifact) as (resolved_path, cache):
             parquet_path = str(resolved_path)
-            con = duckdb.connect()
-            try:
+            with safe_connect() as con:
                 columns = set(_table_columns(con, parquet_path))
                 search_columns = [
                     column
@@ -992,8 +983,6 @@ def catalog_inventory_search(
                 """
                 rows = con.execute(sql, params).fetchall()
                 cols = [desc[0] for desc in con.description]
-            finally:
-                con.close()
     except FileNotFoundError:
         return _parquet_not_found(artifact)
 
@@ -1157,8 +1146,7 @@ def _inventory_source_status(source_id: str) -> dict[str, Any] | None:
 
 
 def _read_sdmx_inventory_rows(parquet_path: Path) -> list[dict[str, Any]]:
-    con = duckdb.connect()
-    try:
+    with safe_connect() as con:
         rows = con.execute(
             f"""
             SELECT source_id, item_id, item_name, title, tags, api_base_url, source_url
@@ -1166,8 +1154,6 @@ def _read_sdmx_inventory_rows(parquet_path: Path) -> list[dict[str, Any]]:
             WHERE source_id = 'istat_sdmx'
             """
         ).fetchall()
-    finally:
-        con.close()
     cols = [
         "source_id",
         "item_id",
@@ -1331,8 +1317,7 @@ def recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
     try:
         artifact = _catalog_inventory_parquet()
         with _resolved_parquet(artifact) as (resolved_path, cache):
-            con = duckdb.connect()
-            try:
+            with safe_connect() as con:
                 rows = con.execute(
                     f'''
                     SELECT source_id, source_kind, protocol,
@@ -1352,8 +1337,6 @@ def recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
                     ''',
                     [f"%{keyword_low}%"] * 5 + [safe_limit],
                 ).fetchall()
-            finally:
-                con.close()
     except FileNotFoundError:
         return _parquet_not_found(_catalog_inventory_parquet())
 
@@ -1406,15 +1389,12 @@ def inventory_diff(source_id: str) -> dict[str, Any]:
     try:
         artifact = _catalog_inventory_parquet()
         with _resolved_parquet(artifact) as (resolved_path, cache):
-            con = duckdb.connect()
-            try:
+            with safe_connect() as con:
                 row = con.execute(
                     f'SELECT COUNT(*) FROM "{resolved_path}" WHERE source_id = ?',
                     [source_id],
                 ).fetchone()
                 current_count = row[0] if row else 0
-            finally:
-                con.close()
     except FileNotFoundError:
         return _parquet_not_found(_catalog_inventory_parquet())
 
