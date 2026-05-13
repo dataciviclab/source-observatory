@@ -38,6 +38,9 @@ jobs:
         run: |
           python scripts/radar_check.py
 
+      - name: Sync datasets_in_use from DI catalog
+        run: python scripts/sync_datasets_in_use.py
+
       - name: Upload radar artifacts
         uses: actions/upload-artifact@v7
         with:
