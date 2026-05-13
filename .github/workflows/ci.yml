@@ -39,13 +39,14 @@ jobs:
               data = yaml.safe_load(f)
           sources = list(data.keys())
           print(f'OK — {len(sources)} fonti caricate:', sources)
-          # Verify required fields per entry
           for sid, cfg in data.items():
               assert 'protocol' in cfg, f'{sid}: missing protocol'
               assert 'observation_mode' in cfg, f'{sid}: missing observation_mode'
               assert 'verdict' in cfg, f'{sid}: missing verdict'
           print('Schema validation OK')
           "
+
+
 
       - name: Run tests
         run: pytest tests/ -v
