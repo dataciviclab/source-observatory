@@ -1,14 +1,15 @@
 # Catalog Watch Report
 
-_Generato: 2026-05-11T20:35:03+00:00 — 13 fonti controllate_
+_Generato: 2026-05-13T19:16:07+00:00 — 12 fonti controllate_
 
 ## Segnali attivi
 
-### • `dati_salute` — csv_magnet
+### 📦 `istat_sdmx` — inventory change
 
-- **Protocollo**: html
-- **Dettaglio**: sitemap failed: primary failed with SSLError; fallback failed with SSLError
-- **Azione**: verificare raggiungibilità del portale
+- **Protocollo**: sdmx
+- **Dettaglio**: 4845 item (dataflow_count), delta +6 rispetto al run precedente (4839).
+- **Item**: 4845
+- **Azione**: verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset
 
 ### • `mim_opendata` — csv_magnet
 
@@ -33,6 +34,6 @@ _Generato: 2026-05-11T20:35:03+00:00 — 13 fonti controllate_
 
 ## Fonti stabili / skipped
 
-_9 fonti senza segnali inventariali in questo run._
+_8 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
