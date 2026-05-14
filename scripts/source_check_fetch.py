@@ -8,16 +8,25 @@ from __future__ import annotations
 
 import logging
 import re
+import threading
 import time
 import urllib.parse
 import xml.etree.ElementTree as ET
 from typing import Any, Optional
 
-from lab_connectors.http import HttpClient
+from lab_connectors.http import HttpClient, HttpResult
 
 logger = logging.getLogger(__name__)
 
+# Default HTTP (retro-compatibile se configure_source_check_http non è chiamato).
 HTTP_TIMEOUT: tuple[float, float] = (5, 10)
+_http_timeout: tuple[float, float] = (5.0, 10.0)
+_http_max_retries = 2
+
+# Circuit breaker per netloc: dopo N errori di trasporto/5xx consecutivi, salta HEAD/GET.
+_circuit_threshold = 0
+_cb_lock = threading.Lock()
+_cb_consecutive: dict[str, int] = {}
 _YEAR_RE = re.compile(r"(?<!\d)(19\d{2}|20[012]\d)(?!\d)")
 
 SDMX_NS = {
@@ -31,6 +40,12 @@ _SUPPORTED_FORMATS = ("JSON", "CSV", "XLSX", "XML", "PDF", "SDMX", "PARQUET")
 _EXCEL_LEGACY = "excel"
 _EXCEL_OOXML = "spreadsheetml"
 
+# Estensioni path + formati inferibili da HEAD (source-check preview / toolkit profiler).
+_PREVIEW_KINDS = frozenset({"csv", "json", "xlsx", "xls", "geojson", "tsv", "jsonl", "ndjson"})
+_CD_FILENAME_STAR_RE = re.compile(r"filename\*=(?:UTF-8''|utf-8'')([^;\s]+)", re.I)
+_CD_FILENAME_DQ_RE = re.compile(r'filename="([^"]+)"', re.I)
+_CD_FILENAME_TOKEN_RE = re.compile(r"filename=([^;\s]+)", re.I)
+
 _EMPTY_ENRICH: dict[str, Any] = {
     "enriched_title": None,
     "enriched_tags": None,
@@ -42,6 +57,102 @@ _EMPTY_ENRICH: dict[str, Any] = {
     "year_max": None,
     "enrich_method": None,
 }
+
+
+def configure_source_check_http(
+    *,
+    circuit_fail_threshold: int = 0,
+    http_timeout: tuple[float, float] | None = None,
+    http_max_retries: int = 1,
+) -> None:
+    """Reimposta stato HTTP/circuit per un run di bulk_source_check (o test).
+
+    Args:
+        circuit_fail_threshold: dopo N fallimenti consecutivi sullo stesso host
+            (timeout/connessione/5xx), salta HEAD/GET per quel host (0 = disabilitato).
+        http_timeout: override timeout (connect, read); default (4, 9) se None e main().
+        http_max_retries: retry GET su errore transiente (default 1 in bulk).
+    """
+    global _circuit_threshold, _http_timeout, _http_max_retries
+    with _cb_lock:
+        _cb_consecutive.clear()
+    _circuit_threshold = max(0, int(circuit_fail_threshold))
+    if http_timeout is not None:
+        _http_timeout = (float(http_timeout[0]), float(http_timeout[1]))
+    _http_max_retries = max(1, int(http_max_retries))
+
+
+def _mk_http_client() -> HttpClient:
+    return HttpClient(timeout=_http_timeout, max_retries=_http_max_retries)
+
+
+def _netloc(url: str) -> str | None:
+    try:
+        parsed = urllib.parse.urlparse(url)
+        return (parsed.netloc or "").lower() or None
+    except Exception:
+        return None
+
+
+def _circuit_should_block(url: str) -> bool:
+    if _circuit_threshold <= 0:
+        return False
+    host = _netloc(url)
+    if not host:
+        return False
+    with _cb_lock:
+        return _cb_consecutive.get(host, 0) >= _circuit_threshold
+
+
+def _circuit_after_result(url: str, result: HttpResult) -> None:
+    if _circuit_threshold <= 0:
+        return
+    host = _netloc(url)
+    if not host:
+        return
+    failed = False
+    if result.err is not None or result.response is None:
+        failed = True
+    elif getattr(result.response, "status_code", 200) >= 500:
+        failed = True
+    with _cb_lock:
+        if failed:
+            prev = _cb_consecutive.get(host, 0)
+            n = prev + 1
+            _cb_consecutive[host] = n
+            if prev < _circuit_threshold <= n:
+                logger.warning(
+                    "Source-check circuit: host %s aperto dopo %d errori (soglia=%d)",
+                    host,
+                    n,
+                    _circuit_threshold,
+                )
+        else:
+            _cb_consecutive[host] = 0
+
+
+def _tracked_http_head(url: str) -> HttpResult | None:
+    """HEAD con circuit. None = circuit aperto (nessuna richiesta inviata)."""
+    if not isinstance(url, str) or not url.startswith("http"):
+        return None
+    if _circuit_should_block(url):
+        return None
+    client = _mk_http_client()
+    result = client.head(url)
+    _circuit_after_result(url, result)
+    return result
+
+
+def _tracked_http_get(url: str, **kwargs: Any) -> HttpResult | None:
+    """GET con circuit. None = circuit aperto."""
+    if not isinstance(url, str) or not url.startswith("http"):
+        return None
+    if _circuit_should_block(url):
+        return None
+    client = _mk_http_client()
+    result = client.get(url, **kwargs)
+    _circuit_after_result(url, result)
+    return result
 
 
 # ── helpers ────────────────────────────────────────────────────────────────
@@ -59,6 +170,95 @@ def _format_from_content_type(content_type: str) -> Optional[str]:
     return None
 
 
+def _filename_from_content_disposition(value: str | None) -> str | None:
+    """Estrae il nome file da Content-Disposition (RFC 5987 / quoted)."""
+    if not value or not isinstance(value, str):
+        return None
+    m = _CD_FILENAME_STAR_RE.search(value)
+    if m:
+        raw = m.group(1).strip().strip('"')
+        return urllib.parse.unquote(raw) if raw else None
+    m = _CD_FILENAME_DQ_RE.search(value)
+    if m:
+        return m.group(1).strip() or None
+    m = _CD_FILENAME_TOKEN_RE.search(value)
+    if m:
+        return m.group(1).strip().strip('"') or None
+    return None
+
+
+def _path_extension_kind(url: str) -> str | None:
+    """Ultima estensione path (minuscolo), mappata su kind preview."""
+    parsed = urllib.parse.urlparse(url)
+    path = parsed.path or ""
+    if "." not in path:
+        return None
+    ext = path.rsplit(".", 1)[-1].lower()
+    if ext == "ndjson":
+        return "jsonl"
+    if ext in _PREVIEW_KINDS:
+        return ext
+    return None
+
+
+def _infer_preview_kind_from_headers(content_type: str, content_disposition: str | None) -> str | None:
+    """Deduce kind (csv, json, …) da Content-Type / Content-Disposition (nessun GET body)."""
+    fn = _filename_from_content_disposition(content_disposition)
+    if fn and "." in fn:
+        ext = fn.rsplit(".", 1)[-1].lower()
+        if ext == "ndjson":
+            return "jsonl"
+        if ext in _PREVIEW_KINDS:
+            return ext
+
+    ct = (content_type or "").split(";")[0].strip()
+    ct_low = ct.lower()
+    if "tab-separated" in ct_low or ct_low in ("text/tsv", "application/tsv"):
+        return "tsv"
+    if "geo+json" in ct_low or "application/vnd.geo+json" in ct_low:
+        return "geojson"
+    if "ndjson" in ct_low or "jsonl" in ct_low or "newline-delimited" in ct_low or "x-ndjson" in ct_low:
+        return "jsonl"
+
+    token = _format_from_content_type(ct)
+    if token == "CSV":
+        return "csv"
+    if token == "JSON":
+        return "json"
+    if token == "XLSX":
+        return "xlsx"
+    if token == "XLS":
+        return "xls"
+    return None
+
+
+def _resolve_preview_kind(url: str) -> tuple[str | None, bool]:
+    """Ritorna (kind, inferred_via_head). kind=None → preview non applicabile."""
+    direct = _path_extension_kind(url)
+    if direct is not None:
+        return direct, False
+
+    if not isinstance(url, str) or not url.startswith("http"):
+        return None, False
+    try:
+        result = _tracked_http_head(url)
+        if result is None:
+            return None, False
+        if not result.is_ok or result.response is None:
+            return None, False
+        resp = result.response
+        if resp.status_code >= 400:
+            return None, False
+        ct = resp.headers.get("Content-Type", "") or ""
+        cd = resp.headers.get("Content-Disposition")
+        inferred = _infer_preview_kind_from_headers(ct, cd)
+        if inferred is not None:
+            return inferred, True
+    except Exception:
+        return None, False
+    return None, False
+
+
 # ── HTTP HEAD with retry ───────────────────────────────────────────────────
 
 
@@ -67,11 +267,15 @@ def _http_head_with_retry(url: str, max_retries: int = 1) -> tuple[Optional[int]
     if not isinstance(url, str) or not url.startswith("http"):
         return None, False, "url_missing_or_invalid", None
 
-    client = HttpClient(timeout=HTTP_TIMEOUT)
+    if _circuit_should_block(url):
+        return None, False, "circuit_open", None
+
     last_error = ""
 
     for attempt in range(max_retries + 1):
-        result = client.head(url)
+        result = _tracked_http_head(url)
+        if result is None:
+            return None, False, "circuit_open", None
 
         if result.is_ok and result.response is not None:
             resp = result.response
@@ -102,11 +306,11 @@ def _content_type_format(url: str) -> Optional[str]:
     if not isinstance(url, str) or not url.startswith("http"):
         return None
     try:
-        client = HttpClient(timeout=HTTP_TIMEOUT)
-        result = client.head(url)
-        if result.is_ok and result.response is not None:
-            ct = result.response.headers.get("Content-Type", "") or ""
-            return _format_from_content_type(ct)
+        result = _tracked_http_head(url)
+        if result is None or not result.is_ok or result.response is None:
+            return None
+        ct = result.response.headers.get("Content-Type", "") or ""
+        return _format_from_content_type(ct)
     except Exception:
         pass
     return None
@@ -119,16 +323,16 @@ def _fetch_ckan_package(base_api: str, item_name: str) -> Optional[dict]:
     """Fetch CKAN package_show."""
     url = f"{base_api}/package_show?id={item_name}"
     try:
-        client = HttpClient(timeout=HTTP_TIMEOUT)
-        result = client.get(url)
-        if result.is_ok and result.response is not None:
-            r = result.response
-            if r.status_code != 200:
-                return None
-            data = r.json()
-            if not data.get("success"):
-                return None
-            return data.get("result")
+        result = _tracked_http_get(url)
+        if result is None or not result.is_ok or result.response is None:
+            return None
+        r = result.response
+        if r.status_code != 200:
+            return None
+        data = r.json()
+        if not data.get("success"):
+            return None
+        return data.get("result")
     except Exception:
         pass
     return None
@@ -161,9 +365,8 @@ def _fetch_sdmx_years(
         else:
             sdmx_root = base
         url = f"{sdmx_root}/data/{flow_id}?lastNObservations=1"
-        client = HttpClient(timeout=HTTP_TIMEOUT)
-        result = client.get(url, headers={"Accept": "application/xml"})
-        if not result.is_ok or result.response is None:
+        result = _tracked_http_get(url, headers={"Accept": "application/xml"})
+        if result is None or not result.is_ok or result.response is None:
             return None, None
         r = result.response
         if r.status_code != 200:
@@ -206,13 +409,13 @@ def _fetch_sdmx_dataflow(base_url: str, flow_id: str) -> Optional[ET.Element]:
         root_url = base.rsplit("/", 1)[0]
     url = f"{root_url}/{flow_id}"
     try:
-        client = HttpClient(timeout=HTTP_TIMEOUT)
-        result = client.get(url, headers={"Accept": "application/xml"})
-        if result.is_ok and result.response is not None:
-            r = result.response
-            if r.status_code != 200:
-                return None
-            return ET.fromstring(r.text)
+        result = _tracked_http_get(url, headers={"Accept": "application/xml"})
+        if result is None or not result.is_ok or result.response is None:
+            return None
+        r = result.response
+        if r.status_code != 200:
+            return None
+        return ET.fromstring(r.text)
     except Exception:
         pass
     return None
@@ -229,9 +432,8 @@ def _fetch_html_metadata(url: str) -> dict:
         return result
 
     try:
-        client = HttpClient(timeout=HTTP_TIMEOUT)
-        result = client.get(url)
-        if not result.is_ok or result.response is None:
+        result = _tracked_http_get(url)
+        if result is None or not result.is_ok or result.response is None:
             err = _EMPTY_ENRICH.copy()
             err["enrich_method"] = "html_scrape_fetch_failed"
             return err
@@ -297,6 +499,10 @@ def _fetch_data_preview(
     diretto. Gestisce encoding, delimitatore, decimale e skip in modo robusto,
     anche per CSV italiani (latin-1, ; come delim, , come decimale).
 
+    Estensioni path supportate: csv, tsv, json, geojson, jsonl, ndjson, xlsx, xls.
+    Se il path non ha estensione utile, esegue HTTP HEAD e deduce il formato da
+    Content-Type / Content-Disposition (filename), poi GET con Range come per CSV.
+
     Se known_encoding è fornito (es. dall'inventory sniff), salta la fase di
     sniff (Phase 1) e va direttamente a DuckDB profiling con parametri noti.
     Questo evita di re-downloadare e re-sniffare item giá processati in fase
@@ -319,28 +525,31 @@ def _fetch_data_preview(
         result["enrich_method"] = "csv_preview_failed"
         return result
 
-    parsed = urllib.parse.urlparse(url)
-    path = parsed.path or ""
-    fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
-    if fmt not in ("csv", "json", "xlsx", "xls"):
+    kind, _preview_inferred_via_head = _resolve_preview_kind(url)
+    if kind is None:
         result = _EMPTY_ENRICH.copy()
         result["enrich_method"] = "csv_preview_skipped"
         return result
 
-    try:
-        client = HttpClient(timeout=HTTP_TIMEOUT)
+    fmt = kind
+    resource_kind = kind
 
+    try:
         # CSV/JSON: sample 100KB basta per sniffare encoding/colonne.
         # XLS/XLSX: serve il file intero (e' uno ZIP con XML dentro).
         # Il Range header limita il download a 1MB o 5MB rispettivamente.
-        if fmt in ("csv", "json"):
+        if fmt in ("csv", "tsv", "json", "geojson", "jsonl"):
             range_limit = 1 * 1024 * 1024  # 1MB
             sample_size = 100 * 1024        # 100KB sample
         else:
             range_limit = 5 * 1024 * 1024   # 5MB per XLSX/XLS
             sample_size = None              # usa tutto
 
-        fetch_result = client.get(url, headers={"Range": f"bytes=0-{range_limit - 1}"})
+        fetch_result = _tracked_http_get(url, headers={"Range": f"bytes=0-{range_limit - 1}"})
+        if fetch_result is None:
+            result = _EMPTY_ENRICH.copy()
+            result["enrich_method"] = "csv_preview_circuit"
+            return result
         if not fetch_result.is_ok or fetch_result.response is None:
             err = _EMPTY_ENRICH.copy()
             err["enrich_method"] = "csv_preview_fetch_failed"
@@ -371,6 +580,52 @@ def _fetch_data_preview(
         import json as _json
         import tempfile
         from pathlib import Path
+
+        if fmt == "jsonl":
+            columns_jl: list[str] = []
+            col_types_jl: dict[str, str] = {}
+            preview_row_count_jl = 0
+            text_jl = content.decode("utf-8", errors="replace")
+            for line in text_jl.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = _json.loads(line)
+                except Exception:
+                    continue
+                if isinstance(obj, dict):
+                    columns_jl = list(obj.keys())
+                    col_types_jl = {str(k): type(v).__name__ for k, v in obj.items()}
+                    preview_row_count_jl = 1
+                    break
+            granularity_jl = "non_determinato"
+            if columns_jl:
+                cols_lower = [c.lower() for c in columns_jl]
+                if any(c in " ".join(cols_lower) for c in COMUNE_COLUMNS):
+                    granularity_jl = "comune"
+                elif any(c in " ".join(cols_lower) for c in REGION_COLUMNS):
+                    granularity_jl = "regione"
+            result = _EMPTY_ENRICH.copy()
+            result.update({
+                "columns": _json.dumps(columns_jl) if columns_jl else None,
+                "col_types": _json.dumps(col_types_jl) if col_types_jl else None,
+                "file_size": file_size,
+                "preview_row_count": preview_row_count_jl or None,
+                "year_min": None,
+                "year_max": None,
+                "granularity": granularity_jl,
+                "resource_format": resource_kind.upper(),
+                "enrich_method": "csv_preview",
+                "encoding_suggested": "utf-8",
+                "delim_suggested": None,
+                "decimal_suggested": None,
+                "skip_suggested": 0,
+                "robust_read_suggested": False,
+                "mapping_suggestions": "{}",
+            })
+            return result
+
         from toolkit.profile.raw import sniff_source_file, profile_with_read_cfg
 
         columns: list[str] = []
@@ -388,8 +643,13 @@ def _fetch_data_preview(
         robust_read_suggested: bool = False
 
         # Salva il contenuto in un file temporaneo per usare il profiler toolkit
-        ext = f".{fmt}"
-        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+        if fmt in ("geojson", "json"):
+            tmp_suffix = ".json"
+        elif fmt == "tsv":
+            tmp_suffix = ".csv"
+        else:
+            tmp_suffix = f".{fmt}"
+        with tempfile.NamedTemporaryFile(suffix=tmp_suffix, delete=False) as tmp:
             tmp.write(content)
             tmp_path = Path(tmp.name)
 
@@ -413,8 +673,8 @@ def _fetch_data_preview(
                 skip_suggested = sniff.get("skip_suggested", 0)
                 is_binary = sniff.get("is_binary_file")
 
-            if fmt == "csv" and not is_binary:
-                # CSV: profiling DuckDB con sniff
+            if fmt in ("csv", "tsv") and not is_binary:
+                # CSV/TSV: profiling DuckDB con sniff (TSV forza tab dopo sniff)
                 effective_read_cfg: dict[str, Any] = {
                     "encoding": encoding_suggested,
                     "delim": delim_suggested,
@@ -422,6 +682,8 @@ def _fetch_data_preview(
                     "skip": skip_suggested,
                     "header": True,
                 }
+                if fmt == "tsv":
+                    effective_read_cfg["delim"] = "\t"
 
                 profile = profile_with_read_cfg(tmp_path, sniff, effective_read_cfg)
                 columns = profile.get("columns_raw", [])
@@ -523,8 +785,8 @@ def _fetch_data_preview(
                 except Exception:
                     pass
 
-            elif fmt == "json":
-                # JSON: keep existing logic (toolkit doesn't profile JSON)
+            elif fmt in ("json", "geojson"):
+                # JSON / GeoJSON: colonne da primo record (toolkit non profila JSON)
                 text = content.decode("utf-8", errors="replace")
                 try:
                     data = _json.loads(text)
@@ -533,7 +795,26 @@ def _fetch_data_preview(
                         col_types = {str(k): type(v).__name__ for k, v in data[0].items()}
                         preview_row_count = len(data)
                     elif isinstance(data, dict):
-                        columns = list(data.keys())
+                        if data.get("type") == "FeatureCollection":
+                            feats = data.get("features") or []
+                            if feats and isinstance(feats[0], dict):
+                                props = feats[0].get("properties")
+                                if isinstance(props, dict):
+                                    columns = list(props.keys())
+                                    col_types = {str(k): type(v).__name__ for k, v in props.items()}
+                                    preview_row_count = len(feats)
+                                else:
+                                    columns = list(feats[0].keys())
+                                    preview_row_count = len(feats)
+                            else:
+                                columns = list(data.keys())
+                        elif data.get("type") == "Feature" and isinstance(data.get("properties"), dict):
+                            props = data["properties"]
+                            columns = list(props.keys())
+                            col_types = {str(k): type(v).__name__ for k, v in props.items()}
+                            preview_row_count = 1
+                        else:
+                            columns = list(data.keys())
                 except Exception:
                     pass
 
@@ -562,7 +843,7 @@ def _fetch_data_preview(
             "year_min": year_min,
             "year_max": year_max,
             "granularity": granularity,
-            "resource_format": fmt.upper(),
+            "resource_format": resource_kind.upper(),
             "enrich_method": "csv_preview",
             # Nuovi campi dal toolkit
             "encoding_suggested": encoding_suggested,

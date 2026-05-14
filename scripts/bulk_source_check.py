@@ -47,6 +47,7 @@ from source_check_fetch import (
     _fetch_sdmx_dataflow,
     _fetch_sdmx_years,
     _http_head_with_retry,
+    configure_source_check_http,
 )
 from source_check_analyze import (
     _infer_granularity,
@@ -66,6 +67,8 @@ REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 
 MAX_WORKERS = 8
 _NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
+
+_PREVIEW_ENRICH_METHODS = frozenset({"csv_preview", "csv_preview_circuit"})
 
 
 # ── registry ─────────────────────────────────────────────────────────────────
@@ -460,7 +463,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
             )
         else:
             preview = _fetch_data_preview(preview_url)
-        if preview.get("enrich_method") == "csv_preview":
+        if preview.get("enrich_method") in _PREVIEW_ENRICH_METHODS:
             # Anni/granularità: solo se metadati non bastano
             if granularity in (None, "non_determinato") and preview.get("granularity"):
                 granularity = preview["granularity"]
@@ -474,7 +477,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
     # Se l'enrich ha gia' chiamato _fetch_data_preview ma non siamo rientrati
     # nel blocco sopra (perche' granularita' era gia' determinata),
     # propaga comunque i campi preview dall'enrich.
-    if not preview_meta and enrich.get("enrich_method") == "csv_preview":
+    if not preview_meta and enrich.get("enrich_method") in _PREVIEW_ENRICH_METHODS:
         preview_meta = _preview_meta_from_enrich(enrich)
 
     # URL da controllare: enrichment resource > catalogo landing_page > distribution_url
@@ -606,6 +609,14 @@ def parse_args() -> argparse.Namespace:
                    help="Skip item da fonti con status RED in radar_summary.json (evita timeout su fonti down)")
     p.add_argument("--no-sdmx-years", action="store_true", default=False,
                    help="Skip SDMX year fetch (riduce timeout risk su CI)")
+    p.add_argument(
+        "--circuit-fail-threshold",
+        type=int,
+        default=0,
+        metavar="N",
+        help="Dopo N errori consecutivi (timeout/connessione/HTTP 5xx) sullo stesso host, "
+        "salta ulteriori HEAD/GET per quel host nel run (0 = disabilitato).",
+    )
     return p.parse_args()
 
 
@@ -614,6 +625,12 @@ def main() -> None:
     args = parse_args()
     global _NO_SDMX_YEARS
     _NO_SDMX_YEARS = args.no_sdmx_years
+
+    configure_source_check_http(
+        circuit_fail_threshold=args.circuit_fail_threshold,
+        http_timeout=(4.0, 9.0),
+        http_max_retries=1,
+    )
 
     logger.info("Loading catalog: %s", args.input)
     df = pd.read_parquet(args.input)
