@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-05-13
+Ultimo run: 2026-05-14
 
 ## Sommario
 
 - Fonti controllate: 16
-- GREEN: 11
-- YELLOW: 4
+- GREEN: 10
+- YELLOW: 5
 - RED: 1
 
 ## Tipi sorgente
@@ -31,7 +31,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat-gini-regionale, istat-housing-crowding, istat-ipab-aree |
+| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat-gini-regionale, istat-housing-crowding, istat-ipab-aree |
 | anac | catalog | ckan | radar-only | YELLOW | 403 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps-pensioni |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | dipendenti-pubblici, bdap-lea |
@@ -50,6 +50,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
+- `istat_sdmx`: Timeout (ReadTimeout)
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | WAF blocca endpoint CKAN. Declassato a radar-only finche' non disponibile endpoint alternativo o accesso istituzionale.
 - `dati_salute`: SSL verify failed; fallback connection error (SSLError)
 - `lavoro_opendata`: HTTP 200 | content-type: text/html | url finale: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1 | CKAN API returned non-JSON content

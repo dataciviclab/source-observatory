@@ -3,45 +3,47 @@ istat_sdmx:
   protocol: sdmx
   observation_mode: catalog-watch
   base_url: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: dataflow_count
     value: 4212
     method: dataflow_count
     reliability: medium
-    note: Re-baseline su endpoint esploradati (MCP ondata). Il valore 4212 e' il conteggio
-      riproducibile via MCP discover_dataflows (no keyword, no blacklist) dopo filtro
-      NonProductionDataflow. Il valore 509 era il conteggio su sdmx.istat.it (endpoint
-      diverso).
+    note: Re-baseline su endpoint esploradati (MCP ondata). Il valore 4212 e' il
+      conteggio riproducibile via MCP discover_dataflows (no keyword, no 
+      blacklist) dopo filtro NonProductionDataflow. Il valore 509 era il 
+      conteggio su sdmx.istat.it (endpoint diverso).
   verdict: go
   note: Endpoint SDMX ricco e ad alto valore per scouting e source-check.
   datasets_in_use:
-  - istat-gini-regionale
-  - istat-housing-crowding
-  - istat-ipab-aree
+    - istat_gini_regionale
+    - istat_housing_crowding
+    - popolazione_istat_comunale_2019_2025
 anac:
   source_kind: catalog
   protocol: ckan
   observation_mode: radar-only
-  base_url: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1
+  base_url: 
+    https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1
   inventory:
     non_inventoriable: true
-    reason: WAF strutturale - restituisce HTML 'Request Rejected' su qualsiasi client
-      HTTP non browser. Confermato 2026-04-16.
+    reason: WAF strutturale - restituisce HTML 'Request Rejected' su qualsiasi 
+      client HTTP non browser. Confermato 2026-04-16.
     scraping_blocked: true
     scraping_blocked_reason: reCAPTCHA / WAF blocca richieste HTTP non-browser
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-03-28'
     metric: package_count
     value: 69
     method: package_list
     reliability: low
-    note: Conteggio rilevato prima del blocco WAF. Non aggiornabile con HTTP standard.
+    note: Conteggio rilevato prima del blocco WAF. Non aggiornabile con HTTP 
+      standard.
   verdict: hold
-  note: WAF blocca endpoint CKAN. Declassato a radar-only finche' non disponibile
-    endpoint alternativo o accesso istituzionale.
+  note: WAF blocca endpoint CKAN. Declassato a radar-only finche' non 
+    disponibile endpoint alternativo o accesso istituzionale.
   datasets_in_use: []
 inps:
   source_kind: catalog
@@ -52,51 +54,54 @@ inps:
     skip_current_list: true
     package_show_sample: true
     sample_size: 10000
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
     value: 2323
     method: package_list
     reliability: medium
-    note: Conteggio totale package rilevati via package_list; baseline precedente
-      (544) risultata stale rispetto all'inventario corrente.
+    note: Conteggio totale package rilevati via package_list; baseline 
+      precedente (544) risultata stale rispetto all'inventario corrente.
   verdict: go
   note: Catalogo CKAN ricco e ad alto potenziale per candidati e source-check.
   datasets_in_use:
-  - inps-pensioni
+    - inps_cig_serie_storiche_annuali
+    - inps_pensioni_2017_2024
+    - pensioni_pa_dag
 openbdap:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
-  base_url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
+  base_url: 
+    https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
   inventory:
     skip_package_search: true
     skip_package_search_reason: timeout sistematico a 60s
     skip_current_list: true
     package_show_sample: true
     sample_size: 4000
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
     value: 3772
     method: package_list
     reliability: medium
-    note: Conteggio totale package rilevati via package_list; package_search restituisce
-      count inaffidabile.
+    note: Conteggio totale package rilevati via package_list; package_search 
+      restituisce count inaffidabile.
   verdict: go
-  note: Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario
-    senza intake o monitor diffuso.
+  note: Catalogo CKAN molto ricco; osservazione iniziale stretta a livello 
+    inventario senza intake o monitor diffuso.
   datasets_in_use:
-  - dipendenti-pubblici
-  - bdap-lea
+    - bdap_entrate_stato
+    - dipendenti_pubblici
 dati_salute:
   source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.dati.salute.gov.it/
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-07'
     metric: csv_magnet_total_links
@@ -106,7 +111,8 @@ dati_salute:
     note: 'Sondaggio CSV magnet via sitemap-0.xml. 191 pagine dataset, 4 formati (CSV/XML/JSON/ZIP).
       Prefix matrix: FRM=45, DISPO=38. Anni: 2023-2026.'
   verdict: go
-  note: Portale Ministero Salute — csv_magnet scan integrato nel pipeline catalog-watch.
+  note: Portale Ministero Salute — csv_magnet scan integrato nel pipeline 
+    catalog-watch.
   html_portal:
     topic_hint: sanita
     sitemap_url: https://www.dati.salute.gov.it/sitemap-0.xml
@@ -118,18 +124,19 @@ inail_opendata:
   protocol: aem
   observation_mode: radar-only
   base_url: https://dati.inail.it/
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   verdict: go
-  note: Portale AEM con Open API documentate. Superficie operativa reale = catalogo
-    AEM + Open API, non CKAN standard (logo nel footer fuorviante). Baseline inventariale
-    non ancora difendibile; tenere in radar-only finche' non definito un metodo stabile.
+  note: Portale AEM con Open API documentate. Superficie operativa reale = 
+    catalogo AEM + Open API, non CKAN standard (logo nel footer fuorviante). 
+    Baseline inventariale non ancora difendibile; tenere in radar-only finche' 
+    non definito un metodo stabile.
   datasets_in_use: []
 mim_opendata:
   source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
   base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-27'
     metric: csv_magnet_total_links
@@ -140,19 +147,20 @@ mim_opendata:
       Personale, Valutazione, Edilizia, Adozioni). 1116 link CSV/XLS. Prefix: ALU=300,
       EDI=282, SCU=132. Nessuna sitemap disponibile.'
   verdict: go
-  note: Portale Ministero Istruzione — csv_magnet scan via area_pages (no sitemap).
+  note: Portale Ministero Istruzione — csv_magnet scan via area_pages (no 
+    sitemap).
   html_portal:
     topic_hint: istruzione
     area_pages:
-    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Scuole
-    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Studenti
-    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Personale%20Scuola
-    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Sistema%20Nazionale%20di%20Valutazione
-    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Edilizia%20Scolastica
-    - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Adozioni%20libri%20di%20testo
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Scuole
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Studenti
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Personale%20Scuola
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Sistema%20Nazionale%20di%20Valutazione
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Edilizia%20Scolastica
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Adozioni%20libri%20di%20testo
     delay_seconds: 0.3
   datasets_in_use:
-  - mim-alunni-corso-eta
+    - mim_alunni_corso_eta
 dati_camera:
   source_kind: catalog
   protocol: sparql
@@ -160,7 +168,7 @@ dati_camera:
   base_url: https://dati.camera.it/sparql
   scraping_blocked: true
   scraping_blocked_reason: reCAPTCHA / WAF blocca richieste HTTP non-browser
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -168,30 +176,30 @@ dati_camera:
     method: sparql_query
     query_name: camera_dcat
     reliability: medium
-    note: Baseline fissata con query custom Camera perché il catalogo usa proprietà
-      DC 1.1 Elements per titolo e descrizione.
+    note: Baseline fissata con query custom Camera perché il catalogo usa 
+      proprietà DC 1.1 Elements per titolo e descrizione.
   sparql:
     endpoint_url: https://dati.camera.it/sparql
     query_name: camera_dcat
     limit: 5000
     timeout_seconds: 60
     query: "PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dc: <http://purl.org/dc/elements/1.1/>\n\
-      PREFIX dct: <http://purl.org/dc/terms/>\nSELECT DISTINCT ?dataset ?title ?description\
-      \ ?modified ?landingPage\nWHERE {\n  ?dataset a dcat:Dataset .\n  OPTIONAL {\
-      \ ?dataset dc:title ?title . }\n  OPTIONAL { ?dataset dc:description ?description\
-      \ . }\n  OPTIONAL { ?dataset dct:modified ?modified . }\n  OPTIONAL { ?dataset\
-      \ dcat:landingPage ?landingPage . }\n}\nORDER BY ?dataset\nLIMIT 5000\n"
+      PREFIX dct: <http://purl.org/dc/terms/>\nSELECT DISTINCT ?dataset ?title ?description
+      ?modified ?landingPage\nWHERE {\n  ?dataset a dcat:Dataset .\n  OPTIONAL { ?dataset
+      dc:title ?title . }\n  OPTIONAL { ?dataset dc:description ?description . }\n\
+      \  OPTIONAL { ?dataset dct:modified ?modified . }\n  OPTIONAL { ?dataset dcat:landingPage
+      ?landingPage . }\n}\nORDER BY ?dataset\nLIMIT 5000\n"
   verdict: go
-  note: Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template
-    DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title
-    e dc:description.
+  note: Catalogo linked-data Camera inventariabile via query SPARQL custom. Il 
+    template DCAT generico non valorizza titolo e descrizione perché l'endpoint 
+    usa dc:title e dc:description.
   datasets_in_use: []
 dati_cultura:
   source_kind: catalog
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.cultura.gov.it/sparql
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -199,23 +207,24 @@ dati_cultura:
     method: sparql_query
     query_name: dcat_datasets
     reliability: medium
-    note: Catalogo linked-data MiC (ArCo) con metadati DCAT interrogabili via SPARQL.
-      ~150 dataset/thesaurus nel catalogo. Pilot per inventory SPARQL oltre ISPRA.
+    note: Catalogo linked-data MiC (ArCo) con metadati DCAT interrogabili via 
+      SPARQL. ~150 dataset/thesaurus nel catalogo. Pilot per inventory SPARQL 
+      oltre ISPRA.
   sparql:
     endpoint_url: https://dati.cultura.gov.it/sparql
     query_name: dcat_datasets
     limit: 5000
     timeout_seconds: 90
   verdict: go
-  note: Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check completato
-    con verdict catalog-watch.
+  note: Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check 
+    completato con verdict catalog-watch.
   datasets_in_use: []
 ispra_linked_data:
   source_kind: catalog
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.isprambiente.it/sparql
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -229,82 +238,88 @@ ispra_linked_data:
     query_name: dcat_datasets
     limit: 5000
   verdict: go
-  note: Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot
-    per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline
-    tabellari.
-  datasets_in_use: []
+  note: Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. 
+    Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già 
+    usate per pipeline tabellari.
+  datasets_in_use:
+    - ispra_consumo_suolo
+    - ispra_ru_base
+    - ispra_ru_costi_kg
+    - ispra_ru_costi_procapite
 consip_open_data:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.consip.it/api/3/action/package_list?limit=1
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: package_count
     value: 17
     method: package_list
     reliability: medium
-    note: Baseline iniziale su CKAN package_list. I source-check del 2026-04-10 hanno
-      confermato almeno due dataset primari difendibili (bandi-e-gare, consumi-convenzioni)
-      e un support dataset chiaro (operatori-economici).
+    note: Baseline iniziale su CKAN package_list. I source-check del 2026-04-10 
+      hanno confermato almeno due dataset primari difendibili (bandi-e-gare, 
+      consumi-convenzioni) e un support dataset chiaro (operatori-economici).
   verdict: go
-  note: Catalogo CKAN piccolo ma difendibile per catalog-watch. I source-check dataset-specifici
-    hanno confermato che il catalogo contiene almeno due target primari e un support
-    dataset utile per il filone Consip acquisti PA.
+  note: Catalogo CKAN piccolo ma difendibile per catalog-watch. I source-check 
+    dataset-specifici hanno confermato che il catalogo contiene almeno due 
+    target primari e un support dataset utile per il filone Consip acquisti PA.
   datasets_in_use: []
 lavoro_opendata:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
-  base_url: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
+  base_url: 
+    https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
   inventory:
     skip_package_search: true
     skip_package_search_reason: count inaffidabile
     skip_current_list: true
     package_show_sample: true
     sample_size: 10000
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: package_count
     value: 159
     method: package_list
     reliability: medium
-    note: Baseline iniziale su SPOD CKAN (package_list). Package_search count inaffidabile.
+    note: Baseline iniziale su SPOD CKAN (package_list). Package_search count 
+      inaffidabile.
   verdict: go
-  note: Portale Ministero del Lavoro (SPOD CKAN) con API stabile e catalogo ~159 dataset.
+  note: Portale Ministero del Lavoro (SPOD CKAN) con API stabile e catalogo ~159
+    dataset.
   datasets_in_use: []
 mur_ustat:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati-ustat.mur.gov.it/api/3/action/package_list?limit=1
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-04-09'
     metric: package_count
     value: 68
     method: package_list
     reliability: medium
-    note: Baseline iniziale su CKAN package_list; portale con 68 dataset e metadata
-      completi, aggiornamenti recenti.
+    note: Baseline iniziale su CKAN package_list; portale con 68 dataset e 
+      metadata completi, aggiornamenti recenti.
   verdict: go
-  note: Portale MUR USTAT (istruzione superiore/AFAM/DSU) con CKAN stabile e aggiornamenti
-    recenti. Rinominato da mim_ustat (naming errato).
-  datasets_in_use: []
+  note: Portale MUR USTAT (istruzione superiore/AFAM/DSU) con CKAN stabile e 
+    aggiornamenti recenti. Rinominato da mim_ustat (naming errato).
+  datasets_in_use:
+    - mur_contribuzione_universitaria
 opencoesione:
   source_kind: catalog
   protocol: rest
   observation_mode: radar-only
   base_url: https://opencoesione.gov.it/it/api/
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   verdict: hold
-  note: 'Portale disabilitato/ritirato. CKAN API non piu'' raggiungibile (redirect
-    a /it/ con 404 "Pagina non trovata"). Mantenuto in radar-only per eventuale monitoraggio
-    futuro.
-
-    '
+  note: "Portale disabilitato/ritirato. CKAN API non piu' raggiungibile (redirect
+    a /it/ con 404 \"Pagina non trovata\"). Mantenuto in radar-only per eventuale
+    monitoraggio futuro.\n"
   catalog_baseline:
     captured_at: '2026-04-09'
     metric: data_aggiornamento
@@ -317,8 +332,9 @@ mef_irpef:
   source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
-  base_url: https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
-  last_probed: '2026-05-13'
+  base_url: 
+    https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-05-03'
     metric: csv_magnet_homepage_links
@@ -329,31 +345,34 @@ mef_irpef:
       totali su singola pagina statica. Nessuna sitemap ne sottopagine. Prefix: REG,
       cla, sesso, Redditi. Serie 2010-2025.'
   verdict: go
-  note: Portale MEF Dipartimento Finanze — Open Data IRPEF comunale. Dati fiscali
-    regionali per tipo reddito, classi, sesso. Alta rilevanza civica per analisi disuguaglianza
-    e gettito regionale.
+  note: Portale MEF Dipartimento Finanze — Open Data IRPEF comunale. Dati 
+    fiscali regionali per tipo reddito, classi, sesso. Alta rilevanza civica per
+    analisi disuguaglianza e gettito regionale.
   html_portal:
     topic_hint: fisco
-    homepage: https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
+    homepage: 
+      https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
     delay_seconds: 0.2
-  datasets_in_use: []
+  datasets_in_use:
+    - irpef_comunale
+    - mef_irpef_regionale
 opencivitas:
   source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.opencivitas.it/it/open-data
-  last_probed: '2026-05-13'
+  last_probed: '2026-05-14'
   catalog_baseline:
     captured_at: '2026-05-07'
     metric: csv_magnet_total_links
     value: 1084
     method: csv_magnet_area_pages_paginated
     reliability: medium
-    note: Sondaggio CSV magnet via page_url_template (page=0..54). SSL fallback necessario
-      per cert invalido.
+    note: Sondaggio CSV magnet via page_url_template (page=0..54). SSL fallback 
+      necessario per cert invalido.
   verdict: go
-  note: Portale OpenCivitas — csv_magnet scan via page_url_template. SSL fallback
-    attivo. ZIP con CSV/XLSX dentro.
+  note: Portale OpenCivitas — csv_magnet scan via page_url_template. SSL 
+    fallback attivo. ZIP con CSV/XLSX dentro.
   html_portal:
     topic_hint: trasparenza
     page_url_template: https://www.opencivitas.it/it/open-data?page={page}
