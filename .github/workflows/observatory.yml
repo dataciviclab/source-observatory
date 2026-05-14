@@ -147,6 +147,7 @@ jobs:
           python scripts/bulk_source_check.py \
             --skip-red-sources \
             --no-sdmx-years \
+            --circuit-fail-threshold 2 \
             --max-items 1000 \
             --workers 8
 
