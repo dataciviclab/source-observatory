@@ -432,13 +432,13 @@ def _fetch_html_metadata(url: str) -> dict:
         return result
 
     try:
-        result = _tracked_http_get(url)
-        if result is None or not result.is_ok or result.response is None:
+        http_result = _tracked_http_get(url)
+        if http_result is None or not http_result.is_ok or http_result.response is None:
             err = _EMPTY_ENRICH.copy()
             err["enrich_method"] = "html_scrape_fetch_failed"
             return err
 
-        r = result.response
+        r = http_result.response
         html = r.text
 
         resource_format: Optional[str] = None
