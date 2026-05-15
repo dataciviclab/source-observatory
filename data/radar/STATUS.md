@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-05-14
+Ultimo run: 2026-05-15
 
 ## Sommario
 
@@ -31,21 +31,21 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat-gini-regionale, istat-housing-crowding, istat-ipab-aree |
+| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat_gini_regionale, istat_housing_crowding, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | radar-only | YELLOW | 403 | - |
-| inps | catalog | ckan | catalog-watch | GREEN | 200 | inps-pensioni |
-| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | dipendenti-pubblici, bdap-lea |
+| inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_cig_serie_storiche_annuali, inps_pensioni_2017_2024, pensioni_pa_dag |
+| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_entrate_stato, dipendenti_pubblici |
 | dati_salute | catalog | html | catalog-watch | RED | - | - |
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
-| mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim-alunni-corso-eta |
+| mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta |
 | dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | dati_cultura | catalog | sparql | catalog-watch | GREEN | 200 | - |
-| ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | - |
+| ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | YELLOW | 200 | - |
-| mur_ustat | catalog | ckan | catalog-watch | YELLOW | - | - |
+| mur_ustat | catalog | ckan | catalog-watch | YELLOW | - | mur_contribuzione_universitaria |
 | opencoesione | catalog | rest | radar-only | YELLOW | 403 | - |
-| mef_irpef | catalog | html | catalog-watch | GREEN | 200 | - |
+| mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | - |
 
 ## Note
