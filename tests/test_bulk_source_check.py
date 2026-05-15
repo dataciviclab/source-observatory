@@ -300,6 +300,112 @@ def test_parse_ckan_package_fallback_first_http_url() -> None:
 # ── XLS falso: TSV/Latin-1 fallback ─────────────────────────────────────
 
 
+def test_fetch_data_preview_head_infers_csv_without_extension(monkeypatch) -> None:
+    """URL senza estensione: HEAD text/csv → GET sample → csv_preview."""
+    from lab_connectors.http import HttpClient
+    from source_check_fetch import _fetch_data_preview
+
+    calls = {"head": 0, "get": 0}
+
+    def fake_head(self, url, **kwargs):
+        calls["head"] += 1
+        return HttpResult(
+            response=_FakeResp(
+                headers={"Content-Type": "text/csv; charset=utf-8"},
+                status_code=200,
+                url=url,
+            ),
+            err=None,
+        )
+
+    def fake_get(self, url, **kwargs):
+        calls["get"] += 1
+        return HttpResult(
+            response=_FakeResp(
+                content=b"a,b\n1,2\n",
+                headers={"Content-Type": "text/csv"},
+                status_code=200,
+                url=url,
+            ),
+            err=None,
+        )
+
+    monkeypatch.setattr(HttpClient, "head", fake_head)
+    monkeypatch.setattr(HttpClient, "get", fake_get)
+
+    result = _fetch_data_preview("https://portal.example/api/download?id=1&fmt=file")
+    assert calls["head"] == 1
+    assert calls["get"] == 1
+    assert result.get("enrich_method") == "csv_preview"
+    import json
+
+    assert json.loads(result.get("columns") or "[]") == ["a", "b"]
+
+
+def test_fetch_data_preview_content_disposition_filename(monkeypatch) -> None:
+    """HEAD application/octet-stream + filename .csv → preview."""
+    from lab_connectors.http import HttpClient
+    from source_check_fetch import _fetch_data_preview
+
+    def fake_head(self, url, **kwargs):
+        return HttpResult(
+            response=_FakeResp(
+                headers={
+                    "Content-Type": "application/octet-stream",
+                    "Content-Disposition": 'attachment; filename="report.csv"',
+                },
+                status_code=200,
+                url=url,
+            ),
+            err=None,
+        )
+
+    def fake_get(self, url, **kwargs):
+        return HttpResult(
+            response=_FakeResp(
+                content=b"x,y\n3,4\n",
+                headers={"Content-Type": "text/csv"},
+                status_code=200,
+                url=url,
+            ),
+            err=None,
+        )
+
+    monkeypatch.setattr(HttpClient, "head", fake_head)
+    monkeypatch.setattr(HttpClient, "get", fake_get)
+
+    result = _fetch_data_preview("https://portal.example/export")
+    assert result.get("enrich_method") == "csv_preview"
+    import json
+
+    assert json.loads(result.get("columns") or "[]") == ["x", "y"]
+
+
+def test_fetch_data_preview_tsv_extension(monkeypatch) -> None:
+    from lab_connectors.http import HttpClient
+    from source_check_fetch import _fetch_data_preview
+
+    def fake_get(self, url, **kwargs):
+        return HttpResult(
+            response=_FakeResp(
+                content=b"a\tb\tc\n1\t2\t3\n",
+                headers={"Content-Type": "text/tab-separated-values"},
+                status_code=200,
+                url=url,
+            ),
+            err=None,
+        )
+
+    monkeypatch.setattr(HttpClient, "get", fake_get)
+
+    result = _fetch_data_preview("https://example.test/data.tsv")
+    assert result.get("enrich_method") == "csv_preview"
+    assert result.get("resource_format") == "TSV"
+    import json
+
+    assert json.loads(result.get("columns") or "[]") == ["a", "b", "c"]
+
+
 def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
     """Fake .xls with TSV content + Latin-1 encoding must recover columns."""
     from lab_connectors.http import HttpClient
@@ -328,6 +434,31 @@ def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
     assert len(cols) == 3
     assert cols == ["col1", "col2", "col3"]
     assert result.get("preview_row_count") == 2
+
+
+def test_http_circuit_breaker_blocks_host_after_failures(monkeypatch) -> None:
+    """Dopo N errori di trasporto sullo stesso host, HEAD successivi ritornano circuit_open."""
+    import requests
+    from lab_connectors.http import HttpClient, HttpResult
+    from source_check_fetch import _http_head_with_retry, configure_source_check_http
+
+    heads: list[str] = []
+
+    def fake_head(self, url, **kwargs):
+        heads.append(url)
+        return HttpResult(response=None, err=requests.exceptions.ConnectTimeout())
+
+    monkeypatch.setattr(HttpClient, "head", fake_head)
+    configure_source_check_http(circuit_fail_threshold=2, http_timeout=(1.0, 2.0), http_max_retries=1)
+    try:
+        u = "https://slow-host.example/resource/1"
+        _http_head_with_retry(u)
+        assert len(heads) == 2
+        _st, _ok, note, _fmt = _http_head_with_retry("https://slow-host.example/other")
+        assert note == "circuit_open"
+        assert len(heads) == 2
+    finally:
+        configure_source_check_http(circuit_fail_threshold=0, http_timeout=(5.0, 10.0), http_max_retries=2)
 
 
 def test_normalize_preview_columns_for_parquet_handles_existing_nested_rows(tmp_path: Path) -> None:

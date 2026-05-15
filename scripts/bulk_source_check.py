@@ -47,6 +47,7 @@ from source_check_fetch import (
     _fetch_sdmx_dataflow,
     _fetch_sdmx_years,
     _http_head_with_retry,
+    configure_source_check_http,
 )
 from source_check_analyze import (
     _infer_granularity,
@@ -66,6 +67,8 @@ REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 
 MAX_WORKERS = 8
 _NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
+
+
 
 
 # ── registry ─────────────────────────────────────────────────────────────────
@@ -606,6 +609,14 @@ def parse_args() -> argparse.Namespace:
                    help="Skip item da fonti con status RED in radar_summary.json (evita timeout su fonti down)")
     p.add_argument("--no-sdmx-years", action="store_true", default=False,
                    help="Skip SDMX year fetch (riduce timeout risk su CI)")
+    p.add_argument(
+        "--circuit-fail-threshold",
+        type=int,
+        default=0,
+        metavar="N",
+        help="Dopo N errori consecutivi (timeout/connessione/HTTP 5xx) sullo stesso host, "
+        "salta ulteriori HEAD/GET per quel host nel run (0 = disabilitato).",
+    )
     return p.parse_args()
 
 
@@ -614,6 +625,12 @@ def main() -> None:
     args = parse_args()
     global _NO_SDMX_YEARS
     _NO_SDMX_YEARS = args.no_sdmx_years
+
+    configure_source_check_http(
+        circuit_fail_threshold=args.circuit_fail_threshold,
+        http_timeout=(4.0, 9.0),
+        http_max_retries=1,
+    )
 
     logger.info("Loading catalog: %s", args.input)
     df = pd.read_parquet(args.input)
