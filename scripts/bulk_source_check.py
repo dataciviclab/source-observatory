@@ -68,7 +68,7 @@ REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 MAX_WORKERS = 8
 _NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
 
-_PREVIEW_ENRICH_METHODS = frozenset({"csv_preview", "csv_preview_circuit"})
+
 
 
 # ── registry ─────────────────────────────────────────────────────────────────
@@ -463,7 +463,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
             )
         else:
             preview = _fetch_data_preview(preview_url)
-        if preview.get("enrich_method") in _PREVIEW_ENRICH_METHODS:
+        if preview.get("enrich_method") == "csv_preview":
             # Anni/granularità: solo se metadati non bastano
             if granularity in (None, "non_determinato") and preview.get("granularity"):
                 granularity = preview["granularity"]
@@ -477,7 +477,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
     # Se l'enrich ha gia' chiamato _fetch_data_preview ma non siamo rientrati
     # nel blocco sopra (perche' granularita' era gia' determinata),
     # propaga comunque i campi preview dall'enrich.
-    if not preview_meta and enrich.get("enrich_method") in _PREVIEW_ENRICH_METHODS:
+    if not preview_meta and enrich.get("enrich_method") == "csv_preview":
         preview_meta = _preview_meta_from_enrich(enrich)
 
     # URL da controllare: enrichment resource > catalogo landing_page > distribution_url

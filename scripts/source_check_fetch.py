@@ -41,7 +41,7 @@ _EXCEL_LEGACY = "excel"
 _EXCEL_OOXML = "spreadsheetml"
 
 # Estensioni path + formati inferibili da HEAD (source-check preview / toolkit profiler).
-_PREVIEW_KINDS = frozenset({"csv", "json", "xlsx", "xls", "geojson", "tsv", "jsonl", "ndjson"})
+_PREVIEW_KINDS = frozenset({"csv", "json", "xlsx", "xls", "tsv"})
 _CD_FILENAME_STAR_RE = re.compile(r"filename\*=(?:UTF-8''|utf-8'')([^;\s]+)", re.I)
 _CD_FILENAME_DQ_RE = re.compile(r'filename="([^"]+)"', re.I)
 _CD_FILENAME_TOKEN_RE = re.compile(r"filename=([^;\s]+)", re.I)
@@ -194,8 +194,6 @@ def _path_extension_kind(url: str) -> str | None:
     if "." not in path:
         return None
     ext = path.rsplit(".", 1)[-1].lower()
-    if ext == "ndjson":
-        return "jsonl"
     if ext in _PREVIEW_KINDS:
         return ext
     return None
@@ -206,8 +204,6 @@ def _infer_preview_kind_from_headers(content_type: str, content_disposition: str
     fn = _filename_from_content_disposition(content_disposition)
     if fn and "." in fn:
         ext = fn.rsplit(".", 1)[-1].lower()
-        if ext == "ndjson":
-            return "jsonl"
         if ext in _PREVIEW_KINDS:
             return ext
 
@@ -215,10 +211,6 @@ def _infer_preview_kind_from_headers(content_type: str, content_disposition: str
     ct_low = ct.lower()
     if "tab-separated" in ct_low or ct_low in ("text/tsv", "application/tsv"):
         return "tsv"
-    if "geo+json" in ct_low or "application/vnd.geo+json" in ct_low:
-        return "geojson"
-    if "ndjson" in ct_low or "jsonl" in ct_low or "newline-delimited" in ct_low or "x-ndjson" in ct_low:
-        return "jsonl"
 
     token = _format_from_content_type(ct)
     if token == "CSV":
@@ -499,7 +491,7 @@ def _fetch_data_preview(
     diretto. Gestisce encoding, delimitatore, decimale e skip in modo robusto,
     anche per CSV italiani (latin-1, ; come delim, , come decimale).
 
-    Estensioni path supportate: csv, tsv, json, geojson, jsonl, ndjson, xlsx, xls.
+    Estensioni path supportate: csv, tsv, json, xlsx, xls.
     Se il path non ha estensione utile, esegue HTTP HEAD e deduce il formato da
     Content-Type / Content-Disposition (filename), poi GET con Range come per CSV.
 
@@ -538,7 +530,7 @@ def _fetch_data_preview(
         # CSV/JSON: sample 100KB basta per sniffare encoding/colonne.
         # XLS/XLSX: serve il file intero (e' uno ZIP con XML dentro).
         # Il Range header limita il download a 1MB o 5MB rispettivamente.
-        if fmt in ("csv", "tsv", "json", "geojson", "jsonl"):
+        if fmt in ("csv", "tsv", "json"):
             range_limit = 1 * 1024 * 1024  # 1MB
             sample_size = 100 * 1024        # 100KB sample
         else:
@@ -547,9 +539,7 @@ def _fetch_data_preview(
 
         fetch_result = _tracked_http_get(url, headers={"Range": f"bytes=0-{range_limit - 1}"})
         if fetch_result is None:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "csv_preview_circuit"
-            return result
+            return _EMPTY_ENRICH.copy()
         if not fetch_result.is_ok or fetch_result.response is None:
             err = _EMPTY_ENRICH.copy()
             err["enrich_method"] = "csv_preview_fetch_failed"
@@ -581,51 +571,6 @@ def _fetch_data_preview(
         import tempfile
         from pathlib import Path
 
-        if fmt == "jsonl":
-            columns_jl: list[str] = []
-            col_types_jl: dict[str, str] = {}
-            preview_row_count_jl = 0
-            text_jl = content.decode("utf-8", errors="replace")
-            for line in text_jl.splitlines():
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    obj = _json.loads(line)
-                except Exception:
-                    continue
-                if isinstance(obj, dict):
-                    columns_jl = list(obj.keys())
-                    col_types_jl = {str(k): type(v).__name__ for k, v in obj.items()}
-                    preview_row_count_jl = 1
-                    break
-            granularity_jl = "non_determinato"
-            if columns_jl:
-                cols_lower = [c.lower() for c in columns_jl]
-                if any(c in " ".join(cols_lower) for c in COMUNE_COLUMNS):
-                    granularity_jl = "comune"
-                elif any(c in " ".join(cols_lower) for c in REGION_COLUMNS):
-                    granularity_jl = "regione"
-            result = _EMPTY_ENRICH.copy()
-            result.update({
-                "columns": _json.dumps(columns_jl) if columns_jl else None,
-                "col_types": _json.dumps(col_types_jl) if col_types_jl else None,
-                "file_size": file_size,
-                "preview_row_count": preview_row_count_jl or None,
-                "year_min": None,
-                "year_max": None,
-                "granularity": granularity_jl,
-                "resource_format": resource_kind.upper(),
-                "enrich_method": "csv_preview",
-                "encoding_suggested": "utf-8",
-                "delim_suggested": None,
-                "decimal_suggested": None,
-                "skip_suggested": 0,
-                "robust_read_suggested": False,
-                "mapping_suggestions": "{}",
-            })
-            return result
-
         from toolkit.profile.raw import sniff_source_file, profile_with_read_cfg
 
         columns: list[str] = []
@@ -643,10 +588,10 @@ def _fetch_data_preview(
         robust_read_suggested: bool = False
 
         # Salva il contenuto in un file temporaneo per usare il profiler toolkit
-        if fmt in ("geojson", "json"):
-            tmp_suffix = ".json"
-        elif fmt == "tsv":
+        if fmt == "tsv":
             tmp_suffix = ".csv"
+        elif fmt == "json":
+            tmp_suffix = ".json"
         else:
             tmp_suffix = f".{fmt}"
         with tempfile.NamedTemporaryFile(suffix=tmp_suffix, delete=False) as tmp:
@@ -785,8 +730,8 @@ def _fetch_data_preview(
                 except Exception:
                     pass
 
-            elif fmt in ("json", "geojson"):
-                # JSON / GeoJSON: colonne da primo record (toolkit non profila JSON)
+            elif fmt == "json":
+                # JSON: colonne da primo record (toolkit non profila JSON)
                 text = content.decode("utf-8", errors="replace")
                 try:
                     data = _json.loads(text)
@@ -795,26 +740,7 @@ def _fetch_data_preview(
                         col_types = {str(k): type(v).__name__ for k, v in data[0].items()}
                         preview_row_count = len(data)
                     elif isinstance(data, dict):
-                        if data.get("type") == "FeatureCollection":
-                            feats = data.get("features") or []
-                            if feats and isinstance(feats[0], dict):
-                                props = feats[0].get("properties")
-                                if isinstance(props, dict):
-                                    columns = list(props.keys())
-                                    col_types = {str(k): type(v).__name__ for k, v in props.items()}
-                                    preview_row_count = len(feats)
-                                else:
-                                    columns = list(feats[0].keys())
-                                    preview_row_count = len(feats)
-                            else:
-                                columns = list(data.keys())
-                        elif data.get("type") == "Feature" and isinstance(data.get("properties"), dict):
-                            props = data["properties"]
-                            columns = list(props.keys())
-                            col_types = {str(k): type(v).__name__ for k, v in props.items()}
-                            preview_row_count = 1
-                        else:
-                            columns = list(data.keys())
+                        columns = list(data.keys())
                 except Exception:
                     pass
 
