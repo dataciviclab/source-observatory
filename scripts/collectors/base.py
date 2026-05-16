@@ -5,6 +5,8 @@ from typing import Any
 from datetime import datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
+import requests
+
 
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 DEFAULT_TIMEOUT_SECONDS = 60
