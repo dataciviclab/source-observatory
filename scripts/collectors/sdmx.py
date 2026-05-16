@@ -37,8 +37,8 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     response = result.response
     if response.status_code >= 400:
         raise RuntimeError(
-            f"SDMX endpoint returned HTTP {response.status_code} for {source_id}"
-            f" ({source_id}): {response.text[:200]}"
+            f"SDMX endpoint returned HTTP {response.status_code} for {source_id}: "
+            f"{response.text[:200]}"
         )
 
     try:
