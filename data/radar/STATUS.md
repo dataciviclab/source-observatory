@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-05-15
+Ultimo run: 2026-05-16
 
 ## Sommario
 
 - Fonti controllate: 16
-- GREEN: 10
-- YELLOW: 5
+- GREEN: 11
+- YELLOW: 4
 - RED: 1
 
 ## Tipi sorgente
@@ -31,9 +31,9 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat_gini_regionale, istat_housing_crowding, popolazione_istat_comunale_2019_2025 |
+| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | radar-only | YELLOW | 403 | - |
-| inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_cig_serie_storiche_annuali, inps_pensioni_2017_2024, pensioni_pa_dag |
+| inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_entrate_stato, dipendenti_pubblici |
 | dati_salute | catalog | html | catalog-watch | RED | - | - |
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
@@ -50,7 +50,6 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
-- `istat_sdmx`: Timeout (ReadTimeout)
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | WAF blocca endpoint CKAN. Declassato a radar-only finche' non disponibile endpoint alternativo o accesso istituzionale.
 - `dati_salute`: SSL verify failed; fallback connection error (SSLError)
 - `lavoro_opendata`: HTTP 200 | content-type: text/html | url finale: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1 | CKAN API returned non-JSON content
