@@ -5,9 +5,6 @@ from typing import Any
 from datetime import datetime, timezone
 from urllib.parse import urlsplit, urlunsplit
 
-import requests
-from requests.adapters import HTTPAdapter
-
 
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 DEFAULT_TIMEOUT_SECONDS = 60
@@ -25,16 +22,6 @@ class CollectorResult:
 
 def now_utc_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-
-
-def get_pooled_session(pool_connections: int = 16, pool_maxsize: int = 32) -> requests.Session:
-    """Session with HTTPAdapter connection pooling — reuse across calls."""
-    session = requests.Session()
-    session.headers["User-Agent"] = USER_AGENT
-    adapter = HTTPAdapter(pool_connections=pool_connections, pool_maxsize=pool_maxsize)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    return session
 
 
 def observatory_get(

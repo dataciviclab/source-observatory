@@ -6,15 +6,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 import json
-import time
 from pathlib import Path
 from typing import Any, Literal
 
 import requests
 
 from _constants import (
-    SDMX_RETRYABLE_STATUS_CODES,
-    SDMX_RETRY_DELAYS_SECONDS,
     REGISTRY_PATH,
     RADAR_SUMMARY_PATH,
     RADAR_HISTORY_PATH,
@@ -215,46 +212,8 @@ def probe_url(base_url: str) -> ProbeResult:
             )
         return result
 
-    # SDMX: retry on known intermittent status codes
-    last_result = None
-    for attempt, delay in enumerate([0, *SDMX_RETRY_DELAYS_SECONDS], start=1):
-        if delay > 0:
-            time.sleep(delay)
-        result = _probe_once(base_url)
-        last_result = result
-
-        # Success or non-retryable error: stop
-        if result.status == "GREEN":
-            return result
-        http_code = int(result.http_code) if result.http_code != "-" else 0
-        if http_code not in SDMX_RETRYABLE_STATUS_CODES:
-            if attempt > 1:
-                note = f"Retry dopo {attempt - 1} tentativi: {result.note or 'nessun dettaglio'}"
-                return ProbeResult(
-                    status=result.status,
-                    http_code=result.http_code,
-                    note=note,
-                    final_url=result.final_url,
-                    content_type=result.content_type,
-                )
-            return result
-
-    # All retries exhausted
-    if last_result:
-        note = (
-            f"SDMX retry esaurito ({len(SDMX_RETRY_DELAYS_SECONDS) + 1} tentativi): "
-            f"{last_result.note or 'nessun dettaglio'}"
-        )
-        return ProbeResult(
-            status=last_result.status,
-            http_code=last_result.http_code,
-            note=note,
-            final_url=last_result.final_url,
-            content_type=last_result.content_type,
-        )
-    return last_result or ProbeResult(
-        status="RED", http_code="-", note="SDMX probe fallito"
-    )
+    # SDMX: HttpClient handles retry with backoff internally
+    return _probe_once(base_url)
 
 
 def build_status_report(

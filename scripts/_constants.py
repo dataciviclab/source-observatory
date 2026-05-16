@@ -4,9 +4,6 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-SDMX_RETRYABLE_STATUS_CODES = {500, 502, 503, 504}
-SDMX_RETRY_DELAYS_SECONDS = (2, 5)
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 CATALOG_INVENTORY_REPORT_PATH = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_report.json"
