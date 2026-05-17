@@ -4,27 +4,34 @@ Layer MCP read-only sugli artifact prodotti da Source Observatory.
 
 Il server non sostituisce gli script di build e non scrive nello workspace: espone agli agenti una vista interrogabile degli artifact già generati da CI o run locali.
 
-Gli artifact sotto `data/*/generated/` sono cache locali. La fonte operativa corrente per i parquet è il prefisso GCS configurato dai workflow; gli artifact GitHub Actions restano utili per debug e recupero manuale. Le risposte sui parquet includono un blocco `cache` con `source`, `uri`, `modified_at`, `age_hours`, soglia `max_age_hours` e warning quando la cache locale supera 24 ore.
+Gli artifact di catalog-inventory sono cache locali sotto `data/catalog_inventory/generated/`. Gli altri artifact (catalog_signals, radar, registry) sono sotto `data/catalog/` e `data/radar/`. Le risposte sui parquet includono un blocco `cache` con `source`, `uri`, `modified_at`, `age_hours`, soglia `max_age_hours` e warning quando la cache locale supera 24 ore.
+
+## Workflow sorgente
+
+| Workflow | Schedule | Prodotto principale | Dove finisce |
+|---|---|---|---|
+| `radar.yml` | **daily** 03:15 | `radar_summary.json`, `radar_history.json`, `sources_registry.yaml`, `STATUS.md` | commit su git |
+| `observatory.yml` | **weekly** lun 03:20 | `catalog_signals.json`, `source_check_results.parquet`, `catalog_inventory_report.json`, `catalog_inventory_latest.parquet` | upload GCS + commit signals su git |
+| `ci.yml` | PR/push su main | test, lint, mypy, smoke test | solo CI — non produce artifact |
+
+Il server MCP legge i dati nell'ordine: **GCS → cache locale**. I commit su git sono la fonte per radar e signals. I parquet operativi sono letti dal prefisso GCS configurato (`CATALOG_INVENTORY_GCS_PREFIX`); la cache locale in `data/catalog_inventory/generated/` è il fallback.
 
 ## Avvio
-
-Config canonica workspace:
 
 ```json
 {
   "mcpServers": {
     "source-observatory": {
-      "command": "/home/gabry/dev/dataciviclab-workspace/source-observatory/.venv/bin/python",
+      "command": "<workspace>/.venv/bin/python",
       "args": [
-        "/home/gabry/dev/dataciviclab-workspace/source-observatory/mcp/so_server.py"
-      ],
-      "cwd": "/tmp"
+        "<workspace>/mcp/so_server.py"
+      ]
     }
   }
 }
 ```
 
-Usare l'avvio via file path, non `python -m mcp.so_server`: la repo contiene una directory locale `mcp/` che può collidere con la libreria Python `mcp`.
+Sostituisci `<workspace>` con il path assoluto del repo `source-observatory/`. L'avvio è via file path diretto (non `python -m`): la directory `mcp/` non contiene `__init__.py` (rimosso deliberatamente), quindi non è un package Python e non collide col pacchetto PyPI `mcp`.
 
 ## Config artifact
 
@@ -36,7 +43,7 @@ Variabili supportate per override:
 
 - `SO_ARTIFACT_BACKEND`: `auto`, `gcs` o `local` (`auto` default)
 - `SO_ENV_FILE`: file env opzionale; se non impostato, il server prova `dataciviclab-workspace/.env`
-- `CATALOG_INVENTORY_GCS_PREFIX`: override del prefisso GCS inventory/source-check
+- `CATALOG_INVENTORY_GCS_PREFIX` o `SO_CATALOG_INVENTORY_GCS_PREFIX`: override del prefisso GCS inventory/source-check (valgono entrambi, con priorità alla versione `SO_`)
 - `SO_CACHE_MAX_AGE_HOURS`: soglia di freschezza per cache locale (`24` default)
 
 In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa la cache locale e lo dichiara in `cache.fallback_warning`. In `gcs`, un errore GCS è bloccante. In `local`, il server usa solo i file locali.
@@ -78,7 +85,6 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 
 | Tool | Uso |
 |---|---|
-| `so_radar_summary` | stato sintetico radar |
 | `so_radar_history` | streak RED persistenti |
 | `so_radar_status_md` | sommario leggibile radar |
 | `so_catalog_signals` | drift catalogo (weekly CI) |
@@ -127,12 +133,10 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 - `so_sparql_query`
   - esegue SPARQL SELECT su endpoint pubblici
   - usa observatory_get per User-Agent coerente
-  - sostituisce `_local/mcp/sparql`
 
 - `so_html_extract_links`
   - estrae link CSV/JSON/XLSX/ZIP/XML da pagina HTML
   - usa observatory_get per User-Agent coerente
-  - sostituisce `_local/mcp/html-extractor`
 
 - `so_ckan_package_show`
   - fetch package_show su endpoint CKAN
