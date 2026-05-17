@@ -17,14 +17,13 @@ Config canonica workspace:
       "command": "/home/gabry/dev/dataciviclab-workspace/source-observatory/.venv/bin/python",
       "args": [
         "/home/gabry/dev/dataciviclab-workspace/source-observatory/mcp/so_server.py"
-      ],
-      "cwd": "/tmp"
+      ]
     }
   }
 }
 ```
 
-Usare l'avvio via file path, non `python -m mcp.so_server`: la repo contiene una directory locale `mcp/` che può collidere con la libreria Python `mcp`.
+Nota: `mcp/` **non** contiene `__init__.py` (rimosso deliberatamente), quindi non collide col pacchetto PyPI `mcp`. L'avvio via file path è lo standard; `python -m` non è supportato perché `mcp/` non è un package.
 
 ## Config artifact
 

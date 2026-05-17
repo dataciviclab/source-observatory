@@ -1,40 +1,16 @@
 """Smoke test: verify so_server.py registers 17 MCP tools via create_mcp_server."""
-
 from __future__ import annotations
 
 import asyncio
 import sys
-import importlib.util
 from pathlib import Path
 
+# Aggiungi mcp/ a sys.path: senza __init__.py non c'è collisione col package PyPI `mcp`.
+# so_server.py importa so_server_core come sibling module (stessa directory).
+_mcp_dir = Path(__file__).resolve().parents[1] / "mcp"
+sys.path.insert(0, str(_mcp_dir))
 
-def _load_so_server() -> "importlib.types.ModuleType":
-    """Load so_server.py with the same sys.path isolation it uses at runtime."""
-    mcp_dir = Path(__file__).resolve().parents[1] / "mcp"
-    repo_root = mcp_dir.parent
-
-    # Same trick so_server.py uses: remove local mcp from sys.modules
-    sys.modules.pop("mcp", None)
-    sys.modules.pop("mcp.so_server", None)
-
-    # Remove repo root from sys.path so Python picks up the real PyPI mcp package
-    _saved_path = list(sys.path)
-    sys.path = [p for p in sys.path if Path(p).resolve() not in {repo_root}]
-
-    # Load so_server.py the same way so_server.py loads so_server_core.py
-    spec = importlib.util.spec_from_file_location("mcp.so_server", mcp_dir / "so_server.py")
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot load so_server from {mcp_dir / 'so_server.py'}")
-
-    mod = importlib.util.module_from_spec(spec)
-    sys.modules["mcp.so_server"] = mod
-    spec.loader.exec_module(mod)
-
-    sys.path = _saved_path
-    return mod
-
-
-so_server = _load_so_server()
+import so_server  # noqa: E402
 
 
 def test_mcp_server_registers_17_tools() -> None:

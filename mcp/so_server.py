@@ -2,57 +2,16 @@
 SO MCP Server: read-only layer for Source Observatory artifact inspection.
 
 Run with: python mcp/so_server.py
+
+Nota: mcp/ non ha __init__.py (rimosso deliberatamente) per evitare collisione
+col pacchetto PyPI `mcp`. so_server_core.py e so_server.py sono importabili
+come moduli sibling senza creare un package `mcp` locale.
 """
-# ruff: noqa: E402 — import non in cima per via del sys.path collision workaround
 from __future__ import annotations
 
-import importlib.util
-import sys
-from pathlib import Path
 from typing import Any
 
-# ── sys.path collision avoidance ──────────────────────────────────────────────
-# La directory locale `mcp/` collide col pacchetto PyPI `mcp`.
-# Python ha già cachato `mcp` come pacchetto locale in sys.modules (per via
-# di `from mcp.so_server import ...`). Dobbiamo rimuoverlo per permettere
-# a `lab_connectors.mcp.core` di importare il VERO pacchetto `mcp`.
-
-# 1. Rimuovi il mcp locale da sys.modules e sys.path
-sys.modules.pop("mcp", None)
-sys.modules.pop("mcp.server", None)
-_MCP_DIR = Path(__file__).resolve().parent
-_REPO_ROOT = _MCP_DIR.parent
-sys.path = [p for p in sys.path if Path(p).resolve() not in {_REPO_ROOT}]
-
-# 2. Carica so_server_core via importlib (path assoluto)
-_CORE_PATH = _MCP_DIR / "so_server_core.py"
-_spec = importlib.util.spec_from_file_location("so_server_core", _CORE_PATH)
-if _spec is None or _spec.loader is None:
-    raise ImportError(f"Cannot load so_server_core from {_CORE_PATH}")
-_mod = importlib.util.module_from_spec(_spec)
-sys.modules["so_server_core"] = _mod
-_spec.loader.exec_module(_mod)
-
-# Re-exporta tutte le funzioni di so_server_core
-catalog_inventory_search = _mod.catalog_inventory_search
-discover_sdmx = _mod.discover_sdmx
-find_by_url = _mod.find_by_url
-infer_topic = _mod.infer_topic
-inventory_diff = _mod.inventory_diff
-inventory_status = _mod.inventory_status
-probe_url = _mod.probe_url
-query_inventory = _mod.query_inventory
-query_signals = _mod.query_signals
-radar_history = _mod.radar_history
-radar_status_md = _mod.radar_status_md
-radar_summary = _mod.radar_summary
-recommend_sources = _mod.recommend_sources
-registry_query = _mod.registry_query
-_ckan_package_show = _mod._ckan_package_show
-_html_extract_links = _mod._html_extract_links
-_sparql_query_raw = _mod._sparql_query_raw
-
-# 3. Importa lab_connectors.mcp (mcp non è in sys.modules, sys.path pulito)
+import so_server_core
 from lab_connectors.mcp import create_mcp_server, guard
 
 mcp = create_mcp_server(
@@ -75,7 +34,7 @@ def so_inventory_query(
     limit: int = 50,
     has_results: bool | None = None,
 ) -> dict[str, Any]:
-    return guard(query_inventory, source_id, min_score, limit, has_results)
+    return guard(so_server_core.query_inventory, source_id, min_score, limit, has_results)
 
 
 @mcp.tool(
@@ -83,7 +42,7 @@ def so_inventory_query(
     structured_output=True,
 )
 def so_catalog_signals(source_id: str | None = None, limit: int | None = None) -> dict[str, Any]:
-    return guard(query_signals, source_id, limit)
+    return guard(so_server_core.query_signals, source_id, limit)
 
 
 @mcp.tool(
@@ -91,7 +50,7 @@ def so_catalog_signals(source_id: str | None = None, limit: int | None = None) -
     structured_output=True,
 )
 def so_radar_summary(source_id: str | None = None) -> dict[str, Any]:
-    return guard(radar_summary, source_id)
+    return guard(so_server_core.radar_summary, source_id)
 
 
 @mcp.tool(
@@ -99,7 +58,7 @@ def so_radar_summary(source_id: str | None = None) -> dict[str, Any]:
     structured_output=True,
 )
 def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, Any]:
-    return guard(radar_history, source_id, limit)
+    return guard(so_server_core.radar_history, source_id, limit)
 
 
 @mcp.tool(
@@ -107,7 +66,7 @@ def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, 
     structured_output=True,
 )
 def so_radar_status_md() -> dict[str, Any]:
-    return guard(radar_status_md)
+    return guard(so_server_core.radar_status_md)
 
 
 @mcp.tool(
@@ -115,7 +74,7 @@ def so_radar_status_md() -> dict[str, Any]:
     structured_output=True,
 )
 def so_inventory_status(source_id: str | None = None) -> dict[str, Any]:
-    return guard(inventory_status, source_id)
+    return guard(so_server_core.inventory_status, source_id)
 
 
 @mcp.tool(
@@ -128,7 +87,7 @@ def so_catalog_inventory_search(
     protocol: str | None = None,
     limit: int = 25,
 ) -> dict[str, Any]:
-    return guard(catalog_inventory_search, query, source_id, protocol, limit)
+    return guard(so_server_core.catalog_inventory_search, query, source_id, protocol, limit)
 
 
 @mcp.tool(
@@ -136,7 +95,7 @@ def so_catalog_inventory_search(
     structured_output=True,
 )
 def so_probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
-    return guard(probe_url, url, timeout)
+    return guard(so_server_core.probe_url, url, timeout)
 
 
 @mcp.tool(
@@ -144,7 +103,7 @@ def so_probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
     structured_output=True,
 )
 def so_discover_sdmx(keywords: list[str], limit: int = 30) -> dict[str, Any]:
-    return guard(discover_sdmx, keywords, limit)
+    return guard(so_server_core.discover_sdmx, keywords, limit)
 
 
 @mcp.tool(
@@ -152,7 +111,7 @@ def so_discover_sdmx(keywords: list[str], limit: int = 30) -> dict[str, Any]:
     structured_output=True,
 )
 def so_find_by_url(url: str) -> dict[str, Any]:
-    return guard(find_by_url, url)
+    return guard(so_server_core.find_by_url, url)
 
 
 @mcp.tool(
@@ -165,7 +124,7 @@ def so_registry_query(
     observation_mode: str | None = None,
     source_id: str | None = None,
 ) -> dict[str, Any]:
-    return guard(registry_query, protocol, source_kind, observation_mode, source_id)
+    return guard(so_server_core.registry_query, protocol, source_kind, observation_mode, source_id)
 
 
 @mcp.tool(
@@ -180,7 +139,7 @@ def so_sparql_query(
     timeout: int = 60,
     max_rows: int = 500,
 ) -> dict[str, Any]:
-    return guard(_sparql_query_raw, endpoint, query, timeout, max_rows)
+    return guard(so_server_core._sparql_query_raw, endpoint, query, timeout, max_rows)
 
 
 @mcp.tool(
@@ -190,7 +149,7 @@ def so_sparql_query(
     structured_output=True,
 )
 def so_html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
-    return guard(_html_extract_links, url, timeout)
+    return guard(so_server_core._html_extract_links, url, timeout)
 
 
 @mcp.tool(
@@ -203,7 +162,7 @@ def so_html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
     structured_output=True,
 )
 def so_ckan_package_show(endpoint: str, package_id: str, timeout: int = 30) -> dict[str, Any]:
-    return guard(_ckan_package_show, endpoint, package_id, timeout)
+    return guard(so_server_core._ckan_package_show, endpoint, package_id, timeout)
 
 
 @mcp.tool(
@@ -214,7 +173,7 @@ def so_ckan_package_show(endpoint: str, package_id: str, timeout: int = 30) -> d
     structured_output=True,
 )
 def so_infer_topic(text: str) -> dict[str, Any]:
-    return guard(infer_topic, text)
+    return guard(so_server_core.infer_topic, text)
 
 
 @mcp.tool(
@@ -224,7 +183,7 @@ def so_infer_topic(text: str) -> dict[str, Any]:
     structured_output=True,
 )
 def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
-    return guard(recommend_sources, keyword, limit)
+    return guard(so_server_core.recommend_sources, keyword, limit)
 
 
 @mcp.tool(
@@ -234,7 +193,7 @@ def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
     structured_output=True,
 )
 def so_inventory_diff(source_id: str) -> dict[str, Any]:
-    return guard(inventory_diff, source_id)
+    return guard(so_server_core.inventory_diff, source_id)
 
 
 if __name__ == "__main__":
