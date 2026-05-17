@@ -609,6 +609,9 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             ct_fmt = _probe_content_type(row["url"])
             if ct_fmt:
                 row["format"] = ct_fmt
+        # Ricalcola by_format dopo i probe (summary era stato calcolato pre-probe)
+        from collections import Counter
+        summary["by_format"] = dict(Counter(r.get("format", "?") for r in rows))
 
     if "error" in summary:
         return CollectorResult(

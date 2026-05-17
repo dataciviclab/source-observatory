@@ -687,3 +687,51 @@ class TestScanAreaPagesPagination:
         # Should have scanned exactly page_max pages
         assert summary["area_pages_scanned"] == 3
         assert len(rows) == 3
+
+
+class TestContentTypeProbe:
+    """Test che Content-Type probe ricalcoli by_format nella summary."""
+
+    def test_probe_updates_by_format_in_summary(self, monkeypatch):
+        """Dopo il probe, by_format deve riflettere i formati aggiornati, non quelli pre-probe."""
+        # Un link ZIP -> probe dice CSV -> by_format deve contenere CSV non ZIP
+        html_page = '<a href="https://example.test/data.zip">data</a>'
+
+        def fake_ssl_get(url, **kwargs):
+            return HttpResult(
+                response=FakeJsonResponse(payload=None, text=html_page, headers={"content-type": "text/html"}),
+                err=None, ssl_fallback_used=None,
+            )
+
+        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: _FakeClient(fake_ssl_get))
+
+        # Monkeypatch _probe_content_type per simulare che data.zip sia in realtà CSV
+        original_probe = html_collector._probe_content_type
+
+        def fake_probe(url, timeout=5):
+            if url == "https://example.test/data.zip":
+                return "CSV"
+            return original_probe(url, timeout=timeout)
+
+        monkeypatch.setattr(html_collector, "_probe_content_type", fake_probe)
+
+        source_cfg = {
+            "source_kind": "catalog",
+            "protocol": "html",
+            "base_url": "https://example.test",
+            "html_portal": {
+                "probe_content_type": True,
+                "delay_seconds": 0,
+            },
+        }
+
+        result = html_collector.collect("test_probe", source_cfg, "2026-05-17T12:00:00+00:00")
+
+        # La riga deve avere format=CSV (aggiornato dal probe)
+        row_formats = {r.get("format") for r in result.rows}
+        assert "CSV" in row_formats, f"Formato non aggiornato dal probe: {row_formats}"
+
+        # by_format nella summary deve riflettere il formato aggiornato
+        bf = result.summary.get("by_format", {})
+        assert "CSV" in bf, f"by_format non contiene CSV dopo probe: {bf}"
+        assert "ZIP" not in bf, f"by_format contiene ancora ZIP pre-probe: {bf}"
