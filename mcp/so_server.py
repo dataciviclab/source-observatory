@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any
 
 import so_server_core
-from lab_connectors.mcp import create_mcp_server, guard
+from lab_connectors.mcp import create_mcp_server, guard_timed
 
 mcp = create_mcp_server(
     name="source-observatory",
@@ -34,7 +34,7 @@ def so_inventory_query(
     limit: int = 50,
     has_results: bool | None = None,
 ) -> dict[str, Any]:
-    return guard(so_server_core.query_inventory, source_id, min_score, limit, has_results)
+    return guard_timed(so_server_core.query_inventory, "so_inventory_query", source_id, min_score, limit, has_results, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -42,7 +42,7 @@ def so_inventory_query(
     structured_output=True,
 )
 def so_catalog_signals(source_id: str | None = None, limit: int | None = None) -> dict[str, Any]:
-    return guard(so_server_core.query_signals, source_id, limit)
+    return guard_timed(so_server_core.query_signals, "so_catalog_signals", source_id, limit, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -50,7 +50,7 @@ def so_catalog_signals(source_id: str | None = None, limit: int | None = None) -
     structured_output=True,
 )
 def so_radar_summary(source_id: str | None = None) -> dict[str, Any]:
-    return guard(so_server_core.radar_summary, source_id)
+    return guard_timed(so_server_core.radar_summary, "so_radar_summary", source_id, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -58,7 +58,7 @@ def so_radar_summary(source_id: str | None = None) -> dict[str, Any]:
     structured_output=True,
 )
 def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, Any]:
-    return guard(so_server_core.radar_history, source_id, limit)
+    return guard_timed(so_server_core.radar_history, "so_radar_history", source_id, limit, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -66,7 +66,7 @@ def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, 
     structured_output=True,
 )
 def so_radar_status_md() -> dict[str, Any]:
-    return guard(so_server_core.radar_status_md)
+    return guard_timed(so_server_core.radar_status_md, "so_radar_status_md", logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -74,7 +74,7 @@ def so_radar_status_md() -> dict[str, Any]:
     structured_output=True,
 )
 def so_inventory_status(source_id: str | None = None) -> dict[str, Any]:
-    return guard(so_server_core.inventory_status, source_id)
+    return guard_timed(so_server_core.inventory_status, "so_inventory_status", source_id, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -87,7 +87,7 @@ def so_catalog_inventory_search(
     protocol: str | None = None,
     limit: int = 25,
 ) -> dict[str, Any]:
-    return guard(so_server_core.catalog_inventory_search, query, source_id, protocol, limit)
+    return guard_timed(so_server_core.catalog_inventory_search, "so_catalog_inventory_search", query, source_id, protocol, limit, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -95,7 +95,7 @@ def so_catalog_inventory_search(
     structured_output=True,
 )
 def so_probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
-    return guard(so_server_core.probe_url, url, timeout)
+    return guard_timed(so_server_core.probe_url, "so_probe_url", url, timeout, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -103,15 +103,16 @@ def so_probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
     structured_output=True,
 )
 def so_discover_sdmx(keywords: list[str], limit: int = 30) -> dict[str, Any]:
-    return guard(so_server_core.discover_sdmx, keywords, limit)
+    return guard_timed(so_server_core.discover_sdmx, "so_discover_sdmx", keywords, limit, logger_name="source-observatory")
 
 
 @mcp.tool(
-    description="Cerca un URL in source_check_results.parquet e catalog_inventory_latest.parquet per vedere se e' gia' catalogato.",
+    description="Cerca un URL o testo in source_check_results (colonne URL) e catalog_inventory_latest (URL + item_name, item_id, title, notes_excerpt). "
+    "Usa LIKE %query% — utile per trovare item per URL, filename, ID o nome.",
     structured_output=True,
 )
 def so_find_by_url(url: str) -> dict[str, Any]:
-    return guard(so_server_core.find_by_url, url)
+    return guard_timed(so_server_core.find_by_url, "so_find_by_url", url, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -124,7 +125,7 @@ def so_registry_query(
     observation_mode: str | None = None,
     source_id: str | None = None,
 ) -> dict[str, Any]:
-    return guard(so_server_core.registry_query, protocol, source_kind, observation_mode, source_id)
+    return guard_timed(so_server_core.registry_query, "so_registry_query", protocol, source_kind, observation_mode, source_id, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -139,7 +140,7 @@ def so_sparql_query(
     timeout: int = 60,
     max_rows: int = 500,
 ) -> dict[str, Any]:
-    return guard(so_server_core._sparql_query_raw, endpoint, query, timeout, max_rows)
+    return guard_timed(so_server_core._sparql_query_raw, "so_sparql_query", endpoint, query, timeout, max_rows, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -149,7 +150,7 @@ def so_sparql_query(
     structured_output=True,
 )
 def so_html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
-    return guard(so_server_core._html_extract_links, url, timeout)
+    return guard_timed(so_server_core._html_extract_links, "so_html_extract_links", url, timeout, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -162,18 +163,19 @@ def so_html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
     structured_output=True,
 )
 def so_ckan_package_show(endpoint: str, package_id: str, timeout: int = 30) -> dict[str, Any]:
-    return guard(so_server_core._ckan_package_show, endpoint, package_id, timeout)
+    return guard_timed(so_server_core._ckan_package_show, "so_ckan_package_show", endpoint, package_id, timeout, logger_name="source-observatory")
 
 
 @mcp.tool(
     description="Infer thematic topics from any text string (item_name, title, tags, notes, etc.). "
-    "Uses a fixed taxonomy of 13 topics: lavoro, economia, sanita, istruzione, trasporti, "
-    "ambiente, agricoltura, turismo, giustizia, demografia, energia, commercio. "
+    "Uses a fixed taxonomy of 20 topics: lavoro, economia, sanita, istruzione, trasporti, "
+    "ambiente, agricoltura, turismo, giustizia, demografia, energia, commercio, "
+    "welfare, previdenza, casa, cultura, bilancio, innovazione, sicurezza. "
     "Returns topics sorted by relevance score (desc), with top_match if dominant (score>=3).",
     structured_output=True,
 )
 def so_infer_topic(text: str) -> dict[str, Any]:
-    return guard(so_server_core.infer_topic, text)
+    return guard_timed(so_server_core.infer_topic, "so_infer_topic", text, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -183,7 +185,7 @@ def so_infer_topic(text: str) -> dict[str, Any]:
     structured_output=True,
 )
 def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
-    return guard(so_server_core.recommend_sources, keyword, limit)
+    return guard_timed(so_server_core.recommend_sources, "so_recommend_sources", keyword, limit, logger_name="source-observatory")
 
 
 @mcp.tool(
@@ -193,7 +195,7 @@ def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
     structured_output=True,
 )
 def so_inventory_diff(source_id: str) -> dict[str, Any]:
-    return guard(so_server_core.inventory_diff, source_id)
+    return guard_timed(so_server_core.inventory_diff, "so_inventory_diff", source_id, logger_name="source-observatory")
 
 
 if __name__ == "__main__":
