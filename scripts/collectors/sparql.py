@@ -193,7 +193,7 @@ def _execute_sparql_query(
     payload = response.json()
     bindings = ((payload.get("results") or {}).get("bindings")) or []
     if not isinstance(bindings, list):
-        raise ValueError(f"Unexpected SPARQL payload: bindings is not a list")
+        raise ValueError("Unexpected SPARQL payload: bindings is not a list")
     return bindings
 
 
