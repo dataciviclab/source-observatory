@@ -34,11 +34,12 @@ WHERE {
 }
 ORDER BY ?dataset
 LIMIT {limit}
+OFFSET {offset}
 """.strip()
 }
 
 
-def build_sparql_query(source_cfg: dict[str, Any]) -> tuple[str, str]:
+def build_sparql_query(source_cfg: dict[str, Any], offset: int = 0) -> tuple[str, str]:
     sparql_cfg = source_cfg.get("sparql") or {}
     query_name = sparql_cfg.get("query_name") or source_cfg.get(
         "catalog_baseline", {}
@@ -52,6 +53,8 @@ def build_sparql_query(source_cfg: dict[str, Any]) -> tuple[str, str]:
     limit = int(sparql_cfg.get("limit", 5000))
     if "{limit}" in query_text:
         query_text = query_text.replace("{limit}", str(limit))
+    if "{offset}" in query_text:
+        query_text = query_text.replace("{offset}", str(offset))
     return query_text, query_name or "custom"
 
 
@@ -168,38 +171,82 @@ def _build_sparql_rows(
     }
 
 
-def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> CollectorResult:
-    sparql_cfg = source_cfg.get("sparql") or {}
-    endpoint = sparql_cfg.get("endpoint_url") or source_cfg["base_url"]
-    query_text, query_name = build_sparql_query(source_cfg)
+def _query_supports_offset(source_cfg: dict[str, Any], query_name: str) -> bool:
+    """Check if the SPARQL query template or custom query supports {offset} placeholder."""
+    if query_name in SPARQL_QUERY_TEMPLATES:
+        return "{offset}" in SPARQL_QUERY_TEMPLATES[query_name]
+    custom_query = (source_cfg.get("sparql") or {}).get("query") or ""
+    return "{offset}" in custom_query
+
+
+def _execute_sparql_query(
+    endpoint: str, query_text: str, timeout: int,
+) -> list[dict[str, Any]]:
+    """Execute a single SPARQL query and return bindings."""
     response = observatory_get(
         endpoint,
         params={"query": query_text, "format": "application/sparql-results+json"},
-        headers={
-            "Accept": "application/sparql-results+json",
-        },
-        timeout=int(sparql_cfg.get("timeout_seconds", 60)),
+        headers={"Accept": "application/sparql-results+json"},
+        timeout=timeout,
     )
     response.raise_for_status()
     payload = response.json()
     bindings = ((payload.get("results") or {}).get("bindings")) or []
     if not isinstance(bindings, list):
-        raise ValueError(
-            f"Unexpected SPARQL payload for {source_id}: bindings is not a list"
+        raise ValueError(f"Unexpected SPARQL payload: bindings is not a list")
+    return bindings
+
+
+def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> CollectorResult:
+    sparql_cfg = source_cfg.get("sparql") or {}
+    endpoint = sparql_cfg.get("endpoint_url") or source_cfg["base_url"]
+    limit = int(sparql_cfg.get("limit", 5000))
+    max_pages = int(sparql_cfg.get("max_pages", 50))
+    timeout = int(sparql_cfg.get("timeout_seconds", 60))
+
+    _, query_name = build_sparql_query(source_cfg, offset=0)
+    supports_pagination = _query_supports_offset(source_cfg, query_name)
+
+    if supports_pagination:
+        # Paginazione OFFSET-based
+        all_bindings: list[dict[str, Any]] = []
+        offset = 0
+        page = 0
+
+        while page < max_pages:
+            query_text = build_sparql_query(source_cfg, offset=offset)[0]
+            bindings = _execute_sparql_query(endpoint, query_text, timeout)
+            if not bindings:
+                break
+            all_bindings.extend(bindings)
+            page += 1
+            if len(bindings) < limit:
+                break
+            offset += limit
+
+        by_dataset = _group_sparql_bindings(all_bindings)
+        rows, summary = _build_sparql_rows(
+            by_dataset, source_id, source_cfg, captured_at, endpoint, query_name,
         )
+        if not rows:
+            raise ValueError(f"SPARQL query returned no inventory rows for {source_id}")
+        summary["bindings"] = len(all_bindings)
+        summary["pages"] = page
+        if page >= max_pages:
+            summary["warning"] = (
+                f"Pagination stopped at max_pages={max_pages}; catalog may be truncated"
+            )
+    else:
+        # Run singolo (backward compat per query custom senza {offset})
+        query_text = build_sparql_query(source_cfg, offset=0)[0]
+        bindings = _execute_sparql_query(endpoint, query_text, timeout)
+        by_dataset = _group_sparql_bindings(bindings)
+        rows, summary = _build_sparql_rows(
+            by_dataset, source_id, source_cfg, captured_at, endpoint, query_name,
+        )
+        if not rows:
+            raise ValueError(f"SPARQL query returned no inventory rows for {source_id}")
+        summary["bindings"] = len(bindings)
+        summary["pages"] = 1
 
-    by_dataset = _group_sparql_bindings(bindings)
-    rows, summary = _build_sparql_rows(
-        by_dataset,
-        source_id,
-        source_cfg,
-        captured_at,
-        endpoint,
-        query_name,
-    )
-
-    if not rows:
-        raise ValueError(f"SPARQL query returned no inventory rows for {source_id}")
-
-    summary["bindings"] = len(bindings)
     return CollectorResult(rows=rows, summary=summary)

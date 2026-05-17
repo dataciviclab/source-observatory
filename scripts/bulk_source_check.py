@@ -225,16 +225,19 @@ def _enrich_with_inventory(
         item_name = _slug.strip()
 
     # CKAN: only re-fetch package_show if format AND title are missing in inventory
-    # inv_format="csv,xml" is truthy but is a dirty concatenated string → treat as missing
-    valid_formats = {"CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"}
-    inv_format_clean = isinstance(inv_format, str) and inv_format.upper() in valid_formats
+    # inv_format="csv,xml,json" is a dirty concatenated string from package_search → check if any token is valid
+    _VALID_FORMATS_FOR_SKIP = {"CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"}
+    inv_format_has_valid = (
+        isinstance(inv_format, str)
+        and any(t.strip().upper() in _VALID_FORMATS_FOR_SKIP for t in inv_format.split(","))
+    )
     has_valid_slug = bool(isinstance(_slug, str) and _slug.strip() and _slug.strip() != "dataset")
     needs_ckan_refetch = (
         protocol == "ckan"
         and base_url
         and item_name
         and has_valid_slug
-        and not inv_format_clean
+        and not inv_format_has_valid
         and not inv_title
     )
 

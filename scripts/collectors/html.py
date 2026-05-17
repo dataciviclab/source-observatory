@@ -115,6 +115,43 @@ class _DataLinksParser:
         self.links = parser.links
 
 
+# ─── Content-Type probing (opt-in) ─────────────────────────────────────────
+
+_CT_TO_FORMAT: dict[str, str] = {
+    "text/csv": "CSV",
+    "text/tab-separated-values": "TSV",
+    "application/json": "JSON",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
+    "application/vnd.ms-excel": "XLS",
+    "application/pdf": "PDF",
+    "application/xml": "XML",
+    "text/xml": "XML",
+    "application/zip": "ZIP",
+    "application/gzip": "GZ",
+    "application/x-parquet": "PARQUET",
+    "application/octet-stream": "BIN",
+}
+
+
+def _content_type_to_format(content_type: str) -> str | None:
+    """Mappa un Content-Type HTTP in un formato standardizzato."""
+    ct = content_type.split(";")[0].strip().lower()
+    return _CT_TO_FORMAT.get(ct)
+
+
+def _probe_content_type(url: str, timeout: float = 5) -> str | None:
+    """HEAD leggero per ricavare Content-Type. Timeout breve, fallisce silenziosamente."""
+    try:
+        client = HttpClient(timeout=timeout)
+        result = client.head(url)
+        if result.is_ok and result.response is not None:
+            ct = (result.response.headers or {}).get("content-type", "")
+            return _content_type_to_format(ct)
+    except Exception:
+        pass
+    return None
+
+
 # ─── URL Analysis ─────────────────────────────────────────────────────────────
 
 
@@ -523,6 +560,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     page_start = html_portal_cfg.get("page_start", 0)
     page_max = html_portal_cfg.get("page_max", 200)
     page_stop_on_empty = html_portal_cfg.get("page_stop_on_empty", True)
+    probe_ct = html_portal_cfg.get("probe_content_type", False)
 
     if sitemap_url:
         sample = html_portal_cfg.get("sample_pages", 30)
@@ -564,6 +602,14 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             "method": "csv_magnet_homepage_only",
         }
 
+    # Content-Type probe (opt-in): arricchisce formato per URL ambigui
+    if probe_ct and not summary.get("error"):
+        _probe_targets = [r for r in rows if r.get("url") and r.get("format") in ("?", "ZIP", "BIN")]
+        for row in _probe_targets[:20]:  # max 20 probe per run
+            ct_fmt = _probe_content_type(row["url"])
+            if ct_fmt:
+                row["format"] = ct_fmt
+
     if "error" in summary:
         return CollectorResult(
             rows=[],
@@ -572,5 +618,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
 
     summary["type"] = "csv_magnet"
     summary["source_id"] = source_id
+    if probe_ct:
+        summary["content_type_probes"] = min(len([r for r in rows if r.get("format") not in ("?", )]), 20)
 
     return CollectorResult(rows=rows, summary=summary)
