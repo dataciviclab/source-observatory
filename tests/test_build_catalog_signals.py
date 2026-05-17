@@ -241,3 +241,26 @@ def test_signals_json_schema() -> None:
     result = build_signals(curr, prev, None)
     schema = _load_schema("catalog_signals.schema.json")
     jsonschema.validate(instance=result, schema=schema)
+
+
+def test_csv_magnet_signal_schema() -> None:
+    """Un segnale csv_magnet con topics e years_range deve essere valido."""
+    payload = {
+        "captured_at": "2026-05-17T10:00:00+00:00",
+        "sources_checked": 1,
+        "signals": [
+            {
+                "source": "mim_opendata",
+                "protocol": "html",
+                "signal_type": "csv_magnet",
+                "result": "scan_completed",
+                "detail": "1116 link data (CSV 372, JSON 372, XML 372), years 2015-2025",
+                "suggested_action": "catalog-watch-ready",
+                "prefix_matrix": {"SCUANAGR": 66, "ALUCORSO": 120, "INFANZIA": 192},
+                "topics": {"istruzione": 1116},
+                "years_range": [2015, 2025],
+            }
+        ],
+    }
+    schema = _load_schema("catalog_signals.schema.json")
+    jsonschema.validate(instance=payload, schema=schema)

@@ -80,21 +80,27 @@
         },
         "prefix_matrix": {
           "type": "object",
-          "patternProperties": {
-            "^[A-Z0-9_]+$": { "type": "integer" }
-          },
-          "additionalProperties": false,
-          "description": "Mappa prefisso -> conteggio link (solo per signal_type=csv_magnet)."
+          "additionalProperties": { "type": "integer" },
+          "description": "Mappa prefisso -> conteggio link (solo per signal_type=csv_magnet). Le chiavi sono stringhe libere (prefissi, anni, nomi)."
+        },
+        "topics": {
+          "type": "object",
+          "additionalProperties": { "type": "integer" },
+          "description": "Mappa topic -> conteggio link totali (solo per signal_type=csv_magnet)."
+        },
+        "years_range": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 0,
+          "maxItems": 2,
+          "description": "Intervallo anni [inizio, fine] dei link scoperti (solo per signal_type=csv_magnet). Array vuoto se non determinabile."
         },
         "series": {
           "type": "object",
-          "patternProperties": {
-            "^[A-Z0-9_]+$": {
-              "$ref": "#/definitions/SeriesEntry"
-            }
+          "additionalProperties": {
+            "$ref": "#/definitions/SeriesEntry"
           },
-          "additionalProperties": false,
-          "description": "Serie dettagliate per prefisso (solo per signal_type=csv_magnet)."
+          "description": "Serie dettagliate per prefisso (solo per signal_type=csv_magnet). Le chiavi sono stringhe libere (prefissi, anni, nomi)."
         }
       },
       "additionalProperties": false,
