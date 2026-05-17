@@ -501,6 +501,63 @@ def test_inventory_diff_parquet_not_found(tmp_path, monkeypatch) -> None:
     assert result["error"] == "artifact_not_found"
 
 
+# ─── _source_radar_context tests (GAP-7: real radar_summary.json schema) ────
+
+
+def test_source_radar_context_red(tmp_path, monkeypatch) -> None:
+    """RED source with red_streak returns contesto giorni."""
+    radar_path = tmp_path / "radar_summary.json"
+    radar_path.write_text(
+        json.dumps({
+            "sources": [
+                {"id": "dati_salute", "status": "RED", "red_streak": 14},
+                {"id": "istat_sdmx", "status": "GREEN"},
+            ],
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(core, "_RADAR_JSON", radar_path)
+
+    result = core._source_radar_context("dati_salute")
+    assert result is not None
+    assert "RED" in result
+    assert "14 giorni" in result
+
+
+def test_source_radar_context_green(tmp_path, monkeypatch) -> None:
+    """GREEN source returns status=GREEN."""
+    radar_path = tmp_path / "radar_summary.json"
+    radar_path.write_text(
+        json.dumps({
+            "sources": [
+                {"id": "istat_sdmx", "status": "GREEN"},
+            ],
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(core, "_RADAR_JSON", radar_path)
+
+    result = core._source_radar_context("istat_sdmx")
+    assert result == "status=GREEN"
+
+
+def test_source_radar_context_unknown_source(tmp_path, monkeypatch) -> None:
+    """Source not in radar returns None."""
+    radar_path = tmp_path / "radar_summary.json"
+    radar_path.write_text(json.dumps({"sources": []}), encoding="utf-8")
+    monkeypatch.setattr(core, "_RADAR_JSON", radar_path)
+
+    result = core._source_radar_context("unknown_source")
+    assert result is None
+
+
+def test_source_radar_context_no_file(tmp_path, monkeypatch) -> None:
+    """No radar file returns None."""
+    monkeypatch.setattr(core, "_RADAR_JSON", tmp_path / "nonexistent.json")
+    result = core._source_radar_context("dati_salute")
+    assert result is None
+
+
 # ─── Tests for HTTP tools (mocked) ─────────────────────────────────────────────
 
 

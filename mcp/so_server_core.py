@@ -1396,23 +1396,33 @@ def recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
 
 
 def _source_radar_context(source_id: str) -> str | None:
-    """Check radar_summary.json for source context (health, days_red)."""
+    """Check radar_summary.json for source context (status, red_streak).
+
+    Schema reale di radar_summary.json::
+
+        {"sources": [{"id": "dati_salute", "status": "RED",
+                      "red_streak": 14, ...}, ...]}
+    """
     if not _RADAR_JSON.exists():
         return None
     try:
         with _RADAR_JSON.open(encoding="utf-8") as fh:
             radar = json.load(fh)
-        sources = radar.get("sources") or {}
-        info = sources.get(source_id)
+        sources_list = radar.get("sources") or []
+        info = None
+        for s in sources_list:
+            if isinstance(s, dict) and s.get("id") == source_id:
+                info = s
+                break
         if not info:
             return None
-        health = info.get("health", "unknown")
-        days_red = info.get("days_red")
-        if days_red and health == "RED":
-            return f"RED da {days_red} giorni, inventories non generati"
-        if health == "RED":
+        status = info.get("status", "unknown")
+        red_streak = info.get("red_streak")
+        if red_streak and status == "RED":
+            return f"RED da {red_streak} giorni, inventories non generati"
+        if status == "RED":
             return "RED (nessun inventory generato)"
-        return f"health={health}"
+        return f"status={status}"
     except Exception:
         return None
 
