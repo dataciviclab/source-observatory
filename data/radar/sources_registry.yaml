@@ -118,6 +118,7 @@ dati_salute:
     sitemap_url: https://www.dati.salute.gov.it/sitemap-0.xml
     delay_seconds: 0.3
     sample_pages: 191
+    probe_content_type: true
   datasets_in_use: []
 inail_opendata:
   source_kind: portal
@@ -353,6 +354,7 @@ mef_irpef:
     homepage: 
       https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
     delay_seconds: 0.2
+    probe_content_type: true
   datasets_in_use:
     - irpef_comunale
     - mef_irpef_regionale
@@ -380,6 +382,7 @@ opencivitas:
     page_max: 100
     page_stop_on_empty: true
     delay_seconds: 0.3
+    probe_content_type: true
   datasets_in_use: []
 aifa:
   source_kind: catalog
@@ -402,4 +405,5 @@ aifa:
       - https://www.aifa.gov.it/web/guest/incarichi-e-consulenze
       - https://www.aifa.gov.it/web/guest/bandi-di-gara-e-contratti-
     delay_seconds: 0.5
+    probe_content_type: true
   datasets_in_use: []
