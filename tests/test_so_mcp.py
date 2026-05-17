@@ -402,6 +402,7 @@ def test_recommend_sources(tmp_path, monkeypatch) -> None:
     assert result["returned"] == 1
     assert result["sources"][0]["source_id"] == "inps"
     assert result["sources"][0]["item_count"] >= 1
+    assert result["total_items_in_inventory"] == 2  # inps + openbdap in test data
 
 
 def test_recommend_sources_empty_keyword() -> None:
@@ -547,6 +548,61 @@ def test_infer_topic_tasso_not_false_positive(monkeypatch) -> None:
     assert "lavoro" not in result["topics"]
 
 
+# ─── Topic inference — new topics from MCP audit (2026-05-17) ──────────────
+
+
+def test_infer_topic_welfare() -> None:
+    result = core.infer_topic("bonus assistenziali e sostegno alla poverta")
+    assert "welfare" in result["topics"]
+    assert result["topics"]["welfare"] >= 3
+
+
+def test_infer_topic_previdenza() -> None:
+    result = core.infer_topic("pensioni erogate per regione e tipologia, importo medio")
+    assert "previdenza" in result["topics"]
+    assert result["top_match"] == "previdenza"
+
+
+def test_infer_topic_casa() -> None:
+    result = core.infer_topic("edilizia residenziale pubblica e catasto immobiliare")
+    assert "casa" in result["topics"]
+    assert result["topics"]["casa"] >= 3
+
+
+def test_infer_topic_cultura() -> None:
+    result = core.infer_topic("musei e patrimonio artistico, mostre culturali")
+    assert "cultura" in result["topics"]
+    assert result["topics"]["cultura"] >= 3
+
+
+def test_infer_topic_bilancio() -> None:
+    result = core.infer_topic("gettito fiscale IRPEF e spesa pubblica")
+    assert "bilancio" in result["topics"]
+    assert result["topics"]["bilancio"] >= 3
+
+
+def test_infer_topic_innovazione() -> None:
+    result = core.infer_topic("digitale e innovazione tecnologica, open data")
+    assert "innovazione" in result["topics"]
+    assert result["topics"]["innovazione"] >= 3
+
+
+def test_infer_topic_sicurezza() -> None:
+    result = core.infer_topic("protezione civile e prevenzione rischi, emergenza")
+    assert "sicurezza" in result["topics"]
+    assert result["topics"]["sicurezza"] >= 3
+
+
+def test_infer_topic_new_not_overlapping_old() -> None:
+    """New topic keywords should not cause false-positive scoring in old topics."""
+    # Welfare keywords should not accidentally score lavoro or economia
+    result = core.infer_topic("bonus assistenziali e assegno sostegno")
+    assert "welfare" in result["topics"]
+    # These are purely welfare terms - should not trigger old topics
+    for old_topic in ("lavoro", "economia", "sanita"):
+        assert old_topic not in result["topics"]
+
+
 class _FakeSSLFallbackResponse:
     """Fake response returned by SSL fallback when verify=False succeeds."""
     status_code = 200
@@ -681,3 +737,152 @@ def test_html_extract_links_ssl_fallback_failure_returns_reachable_false(monkeyp
     assert result["is_reachable"] is False
     assert "error" in result
     assert result["message"] == "unexpected internal error"
+
+
+# ─── _guess_format tests (GAP-8: content-type inference) ───────────────────
+
+
+def test_guess_format_from_content_type() -> None:
+    assert core._guess_format("https://example.test/file", "text/csv") == "CSV"
+    assert core._guess_format("https://example.test/file", "application/json") == "JSON"
+    assert core._guess_format("https://example.test/file", "text/html") == "HTML"
+    assert core._guess_format("https://example.test/file", "text/plain; charset=utf-8") == "TXT"
+    assert core._guess_format("https://example.test/file", "application/octet-stream") == "BIN"
+    assert core._guess_format("https://example.test/file", "text/tab-separated-values") == "TSV"
+    assert core._guess_format("https://example.test/file", "application/gzip") == "GZ"
+    assert core._guess_format("https://example.test/file", "application/zip") == "ZIP"
+    assert core._guess_format("https://example.test/file", "application/pdf") == "PDF"
+    assert core._guess_format("https://example.test/file", "application/parquet") == "PARQUET"
+
+
+def test_guess_format_from_suffix_fallback() -> None:
+    """When content_type is None or unknown, fallback to URL suffix."""
+    assert core._guess_format("https://example.test/data.csv", None) == "CSV"
+    assert core._guess_format("https://example.test/data.json", None) == "JSON"
+    assert core._guess_format("https://example.test/data.xlsx", None) == "XLSX"
+    assert core._guess_format("https://example.test/file.unknown", None) is None
+    assert core._guess_format("https://example.test/data", "application/octet-stream") == "BIN"
+
+
+def test_guess_format_unknown_content_type() -> None:
+    """Unknown content-type with no suffix should return None."""
+    assert core._guess_format("https://example.test/file", "application/vnd.ms-powerpoint") is None
+    assert core._guess_format("https://example.test/data", None) is None
+
+
+# ─── find_by_url tests (GAP-1: expanded search beyond URL columns) ─────────
+
+
+def _write_source_check_parquet(path, rows: list[dict]) -> None:
+    """Write minimal columns matching source_check_results schema."""
+    _write_parquet(path, rows)
+
+
+def _write_catalog_inventory_parquet(path, rows: list[dict]) -> None:
+    """Write minimal columns matching catalog_inventory schema."""
+    _write_parquet(path, rows)
+
+
+def test_find_by_url_finds_by_url_in_source_check(tmp_path, monkeypatch) -> None:
+    """Search by download URL in source_check_results."""
+    check_path = tmp_path / "source_check_results.parquet"
+    _write_source_check_parquet(
+        check_path,
+        [
+            {"url": "https://inps.example/download/PENSIONI-2024.csv", "url_checked": "", "item_id": "id1"},
+            {"url": "https://inps.example/download/ALTRO.csv", "url_checked": "", "item_id": "id2"},
+        ],
+    )
+    inv_path = tmp_path / "catalog_inventory_latest.parquet"
+    _write_catalog_inventory_parquet(inv_path, [{"dummy": 0}])
+    monkeypatch.setattr(core, "_CHECK_PARQUET", check_path)
+    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inv_path)
+
+    result = core.find_by_url("PENSIONI-2024.csv")
+
+    assert result["query_url"] == "PENSIONI-2024.csv"
+    assert len(result["source_check_results"]) == 1
+    assert result["source_check_results"][0]["item_id"] == "id1"
+
+
+def test_find_by_url_finds_by_item_name_in_inventory(tmp_path, monkeypatch) -> None:
+    """Search by item_name should match in catalog_inventory expanded columns."""
+    check_path = tmp_path / "source_check_results.parquet"
+    _write_source_check_parquet(check_path, [{"url": "", "url_checked": "", "item_id": "none"}])
+    inv_path = tmp_path / "catalog_inventory_latest.parquet"
+    _write_catalog_inventory_parquet(
+        inv_path,
+        [
+            {
+                "source_id": "inps",
+                "item_id": "ID-5257",
+                "item_name": "Pensioni erogate 2024",
+                "title": "Pensioni INPS per regione",
+                "landing_page": "https://inps.example/dataset/5257",
+                "distribution_url": "",
+                "source_url": "",
+                "notes_excerpt": "Dati sulle pensioni erogate",
+                "tags": "",
+            },
+        ],
+    )
+    monkeypatch.setattr(core, "_CHECK_PARQUET", check_path)
+    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inv_path)
+
+    # Search by item_name substring
+    result = core.find_by_url("Pensioni erogate")
+
+    assert len(result["catalog_inventory"]) == 1
+    assert result["catalog_inventory"][0]["item_id"] == "ID-5257"
+
+
+def test_find_by_url_finds_by_item_id_in_inventory(tmp_path, monkeypatch) -> None:
+    """Search by item_id should match in catalog_inventory expanded columns."""
+    check_path = tmp_path / "source_check_results.parquet"
+    _write_source_check_parquet(check_path, [{"url": "", "url_checked": "", "item_id": "none"}])
+    inv_path = tmp_path / "catalog_inventory_latest.parquet"
+    _write_catalog_inventory_parquet(
+        inv_path,
+        [
+            {
+                "source_id": "inps",
+                "item_id": "ID-5257",
+                "item_name": "Pensioni",
+                "title": "Pensioni INPS",
+                "landing_page": "",
+                "distribution_url": "",
+                "source_url": "",
+                "notes_excerpt": "",
+                "tags": "",
+            },
+        ],
+    )
+    monkeypatch.setattr(core, "_CHECK_PARQUET", check_path)
+    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inv_path)
+
+    result = core.find_by_url("ID-5257")
+
+    assert len(result["catalog_inventory"]) == 1
+    assert result["catalog_inventory"][0]["item_name"] == "Pensioni"
+
+
+def test_find_by_url_returns_empty_when_no_match(tmp_path, monkeypatch) -> None:
+    """No match should return empty lists, not errors."""
+    check_path = tmp_path / "source_check_results.parquet"
+    _write_source_check_parquet(check_path, [{"url": "https://example.test/other.csv", "url_checked": "", "item_id": "none"}])
+    inv_path = tmp_path / "catalog_inventory_latest.parquet"
+    _write_catalog_inventory_parquet(inv_path, [{"item_id": "other", "item_name": "Other", "title": "Other"}])
+    monkeypatch.setattr(core, "_CHECK_PARQUET", check_path)
+    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inv_path)
+
+    result = core.find_by_url("nonexistent-filename.csv")
+
+    assert result["source_check_results"] == []
+    assert result["catalog_inventory"] == []
+    assert "source_check_error" not in result
+    assert "catalog_inventory_error" not in result
+
+
+def test_find_by_url_rejects_empty_url() -> None:
+    result = core.find_by_url("")
+    assert result["error"] == "empty_url"

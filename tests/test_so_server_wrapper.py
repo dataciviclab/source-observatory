@@ -53,3 +53,28 @@ def test_guard_turns_exception_into_error_dict() -> None:
     assert "message" in result
     assert result["error"] == "unexpected_error"
     assert "test error" in result["message"]
+
+
+def test_guard_timed_logs_and_wraps_exception() -> None:
+    """guard_timed() wraps exceptions and includes timing metadata in logs."""
+    from lab_connectors.mcp import guard_timed
+
+    def raising() -> dict:
+        raise ValueError("test timed error")
+
+    result = guard_timed(raising, "test_tool", logger_name="test-server")
+    assert "error" in result
+    assert "message" in result
+    assert result["error"] == "unexpected_error"
+    assert "test timed error" in result["message"]
+
+
+def test_guard_timed_returns_dict_result() -> None:
+    """guard_timed() passes through a successful dict result unchanged."""
+    from lab_connectors.mcp import guard_timed
+
+    def working() -> dict:
+        return {"result_key": 42, "nested": {"a": 1}}
+
+    result = guard_timed(working, "working_tool", logger_name="test-server")
+    assert result == {"result_key": 42, "nested": {"a": 1}}

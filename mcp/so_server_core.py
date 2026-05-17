@@ -108,14 +108,30 @@ def _ckan_package_show(endpoint: str, package_id: str, timeout: int = 30) -> dic
     try:
         payload = _ckan_get_json(api_url, params=params, timeout=timeout)
     except Exception as exc:
-        return {"error": type(exc).__name__, "message": str(exc)[:200]}
+        return {
+            "error": type(exc).__name__,
+            "message": str(exc)[:200],
+            "tried_url": api_url,
+            "package_id": package_id,
+        }
 
     if not payload.get("success"):
-        return {"error": "ckan_error", "message": f"success=false for {package_id}"}
+        return {
+            "error": "ckan_error",
+            "message": f"success=false for {package_id}",
+            "tried_url": api_url,
+            "package_id": package_id,
+            "ckan_response": payload.get("error") or payload,
+        }
 
     item = payload.get("result")
     if not isinstance(item, dict):
-        return {"error": "ckan_error", "message": f"result non-dict for {package_id}"}
+        return {
+            "error": "ckan_error",
+            "message": f"result non-dict for {package_id}",
+            "tried_url": api_url,
+            "package_id": package_id,
+        }
 
     # Organization
     organization = (item.get("organization") or {}).get("title") or (
@@ -194,6 +210,14 @@ _FORMAT_BY_CONTENT_TYPE = {
     "text/xml": "XML",
     "application/pdf": "PDF",
     "application/parquet": "PARQUET",
+    "text/html": "HTML",
+    "text/plain": "TXT",
+    "application/octet-stream": "BIN",
+    "text/tab-separated-values": "TSV",
+    "application/gzip": "GZ",
+    "application/zip": "ZIP",
+    "application/x-tar": "TAR",
+    "application/vnd.oasis.opendocument.spreadsheet": "ODS",
 }
 _FORMAT_BY_SUFFIX = {
     ".csv": "CSV",
@@ -712,7 +736,7 @@ def find_by_url(url: str) -> dict[str, Any]:
                         f"lower(coalesce(cast({c} as varchar), '')) LIKE ?"
                         for c in url_cols
                     )
-                    like = f"%{clean_url}%"
+                    like = f"%{clean_url.lower()}%"
                     sql = f'SELECT * FROM "{parquet_path}" WHERE {where} LIMIT 10'
                     rows = con.execute(sql, [like] * len(url_cols)).fetchall()
                     results["source_check_results"] = [dict(zip(cols, row)) for row in rows]
@@ -726,17 +750,22 @@ def find_by_url(url: str) -> dict[str, Any]:
             parquet_path = str(resolved_path)
             with safe_connect() as con:
                 cols = _table_columns(con, parquet_path)
-                url_cols = [c for c in cols if c in ("url", "url_checked", "distribution_url", "landing_page", "source_url")]
-                if not url_cols:
-                    results["catalog_inventory_error"] = "No URL columns found in parquet"
+                # Search URL columns + descriptive columns for better match coverage
+                search_cols = [
+                    c for c in cols
+                    if c in ("url", "url_checked", "distribution_url", "landing_page",
+                             "source_url", "item_name", "item_id", "title", "notes_excerpt")
+                ]
+                if not search_cols:
+                    results["catalog_inventory_error"] = "No searchable columns found in parquet"
                 else:
                     where = " OR ".join(
                         f"lower(coalesce(cast({c} as varchar), '')) LIKE ?"
-                        for c in url_cols
+                        for c in search_cols
                     )
-                    like = f"%{clean_url}%"
+                    like = f"%{clean_url.lower()}%"
                     sql = f'SELECT * FROM "{parquet_path}" WHERE {where} LIMIT 10'
-                    rows = con.execute(sql, [like] * len(url_cols)).fetchall()
+                    rows = con.execute(sql, [like] * len(search_cols)).fetchall()
                     results["catalog_inventory"] = [dict(zip(cols, row)) for row in rows]
                     results["catalog_inventory_cache"] = cache
     except FileNotFoundError:
@@ -1243,6 +1272,13 @@ _TOPIC_KEYWORDS = {
     "demografia": ["demografia", "popolazione", "natalita", "mortalita", "migrazioni", "invecchiamento", "indice_vecchiaia"],
     "energia": ["energia", "elettricita", "gas", "petrolio", "rinnovabili", "consumi_energetici"],
     "commercio": ["commercio", "export", "import", "interscambio", "merci", " esport", "import"],
+    "welfare": ["assistenza", "sussidi", "poverta", "esclusione", "inclusione", "bonus", "assegno", "sostegno", "nucleo_familiare", "ISEE", "handicap", "invalidita", "non_autosufficienza"],
+    "previdenza": ["pensione", "pensioni", "previdenza", "contributi", "pensionistico", "anzianita", "vecchiaia", "reversibilita", "quota"],
+    "casa": ["casa", "edilizia", "alloggi", "residenziale", "affitto", "proprieta", "catasto", "immobiliare", "mutuo", "sfratti"],
+    "cultura": ["cultura", "musei", "biblioteche", "patrimonio", "artistico", "archeologico", "monumenti", "spettacolo", "mostre"],
+    "bilancio": ["bilancio", "fiscalita", "tasse", "imposte", "tributi", "gettito", "spesa_pubblica", "debito", "entrate", "erariale", "IRPEF", "IVA", "IRES"],
+    "innovazione": ["innovazione", "digitale", "digitalizzaz", "tecnologia", "ICT", "banda_larga", "PA_digitale", "startup", "ricerca_sviluppo", "smart_city", "open_data", "interoperabilita"],
+    "sicurezza": ["sicurezza", "protezione_civile", "emergenza", "rischio", "prevenzione", "ordine_pubblico", "forze_ordine", "polizia", "vigili_fuoco", "protezione", "soccorso"],
 }
 
 
@@ -1270,9 +1306,10 @@ def _score_text_by_topics(text: str) -> dict[str, int]:
 def infer_topic(text: str) -> dict[str, Any]:
     """Infer thematic topics from any text string.
 
-    Matches against a fixed taxonomy of 13 topics (lavoro, economia, sanita,
+    Matches against a fixed taxonomy of 20 topics: lavoro, economia, sanita,
     istruzione, trasporti, ambiente, agricoltura, turismo, giustizia,
-    demografia, energia, commercio).
+    demografia, energia, commercio, welfare, previdenza, casa, cultura,
+    bilancio, innovazione, sicurezza.
     Returns topics sorted by relevance score (desc), with scores.
     Also returns top_match if a dominant topic exists (score >= 3).
     """
@@ -1318,6 +1355,11 @@ def recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
         artifact = _catalog_inventory_parquet()
         with _resolved_parquet(artifact) as (resolved_path, cache):
             with safe_connect() as con:
+                total_row = con.execute(
+                    f'SELECT COUNT(*) FROM "{resolved_path}"'
+                ).fetchone()
+                total_items = total_row[0] if total_row else 0
+
                 rows = con.execute(
                     f'''
                     SELECT source_id, source_kind, protocol,
@@ -1348,8 +1390,31 @@ def recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
         "filters": {"limit": safe_limit},
         "sources": sources,
         "returned": len(sources),
+        "total_items_in_inventory": total_items,
         "cache": cache,
     }
+
+
+def _source_radar_context(source_id: str) -> str | None:
+    """Check radar_summary.json for source context (health, days_red)."""
+    if not _RADAR_JSON.exists():
+        return None
+    try:
+        with _RADAR_JSON.open(encoding="utf-8") as fh:
+            radar = json.load(fh)
+        sources = radar.get("sources") or {}
+        info = sources.get(source_id)
+        if not info:
+            return None
+        health = info.get("health", "unknown")
+        days_red = info.get("days_red")
+        if days_red and health == "RED":
+            return f"RED da {days_red} giorni, inventories non generati"
+        if health == "RED":
+            return "RED (nessun inventory generato)"
+        return f"health={health}"
+    except Exception:
+        return None
 
 
 # ─── Inventory Diff (read-only, on-demand) ──────────────────────────────────
@@ -1376,10 +1441,16 @@ def inventory_diff(source_id: str) -> dict[str, Any]:
 
     source_info = (report.get("sources") or {}).get(source_id)
     if not source_info:
+        # Check radar for context: maybe source is RED and has no inventory
+        radar_ctx = _source_radar_context(source_id)
+        msg = f"source_id '{source_id}' not found in inventory report"
+        if radar_ctx:
+            msg += f". Radar: {radar_ctx}"
         return {
             "error": "source_not_in_report",
-            "message": f"source_id '{source_id}' not found in inventory report",
+            "message": msg,
             "source_id": source_id,
+            "radar_context": radar_ctx,
         }
 
     baseline = source_info.get("catalog_baseline", {})
@@ -1400,6 +1471,13 @@ def inventory_diff(source_id: str) -> dict[str, Any]:
 
     delta = (current_count or 0) - (baseline_value or 0)
 
+    notes: list[str] = []
+    if not baseline_date:
+        notes.append("baseline_date non disponibile — report non contiene captured_at o last_inventory per questa fonte")
+    if not baseline_value:
+        notes.append("baseline_value non disponibile — delta non calcolabile; current_count è il primo inventario")
+    notes.append("delta calcolato vs baseline nel registry; verificare se baseline_value è aggiornato")
+
     return {
         "source_id": source_id,
         "baseline_date": baseline_date,
@@ -1408,7 +1486,7 @@ def inventory_diff(source_id: str) -> dict[str, Any]:
         "delta": delta,
         "delta_pct": round((delta / baseline_value * 100), 1) if baseline_value else None,
         "cache": cache,
-        "note": "delta calcolato vs baseline nel registry; verificare se baseline_value è aggiornato",
+        "note": " | ".join(notes),
     }
 
 
