@@ -1,0 +1,136 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://dataciviclab.org/schemas/catalog_signals.schema.json",
+  "title": "CatalogSignals",
+  "description": "Schema per catalog_signals.json — segnali di drift/inventory del catalogo fonti.",
+  "type": "object",
+  "required": [
+    "captured_at",
+    "sources_checked",
+    "signals"
+  ],
+  "properties": {
+    "captured_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp del report inventory da cui sono derivati i segnali."
+    },
+    "sources_checked": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Numero di fonti sottoposte a classification in questo run."
+    },
+    "signals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Signal"
+      },
+      "description": "Lista dei segnali, uno per fonte."
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Signal": {
+      "type": "object",
+      "required": [
+        "source",
+        "signal_type",
+        "result",
+        "detail",
+        "suggested_action"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Identificativo della fonte (source_id)."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "Protocollo della fonte (ckan, sdmx, html, ...)."
+        },
+        "signal_type": {
+          "type": "string",
+          "enum": [
+            "inventory change",
+            "structural drift",
+            "missing_data",
+            "endpoint unstable",
+            "follow-up candidate",
+            "no signal",
+            "csv_magnet",
+            "low signal"
+          ],
+          "description": "Tipo di segnale: inventariale, strutturale, di connettivita', o assenza."
+        },
+        "result": {
+          "type": "string",
+          "description": "Esito del segnale (testo libero: 'inventory change', 'regressione', 'stabile', 'skipped', 'scan_completed', ...)."
+        },
+        "metric_value": {
+          "type": "integer",
+          "description": "Valore numerico associato (item count, link count, etc.). Omesso se null."
+        },
+        "detail": {
+          "type": "string",
+          "description": "Descrizione estesa del segnale."
+        },
+        "suggested_action": {
+          "type": "string",
+          "description": "Azione suggerita all'agente/operatore."
+        },
+        "prefix_matrix": {
+          "type": "object",
+          "additionalProperties": { "type": "integer" },
+          "description": "Mappa prefisso -> conteggio link (solo per signal_type=csv_magnet). Le chiavi sono stringhe libere (prefissi, anni, nomi)."
+        },
+        "topics": {
+          "type": "object",
+          "additionalProperties": { "type": "integer" },
+          "description": "Mappa topic -> conteggio link totali (solo per signal_type=csv_magnet)."
+        },
+        "years_range": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "minItems": 0,
+          "maxItems": 2,
+          "description": "Intervallo anni [inizio, fine] dei link scoperti (solo per signal_type=csv_magnet). Array vuoto se non determinabile."
+        },
+        "series": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/SeriesEntry"
+          },
+          "description": "Serie dettagliate per prefisso (solo per signal_type=csv_magnet). Le chiavi sono stringhe libere (prefissi, anni, nomi)."
+        }
+      },
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "description": "csv_magnet deve avere prefix_matrix se presente",
+          "if": { "properties": { "signal_type": { "const": "csv_magnet" } } },
+          "then": { "required": ["protocol"] }
+        }
+      ]
+    },
+    "SeriesEntry": {
+      "type": "object",
+      "required": ["years", "count", "sample"],
+      "properties": {
+        "years": {
+          "type": "array",
+          "items": { "type": "integer" },
+          "description": "Anni disponibili per questo prefisso."
+        },
+        "count": {
+          "type": "integer",
+          "description": "Numero di link per questo prefisso."
+        },
+        "sample": {
+          "type": "string",
+          "description": "Nome di un file di esempio per questo prefisso."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

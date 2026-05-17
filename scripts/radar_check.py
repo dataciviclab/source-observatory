@@ -23,6 +23,24 @@ from _constants import (
 )
 from lab_connectors.http import HttpClient, HttpFallbackError
 
+import jsonschema
+
+_SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
+
+
+def _validate_schema(instance: dict, schema_name: str) -> None:
+    """Validate a dict against the JSON schema file in schemas/."""
+    schema_path = _SCHEMA_DIR / schema_name
+    if not schema_path.exists():
+        print(f"⚠️  Schema {schema_name} non trovato — skip validazione")
+        return
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    try:
+        jsonschema.validate(instance=instance, schema=schema)
+    except jsonschema.ValidationError as exc:
+        print(f"❌ Validazione fallita ({schema_name}): {exc.message}")
+        raise
+
 
 WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
 STATUS_PATH = WORKSPACE_ROOT / "data" / "radar" / "STATUS.md"
@@ -455,6 +473,8 @@ def main() -> int:
 
     # Rebuild summary with updated history for final output
     summary, _ = build_radar_summary(registry, results, probe_date, history)
+
+    _validate_schema(summary, "radar_summary.schema.json")
 
     STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
     STATUS_PATH.write_text(report, encoding="utf-8")

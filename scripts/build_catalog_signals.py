@@ -14,11 +14,28 @@ import argparse
 import json
 from pathlib import Path
 
+import jsonschema
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
+SCHEMA_DIR = REPO_ROOT / "schemas"
 DEFAULT_REPORT = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_report.json"
 DEFAULT_RADAR = REPO_ROOT / "data" / "radar" / "radar_summary.json"
 DEFAULT_OUT = REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
 DEFAULT_REPORT_OUT = REPO_ROOT / "data" / "catalog" / "CATALOG_WATCH_REPORT.md"
+
+
+def _validate_schema(instance: dict, schema_name: str) -> None:
+    """Validate a dict against the JSON schema file in schemas/."""
+    schema_path = SCHEMA_DIR / schema_name
+    if not schema_path.exists():
+        print(f"⚠️  Schema {schema_name} non trovato — skip validazione")
+        return
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    try:
+        jsonschema.validate(instance=instance, schema=schema)
+    except jsonschema.ValidationError as exc:
+        print(f"❌ Validazione fallita ({schema_name}): {exc.message}")
+        raise
 
 # Soglia minima di link per considerare un portale HTML "catalog-watch-ready".
 # Sotto questa soglia il signal è classificato come "low signal".
@@ -329,6 +346,8 @@ def main() -> None:
         radar_summary = json.loads(args.radar.read_text(encoding="utf-8"))
 
     signals = build_signals(report, prev_report, radar_summary)
+
+    _validate_schema(signals, "catalog_signals.schema.json")
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(signals, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

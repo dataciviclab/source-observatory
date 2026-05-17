@@ -1,11 +1,20 @@
 """Tests for build_catalog_signals.py."""
 
+import json
 import sys
 from pathlib import Path
+
+import jsonschema
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from build_catalog_signals import build_signals, build_watch_report, _classify
+
+_SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
+
+
+def _load_schema(name: str) -> dict:
+    return json.loads((_SCHEMA_DIR / name).read_text(encoding="utf-8"))
 
 
 def _report(*sources: tuple) -> dict:
@@ -223,3 +232,35 @@ def test_watch_report_with_inventory_change():
     assert "inventory change" in report
     assert "verificare" in report
     assert "2335" in report
+
+
+def test_signals_json_schema() -> None:
+    """Produce un signals realistico e validalo contro lo schema."""
+    prev = _report(("inps", _ok(rows=2323)))
+    curr = _report(("inps", _ok(rows=2335)))
+    result = build_signals(curr, prev, None)
+    schema = _load_schema("catalog_signals.schema.json")
+    jsonschema.validate(instance=result, schema=schema)
+
+
+def test_csv_magnet_signal_schema() -> None:
+    """Un segnale csv_magnet con topics e years_range deve essere valido."""
+    payload = {
+        "captured_at": "2026-05-17T10:00:00+00:00",
+        "sources_checked": 1,
+        "signals": [
+            {
+                "source": "mim_opendata",
+                "protocol": "html",
+                "signal_type": "csv_magnet",
+                "result": "scan_completed",
+                "detail": "1116 link data (CSV 372, JSON 372, XML 372), years 2015-2025",
+                "suggested_action": "catalog-watch-ready",
+                "prefix_matrix": {"SCUANAGR": 66, "ALUCORSO": 120, "INFANZIA": 192},
+                "topics": {"istruzione": 1116},
+                "years_range": [2015, 2025],
+            }
+        ],
+    }
+    schema = _load_schema("catalog_signals.schema.json")
+    jsonschema.validate(instance=payload, schema=schema)
