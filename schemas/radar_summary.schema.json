@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://dataciviclab.org/schemas/radar_summary.schema.json",
+  "title": "RadarSummary",
+  "description": "Schema per radar_summary.json — health portali e stato GREEN/YELLOW/RED per fonte.",
+  "type": "object",
+  "required": [
+    "generated_at",
+    "probe_date",
+    "sources_total",
+    "status_counts",
+    "persistent_red",
+    "sources"
+  ],
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp di generazione del summary."
+    },
+    "probe_date": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+      "description": "Data del probe in formato YYYY-MM-DD."
+    },
+    "sources_total": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Numero totale di fonti nel registry."
+    },
+    "status_counts": {
+      "type": "object",
+      "required": ["GREEN", "YELLOW", "RED"],
+      "properties": {
+        "GREEN": { "type": "integer", "minimum": 0 },
+        "YELLOW": { "type": "integer", "minimum": 0 },
+        "RED": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false,
+      "description": "Conteggio fonti per stato."
+    },
+    "persistent_red": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Numero di fonti con streak RED >= 2."
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/SourceEntry"
+      },
+      "description": "Lista delle fonti con stato probe."
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "SourceEntry": {
+      "type": "object",
+      "required": ["id", "status"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identificativo della fonte (source_id)."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["GREEN", "YELLOW", "RED"],
+          "description": "Stato del probe: GREEN=raggiungibile, YELLOW=raggiungibile con anomalie, RED=non raggiungibile."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "Protocollo della fonte (ckan, sdmx, html, sparql, rest, aem, ...)."
+        },
+        "http_code": {
+          "type": "string",
+          "description": "Codice HTTP della risposta, o '-' se non disponibile."
+        },
+        "note": {
+          "type": ["string", "null"],
+          "description": "Nota opzionale sul probe (errore, dettaglio SSL, timeout, ...)."
+        },
+        "red_streak": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Streak di probe RED consecutivi (presente solo se >= 2)."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

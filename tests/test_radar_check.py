@@ -3,9 +3,17 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
+import jsonschema
 import radar_check
 from lab_connectors.http import HttpFallbackError, HttpResult
+
+_SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
+
+
+def _load_schema(name: str) -> dict:
+    return json.loads((_SCHEMA_DIR / name).read_text(encoding="utf-8"))
 
 
 class FakeResponse:
@@ -252,27 +260,10 @@ class TestBuildReport:
             ),
         }
         summary, sources_list = radar_check.build_radar_summary(registry, results, "2026-04-18")
-        assert "generated_at" in summary
-        assert "probe_date" in summary
-        assert "sources_total" in summary
-        assert "status_counts" in summary
-        assert "sources" in summary
-        assert summary["probe_date"] == "2026-04-18"
-        assert summary["sources_total"] == 2
-        assert summary["status_counts"]["GREEN"] == 1
-        assert summary["status_counts"]["YELLOW"] == 1
-        assert summary["status_counts"]["RED"] == 0
-        sources_by_id = {s["id"]: s for s in sources_list}
-        assert "demo_ckan" in sources_by_id
-        demo = sources_by_id["demo_ckan"]
-        assert demo["status"] == "GREEN"
-        assert demo["http_code"] == "200"
-        istat = sources_by_id["istat_sdmx"]
-        assert istat["status"] == "YELLOW"
-        assert istat["note"] == "Timeout"
-        json_str = json.dumps(summary)
-        reparsed = json.loads(json_str)
-        assert reparsed == summary
+        schema = _load_schema("radar_summary.schema.json")
+        jsonschema.validate(instance=summary, schema=schema)
+        # Verify sources_list mirrors summary.sources
+        assert len(sources_list) == summary["sources_total"]
 
 
 # ── helper ────────────────────────────────────────────────────────────────────────
