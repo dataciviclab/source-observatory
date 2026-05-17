@@ -368,10 +368,10 @@ opencivitas:
     value: 1084
     method: csv_magnet_area_pages_paginated
     reliability: medium
-    note: Sondaggio CSV magnet via page_url_template (page=0..54). SSL fallback 
+    note: Sondaggio CSV magnet via page_url_template (page=0..54). SSL fallback
       necessario per cert invalido.
   verdict: go
-  note: Portale OpenCivitas — csv_magnet scan via page_url_template. SSL 
+  note: Portale OpenCivitas — csv_magnet scan via page_url_template. SSL
     fallback attivo. ZIP con CSV/XLSX dentro.
   html_portal:
     topic_hint: trasparenza
@@ -380,4 +380,26 @@ opencivitas:
     page_max: 100
     page_stop_on_empty: true
     delay_seconds: 0.3
+  datasets_in_use: []
+aifa:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://www.aifa.gov.it/dati-aifa
+  verdict: go
+  note: >
+    Portale Open Data AIFA — CSV scaricabili senza autenticazione.
+    Licenza CC-BY 4.0. Inventory via area_pages (sito principale ha
+    protezioni anti-bot). Dataset: liste farmaci, provvedimenti,
+    sperimentazioni cliniche, farmacovigilanza, incarichi, bandi.
+  html_portal:
+    topic_hint: sanita
+    area_pages:
+      - https://www.aifa.gov.it/web/guest/liste-dei-farmaci
+      - https://www.aifa.gov.it/web/guest/provvedimenti-aifa
+      - https://www.aifa.gov.it/web/guest/sperimentazioni-cliniche
+      - https://www.aifa.gov.it/web/guest/farmacovigilanza-open-data
+      - https://www.aifa.gov.it/web/guest/incarichi-e-consulenze
+      - https://www.aifa.gov.it/web/guest/bandi-di-gara-e-contratti-
+    delay_seconds: 0.5
   datasets_in_use: []
