@@ -3,7 +3,7 @@ istat_sdmx:
   protocol: sdmx
   observation_mode: catalog-watch
   base_url: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: dataflow_count
@@ -32,7 +32,7 @@ anac:
       client HTTP non browser. Confermato 2026-04-16.
     scraping_blocked: true
     scraping_blocked_reason: reCAPTCHA / WAF blocca richieste HTTP non-browser
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-03-28'
     metric: package_count
@@ -54,7 +54,7 @@ inps:
     skip_current_list: true
     package_show_sample: true
     sample_size: 10000
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -80,7 +80,7 @@ openbdap:
     skip_current_list: true
     package_show_sample: true
     sample_size: 4000
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -94,13 +94,14 @@ openbdap:
     inventario senza intake o monitor diffuso.
   datasets_in_use:
     - bdap_entrate_stato
+    - bdap_lea
     - dipendenti_pubblici
 dati_salute:
   source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.dati.salute.gov.it/
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-07'
     metric: csv_magnet_total_links
@@ -123,7 +124,7 @@ inail_opendata:
   protocol: aem
   observation_mode: radar-only
   base_url: https://dati.inail.it/
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   verdict: go
   note: Portale AEM con Open API documentate. Superficie operativa reale = 
     catalogo AEM + Open API, non CKAN standard (logo nel footer fuorviante). 
@@ -135,7 +136,7 @@ mim_opendata:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-27'
     metric: csv_magnet_total_links
@@ -167,7 +168,7 @@ dati_camera:
   base_url: https://dati.camera.it/sparql
   scraping_blocked: true
   scraping_blocked_reason: reCAPTCHA / WAF blocca richieste HTTP non-browser
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -198,7 +199,7 @@ dati_cultura:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.cultura.gov.it/sparql
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -223,7 +224,7 @@ ispra_linked_data:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.isprambiente.it/sparql
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -250,7 +251,7 @@ consip_open_data:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.consip.it/api/3/action/package_list?limit=1
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: package_count
@@ -277,7 +278,7 @@ lavoro_opendata:
     skip_current_list: true
     package_show_sample: true
     sample_size: 10000
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: package_count
@@ -295,7 +296,7 @@ mur_ustat:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati-ustat.mur.gov.it/api/3/action/package_list?limit=1
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-04-09'
     metric: package_count
@@ -314,7 +315,7 @@ opencoesione:
   protocol: rest
   observation_mode: radar-only
   base_url: https://opencoesione.gov.it/it/api/
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   verdict: hold
   note: "Portale disabilitato/ritirato. CKAN API non piu' raggiungibile (redirect
     a /it/ con 404 \"Pagina non trovata\"). Mantenuto in radar-only per eventuale
@@ -333,7 +334,7 @@ mef_irpef:
   observation_mode: catalog-watch
   base_url: 
     https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-05-03'
     metric: csv_magnet_homepage_links
@@ -360,7 +361,7 @@ opencivitas:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.opencivitas.it/it/open-data
-  last_probed: '2026-05-16'
+  last_probed: '2026-05-17'
   catalog_baseline:
     captured_at: '2026-05-07'
     metric: csv_magnet_total_links
