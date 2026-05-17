@@ -405,4 +405,5 @@ aifa:
       - https://www.aifa.gov.it/web/guest/incarichi-e-consulenze
       - https://www.aifa.gov.it/web/guest/bandi-di-gara-e-contratti-
     delay_seconds: 0.5
+    probe_content_type: true
   datasets_in_use: []
