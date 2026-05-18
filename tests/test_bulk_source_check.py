@@ -492,3 +492,76 @@ def test_normalize_preview_columns_for_parquet_handles_existing_nested_rows(tmp_
     reloaded = pd.read_parquet(out)
     assert json.loads(reloaded.loc[reloaded["item_id"] == "old", "col_types"].iloc[0]) == {"b": "object"}
     assert json.loads(reloaded.loc[reloaded["item_id"] == "old", "columns"].iloc[0]) == ["b"]
+
+
+# ── _enrich_with_inventory: HTML NaN fallback ──────────────────────────────────
+
+class TestEnrichWithInventoryHtmlFallback:
+    """Regressione: organization/tags/notes_excerpt NaN nelle fonti HTML devono
+    essere derivati dal registry (source_id, topic_hint, note)."""
+
+    def _make_row(self, source_id: str, **overrides) -> dict:
+        """Costruisce una pd.Series finta con i campi minimi dell'inventory."""
+        import pandas as pd
+        import numpy as np
+        base = {
+            "source_id": source_id,
+            "item_id": "test-item-001",
+            "item_name": "test-item",
+            "title": "Test Dataset",
+            "organization": np.nan,
+            "tags": np.nan,
+            "notes_excerpt": np.nan,
+            "url": "https://example.com/test.csv",
+            "landing_page": np.nan,
+            "format": "CSV",
+            "granularity": np.nan,
+            "year_signal": np.nan,
+            "encoding_suggested": np.nan,
+            "delim_suggested": np.nan,
+            "decimal_suggested": np.nan,
+            "skip_suggested": np.nan,
+        }
+        base.update(overrides)
+        return pd.Series(base)
+
+    def test_aifa_produces_org_tags_notes(self):
+        from bulk_source_check import _enrich_with_inventory
+        import yaml
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        row = self._make_row("aifa")
+        result = _enrich_with_inventory(row, registry)
+
+        assert result["enriched_org"] == "AIFA", f"expected AIFA, got {result['enriched_org']!r}"
+        assert result["enriched_tags"] == "sanita", f"expected sanita, got {result['enriched_tags']!r}"
+        assert "Portale Open Data AIFA" in (result["enriched_notes"] or ""), \
+            f"expected AIFA note, got {result['enriched_notes']!r}"
+
+    def test_mim_opendata_produces_org_tags_notes(self):
+        from bulk_source_check import _enrich_with_inventory
+        import yaml
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        row = self._make_row("mim_opendata")
+        result = _enrich_with_inventory(row, registry)
+
+        assert result["enriched_org"] == "MIM_OPENDATA"
+        assert result["enriched_tags"] == "istruzione"
+        assert "Ministero Istruzione" in (result["enriched_notes"] or "")
+
+    def test_preserves_existing_org_non_nan(self):
+        """Se organization è già popolata (stringa), non deve essere sovrascritta."""
+        from bulk_source_check import _enrich_with_inventory
+        import yaml
+        import numpy as np
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        row = self._make_row("mim_opendata", organization="MIM ufficiale", tags=np.nan)
+        result = _enrich_with_inventory(row, registry)
+
+        assert result["enriched_org"] == "MIM ufficiale", \
+            f"non deve sovrascrivere org esistente: {result['enriched_org']!r}"
