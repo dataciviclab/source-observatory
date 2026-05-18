@@ -149,7 +149,7 @@ jobs:
             --no-sdmx-years \
             --circuit-fail-threshold 2 \
             --max-items 1000 \
-            --workers 8
+            --workers 16
 
       # ═══════════════════════════════════════════════════════════════════
       # STEP 3 — UPLOAD GCS
