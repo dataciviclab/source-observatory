@@ -64,9 +64,9 @@ inps:
     value: 2323
     method: package_list
     reliability: high
-    note: Inventory via package_list + package_show_sample (16 workers).
-      current_package_list_with_resources testato ma scartato:
-      degrada a offset alti. package_show_sample più veloce.
+    note: "Inventory via package_list + package_show_sample (16 workers).
+      current_package_list_with_resources testato ma scartato per lentezza
+      a offset alti. package_show_sample più veloce."
   verdict: go
   note: Catalogo CKAN INPS — inventory via package_list + package_show_sample
     (current_package_list_with_resources lento a offset alti).

@@ -604,10 +604,18 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
         print()
         print(f"{'Source':<24} {'Items':<8} {'Errors':<8} {'Time':<8}  {'Note'}")
         print("-" * 64)
+        now = time.time()
         for sid in sorted(source_item_count):
-            elapsed = source_last_done.get(sid, 0) - source_first_submit.get(sid, 0)
+            first = source_first_submit.get(sid, now)
+            last = source_last_done.get(sid)
+            if last is None:
+                # fonte non completata (timeout batch): stima con timeout globale
+                elapsed = float(_BULK_CHECK_TIMEOUT)
+                note = "timeout"
+            else:
+                elapsed = last - first
+                note = "ok"
             errs = source_error_count.get(sid, 0)
-            note = "ok"
             if errs:
                 note = f"{errs} error(s)"
             print(f"{sid:<24} {source_item_count[sid]:<8} {errs:<8} {elapsed:>6.1f}s  {note}")
