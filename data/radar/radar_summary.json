@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-05-18T07:04:48.918354+00:00",
+  "generated_at": "2026-05-18T10:22:34.831089+00:00",
   "probe_date": "2026-05-18",
-  "sources_total": 17,
+  "sources_total": 23,
   "status_counts": {
-    "GREEN": 12,
+    "GREEN": 18,
     "YELLOW": 4,
     "RED": 1
   },
@@ -128,6 +128,48 @@
       "protocol": "html",
       "http_code": "200",
       "note": "SSL verify failed; fallback verify=False used (SSLError)"
+    },
+    {
+      "id": "dait",
+      "status": "GREEN",
+      "protocol": "html",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "mit_opendata",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "openga",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "giustizia_statistiche",
+      "status": "GREEN",
+      "protocol": "html",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "cortecostituzionale",
+      "status": "GREEN",
+      "protocol": "html",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "terna_opendata",
+      "status": "GREEN",
+      "protocol": "rest",
+      "http_code": "200",
+      "note": null
     }
   ]
 }

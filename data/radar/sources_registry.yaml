@@ -52,9 +52,8 @@ inps:
   base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
   inventory:
     skip_current_list: true
-    skip_current_list_reason: >
-      current_package_list_with_resources degrada a offset alti
-      (2300+ timeout 30s) — package_show_sample +16 workers è più veloce.
+    skip_current_list_reason: "current_package_list_with_resources degrada a offset
+      alti (2300+ timeout 30s) — package_show_sample +16 workers è più veloce.\n"
     package_show_sample: true
     sample_size: 10000
   last_probed: '2026-05-18'
@@ -64,11 +63,11 @@ inps:
     value: 2323
     method: package_list
     reliability: high
-    note: "Inventory via package_list + package_show_sample (16 workers).
-      current_package_list_with_resources testato ma scartato per lentezza
-      a offset alti. package_show_sample più veloce."
+    note: Inventory via package_list + package_show_sample (16 workers). 
+      current_package_list_with_resources testato ma scartato per lentezza a 
+      offset alti. package_show_sample più veloce.
   verdict: go
-  note: Catalogo CKAN INPS — inventory via package_list + package_show_sample
+  note: Catalogo CKAN INPS — inventory via package_list + package_show_sample 
     (current_package_list_with_resources lento a offset alti).
   datasets_in_use:
     - inps_pensioni_trimestrale
@@ -280,11 +279,9 @@ lavoro_opendata:
     https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
   last_probed: '2026-05-18'
   verdict: hold
-  note: >
-    Declassato a radar-only il 2026-05-18. ValueError sistematico su
-    package_list — CKAN non raggiungibile via HTTP standard (restituisce
-    HTML non JSON). Catalogo ~159 dataset, inventory non aggiornabile
-    fino a ripristino API.
+  note: "Declassato a radar-only il 2026-05-18. ValueError sistematico su package_list
+    — CKAN non raggiungibile via HTTP standard (restituisce HTML non JSON). Catalogo
+    ~159 dataset, inventory non aggiornabile fino a ripristino API.\n"
   datasets_in_use: []
 mur_ustat:
   source_kind: catalog
@@ -298,14 +295,13 @@ mur_ustat:
     value: 68
     method: package_list
     reliability: medium
-    note: Baseline fissata il 2026-04-09. Declassato a radar-only il
-      2026-05-18 per timeout sistematico di connessione (ConnectTimeout).
-      Inventory non aggiornabile fino a ripristino endpoint.
+    note: Baseline fissata il 2026-04-09. Declassato a radar-only il 2026-05-18 
+      per timeout sistematico di connessione (ConnectTimeout). Inventory non 
+      aggiornabile fino a ripristino endpoint.
   verdict: hold
-  note: >
-    Declassato a radar-only il 2026-05-18. ConnectTimeout sistematico
-    su CKAN package_list. 68 dataset in baseline storica.
-    Inventory non aggiornabile fino a ripristino endpoint.
+  note: "Declassato a radar-only il 2026-05-18. ConnectTimeout sistematico su CKAN
+    package_list. 68 dataset in baseline storica. Inventory non aggiornabile fino
+    a ripristino endpoint.\n"
   datasets_in_use:
     - mur_contribuzione_universitaria
 opencoesione:
@@ -412,10 +408,9 @@ dait:
   base_url: https://dait.interno.gov.it/contenuti/tipo/open_data
   last_probed: '2026-05-18'
   verdict: go
-  note: >
-    DAIT — Anagrafe Amministratori locali. CSV snapshot annuali 1991-2026 + 
-    corrente. 41 su 42 entry sono snapshot dello stesso dataset.
-    radar-only iniziale per evitare rumore catalog inventory sui 41 snapshot.
+  note: "DAIT — Anagrafe Amministratori locali. CSV snapshot annuali 1991-2026 + \
+    \ corrente. 41 su 42 entry sono snapshot dello stesso dataset. radar-only iniziale
+    per evitare rumore catalog inventory sui 41 snapshot.\n"
   datasets_in_use: []
 mit_opendata:
   source_kind: catalog
@@ -424,10 +419,9 @@ mit_opendata:
   base_url: https://dati.mit.gov.it/catalog/api/3/action/package_list?limit=1
   last_probed: '2026-05-18'
   verdict: go
-  note: >
-    Portale CKAN MIT — 67 dataset su trasporti, infrastrutture, incidentalità,
-    veicoli, opere pubbliche. Include dataset già in uso dal Lab
-    (mit_incidentalita_mensile, mit_opere_incompiute).
+  note: "Portale CKAN MIT — 67 dataset su trasporti, infrastrutture, incidentalità,
+    veicoli, opere pubbliche. Include dataset già in uso dal Lab (mit_incidentalita_mensile,
+    mit_opere_incompiute).\n"
   datasets_in_use:
     - mit_incidentalita_mensile
     - mit_opere_incompiute_2020
@@ -435,13 +429,13 @@ openga:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
-  base_url: https://openga.giustizia-amministrativa.it/api/3/action/package_list?limit=1
+  base_url: 
+    https://openga.giustizia-amministrativa.it/api/3/action/package_list?limit=1
   last_probed: '2026-05-18'
   verdict: go
-  note: >
-    Portale CKAN Giustizia Amministrativa — ~270 dataset su ricorsi TAR+CDS,
-    sentenze, ordinanze, pareri. CC-BY 4.0. Aggiornamento mensile.
-    Si incastra con civile_flussi (giustizia ordinaria).
+  note: "Portale CKAN Giustizia Amministrativa — ~270 dataset su ricorsi TAR+CDS,
+    sentenze, ordinanze, pareri. CC-BY 4.0. Aggiornamento mensile. Si incastra con
+    civile_flussi (giustizia ordinaria).\n"
   datasets_in_use: []
 giustizia_statistiche:
   source_kind: catalog
@@ -450,21 +444,19 @@ giustizia_statistiche:
   base_url: https://datiestatistiche.giustizia.it/
   last_probed: '2026-05-18'
   verdict: go
-  note: >
-    Portale statistico Ministero Giustizia — XLSX scaricabili su flussi
-    civili/penali, clearance rate, disposition time, sorveglianza,
-    intercettazioni, monitoraggio tribunali, durata procedimenti.
-    Include dataset già in uso dal Lab.
+  note: "Portale statistico Ministero Giustizia — XLSX scaricabili su flussi civili/penali,
+    clearance rate, disposition time, sorveglianza, intercettazioni, monitoraggio
+    tribunali, durata procedimenti. Include dataset già in uso dal Lab.\n"
   html_portal:
     topic_hint: giustizia
     area_pages:
-      - 'https://datiestatistiche.giustizia.it/page/it/flussi-tribunali-ordinari-e-corti-di-appello'
-      - 'https://datiestatistiche.giustizia.it/page/it/clearance-rate-e-disposition-time-civile'
-      - 'https://datiestatistiche.giustizia.it/page/it/clearance-rate-e-disposition-time-penale'
-      - 'https://datiestatistiche.giustizia.it/it/sorveglianza.page'
-      - 'https://datiestatistiche.giustizia.it/it/intercettazioni.page'
-      - 'https://datiestatistiche.giustizia.it/page/it/durata-dei-procedimenti-civili'
-      - 'https://datiestatistiche.giustizia.it/page/it/monitoraggio-mensile-dei-tribunal'
+      - https://datiestatistiche.giustizia.it/page/it/flussi-tribunali-ordinari-e-corti-di-appello
+      - https://datiestatistiche.giustizia.it/page/it/clearance-rate-e-disposition-time-civile
+      - https://datiestatistiche.giustizia.it/page/it/clearance-rate-e-disposition-time-penale
+      - https://datiestatistiche.giustizia.it/it/sorveglianza.page
+      - https://datiestatistiche.giustizia.it/it/intercettazioni.page
+      - https://datiestatistiche.giustizia.it/page/it/durata-dei-procedimenti-civili
+      - https://datiestatistiche.giustizia.it/page/it/monitoraggio-mensile-dei-tribunal
     delay_seconds: 0.3
     probe_content_type: true
   datasets_in_use:
@@ -477,10 +469,9 @@ cortecostituzionale:
   base_url: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
   last_probed: '2026-05-18'
   verdict: go
-  note: >
-    Portale Open Data Corte Costituzionale — Pronunce (1956-oggi), Massime,
-    Anagrafica Giudici, Atti di promovimento. CSV/XML/JSON in ZIP.
-    Agg. giornaliero. Endpoint SPARQL disponibile.
+  note: "Portale Open Data Corte Costituzionale — Pronunce (1956-oggi), Massime, Anagrafica
+    Giudici, Atti di promovimento. CSV/XML/JSON in ZIP. Agg. giornaliero. Endpoint
+    SPARQL disponibile.\n"
   html_portal:
     topic_hint: giustizia
     homepage: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
@@ -494,11 +485,9 @@ terna_opendata:
   base_url: https://dati.terna.it/
   last_probed: '2026-05-18'
   verdict: go
-  note: >
-    Portale Dati Terna — API Sitecore REST. 31+ dataset su energia
-    (fabbisogno, generazione, trasmissione, mercato, adeguatezza).
-    API pubblica ritorna XLSX. Già in uso da pipeline Lab.
-    Catalog-watch richiederebbe connector custom.
+  note: "Portale Dati Terna — API Sitecore REST. 31+ dataset su energia (fabbisogno,
+    generazione, trasmissione, mercato, adeguatezza). API pubblica ritorna XLSX. Già
+    in uso da pipeline Lab. Catalog-watch richiederebbe connector custom.\n"
   api_discovery:
     endpoint: https://dati.terna.it/api/sitecore/dati/downloadcenter/records
     known_datasets:

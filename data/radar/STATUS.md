@@ -4,8 +4,8 @@ Ultimo run: 2026-05-18
 
 ## Sommario
 
-- Fonti controllate: 17
-- GREEN: 12
+- Fonti controllate: 23
+- GREEN: 18
 - YELLOW: 4
 - RED: 1
 
@@ -13,7 +13,7 @@ Ultimo run: 2026-05-18
 
 | Tipo | Conteggio |
 | --- | --- |
-| catalog | 16 |
+| catalog | 22 |
 | portal | 1 |
 | source | 0 |
 
@@ -21,8 +21,8 @@ Ultimo run: 2026-05-18
 
 | Modalita' | Conteggio | Significato |
 | --- | --- | --- |
-| radar-only | 3 | Salute della fonte senza segnali di inventario |
-| catalog-watch | 14 | Inventario e drift strutturale del catalogo |
+| radar-only | 7 | Salute della fonte senza segnali di inventario |
+| catalog-watch | 16 | Inventario e drift strutturale del catalogo |
 | monitor-active | 0 | Caso ristretto con monitoraggio piu' vicino alla risorsa |
 
 Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornamento del dataset.
@@ -42,12 +42,18 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | dati_cultura | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
-| lavoro_opendata | catalog | ckan | catalog-watch | YELLOW | 200 | - |
-| mur_ustat | catalog | ckan | catalog-watch | YELLOW | - | mur_contribuzione_universitaria |
+| lavoro_opendata | catalog | ckan | radar-only | YELLOW | 200 | - |
+| mur_ustat | catalog | ckan | radar-only | YELLOW | - | mur_contribuzione_universitaria |
 | opencoesione | catalog | rest | radar-only | YELLOW | 403 | - |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | - |
-| aifa | catalog | html | catalog-watch | GREEN | 200 | - |
+| aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
+| dait | catalog | html | radar-only | GREEN | 200 | - |
+| mit_opendata | catalog | ckan | catalog-watch | GREEN | 200 | mit_incidentalita_mensile, mit_opere_incompiute_2020 |
+| openga | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| giustizia_statistiche | catalog | html | catalog-watch | GREEN | 200 | civile_flussi, giustizia_penale_indicatori |
+| cortecostituzionale | catalog | html | catalog-watch | GREEN | 200 | - |
+| terna_opendata | catalog | rest | radar-only | GREEN | 200 | terna_capacita_rinnovabile, terna_electricity_by_source |
 
 ## Note
 
