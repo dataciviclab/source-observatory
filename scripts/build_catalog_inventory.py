@@ -214,11 +214,9 @@ def main() -> None:
             # non quando wait() ritorna (che e' il tempo del piu' lento).
             # NOTA: chiudere _sid nel default del lambda per evitare
             # il bug classico di chiusura su variabile di loop.
-            f.add_done_callback(
-                lambda _f, _sid=source_id: source_timing.setdefault(
-                    _sid, time.time() - submit_times[_sid]
-                )
-            )
+            def _record_timing(_f: object, _sid: str = source_id) -> None:
+                source_timing.setdefault(_sid, time.time() - submit_times[_sid])
+            f.add_done_callback(_record_timing)
 
         # wait() timeout globale per il batch (rete di sicurezza). Il timeout
         # reale per fonte è in _collect_source (_SOURCE_TIMEOUT = 300s).

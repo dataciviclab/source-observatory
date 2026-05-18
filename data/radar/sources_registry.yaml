@@ -52,6 +52,9 @@ inps:
   base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
   inventory:
     skip_current_list: true
+    skip_current_list_reason: >
+      current_package_list_with_resources degrada a offset alti
+      (2300+ timeout 30s) — package_show_sample +16 workers è più veloce.
     package_show_sample: true
     sample_size: 10000
   last_probed: '2026-05-18'
@@ -60,11 +63,13 @@ inps:
     metric: package_count
     value: 2323
     method: package_list
-    reliability: medium
-    note: Conteggio totale package rilevati via package_list; baseline 
-      precedente (544) risultata stale rispetto all'inventario corrente.
+    reliability: high
+    note: Inventory via package_list + package_show_sample (16 workers).
+      current_package_list_with_resources testato ma scartato:
+      degrada a offset alti. package_show_sample più veloce.
   verdict: go
-  note: Catalogo CKAN ricco e ad alto potenziale per candidati e source-check.
+  note: Catalogo CKAN INPS — inventory via package_list + package_show_sample
+    (current_package_list_with_resources lento a offset alti).
   datasets_in_use:
     - inps_pensioni_trimestrale
     - pensioni_pa_dag
