@@ -1,11 +1,11 @@
 # Stato Radar
 
-Ultimo run: 2026-05-17
+Ultimo run: 2026-05-18
 
 ## Sommario
 
-- Fonti controllate: 16
-- GREEN: 11
+- Fonti controllate: 17
+- GREEN: 12
 - YELLOW: 4
 - RED: 1
 
@@ -13,7 +13,7 @@ Ultimo run: 2026-05-17
 
 | Tipo | Conteggio |
 | --- | --- |
-| catalog | 15 |
+| catalog | 16 |
 | portal | 1 |
 | source | 0 |
 
@@ -22,7 +22,7 @@ Ultimo run: 2026-05-17
 | Modalita' | Conteggio | Significato |
 | --- | --- | --- |
 | radar-only | 3 | Salute della fonte senza segnali di inventario |
-| catalog-watch | 13 | Inventario e drift strutturale del catalogo |
+| catalog-watch | 14 | Inventario e drift strutturale del catalogo |
 | monitor-active | 0 | Caso ristretto con monitoraggio piu' vicino alla risorsa |
 
 Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornamento del dataset.
@@ -34,7 +34,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | radar-only | YELLOW | 403 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
-| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_entrate_stato, dipendenti_pubblici |
+| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_entrate_stato, bdap_lea, dipendenti_pubblici |
 | dati_salute | catalog | html | catalog-watch | RED | - | - |
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta |
@@ -47,6 +47,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | opencoesione | catalog | rest | radar-only | YELLOW | 403 | - |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | - |
+| aifa | catalog | html | catalog-watch | GREEN | 200 | - |
 
 ## Note
 
@@ -57,3 +58,4 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 - `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/api/ | Portale disabilitato/ritirato. CKAN API non piu' raggiungibile (redirect a /it/ con 404 "Pagina non trovata"). Mantenuto in radar-only per eventuale monitoraggio futuro.
 
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
+- `aifa`: HTTP 200 | content-type: text/html;charset=UTF-8 | url finale: https://www.aifa.gov.it/dati-aifa | SSL verify failed; fallback verify=False used (SSLError)

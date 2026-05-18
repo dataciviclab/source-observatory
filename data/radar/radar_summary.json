@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-05-17T06:30:16.373692+00:00",
-  "probe_date": "2026-05-17",
-  "sources_total": 16,
+  "generated_at": "2026-05-18T07:04:48.918354+00:00",
+  "probe_date": "2026-05-18",
+  "sources_total": 17,
   "status_counts": {
-    "GREEN": 11,
+    "GREEN": 12,
     "YELLOW": 4,
     "RED": 1
   },
@@ -117,6 +117,13 @@
     },
     {
       "id": "opencivitas",
+      "status": "GREEN",
+      "protocol": "html",
+      "http_code": "200",
+      "note": "SSL verify failed; fallback verify=False used (SSLError)"
+    },
+    {
+      "id": "aifa",
       "status": "GREEN",
       "protocol": "html",
       "http_code": "200",
