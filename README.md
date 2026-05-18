@@ -102,10 +102,9 @@ data/catalog_inventory/generated/
 
 I JSON strutturali (`radar_summary`, `radar_history`, `catalog_signals`) sono consumati da **agent-context-builder** per il contesto operativo degli agenti.
 
-Artifact su GCS:
+Artifact su GCS (solo inventory e source-check — il radar vive su git + Actions artifacts):
 - `gs://dataciviclab-clean/catalog_inventory/` — parquet inventory + report
 - `gs://dataciviclab-clean/catalog_inventory/source-check/` — source-check results e snapshots
-- `gs://dataciviclab-clean/radar/` — radar summary
 
 ## Struttura
 
