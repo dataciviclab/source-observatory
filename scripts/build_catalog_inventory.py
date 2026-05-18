@@ -112,8 +112,8 @@ def parse_args() -> argparse.Namespace:
         "--workers",
         type=int,
         default=1,
-        choices=range(1, 9),
-        metavar="N (1-8)",
+        choices=range(1, 17),
+        metavar="N (1-16)",
         help="Thread per la raccolta parallela (default: 1 = seriale).",
     )
     parser.add_argument(
