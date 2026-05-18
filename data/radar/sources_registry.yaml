@@ -405,3 +405,133 @@ aifa:
   datasets_in_use:
     - aifa_spesa_consumo
   last_probed: '2026-05-18'
+dait:
+  source_kind: catalog
+  protocol: html
+  observation_mode: radar-only
+  base_url: https://dait.interno.gov.it/contenuti/tipo/open_data
+  last_probed: '2026-05-18'
+  verdict: go
+  note: >
+    DAIT — Anagrafe Amministratori locali. CSV snapshot annuali 1991-2026 + 
+    corrente. 41 su 42 entry sono snapshot dello stesso dataset.
+    radar-only iniziale per evitare rumore catalog inventory sui 41 snapshot.
+  datasets_in_use: []
+mit_opendata:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.mit.gov.it/catalog/api/3/action/package_list?limit=1
+  last_probed: '2026-05-18'
+  verdict: go
+  note: >
+    Portale CKAN MIT — 67 dataset su trasporti, infrastrutture, incidentalità,
+    veicoli, opere pubbliche. Include dataset già in uso dal Lab
+    (mit_incidentalita_mensile, mit_opere_incompiute).
+  datasets_in_use:
+    - mit_incidentalita_mensile
+    - mit_opere_incompiute_2020
+openga:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://openga.giustizia-amministrativa.it/api/3/action/package_list?limit=1
+  last_probed: '2026-05-18'
+  verdict: go
+  note: >
+    Portale CKAN Giustizia Amministrativa — ~270 dataset su ricorsi TAR+CDS,
+    sentenze, ordinanze, pareri. CC-BY 4.0. Aggiornamento mensile.
+    Si incastra con civile_flussi (giustizia ordinaria).
+  datasets_in_use: []
+giustizia_statistiche:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://datiestatistiche.giustizia.it/
+  last_probed: '2026-05-18'
+  verdict: go
+  note: >
+    Portale statistico Ministero Giustizia — XLSX scaricabili su flussi
+    civili/penali, clearance rate, disposition time, sorveglianza,
+    intercettazioni, monitoraggio tribunali, durata procedimenti.
+    Include dataset già in uso dal Lab.
+  html_portal:
+    topic_hint: giustizia
+    area_pages:
+      - 'https://datiestatistiche.giustizia.it/page/it/flussi-tribunali-ordinari-e-corti-di-appello'
+      - 'https://datiestatistiche.giustizia.it/page/it/clearance-rate-e-disposition-time-civile'
+      - 'https://datiestatistiche.giustizia.it/page/it/clearance-rate-e-disposition-time-penale'
+      - 'https://datiestatistiche.giustizia.it/it/sorveglianza.page'
+      - 'https://datiestatistiche.giustizia.it/it/intercettazioni.page'
+      - 'https://datiestatistiche.giustizia.it/page/it/durata-dei-procedimenti-civili'
+      - 'https://datiestatistiche.giustizia.it/page/it/monitoraggio-mensile-dei-tribunal'
+    delay_seconds: 0.3
+    probe_content_type: true
+  datasets_in_use:
+    - civile_flussi
+    - giustizia_penale_indicatori
+cortecostituzionale:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
+  last_probed: '2026-05-18'
+  verdict: go
+  note: >
+    Portale Open Data Corte Costituzionale — Pronunce (1956-oggi), Massime,
+    Anagrafica Giudici, Atti di promovimento. CSV/XML/JSON in ZIP.
+    Agg. giornaliero. Endpoint SPARQL disponibile.
+  html_portal:
+    topic_hint: giustizia
+    homepage: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
+    delay_seconds: 0.3
+    probe_content_type: true
+  datasets_in_use: []
+terna_opendata:
+  source_kind: catalog
+  protocol: rest
+  observation_mode: radar-only
+  base_url: https://dati.terna.it/
+  last_probed: '2026-05-18'
+  verdict: go
+  note: >
+    Portale Dati Terna — API Sitecore REST. 31+ dataset su energia
+    (fabbisogno, generazione, trasmissione, mercato, adeguatezza).
+    API pubblica ritorna XLSX. Già in uso da pipeline Lab.
+    Catalog-watch richiederebbe connector custom.
+  api_discovery:
+    endpoint: https://dati.terna.it/api/sitecore/dati/downloadcenter/records
+    known_datasets:
+      - TotalLoad
+      - MarketLoad
+      - PeakValleyLoad
+      - DailyDataIndexes
+      - InternationalComparisons
+      - IMCEI
+      - IMSER
+      - ElectricalEnergy
+      - Market
+      - IndustrialSector
+      - ServiceSector
+      - Total
+      - ConsumptionBySource
+      - ElectricityItaly
+      - ElectricityByType
+      - ActualGeneration
+      - RenewableGeneration
+      - EnergyBalance
+      - RenewableSources
+      - NonRenewableSources
+      - Storage
+      - ElectricityBySource
+      - ProductionRenewableSources
+      - HydroPower
+      - GrossVsCO2Emissions
+      - ProductionThermal
+      - ThermalHeat
+      - CapacityRenewableSources
+      - CapacityThermal
+      - GenerationPlants
+  datasets_in_use:
+    - terna_capacita_rinnovabile
+    - terna_electricity_by_source
