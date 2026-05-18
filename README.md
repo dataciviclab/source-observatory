@@ -7,36 +7,54 @@ Risponde a una domanda sola: **questa fonte vale il tempo del Lab?**
 ## Il funnel
 
 ```
-gate ── catalog-watch ── catalog-inventory ── source-check
-     └── radar-only
+radar ── gate ── catalog-watch ── catalog-inventory ── source-check
+             └── radar-only
 ```
 
-1. **Gate** — decide il regime di osservazione (`catalog-watch` o `radar-only`)
-2. **Catalog-inventory** — enumera gli item dei cataloghi ammessi
-3. **Source-check** — valuta qualità e granularità dei dataset
+1. **Radar** — probe leggero su tutte le fonti (health check, sempre)
+2. **Gate** — decide il regime di osservazione (`catalog-watch` o `radar-only`)
+3. **Catalog-inventory** — enumera gli item dei cataloghi ammessi
+4. **Source-check** — valuta qualità e granularità dei dataset
 
 Il funnel è alimentato dal `sources_registry.yaml`: ogni fonte ha un `source_id`, un `protocol` e un `observation_mode`. Le fonti nuove vengono aggiunte al registry manualmente.
 
-## La CI
+## CI / Workflow
 
-L'unica Action schedulata è `observatory.yml`. Gira ogni giorno alle 03:15 e in un solo job fa:
+Due workflow schedulati su GitHub Actions:
 
-1. **Radar** — probe leggero di tutte le fonti nel registry (sempre)
-2. **Inventory** — build dell'inventory parquet dei cataloghi enumerabili (solo lunedì o manual dispatch)
-3. **Source-check** — scoring item-level sul parquet inventory (sempre, incrementale)
+| Workflow | Schedule | Cosa fa |
+|---|---|---|
+| `radar.yml` | **daily** 03:15 | Radar check su tutte le fonti + sync `datasets_in_use` da DI catalog |
+| `observatory.yml` | **weekly** (lunedì) 03:20 | Inventory → catalog signals → source-check → upload GCS |
 
-I risultati vengono committati nel repo, caricati su GCS e pubblicati come artifact Actions.
+### `radar.yml` (daily)
+
+Probe leggero HTTP su ogni fonte nel registry. Aggiorna `radar_summary.json`, `radar_history.json`, `STATUS.md` e `sources_registry.yaml`. Committa i risultati su git.
+
+### `observatory.yml` (weekly, lunedì)
+
+1. **Inventory** — build del parquet `catalog_inventory_latest.parquet` per le fonti `catalog-watch`
+2. **Catalog signals** — calcola segnali di drift/inventory, produce `catalog_signals.json` e `CATALOG_WATCH_REPORT.md`
+3. **Source-check** — scoring item-level sul parquet inventory (merge con risultati precedenti da GCS)
+4. **Upload GCS** — parquet, report e snapshot su `gs://dataciviclab-clean/catalog_inventory/`
+5. **Issue alert** — crea/aggiorna automaticamente issue `catalog-alert` in caso di variazioni rilevanti
+
+I risultati vengono committati nel repo (signals), caricati su GCS e pubblicati come artifact Actions.
 
 ## Script
 
 | Script | Cosa fa |
 |---|---|
 | `scripts/radar_check.py` | Health check delle fonti nel registry |
+| `scripts/sync_datasets_in_use.py` | Sincronizza `datasets_in_use` dal catalogo DI (`radar.yml`) |
 | `scripts/build_catalog_inventory.py` | Snapshot tabulare di tutti gli item enumerabili |
 | `scripts/build_catalog_signals.py` | Segnali drift/inventory del catalogo |
 | `scripts/bulk_source_check.py` | Scoring item-level (qualità, granularità, rilevanza) |
+| `scripts/source_check_analyze.py` | Logica di scoring e analisi (usata da `bulk_source_check.py`) |
+| `scripts/source_check_fetch.py` | Fetch HTTP e enrichment per source-check |
 | `scripts/catalog_diff.py` | Diff tra due report inventory per segnalare regressioni |
 | `scripts/collectors/` | Adapter per protocollo: CKAN, SDMX, SPARQL, HTML |
+| `scripts/gha/` | Helper per CI (issue body, publish summary) |
 
 ```bash
 # Radar (giornaliero)
@@ -63,7 +81,7 @@ Il layer MCP (`mcp/so_server_core.py`) è il modo consigliato per consultare gli
 
 ## Output e artefatti
 
-Gli artifact strutturali (`radar_summary.json`, `radar_history.json`, `catalog_signals.json`, `STATUS.md`) sono versionati nel repo e aggiornati dalla CI. I parquet in `generated/` sono cache operative.
+Gli artifact strutturali (`radar_summary.json`, `radar_history.json`, `catalog_signals.json`, `STATUS.md`) sono versionati nel repo e aggiornati dalla CI. I parquet in `generated/` sono cache operative, sovrascritti a ogni run.
 
 ```
 data/radar/
@@ -82,9 +100,11 @@ data/catalog_inventory/generated/
   source_check_results.parquet       # scoring item-level
 ```
 
-I tre JSON (`radar_summary`, `catalog_signals`, `radar_history`) sono consumati da **agent-context-builder** per il contesto operativo degli agenti.
+I JSON strutturali (`radar_summary`, `radar_history`, `catalog_signals`) sono consumati da **agent-context-builder** per il contesto operativo degli agenti.
 
-L'artifact parquet su GCS: `gs://dataciviclab-clean/catalog_inventory/`
+Artifact su GCS (solo inventory e source-check — il radar vive su git + Actions artifacts):
+- `gs://dataciviclab-clean/catalog_inventory/` — parquet inventory + report
+- `gs://dataciviclab-clean/catalog_inventory/source-check/` — source-check results e snapshots
 
 ## Struttura
 

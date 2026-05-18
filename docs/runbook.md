@@ -19,12 +19,11 @@ Output:
 
 - [STATUS.md](../data/radar/STATUS.md)
 
-Scheduling v0:
+Scheduling:
 
-- run giornaliero via GitHub Actions (`observatory.yml`)
-- `workflow_dispatch` disponibile per run manuali
-- il modello v0 è `report-only`: aggiorna `STATUS.md` e `sources_registry.yaml`
-- nessuna issue automatica o alerting complesso in questa fase
+- `radar.yml`: run **daily** 03:15 — health check, aggiorna `STATUS.md`, `radar_summary.json`, `radar_history.json`, `sources_registry.yaml`
+- `observatory.yml`: run **weekly** (lunedì) 03:20 — inventory, catalog signals, source-check, upload GCS
+- `workflow_dispatch` disponibile per entrambi i workflow per run manuali
 
 Comportamento probe:
 
@@ -57,11 +56,12 @@ Usa `catalog-watch` quando la domanda è:
 
 Modello v0:
 
-- i segnali vengono prodotti automaticamente dal workflow schedulato `observatory.yml` (ogni lunedì 03:15)
+- i segnali vengono prodotti automaticamente dal workflow schedulato `observatory.yml` (ogni lunedì 03:20)
 - il follow-up resta `human-run`: il report non sostituisce la review umana sui cambi rilevanti
 - il run manuale va usato quando serve un check metodologicamente difendibile fuori schedule
 - gli output canonici restano `CATALOG_WATCH_REPORT.md` e `catalog_signals.json`
 - problemi di connessione/HTTP vanno letti in `radar_summary.json`, non in `catalog_signals.json`
+- **Issue automatiche**: in caso di variazioni rilevanti nel catalogo, `observatory.yml` crea o aggiorna una issue `catalog-alert` su GitHub
 
 ## Catalog inventory
 
@@ -88,9 +88,11 @@ Disciplina:
 - il perimetro segue le fonti `catalog-watch` del registry
 - una fonte può restare osservata in SO ma non essere inventariabile
 - `anac` oggi resta escluso dall'inventory automatico per vincoli WAF
-- l'upload su GCS è opzionale e richiede secret espliciti
+- l'upload su GCS richiede secret espliciti (GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT, CATALOG_INVENTORY_GCS_PREFIX)
 - in assenza di GCS il workflow resta valido: usa baseline locale vuota e salta i passaggi opzionali di storage/diff
 - il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`
+- `--skip-red-sources` usato in CI per evitare tentativi su fonti già RED (timeout, WAF)
+- `sync_datasets_in_use.py` viene eseguito nel workflow `radar.yml` per allineare il catalogo DI
 
 ## Ordine consigliato
 

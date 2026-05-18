@@ -9,10 +9,17 @@ scripts/
     ckan.py            # collector CKAN
     sdmx.py            # collector SDMX
     sparql.py          # collector SPARQL
+    html.py            # collector HTML (scraping pagine con link a dati)
   build_catalog_inventory.py   # entry point: enumera fonti → parquet
   build_catalog_signals.py     # entry point: drift/inventory del catalogo
   bulk_source_check.py         # entry point: enrichment e scoring per intake
+  source_check_analyze.py      # logica scoring e analisi (chiamata da bulk_source_check)
+  source_check_fetch.py        # fetch HTTP e enrichment per source-check
+  radar_check.py               # health check HTTP su tutte le fonti (radar)
+  sync_datasets_in_use.py      # sincronizza datasets_in_use dal catalogo DI
+  catalog_diff.py              # diff tra report inventory
   _constants.py                # costanti condivise tra script
+  gha/                         # helper per CI (issue body, publish summary)
 ```
 
 ## Regola fondamentale: riusa collectors/base.py
@@ -70,6 +77,15 @@ if __name__ == "__main__":
 - **Nessuna eccezione silenziata senza motivo.** Se catturi `Exception`, logga o restituisci un valore sentinel esplicito (es. `None`, `enrich_method: "error"`).
 - **Tipi espliciti** sulle firme delle funzioni pubbliche.
 - **No dipendenze nuove** senza discussione — il progetto usa `requests`, `pandas`, `pyyaml`, `duckdb`. Per parsing XML usa `xml.etree.ElementTree` stdlib.
+- **lab_connectors**: dependency esterna per `safe_connect()` a DuckDB e utility HTTP condivise con altri repo del Lab.
+
+## Circuit breaker host-level
+
+Il source-check implementa un circuit breaker host-level per evitare di martellare fonti che rispondono con errori persistenti.
+
+- `--circuit-fail-threshold 2` (default): dopo 2 fallimenti consecutivi su uno stesso host, il circuito si apre e salta le richieste successive verso quell'host nel run corrente
+- Il circuito si resetta a ogni nuovo run di source-check
+- Utile per fonti con WAF o rate limiting (es. ANAC, opencoesione)
 
 ## Boundary segnali: radar vs catalog
 
