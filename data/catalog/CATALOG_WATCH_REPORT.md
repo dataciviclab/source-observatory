@@ -1,15 +1,8 @@
 # Catalog Watch Report
 
-_Generato: 2026-05-18T07:09:06+00:00 — 13 fonti controllate_
+_Generato: 2026-05-18T10:24:52+00:00 — 15 fonti controllate_
 
 ## Segnali attivi
-
-### 📦 `istat_sdmx` — inventory change
-
-- **Protocollo**: sdmx
-- **Dettaglio**: 4849 item (dataflow_count), delta +4 rispetto al run precedente (4845).
-- **Item**: 4849
-- **Azione**: verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset
 
 ### • `mim_opendata` — csv_magnet
 
@@ -39,8 +32,22 @@ _Generato: 2026-05-18T07:09:06+00:00 — 13 fonti controllate_
 - **Item**: 42
 - **Azione**: catalog-watch-ready
 
+### • `giustizia_statistiche` — csv_magnet
+
+- **Protocollo**: html
+- **Dettaglio**: 8 link data (XLS 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1
+- **Item**: 8
+- **Azione**: low signal
+
+### • `cortecostituzionale` — csv_magnet
+
+- **Protocollo**: html
+- **Dettaglio**: 33 link data (ZIP 33)
+- **Item**: 33
+- **Azione**: catalog-watch-ready
+
 ## Fonti stabili / skipped
 
-_8 fonti senza segnali inventariali in questo run._
+_9 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.

@@ -1,15 +1,15 @@
 {
-  "captured_at": "2026-05-18T07:09:06+00:00",
-  "sources_checked": 13,
+  "captured_at": "2026-05-18T10:24:52+00:00",
+  "sources_checked": 15,
   "signals": [
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
-      "signal_type": "inventory change",
-      "result": "inventory change",
+      "signal_type": "no signal",
+      "result": "stabile",
       "metric_value": 4849,
-      "detail": "4849 item (dataflow_count), delta +4 rispetto al run precedente (4845).",
-      "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset"
+      "detail": "4849 item (dataflow_count), in linea con la baseline.",
+      "suggested_action": "nessuna"
     },
     {
       "source": "inps",
@@ -24,8 +24,9 @@
       "source": "openbdap",
       "protocol": "ckan",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 3773,
+      "detail": "3773 item (package_list), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -634,9 +635,8 @@
       "source": "dati_camera",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 104,
-      "detail": "104 item (sparql_query), in linea con la baseline.",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {
@@ -664,22 +664,6 @@
       "result": "stabile",
       "metric_value": 16,
       "detail": "16 item (package_list), in linea con la baseline.",
-      "suggested_action": "nessuna"
-    },
-    {
-      "source": "lavoro_opendata",
-      "protocol": "ckan",
-      "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
-      "suggested_action": "nessuna"
-    },
-    {
-      "source": "mur_ustat",
-      "protocol": "ckan",
-      "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {
@@ -1322,6 +1306,99 @@
         2010,
         2027
       ],
+      "suggested_action": "catalog-watch-ready"
+    },
+    {
+      "source": "mit_opendata",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 70,
+      "detail": "70 item (None), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "openga",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 436,
+      "detail": "436 item (None), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "giustizia_statistiche",
+      "protocol": "html",
+      "signal_type": "csv_magnet",
+      "result": "scan_completed",
+      "metric_value": 8,
+      "detail": "8 link data (XLS 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1",
+      "prefix_matrix": {
+        "Civile": 1,
+        "Indicatori": 2,
+        "Sorveg": 1,
+        "Interc": 1,
+        "Durata": 2,
+        "Monitoraggio": 1
+      },
+      "series": {
+        "Civile": {
+          "years": [
+            2014,
+            2025
+          ],
+          "count": 1,
+          "sample": "CivileFlussi20142025"
+        },
+        "Indicatori": {
+          "years": [],
+          "count": 2,
+          "sample": "Indicatori_Civili_4"
+        },
+        "Sorveg": {
+          "years": [],
+          "count": 1,
+          "sample": "Sorveglianza"
+        },
+        "Interc": {
+          "years": [],
+          "count": 1,
+          "sample": "Intercettazioni"
+        },
+        "Durata": {
+          "years": [
+            2014,
+            2025
+          ],
+          "count": 2,
+          "sample": "Durata_SICID_20142025"
+        },
+        "Monitoraggio": {
+          "years": [],
+          "count": 1,
+          "sample": "Monitoraggio_mensile"
+        }
+      },
+      "topics": {
+        "giustizia": 8
+      },
+      "years_range": [
+        2014,
+        2025
+      ],
+      "suggested_action": "low signal"
+    },
+    {
+      "source": "cortecostituzionale",
+      "protocol": "html",
+      "signal_type": "csv_magnet",
+      "result": "scan_completed",
+      "metric_value": 33,
+      "detail": "33 link data (ZIP 33)",
+      "prefix_matrix": {},
+      "series": {},
+      "topics": {},
+      "years_range": [],
       "suggested_action": "catalog-watch-ready"
     }
   ]
