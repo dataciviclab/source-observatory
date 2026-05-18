@@ -218,6 +218,26 @@ def _enrich_with_inventory(
     inv_notes = row.get("notes_excerpt")
     inv_granularity = row.get("granularity")  # may be None
 
+    # Fallback per fonti HTML: inventory non ha org/tags/notes perché il
+    # csv_magnet scan cattura solo URL e titolo, non i metadati del portale.
+    # Deriviamo dai campi noti del registry (source_id, topic_hint, note).
+    inv_org = row.get("organization")
+    if not inv_org:
+        # source_id come organizzazione implicita (es. "aifa"→"AIFA")
+        inv_org = source_id.upper() if source_id else None
+    # NaN safeguard: pandas NaN è truthy in Python, ma `not x` su NaN è False.
+    # Usiamo pd.isna() per rilevare valori NaN/non popolati.
+    if pd.isna(inv_org) or pd.isna(inv_tags) or pd.isna(inv_notes):
+        hp = source_cfg.get("html_portal") or {}
+        topic_hint = hp.get("topic_hint") if isinstance(hp, dict) else None
+        src_note = source_cfg.get("note", "") or ""
+        if pd.isna(inv_org):
+            inv_org = source_id.upper() if source_id else None
+        if pd.isna(inv_tags) and topic_hint:
+            inv_tags = topic_hint
+        if pd.isna(inv_notes) and src_note:
+            inv_notes = src_note[:300]
+
     _raw_name = row.get("item_name") or row.get("item_id")
     item_name = "" if pd.isna(_raw_name) else str(_raw_name)
     _slug = row.get("item_slug")
@@ -259,12 +279,20 @@ def _enrich_with_inventory(
             return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
 
     def _enc(r: dict) -> dict:
-        """Aggiunge encoding dall'inventory row a qualsiasi result dict."""
+        """Aggiunge encoding dall'inventory row a qualsiasi result dict,
+        più organization derivata dal registry per fonti senza metadati."""
         r["encoding_suggested"] = _safe_str(row.get("encoding_suggested"))
         r["delim_suggested"] = _safe_str(row.get("delim_suggested"))
         r["decimal_suggested"] = _safe_str(row.get("decimal_suggested"))
         _skip = row.get("skip_suggested")
         r["skip_suggested"] = 0 if pd.isna(_skip) else int(_skip)
+        # Fallback per fonti HTML: inventory non ha organization/tags/notes
+        # (csv_magnet scan cattura solo URL e titolo).
+        # Assegnamento diretto (non setdefault): _EMPTY_ENRICH ha già queste
+        # chiavi a None, setdefault non sovrascriverebbe.
+        r["enriched_org"] = inv_org
+        r["enriched_tags"] = inv_tags
+        r["enriched_notes"] = inv_notes
         return r
 
     # HTML: use inventory url + content-type format detection
@@ -293,7 +321,12 @@ def _enrich_with_inventory(
             path = parsed.path or ""
             fmt_ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
             if fmt_ext in ("csv", "json", "xlsx", "xls"):
-                return _fetch_data_preview(data_url)
+                preview = _fetch_data_preview(data_url)
+                # Merge con _enc per arricchire org/tags/notes dal registry
+                if preview:
+                    # Unisce i campi del registry (enriched_org, encoding, etc.)
+                    _enc(preview)
+                return preview
 
     # HTML fallback: landing_page reachable
     landing = row.get("landing_page")
@@ -513,7 +546,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "item_id": row.get("item_id"),
         "item_name": row.get("item_name"),
         "title": enrich["enriched_title"] or row.get("title"),
-        "organization": row.get("organization"),
+        "organization": row.get("organization") if pd.notna(row.get("organization")) else enrich.get("enriched_org") or str(row.get("source_id", "")).upper(),
         "tags": enrich["enriched_tags"] or row.get("tags"),
         "notes": enrich["enriched_notes"],
         "url_checked": url_to_check,
