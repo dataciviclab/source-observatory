@@ -1,14 +1,14 @@
 {
-  "captured_at": "2026-05-13T19:16:07+00:00",
-  "sources_checked": 12,
+  "captured_at": "2026-05-18T07:09:06+00:00",
+  "sources_checked": 13,
   "signals": [
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
       "signal_type": "inventory change",
       "result": "inventory change",
-      "metric_value": 4845,
-      "detail": "4845 item (dataflow_count), delta +6 rispetto al run precedente (4839).",
+      "metric_value": 4849,
+      "detail": "4849 item (dataflow_count), delta +4 rispetto al run precedente (4845).",
       "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset"
     },
     {
@@ -643,8 +643,9 @@
       "source": "dati_cultura",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 213,
+      "detail": "213 item (sparql_query), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -687,7 +688,7 @@
       "signal_type": "csv_magnet",
       "result": "scan_completed",
       "metric_value": 147,
-      "detail": "147 link data (no format)",
+      "detail": "147 link data (CSV 81, ZIP 66)",
       "prefix_matrix": {},
       "series": {},
       "topics": {},
@@ -1096,6 +1097,230 @@
       "years_range": [
         2010,
         2025
+      ],
+      "suggested_action": "catalog-watch-ready"
+    },
+    {
+      "source": "aifa",
+      "protocol": "html",
+      "signal_type": "csv_magnet",
+      "result": "scan_completed",
+      "metric_value": 42,
+      "detail": "42 link data (CSV 38, XML 1, ZIP 3), years 2010-2027 — top prefixes: provvedimenti=8, Classe=4, sc=3, elenco=2, Elenco=2",
+      "prefix_matrix": {
+        "Lista": 1,
+        "confezioni": 1,
+        "PA": 1,
+        "atc": 1,
+        "Classe": 4,
+        "Liste": 1,
+        "lista": 1,
+        "elenco-farmaci-MR-l648": 1,
+        "lista-farmaci-malattie-rare": 1,
+        "programmi": 1,
+        "elenco": 2,
+        "Elenco": 2,
+        "Strutture": 1,
+        "Lista-": 1,
+        "Accordi": 2,
+        "provvedimenti": 8,
+        "2933": 1,
+        "fdaab4": 1,
+        "54": 1,
+        "fe9616": 1,
+        "glossario": 1,
+        "sc": 3,
+        "strutture": 1,
+        "ElencoDipendenti": 1,
+        "collegio": 1,
+        "componenti": 1,
+        "AIFAindice": 1
+      },
+      "series": {
+        "Lista": {
+          "years": [],
+          "count": 1,
+          "sample": "Lista_farmaci_equivalenti"
+        },
+        "confezioni": {
+          "years": [],
+          "count": 1,
+          "sample": "confezioni_fornitura"
+        },
+        "PA": {
+          "years": [],
+          "count": 1,
+          "sample": "PA_confezioni"
+        },
+        "atc": {
+          "years": [],
+          "count": 1,
+          "sample": "atc"
+        },
+        "Classe": {
+          "years": [
+            2025
+          ],
+          "count": 4,
+          "sample": "Classe_A_per_principio_attivo_30-10-2025"
+        },
+        "Liste": {
+          "years": [
+            2022
+          ],
+          "count": 1,
+          "sample": "Liste_sostanze_attive_settembre_2022"
+        },
+        "lista": {
+          "years": [
+            2026
+          ],
+          "count": 1,
+          "sample": "lista_farmaci_valutati_inserimento_classe_Cnn_27.04.2026"
+        },
+        "elenco-farmaci-MR-l648": {
+          "years": [
+            2026
+          ],
+          "count": 1,
+          "sample": "elenco-farmaci-MR-l648_15.05.2026"
+        },
+        "lista-farmaci-malattie-rare": {
+          "years": [
+            2026
+          ],
+          "count": 1,
+          "sample": "lista-farmaci-malattie-rare_15.05.2026"
+        },
+        "programmi": {
+          "years": [
+            2026
+          ],
+          "count": 1,
+          "sample": "programmi_uso_compassionevole_29.04.2026"
+        },
+        "elenco": {
+          "years": [
+            2025
+          ],
+          "count": 2,
+          "sample": "elenco_medicinali_carenti"
+        },
+        "Elenco": {
+          "years": [
+            2026
+          ],
+          "count": 2,
+          "sample": "Elenco_Registri_PT_attivi_14.05.2026"
+        },
+        "Strutture": {
+          "years": [
+            2026
+          ],
+          "count": 1,
+          "sample": "Strutture_registri_regioni_2026-03-05"
+        },
+        "Lista-": {
+          "years": [
+            2025
+          ],
+          "count": 1,
+          "sample": "Lista-farmaci-orfani-2025"
+        },
+        "Accordi": {
+          "years": [
+            2010,
+            2025,
+            2026
+          ],
+          "count": 2,
+          "sample": "Accordi_pa_privati_2026_al_28.04.2026"
+        },
+        "provvedimenti": {
+          "years": [
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025,
+            2026
+          ],
+          "count": 8,
+          "sample": "provvedimenti_ACC_2-Semestre-2024"
+        },
+        "2933": {
+          "years": [],
+          "count": 1,
+          "sample": "2933ae24-c9cd-af4a-9aa9-f75592228ae7?t=1611584979402"
+        },
+        "fdaab4": {
+          "years": [],
+          "count": 1,
+          "sample": "fdaab459-3919-98aa-7899-87b07a4647b4"
+        },
+        "54": {
+          "years": [],
+          "count": 1,
+          "sample": "54f80c42-121e-e86d-ed9d-46721ec17c64"
+        },
+        "fe9616": {
+          "years": [],
+          "count": 1,
+          "sample": "fe961636-7fdf-f2c3-7534-161ce641f1d8"
+        },
+        "glossario": {
+          "years": [],
+          "count": 1,
+          "sample": "glossario_etichette"
+        },
+        "sc": {
+          "years": [],
+          "count": 3,
+          "sample": "sc_approvate"
+        },
+        "strutture": {
+          "years": [],
+          "count": 1,
+          "sample": "strutture_responsabili_farmacovigilanza"
+        },
+        "ElencoDipendenti": {
+          "years": [
+            2025
+          ],
+          "count": 1,
+          "sample": "ElencoDipendenti_2025_05.05.2025"
+        },
+        "collegio": {
+          "years": [
+            2019,
+            2022,
+            2024
+          ],
+          "count": 1,
+          "sample": "collegio_revisori_conti_2019-2024_28.02.2022"
+        },
+        "componenti": {
+          "years": [
+            2024,
+            2027
+          ],
+          "count": 1,
+          "sample": "componenti_cse_2024-2027_26.04.2024"
+        },
+        "AIFAindice": {
+          "years": [],
+          "count": 1,
+          "sample": "AIFAindice_file_AppaltiL190"
+        }
+      },
+      "topics": {
+        "sanita": 42
+      },
+      "years_range": [
+        2010,
+        2027
       ],
       "suggested_action": "catalog-watch-ready"
     }

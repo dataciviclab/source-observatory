@@ -1,14 +1,14 @@
 # Catalog Watch Report
 
-_Generato: 2026-05-13T19:16:07+00:00 — 12 fonti controllate_
+_Generato: 2026-05-18T07:09:06+00:00 — 13 fonti controllate_
 
 ## Segnali attivi
 
 ### 📦 `istat_sdmx` — inventory change
 
 - **Protocollo**: sdmx
-- **Dettaglio**: 4845 item (dataflow_count), delta +6 rispetto al run precedente (4839).
-- **Item**: 4845
+- **Dettaglio**: 4849 item (dataflow_count), delta +4 rispetto al run precedente (4845).
+- **Item**: 4849
 - **Azione**: verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset
 
 ### • `mim_opendata` — csv_magnet
@@ -21,7 +21,7 @@ _Generato: 2026-05-13T19:16:07+00:00 — 12 fonti controllate_
 ### • `mef_irpef` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 147 link data (no format)
+- **Dettaglio**: 147 link data (CSV 81, ZIP 66)
 - **Item**: 147
 - **Azione**: catalog-watch-ready
 
@@ -30,6 +30,13 @@ _Generato: 2026-05-13T19:16:07+00:00 — 12 fonti controllate_
 - **Protocollo**: html
 - **Dettaglio**: 748 link data (ZIP 748), years 2010-2025 — top prefixes: 2010=90, 2013=72, Metadati=64, 2022=63, 2018=59
 - **Item**: 748
+- **Azione**: catalog-watch-ready
+
+### • `aifa` — csv_magnet
+
+- **Protocollo**: html
+- **Dettaglio**: 42 link data (CSV 38, XML 1, ZIP 3), years 2010-2027 — top prefixes: provvedimenti=8, Classe=4, sc=3, elenco=2, Elenco=2
+- **Item**: 42
 - **Azione**: catalog-watch-ready
 
 ## Fonti stabili / skipped
