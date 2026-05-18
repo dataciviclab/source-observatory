@@ -65,7 +65,7 @@ DEFAULT_IN = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_i
 DEFAULT_OUT = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
 REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
 
-MAX_WORKERS = 8
+MAX_WORKERS = 16
 _NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
 
 
@@ -549,20 +549,31 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
     check_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     results = []
 
+    # Per-source timing (stesso pattern di build_catalog_inventory)
+    source_first_submit: dict[str, float] = {}
+    source_last_done: dict[str, float] = {}
+    source_item_count: dict[str, int] = {}
+    source_error_count: dict[str, int] = {}
+
     _BULK_CHECK_TIMEOUT = 900  # 15 minuti per batch source-check (safety net)
     pool = ThreadPoolExecutor(max_workers=workers)
     try:
         # Usa enumerate per avere un indice posizionale garantito come int.
         # df.iterrows() restituisce un indice generico (Hashable) che mypy
         # non accetta per df.loc/df.iloc — con enumerate pos abbiamo int certo.
-        future_to_idx = {
-            pool.submit(_check_row, row, check_ts, registry): pos
-            for pos, (_idx, row) in enumerate(df.iterrows())
-        }
+        future_to_idx = {}
+        for pos, (_idx, row) in enumerate(df.iterrows()):
+            f = pool.submit(_check_row, row, check_ts, registry)
+            future_to_idx[f] = pos
+            sid = str(row.get("source_id", ""))
+            source_first_submit.setdefault(sid, time.time())
+            source_item_count[sid] = source_item_count.get(sid, 0) + 1
+
         done = 0
         total = len(future_to_idx)
         for future in as_completed(future_to_idx, timeout=_BULK_CHECK_TIMEOUT):
             pos = future_to_idx[future]
+            sid = str(df.iloc[pos].get("source_id", "")) if pos < len(df) else ""
             try:
                 results.append(_finalize_scores(future.result()))
             except Exception as exc:
@@ -577,6 +588,8 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
                     "check_notes": f"check failed: {exc}",
                     "enrich_method": "error",
                 })
+                source_error_count[sid] = source_error_count.get(sid, 0) + 1
+            source_last_done[sid] = time.time()
             done += 1
             if done % 50 == 0 or done == total:
                 logger.info("  %d/%d completed", done, total)
@@ -585,6 +598,28 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
                        _BULK_CHECK_TIMEOUT, done, total)
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
+
+    # ── Per-source timing table ───────────────────────────────────────────────────
+    if source_item_count:
+        print()
+        print(f"{'Source':<24} {'Items':<8} {'Errors':<8} {'Time':<8}  {'Note'}")
+        print("-" * 64)
+        now = time.time()
+        for sid in sorted(source_item_count):
+            first = source_first_submit.get(sid, now)
+            last = source_last_done.get(sid)
+            if last is None:
+                # fonte non completata (timeout batch): stima con timeout globale
+                elapsed = float(_BULK_CHECK_TIMEOUT)
+                note = "timeout"
+            else:
+                elapsed = last - first
+                note = "ok"
+            errs = source_error_count.get(sid, 0)
+            if errs:
+                note = f"{errs} error(s)"
+            print(f"{sid:<24} {source_item_count[sid]:<8} {errs:<8} {elapsed:>6.1f}s  {note}")
+        print()
 
     return pd.DataFrame(results)
 

@@ -76,7 +76,7 @@ jobs:
         run: |
           python scripts/build_catalog_inventory.py \
             --out-dir data/catalog_inventory/generated \
-            --workers 8 \
+            --workers 16 \
             --skip-red-sources
 
       - name: Build catalog signals + diff
@@ -149,7 +149,7 @@ jobs:
             --no-sdmx-years \
             --circuit-fail-threshold 2 \
             --max-items 1000 \
-            --workers 8
+            --workers 16
 
       # ═══════════════════════════════════════════════════════════════════
       # STEP 3 — UPLOAD GCS

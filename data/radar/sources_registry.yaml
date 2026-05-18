@@ -52,6 +52,9 @@ inps:
   base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
   inventory:
     skip_current_list: true
+    skip_current_list_reason: >
+      current_package_list_with_resources degrada a offset alti
+      (2300+ timeout 30s) — package_show_sample +16 workers è più veloce.
     package_show_sample: true
     sample_size: 10000
   last_probed: '2026-05-18'
@@ -60,11 +63,13 @@ inps:
     metric: package_count
     value: 2323
     method: package_list
-    reliability: medium
-    note: Conteggio totale package rilevati via package_list; baseline 
-      precedente (544) risultata stale rispetto all'inventario corrente.
+    reliability: high
+    note: "Inventory via package_list + package_show_sample (16 workers).
+      current_package_list_with_resources testato ma scartato per lentezza
+      a offset alti. package_show_sample più veloce."
   verdict: go
-  note: Catalogo CKAN ricco e ad alto potenziale per candidati e source-check.
+  note: Catalogo CKAN INPS — inventory via package_list + package_show_sample
+    (current_package_list_with_resources lento a offset alti).
   datasets_in_use:
     - inps_pensioni_trimestrale
     - pensioni_pa_dag
@@ -270,32 +275,21 @@ consip_open_data:
 lavoro_opendata:
   source_kind: catalog
   protocol: ckan
-  observation_mode: catalog-watch
+  observation_mode: radar-only
   base_url: 
     https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
-  inventory:
-    skip_package_search: true
-    skip_package_search_reason: count inaffidabile
-    skip_current_list: true
-    package_show_sample: true
-    sample_size: 10000
   last_probed: '2026-05-18'
-  catalog_baseline:
-    captured_at: '2026-04-11'
-    metric: package_count
-    value: 159
-    method: package_list
-    reliability: medium
-    note: Baseline iniziale su SPOD CKAN (package_list). Package_search count 
-      inaffidabile.
-  verdict: go
-  note: Portale Ministero del Lavoro (SPOD CKAN) con API stabile e catalogo ~159
-    dataset.
+  verdict: hold
+  note: >
+    Declassato a radar-only il 2026-05-18. ValueError sistematico su
+    package_list — CKAN non raggiungibile via HTTP standard (restituisce
+    HTML non JSON). Catalogo ~159 dataset, inventory non aggiornabile
+    fino a ripristino API.
   datasets_in_use: []
 mur_ustat:
   source_kind: catalog
   protocol: ckan
-  observation_mode: catalog-watch
+  observation_mode: radar-only
   base_url: https://dati-ustat.mur.gov.it/api/3/action/package_list?limit=1
   last_probed: '2026-05-18'
   catalog_baseline:
@@ -304,11 +298,14 @@ mur_ustat:
     value: 68
     method: package_list
     reliability: medium
-    note: Baseline iniziale su CKAN package_list; portale con 68 dataset e 
-      metadata completi, aggiornamenti recenti.
-  verdict: go
-  note: Portale MUR USTAT (istruzione superiore/AFAM/DSU) con CKAN stabile e 
-    aggiornamenti recenti. Rinominato da mim_ustat (naming errato).
+    note: Baseline fissata il 2026-04-09. Declassato a radar-only il
+      2026-05-18 per timeout sistematico di connessione (ConnectTimeout).
+      Inventory non aggiornabile fino a ripristino endpoint.
+  verdict: hold
+  note: >
+    Declassato a radar-only il 2026-05-18. ConnectTimeout sistematico
+    su CKAN package_list. 68 dataset in baseline storica.
+    Inventory non aggiornabile fino a ripristino endpoint.
   datasets_in_use:
     - mur_contribuzione_universitaria
 opencoesione:

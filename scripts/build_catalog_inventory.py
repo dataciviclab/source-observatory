@@ -112,8 +112,8 @@ def parse_args() -> argparse.Namespace:
         "--workers",
         type=int,
         default=1,
-        choices=range(1, 9),
-        metavar="N (1-8)",
+        choices=range(1, 17),
+        metavar="N (1-16)",
         help="Thread per la raccolta parallela (default: 1 = seriale).",
     )
     parser.add_argument(
@@ -211,10 +211,12 @@ def main() -> None:
             future_to_id[f] = source_id
             submit_times[source_id] = time.time()
             # Timing per-fonte: registra quando il future completa,
-            # non quando wait() ritorna (che e' il tempo del piu' lento)
-            def _record_timing(_sid: str = source_id) -> None:
+            # non quando wait() ritorna (che e' il tempo del piu' lento).
+            # NOTA: chiudere _sid nel default del lambda per evitare
+            # il bug classico di chiusura su variabile di loop.
+            def _record_timing(_f: object, _sid: str = source_id) -> None:
                 source_timing.setdefault(_sid, time.time() - submit_times[_sid])
-            f.add_done_callback(lambda _: _record_timing())
+            f.add_done_callback(_record_timing)
 
         # wait() timeout globale per il batch (rete di sicurezza). Il timeout
         # reale per fonte è in _collect_source (_SOURCE_TIMEOUT = 300s).
