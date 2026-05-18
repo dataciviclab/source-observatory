@@ -79,10 +79,7 @@ openbdap:
     skip_package_search_reason: timeout sistematico a 60s
     skip_current_list: true
     package_show_sample: true
-    sample_size: 100
-    sample_size_reason: Ridotto da 4000 a 100 il 2026-05-18 — package_show su
-      3772 dataset consuma risorse e spesso va in timeout. Sample 100 sufficiente
-      per rilevare variazioni significative nel catalogo.
+    sample_size: 4000
   last_probed: '2026-05-18'
   catalog_baseline:
     captured_at: '2026-04-02'
@@ -377,6 +374,7 @@ opencivitas:
     page_max: 100
     page_stop_on_empty: true
     delay_seconds: 0.3
+    probe_content_type: true
   datasets_in_use: []
 aifa:
   source_kind: catalog
