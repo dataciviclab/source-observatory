@@ -491,7 +491,7 @@ terna_opendata:
   source_kind: catalog
   protocol: rest
   observation_mode: radar-only
-  base_url: https://dati.terna.it/api/sitecore/dati/downloadcenter/records?f=xlsx&db=dati&pageSize=1
+  base_url: https://dati.terna.it/
   last_probed: '2026-05-18'
   verdict: go
   note: >
