@@ -8,5 +8,5 @@ ddgs>=9.14.2,<10.0
 jsonschema>=4.20.0,<5.0
 mcp>=1.27.1
 fastmcp>=3.2.4
-lab-connectors[duckdb] @ git+https://github.com/dataciviclab/lab-connectors.git@v0.7.0
-dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@6b3367c
+lab-connectors[duckdb] @ git+https://github.com/dataciviclab/lab-connectors.git@v0.8.0
+dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@fca6bd28
