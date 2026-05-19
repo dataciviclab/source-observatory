@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-05-18
+Ultimo run: 2026-05-19
 
 ## Sommario
 
 - Fonti controllate: 23
-- GREEN: 18
+- GREEN: 17
 - YELLOW: 4
-- RED: 1
+- RED: 2
 
 ## Tipi sorgente
 
@@ -38,7 +38,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | dati_salute | catalog | html | catalog-watch | RED | - | - |
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta |
-| dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | - |
+| dati_camera | catalog | sparql | catalog-watch | RED | 503 | - |
 | dati_cultura | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
@@ -59,6 +59,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | WAF blocca endpoint CKAN. Declassato a radar-only finche' non disponibile endpoint alternativo o accesso istituzionale.
 - `dati_salute`: SSL verify failed; fallback connection error (SSLError)
+- `dati_camera`: HTTP 503 | content-type: text/html; charset=UTF-8 | url finale: https://dati.camera.it/sparql | Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.
 - `lavoro_opendata`: HTTP 200 | content-type: text/html | url finale: https://dati.lavoro.gov.it/SpodCkanApi/api/3/action/package_list?limit=1 | CKAN API returned non-JSON content
 - `mur_ustat`: Retry timeout/connection: Timeout (ConnectTimeout)
 - `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/api/ | Portale disabilitato/ritirato. CKAN API non piu' raggiungibile (redirect a /it/ con 404 "Pagina non trovata"). Mantenuto in radar-only per eventuale monitoraggio futuro.
