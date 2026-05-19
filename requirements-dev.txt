@@ -1,6 +1,6 @@
 -r requirements.txt
 pytest>=9.0.3,<10.0
-ruff>=0.15.12,<1.0.0
+ruff>=0.15.13,<1.0.0
 mypy>=2.0.0,<3.0.0
 types-requests
 types-PyYAML
