@@ -661,19 +661,39 @@ def test_infer_topic_new_not_overlapping_old() -> None:
 
 
 def test_infer_topic_accenti_normalizzati() -> None:
-    """Testi con accenti devono matchare keyword senza accenti."""
-    result = core.infer_topic("Sanità e salute pubblica")
-    assert "sanita" in result["topics"], "Sanità (accento) dovrebbe matchare sanita"
-    assert result["topics"]["sanita"] >= 3, "sanità dovrebbe dare match word-boundary"
+    """Testi con accenti devono matchare keyword senza accenti.
 
-    result = core.infer_topic("Mobilità sostenibile e trasporti")
-    assert "trasporti" in result["topics"], "Mobilità (accento) dovrebbe matchare trasporti"
+    Ogni frase contiene UNA SOLA parola accentata come unica keyword matchabile.
+    Se la normalizzazione NFKD venisse rimossa, ciascuna frase produrrebbe {}
+    (nessun topic matchato).
+    """
+    # "Sanità" → keyword "sanita" (solo dopo NFKD: sanità → sanita)
+    result = core.infer_topic("Sanità")
+    assert "sanita" in result["topics"], (
+        "Sanità (accento) deve matchare sanita. "
+        "Se fallisce, la normalizzazione NFKD non funziona."
+    )
 
-    result = core.infer_topic("Previdenza: pensioni e anzianità")
-    assert "previdenza" in result["topics"], "anzianità (accento) dovrebbe matchare"
+    # "Mobilità" → keyword "mobilita" (solo dopo NFKD: mobilità → mobilita)
+    result = core.infer_topic("Mobilità")
+    assert "trasporti" in result["topics"], (
+        "Mobilità (accento) deve matchare trasporti. "
+        "Se fallisce, la normalizzazione NFKD non funziona."
+    )
 
-    result = core.infer_topic("Elettricità da fonti rinnovabili")
-    assert "energia" in result["topics"], "Elettricità (accento) dovrebbe matchare energia"
+    # "Elettricità" → keyword "elettricita" (solo dopo NFKD)
+    result = core.infer_topic("Elettricità")
+    assert "energia" in result["topics"], (
+        "Elettricità (accento) deve matchare energia. "
+        "Se fallisce, la normalizzazione NFKD non funziona."
+    )
+
+    # "Anzianità" → keyword "anzianita" (solo dopo NFKD)
+    result = core.infer_topic("Anzianità")
+    assert "previdenza" in result["topics"], (
+        "Anzianità (accento) deve matchare previdenza. "
+        "Se fallisce, la normalizzazione NFKD non funziona."
+    )
 
 
 def test_infer_topic_no_false_positive_aria_in_sanitaria() -> None:
