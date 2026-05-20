@@ -660,6 +660,40 @@ def test_infer_topic_new_not_overlapping_old() -> None:
         assert old_topic not in result["topics"]
 
 
+def test_infer_topic_accenti_normalizzati() -> None:
+    """Testi con accenti devono matchare keyword senza accenti."""
+    result = core.infer_topic("Sanità e salute pubblica")
+    assert "sanita" in result["topics"], "Sanità (accento) dovrebbe matchare sanita"
+    assert result["topics"]["sanita"] >= 3, "sanità dovrebbe dare match word-boundary"
+
+    result = core.infer_topic("Mobilità sostenibile e trasporti")
+    assert "trasporti" in result["topics"], "Mobilità (accento) dovrebbe matchare trasporti"
+
+    result = core.infer_topic("Previdenza: pensioni e anzianità")
+    assert "previdenza" in result["topics"], "anzianità (accento) dovrebbe matchare"
+
+    result = core.infer_topic("Elettricità da fonti rinnovabili")
+    assert "energia" in result["topics"], "Elettricità (accento) dovrebbe matchare energia"
+
+
+def test_infer_topic_no_false_positive_aria_in_sanitaria() -> None:
+    """"aria" come sottostringa di "sanitaria" non deve produrre falso positivo ambiente."""
+    result = core.infer_topic("Spesa sanitaria regionale")
+    # "sanitaria" contiene "aria" (substring) che potrebbe matchare ambiente
+    assert "ambiente" not in result["topics"], (
+        "'aria' in 'sanitaria' non deve matchare ambiente via substring"
+    )
+
+
+def test_infer_topic_no_false_positive_ment_in_farmaceutica() -> None:
+    """Verifica che non ci siano falsi positivi da substring con keyword corte."""
+    result = core.infer_topic("Consumo farmaceutico convenzionato regionale")
+    for topic in ("ambiente", "casa", "cultura", "economia"):
+        assert topic not in result["topics"], (
+            f"'{topic}' non dovrebbe matchare su testo farmaceutico"
+        )
+
+
 class _FakeSSLFallbackResponse:
     """Fake response returned by SSL fallback when verify=False succeeds."""
     status_code = 200
