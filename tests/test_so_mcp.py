@@ -660,6 +660,60 @@ def test_infer_topic_new_not_overlapping_old() -> None:
         assert old_topic not in result["topics"]
 
 
+def test_infer_topic_accenti_normalizzati() -> None:
+    """Testi con accenti devono matchare keyword senza accenti.
+
+    Ogni frase contiene UNA SOLA parola accentata come unica keyword matchabile.
+    Se la normalizzazione NFKD venisse rimossa, ciascuna frase produrrebbe {}
+    (nessun topic matchato).
+    """
+    # "Sanità" → keyword "sanita" (solo dopo NFKD: sanità → sanita)
+    result = core.infer_topic("Sanità")
+    assert "sanita" in result["topics"], (
+        "Sanità (accento) deve matchare sanita. "
+        "Se fallisce, la normalizzazione NFKD non funziona."
+    )
+
+    # "Mobilità" → keyword "mobilita" (solo dopo NFKD: mobilità → mobilita)
+    result = core.infer_topic("Mobilità")
+    assert "trasporti" in result["topics"], (
+        "Mobilità (accento) deve matchare trasporti. "
+        "Se fallisce, la normalizzazione NFKD non funziona."
+    )
+
+    # "Elettricità" → keyword "elettricita" (solo dopo NFKD)
+    result = core.infer_topic("Elettricità")
+    assert "energia" in result["topics"], (
+        "Elettricità (accento) deve matchare energia. "
+        "Se fallisce, la normalizzazione NFKD non funziona."
+    )
+
+    # "Anzianità" → keyword "anzianita" (solo dopo NFKD)
+    result = core.infer_topic("Anzianità")
+    assert "previdenza" in result["topics"], (
+        "Anzianità (accento) deve matchare previdenza. "
+        "Se fallisce, la normalizzazione NFKD non funziona."
+    )
+
+
+def test_infer_topic_no_false_positive_aria_in_sanitaria() -> None:
+    """"aria" come sottostringa di "sanitaria" non deve produrre falso positivo ambiente."""
+    result = core.infer_topic("Spesa sanitaria regionale")
+    # "sanitaria" contiene "aria" (substring) che potrebbe matchare ambiente
+    assert "ambiente" not in result["topics"], (
+        "'aria' in 'sanitaria' non deve matchare ambiente via substring"
+    )
+
+
+def test_infer_topic_no_false_positive_ment_in_farmaceutica() -> None:
+    """Verifica che non ci siano falsi positivi da substring con keyword corte."""
+    result = core.infer_topic("Consumo farmaceutico convenzionato regionale")
+    for topic in ("ambiente", "casa", "cultura", "economia"):
+        assert topic not in result["topics"], (
+            f"'{topic}' non dovrebbe matchare su testo farmaceutico"
+        )
+
+
 class _FakeSSLFallbackResponse:
     """Fake response returned by SSL fallback when verify=False succeeds."""
     status_code = 200

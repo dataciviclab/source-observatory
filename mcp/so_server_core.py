@@ -10,6 +10,7 @@ import importlib.util
 import os
 import re
 import subprocess
+import unicodedata
 import sys
 import tempfile
 from contextlib import AbstractContextManager, contextmanager
@@ -1287,16 +1288,24 @@ def _score_text_by_topics(text: str) -> dict[str, int]:
 
     Returns dict of topic -> score. Score is sum of keyword matches.
     Word-boundary matches = 3pt, substring matches = 1pt.
+    Accented characters are normalised via NFKD so that e.g.
+    ``'sanità'`` matches the keyword ``'sanita'``.
     """
+    # Normalise Unicode: decompose accented chars, strip combining marks
+    text = unicodedata.normalize("NFKD", text)
+    text = text.encode("ascii", "ignore").decode("ascii")
     low = text.lower()
     scores: dict[str, int] = {}
     for topic, keywords in _TOPIC_KEYWORDS.items():
         score = 0
         for kw in keywords:
-            pattern = re.escape(kw.lower())
+            kw_low = kw.lower()
+            pattern = re.escape(kw_low)
             if re.search(rf"\b{pattern}\b", low):
                 score += 3
-            elif kw.lower() in low:
+            elif len(kw_low) > 4 and kw_low in low:
+                # Substring match solo per keyword > 4 caratteri,
+                # per evitare falsi positivi (es. "aria" in "sanitaria").
                 score += 1
         if score > 0:
             scores[topic] = score
