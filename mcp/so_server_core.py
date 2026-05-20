@@ -24,6 +24,7 @@ import duckdb
 import requests
 from lab_connectors.duckdb import safe_connect
 
+from lab_connectors.gcs.paths import CLEAN_BUCKET
 from lab_connectors.http import HttpClient
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -195,7 +196,7 @@ def _ckan_package_show(endpoint: str, package_id: str, timeout: int = 30) -> dic
         "source_url": api_url,
     }
 _DEFAULT_GCS_PREFIXES = {
-    "CATALOG_INVENTORY_GCS_PREFIX": "gs://dataciviclab-clean/catalog_inventory",
+    "CATALOG_INVENTORY_GCS_PREFIX": f"gs://{CLEAN_BUCKET}/catalog_inventory",
 }
 _SOURCE_CHECK_ARTIFACT = "source_check_results.parquet"
 _CATALOG_INVENTORY_ARTIFACT = "catalog_inventory_latest.parquet"
