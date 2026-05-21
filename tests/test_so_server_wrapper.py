@@ -2,15 +2,8 @@
 from __future__ import annotations
 
 import asyncio
-import sys
-from pathlib import Path
 
-# Aggiungi mcp/ a sys.path: senza __init__.py non c'è collisione col package PyPI `mcp`.
-# so_server.py importa so_server_core come sibling module (stessa directory).
-_mcp_dir = Path(__file__).resolve().parents[1] / "mcp"
-sys.path.insert(0, str(_mcp_dir))
-
-import so_server  # noqa: E402
+import so_server  # noqa: E402  # conftest aggiunge mcp/ a sys.path
 
 
 def test_mcp_server_registers_17_tools() -> None:

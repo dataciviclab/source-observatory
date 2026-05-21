@@ -1,25 +1,13 @@
 from __future__ import annotations
 
 import json
-import sys
-from pathlib import Path
 
 import pandas as pd  # must be before so_server_core import
 
-# Aggiungi mcp/ a sys.path: senza __init__.py non c'è collisione col package PyPI `mcp`.
-# so_server_core è un modulo normale, non un sottomodulo di un package `mcp`.
-_mcp_dir = Path(__file__).resolve().parents[1] / "mcp"
-sys.path.insert(0, str(_mcp_dir))
-
-import so_server_core as core  # noqa: E402
+import so_server_core as core  # noqa: E402  # conftest aggiunge mcp/ a sys.path
 
 import duckdb  # noqa: E402
 import pytest  # noqa: E402
-
-
-@pytest.fixture(autouse=True)
-def _use_local_artifacts(monkeypatch) -> None:
-    monkeypatch.setenv("SO_ARTIFACT_BACKEND", "local")
 
 
 def _write_parquet(path, rows: list[dict]) -> None:

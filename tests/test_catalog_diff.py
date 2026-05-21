@@ -1,11 +1,6 @@
 """Tests for catalog_diff.py — generate_diff."""
 from __future__ import annotations
 
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
-
 from catalog_diff import generate_diff
 
 

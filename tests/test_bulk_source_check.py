@@ -1,11 +1,6 @@
 """Tests per bulk_source_check: regole non ovvie, edge case, bug già visti."""
 from __future__ import annotations
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-
 from lab_connectors.http import HttpResult
 
 from source_check_analyze import (
