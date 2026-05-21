@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from typing import Any
+
+from . import ckan, html, sdmx, sparql
 from .base import CollectorResult
-from . import ckan, sdmx, sparql, html
 
 COLLECTORS = {
     "ckan": ckan.collect,

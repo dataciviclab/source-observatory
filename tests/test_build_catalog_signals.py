@@ -1,14 +1,10 @@
 """Tests for build_catalog_signals.py."""
 
 import json
-import sys
 from pathlib import Path
 
 import jsonschema
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-
-from build_catalog_signals import build_signals, build_watch_report, _classify
+from build_catalog_signals import _classify, build_signals, build_watch_report
 
 _SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 

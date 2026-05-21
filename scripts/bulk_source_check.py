@@ -37,9 +37,17 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from source_check_analyze import (
+    _fallback_infer,
+    _finalize_scores,
+    _infer_granularity,
+    _infer_years,
+    _normalize_format,
+    _parse_ckan_package,
+)
 from source_check_fetch import (
-    SDMX_NS,
     _EMPTY_ENRICH,
+    SDMX_NS,
     _content_type_format,
     _fetch_ckan_package,
     _fetch_data_preview,
@@ -48,14 +56,6 @@ from source_check_fetch import (
     _fetch_sdmx_years,
     _http_head_with_retry,
     configure_source_check_http,
-)
-from source_check_analyze import (
-    _infer_granularity,
-    _infer_years,
-    _parse_ckan_package,
-    _fallback_infer,
-    _normalize_format,
-    _finalize_scores,
 )
 
 logger = logging.getLogger(__name__)

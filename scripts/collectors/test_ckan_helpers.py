@@ -1,4 +1,5 @@
-from collectors.ckan import _resource_format, _has_datastore_active, _resource_count
+from collectors.ckan import _has_datastore_active, _resource_count, _resource_format
+
 
 def test_resource_format():
     item = {

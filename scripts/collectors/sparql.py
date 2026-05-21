@@ -4,13 +4,12 @@ from typing import Any
 
 from .base import (
     CollectorResult,
-    sparql_binding_value,
-    compact_uri_name,
     append_unique,
-    parse_int,
+    compact_uri_name,
     observatory_get,
+    parse_int,
+    sparql_binding_value,
 )
-
 
 SPARQL_QUERY_TEMPLATES = {
     "dcat_datasets": """
