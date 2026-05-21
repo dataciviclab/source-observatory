@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, wait
@@ -62,7 +63,7 @@ DEFAULT_OUT_PARQUET = "catalog_inventory_latest.parquet"
 DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
 
 
-_SOURCE_TIMEOUT = 300  # timeout individuale per fonte (5 min)
+_SOURCE_TIMEOUT = 120  # timeout individuale per fonte (2 min)
 
 
 def _collect_source(
@@ -70,33 +71,18 @@ def _collect_source(
 ) -> tuple[str, list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]:
     """Worker per ThreadPoolExecutor: raccoglie una fonte e cattura eccezioni.
 
-    Usa threading.Thread(daemon=True) per timeout reale. Se dispatch() non
-    completa in _SOURCE_TIMEOUT secondi, la fonte viene marcata fallita.
-    Il thread va in timeout ma non blocca l'uscita dello script (daemon=True).
+    NON usa threading.Thread annidato — dispatch() ha già timeout HTTP
+    esplicito via HttpClient. Il timeout globale per fonte è gestito dal
+    chiamante via source_timing check nel loop wait()/heartbeat.
+
+    Il vantaggio: niente GIL contention su join(), niente daemon thread leak,
+    niente doppio annidamento di thread.
     """
-    import threading as _threading
-
-    _result: list = []
-    _error: list = []
-
-    def _run() -> None:
-        try:
-            _result.append(dispatch(source_id, source_cfg, captured_at))
-        except Exception as exc:
-            _error.append(exc)
-
-    t = _threading.Thread(target=_run, daemon=True)
-    t.start()
-    t.join(timeout=_SOURCE_TIMEOUT)
-
-    if t.is_alive():
-        return source_id, [], None, None, TimeoutError(
-            f"Source {source_id} timed out after {_SOURCE_TIMEOUT}s"
-        )
-    if _error:
-        return source_id, [], None, None, _error[0]
-    res = _result[0]
-    return source_id, res.rows, res.warning, res.summary, None
+    try:
+        res = dispatch(source_id, source_cfg, captured_at)
+        return source_id, res.rows, res.warning, res.summary, None
+    except Exception as exc:
+        return source_id, [], None, None, exc
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -202,6 +188,15 @@ def main() -> None:
 
     collected: dict[str, tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]] = {}
     source_timing: dict[str, float] = {}
+
+    # Timeout per-fonte: leggibile dal blocco inventory.timeout nel registry,
+    # fallback a _SOURCE_TIMEOUT (120s). Permette a fonti lente (es. openbdap
+    # con sample_size=4000) di avere più tempo senza impattare le altre.
+    source_timeout: dict[str, int] = {}
+    for source_id, source_cfg in inventoriable:
+        inv = inventory_cfg(source_cfg)
+        source_timeout[source_id] = int(inv.get("timeout", _SOURCE_TIMEOUT))
+
     executor = ThreadPoolExecutor(max_workers=args.workers)
     try:
         future_to_id: dict[Any, str] = {}
@@ -218,23 +213,77 @@ def main() -> None:
                 source_timing.setdefault(_sid, time.time() - submit_times[_sid])
             f.add_done_callback(_record_timing)
 
-        # wait() timeout globale per il batch (rete di sicurezza). Il timeout
-        # reale per fonte è in _collect_source (_SOURCE_TIMEOUT = 300s).
+        # wait() con heartbeat ogni 30s. Il timeout per-fonte è imposto
+        # via submission time, non via thread join annidato (eliminato).
+        # Questa è la root cause fix: niente daemon thread leak, niente
+        # GIL contention su join() in C extension (XML parsing).
         _BATCH_TIMEOUT = 3600
-        done, not_done = wait(future_to_id, timeout=_BATCH_TIMEOUT)
+        _HEARTBEAT_INTERVAL = 30
+        pending: set[Any] = set(future_to_id.keys())
+        batch_start = time.time()
+        while pending:
+            remaining = _BATCH_TIMEOUT - (time.time() - batch_start)
+            if remaining <= 0:
+                break
+
+            batch_done, pending = wait(
+                pending, timeout=min(_HEARTBEAT_INTERVAL, remaining)
+            )
+
+            # Process completed futures from this batch
+            now = time.time()
+            for f in batch_done:
+                sid = future_to_id[f]
+                try:
+                    _, rows, warning, summary, err = f.result()
+                except Exception as exc:
+                    collected[sid] = ([], None, None, exc)
+                else:
+                    if sid not in source_timing:
+                        source_timing[sid] = now - submit_times[sid]
+                    collected[sid] = (rows, warning, summary, err)
+
+            # Per-source timeout: usa source_timeout[sid] dal registry,
+            # fallback a _SOURCE_TIMEOUT (120s).
+            for f in list(pending):
+                sid = future_to_id[f]
+                to = source_timeout.get(sid, _SOURCE_TIMEOUT)
+                if now - submit_times[sid] >= to:
+                    pending.discard(f)
+                    f.cancel()
+                    if sid not in source_timing:
+                        source_timing[sid] = now - submit_times[sid]
+                    collected[sid] = ([], None, None,
+                        TimeoutError(f"Source {sid} timed out after {to}s"))
+                    print(
+                        f"  [timeout] {sid} — {(now - submit_times[sid]):.0f}s"
+                        f" exceeded {to}s limit",
+                        file=sys.stderr, flush=True,
+                    )
+
+            # Heartbeat
+            if pending:
+                elapsed = now - batch_start
+                print(
+                    f"  [heartbeat] {len(collected)}/{len(inventoriable)} sources done"
+                    f" in {elapsed:.0f}s — still waiting:"
+                    f" {[f'{future_to_id[f]}({now - submit_times[future_to_id[f]]:.0f}s)' for f in pending]}",
+                    file=sys.stderr, flush=True,
+                )
+
+        # Batch timeout: sources that still haven't completed
         now = time.time()
-        for f in not_done:
+        for f in pending:
             sid = future_to_id[f]
             if sid not in source_timing:
                 source_timing[sid] = now - submit_times[sid]
             f.cancel()
-            logger.warning("Source %s non completato entro %ds (batch timeout), treat as failed", sid, _BATCH_TIMEOUT)
-            collected[sid] = ([], None, None, TimeoutError(f"Batch timeout after {_BATCH_TIMEOUT}s"))
-        for f in done:
-            sid, rows, warning, summary, err = f.result()
-            if sid not in source_timing:
-                source_timing[sid] = time.time() - submit_times[sid]
-            collected[sid] = (rows, warning, summary, err)
+            if sid not in collected:
+                logger.warning(
+                    "Source %s non completato entro %ds (batch timeout), treat as failed",
+                    sid, _BATCH_TIMEOUT,
+                )
+                collected[sid] = ([], None, None, TimeoutError(f"Batch timeout after {_BATCH_TIMEOUT}s"))
     finally:
         # shutdown(wait=False) non aspetta task bloccati — il timeout HTTP
         # (5s) li terminerà prima o poi, ma non blocca il workflow.
@@ -369,6 +418,12 @@ def main() -> None:
 
     print(f"Wrote {len(all_rows)} rows to {out_parquet}")
     print(f"Wrote report to {out_report}")
+
+    # os._exit(0) necessario perché i worker thread di ThreadPoolExecutor
+    # sono non-daemon in Python 3.12. Quando main() ritorna, Python chiama
+    # threading._shutdown() che fa join dei worker — e possono essere bloccati
+    # su HTTP request per minuti (fonti in timeout). Il lavoro è già completato.
+    os._exit(0)
 
 
 if __name__ == "__main__":

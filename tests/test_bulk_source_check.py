@@ -688,6 +688,10 @@ class TestSdmxEnrichWithInventory:
 
         import bulk_source_check as bsc
         monkeypatch.setattr(bsc, "_fetch_sdmx_dataflow", _mock_fetch)
+        # _fetch_sdmx_years non mockato → farebbe HTTP request reale verso ISTAT
+        # (down). La logica SDMX enrichment non dipende dagli anni per i campi
+        # sdmx_flow/version/agency — solo per year_min/year_max (facoltativi).
+        monkeypatch.setattr(bsc, "_fetch_sdmx_years", lambda *a, **kw: (None, None))
 
         row = pd.Series(self._make_sdmx_row())
         result = _enrich_with_inventory(row, registry)
@@ -747,6 +751,9 @@ class TestSdmxCheckRowPassthrough:
         monkeypatch.setattr(bsc, "_fetch_sdmx_dataflow", _mock_fetch)
         monkeypatch.setattr(bsc, "_fetch_data_preview", _mock_preview)
         monkeypatch.setattr(bsc, "_http_head_with_retry", _mock_head)
+        # _fetch_sdmx_years mockato per evitare HTTP request reale verso ISTAT
+        # (down). Gli anni sono accessori — non servono per i campi SDMX testati.
+        monkeypatch.setattr(bsc, "_fetch_sdmx_years", lambda *a, **kw: (None, None))
 
         row = pd.Series({
             "source_id": "istat_sdmx",

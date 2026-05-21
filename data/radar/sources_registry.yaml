@@ -52,6 +52,7 @@ inps:
   observation_mode: catalog-watch
   base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
   inventory:
+    timeout: 180
     skip_current_list: true
     skip_current_list_reason: "current_package_list_with_resources degrada a offset
       alti (2300+ timeout 30s) — package_show_sample +16 workers è più veloce.\n"
@@ -80,6 +81,7 @@ openbdap:
   base_url: 
     https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
   inventory:
+    timeout: 300
     skip_package_search: true
     skip_package_search_reason: timeout sistematico a 60s
     skip_current_list: true
