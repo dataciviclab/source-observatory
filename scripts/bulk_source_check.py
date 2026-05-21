@@ -121,7 +121,7 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
         "enrich_method": "sdmx_dataflow_annotations",
         "sdmx_flow": flow_id,
         "sdmx_version": sdmx_version,
-        "sdmx_agency": sdmx_agency or "IT1",
+        "sdmx_agency": sdmx_agency,  # None se non presente nel XML
     }
 
 
