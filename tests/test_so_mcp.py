@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import json
 
-import pandas as pd  # must be before so_server_core import
-
-import so_server_core as core  # noqa: E402  # conftest aggiunge mcp/ a sys.path
-
 import duckdb  # noqa: E402
+import pandas as pd  # must be before so_server_core import
+import so_server_core as core  # noqa: E402  # conftest aggiunge mcp/ a sys.path
 
 
 def _write_parquet(path, rows: list[dict]) -> None:

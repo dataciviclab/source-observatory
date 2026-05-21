@@ -3,14 +3,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from collectors.ckan import _ckan_api_base
 from lab_connectors.http import HttpResult
-
 from source_check_analyze import (
     _infer_granularity,
     _infer_years,
     _intake_score,
 )
-from collectors.ckan import _ckan_api_base
 
 
 class _FakeResp:
@@ -464,7 +463,6 @@ def test_normalize_preview_columns_for_parquet_handles_existing_nested_rows(tmp_
 
     import numpy as np
     import pandas as pd
-
     from bulk_source_check import _normalize_preview_columns_for_parquet
 
     df = pd.DataFrame(
@@ -499,8 +497,8 @@ class TestEnrichWithInventoryHtmlFallback:
 
     def _make_row(self, source_id: str, **overrides) -> dict:
         """Costruisce una pd.Series finta con i campi minimi dell'inventory."""
-        import pandas as pd
         import numpy as np
+        import pandas as pd
         base = {
             "source_id": source_id,
             "item_id": "test-item-001",
@@ -523,8 +521,8 @@ class TestEnrichWithInventoryHtmlFallback:
         return pd.Series(base)
 
     def test_aifa_produces_org_tags_notes(self):
-        from bulk_source_check import _enrich_with_inventory
         import yaml
+        from bulk_source_check import _enrich_with_inventory
         with open("data/radar/sources_registry.yaml") as f:
             registry = yaml.safe_load(f)
 
@@ -537,8 +535,8 @@ class TestEnrichWithInventoryHtmlFallback:
             f"expected AIFA note, got {result['enriched_notes']!r}"
 
     def test_mim_opendata_produces_org_tags_notes(self):
-        from bulk_source_check import _enrich_with_inventory
         import yaml
+        from bulk_source_check import _enrich_with_inventory
         with open("data/radar/sources_registry.yaml") as f:
             registry = yaml.safe_load(f)
 
@@ -551,9 +549,9 @@ class TestEnrichWithInventoryHtmlFallback:
 
     def test_preserves_existing_org_non_nan(self):
         """Se organization è già popolata (stringa), non deve essere sovrascritta."""
-        from bulk_source_check import _enrich_with_inventory
-        import yaml
         import numpy as np
+        import yaml
+        from bulk_source_check import _enrich_with_inventory
         with open("data/radar/sources_registry.yaml") as f:
             registry = yaml.safe_load(f)
 
@@ -598,6 +596,7 @@ class TestSdmxParseAnnotations:
 
     def test_extracts_version_and_agency(self) -> None:
         import xml.etree.ElementTree as ET
+
         from bulk_source_check import _parse_sdmx_annotations
         root = ET.fromstring(_SDMX_XML)
         result = _parse_sdmx_annotations(root, "https://example.test/dataflow/IT1", "32_221")
@@ -610,6 +609,7 @@ class TestSdmxParseAnnotations:
     def test_no_agency_returns_none(self) -> None:
         """Se l'attributo agencyID non c'è, sdmx_agency deve essere None, non un default."""
         import xml.etree.ElementTree as ET
+
         from bulk_source_check import _parse_sdmx_annotations
         root = ET.fromstring(_SDMX_XML_NO_AGENCY)
         result = _parse_sdmx_annotations(root, "https://example.test/dataflow/IT1", "42_999")
@@ -621,6 +621,7 @@ class TestSdmxParseAnnotations:
     def test_extracts_keywords(self) -> None:
         """Le annotation keywords continuano a funzionare."""
         import xml.etree.ElementTree as ET
+
         from bulk_source_check import _parse_sdmx_annotations
         xml_with_ann = _SDMX_XML.replace(
             "<common:Name>Test dataflow</common:Name>",
@@ -721,8 +722,8 @@ class TestSdmxCheckRowPassthrough:
     """contract: _check_row passa sdmx_flow/version/agency nel result dict."""
 
     def test_sdmx_fields_in_result(self, monkeypatch) -> None:
-        import pandas as pd
         import numpy as np
+        import pandas as pd
         import yaml
         from bulk_source_check import _check_row
 
