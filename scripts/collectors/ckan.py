@@ -177,6 +177,9 @@ def extract_ckan_inventory_row(
         "distribution_url": _distribution_url(item),
         "datastore_active": _has_datastore_active(item),
         "resource_count": _resource_count(item),
+        # Data di creazione/modifica lato fonte (CKAN metadata_created/modified)
+        "issued": item.get("metadata_created") or None,
+        "modified": item.get("metadata_modified") or None,
     }
 
 

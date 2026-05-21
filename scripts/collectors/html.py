@@ -140,12 +140,26 @@ def _content_type_to_format(content_type: str) -> str | None:
 
 
 def _probe_content_type(url: str, timeout: float = 5) -> str | None:
-    """HEAD leggero per ricavare Content-Type. Timeout breve, fallisce silenziosamente."""
+    """HEAD leggero per ricavare Content-Type. Timeout breve, fallisce silenziosamente.
+
+    Usa requests.head diretto (no HttpClient) per evitare SSL fallback
+    warning log che inondano il log CI. Se SSL fallisce, ritorna None
+    (best-effort — probe ott-in).
+    """
     try:
-        client = HttpClient(timeout=timeout)
-        result = client.head(url)
-        if result.is_ok and result.response is not None:
-            ct = (result.response.headers or {}).get("content-type", "")
+        import requests
+
+        from .base import USER_AGENT
+
+        response = requests.head(
+            url,
+            timeout=timeout,
+            headers={"User-Agent": USER_AGENT},
+        )
+        if response.ok:
+            # dict() esplicito evita mypy error su CaseInsensitiveDict.get()
+            # (tipi Never negli stub di types-requests)
+            ct = dict(response.headers).get("content-type", "")
             return _content_type_to_format(ct)
     except Exception:
         pass
