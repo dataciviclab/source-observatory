@@ -5,14 +5,14 @@ Artifact paths are resolved relative to the source-observatory repository.
 """
 from __future__ import annotations
 
-import json
 import importlib.util
+import json
 import os
 import re
 import subprocess
-import unicodedata
 import sys
 import tempfile
+import unicodedata
 from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -23,7 +23,6 @@ from urllib.parse import urlparse
 import duckdb
 import requests
 from lab_connectors.duckdb import safe_connect
-
 from lab_connectors.gcs.paths import CLEAN_BUCKET
 from lab_connectors.http import HttpClient
 

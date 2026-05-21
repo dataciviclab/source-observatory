@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 from datetime import datetime, timezone
+from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
-
 
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 DEFAULT_TIMEOUT_SECONDS = 60

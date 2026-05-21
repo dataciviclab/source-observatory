@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import requests
 from typing import Any
 
-from .base import CollectorResult, strip_query, inventory_cfg, observatory_get
+import requests
 
+from .base import CollectorResult, inventory_cfg, observatory_get, strip_query
 
 CKAN_ACTION_NAMES = {
     "package_list",

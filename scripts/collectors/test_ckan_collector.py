@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from collectors.ckan import (
-    extract_ckan_inventory_row,
-    _resource_format,
+    _ckan_api_base,
     _has_datastore_active,
     _resource_count,
-    _ckan_api_base,
+    _resource_format,
     ckan_action_endpoint,
     collect_ckan_inventory_via_package_show_sample,
+    extract_ckan_inventory_row,
 )
 
 

@@ -1,29 +1,27 @@
 from __future__ import annotations
 
 import argparse
+import json
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
-import json
 from pathlib import Path
 from typing import Any, Literal
 
+import jsonschema
 import requests
-
 from _constants import (
-    REGISTRY_PATH,
-    RADAR_SUMMARY_PATH,
     RADAR_HISTORY_PATH,
-    load_registry,
-    save_registry,
-    load_radar_history,
-    save_radar_history,
+    RADAR_SUMMARY_PATH,
+    REGISTRY_PATH,
     append_radar_probe,
+    load_radar_history,
+    load_registry,
+    save_radar_history,
+    save_registry,
 )
 from lab_connectors.http import HttpClient, HttpFallbackError
-
-import jsonschema
 
 _SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 

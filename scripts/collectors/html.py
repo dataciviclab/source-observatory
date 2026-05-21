@@ -25,9 +25,9 @@ import time
 from typing import Any
 from urllib.parse import urljoin
 
-from .base import CollectorResult
 from lab_connectors.http import HttpClient
 
+from .base import CollectorResult
 
 DATA_EXTENSIONS = {".csv", ".json", ".xlsx", ".xls", ".ods", ".zip", ".xml", ".geojson"}
 

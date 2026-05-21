@@ -4,8 +4,9 @@ Compara due report di catalog inventory e genera un sommario markdown delle dive
 """
 
 from __future__ import annotations
-import json
+
 import argparse
+import json
 import sys
 
 

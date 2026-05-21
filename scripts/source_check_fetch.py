@@ -575,7 +575,7 @@ def _fetch_data_preview(
         import tempfile
         from pathlib import Path
 
-        from toolkit.profile.raw import sniff_source_file, profile_with_read_cfg
+        from toolkit.profile.raw import profile_with_read_cfg, sniff_source_file
 
         columns: list[str] = []
         col_types: dict[str, str] = {}
