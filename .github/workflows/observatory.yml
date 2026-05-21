@@ -148,7 +148,7 @@ jobs:
             --skip-red-sources \
             --no-sdmx-years \
             --circuit-fail-threshold 2 \
-            --max-items 1000 \
+            --max-items 2500 \
             --workers 16
 
       # ═══════════════════════════════════════════════════════════════════
