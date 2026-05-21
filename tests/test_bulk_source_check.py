@@ -565,3 +565,217 @@ class TestEnrichWithInventoryHtmlFallback:
 
         assert result["enriched_org"] == "MIM ufficiale", \
             f"non deve sovrascrivere org esistente: {result['enriched_org']!r}"
+
+
+# ── SDMX enrichment contract ──────────────────────────────────────────────────
+
+_SDMX_XML = """<?xml version="1.0"?>
+<message:Structure xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+                   xmlns:structure="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+                   xmlns:common="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+  <message:Structures>
+    <structure:Dataflows>
+      <structure:Dataflow id="32_221" version="1.0" agencyID="IT1">
+        <common:Name>Test dataflow</common:Name>
+      </structure:Dataflow>
+    </structure:Dataflows>
+  </message:Structures>
+</message:Structure>"""
+
+_SDMX_XML_NO_AGENCY = """<?xml version="1.0"?>
+<message:Structure xmlns:message="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message"
+                   xmlns:structure="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure"
+                   xmlns:common="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
+  <message:Structures>
+    <structure:Dataflows>
+      <structure:Dataflow id="42_999" version="2.0">
+        <common:Name>No agency test</common:Name>
+      </structure:Dataflow>
+    </structure:Dataflows>
+  </message:Structures>
+</message:Structure>"""
+
+
+class TestSdmxParseAnnotations:
+    """contract: _parse_sdmx_annotations estrae version/agency dal Dataflow XML."""
+
+    def test_extracts_version_and_agency(self) -> None:
+        import xml.etree.ElementTree as ET
+        from bulk_source_check import _parse_sdmx_annotations
+        root = ET.fromstring(_SDMX_XML)
+        result = _parse_sdmx_annotations(root, "https://example.test/dataflow/IT1", "32_221")
+        assert result["sdmx_flow"] == "32_221"
+        assert result["sdmx_version"] == "1.0"
+        assert result["sdmx_agency"] == "IT1"
+        assert result["resource_format"] == "SDMX"
+        assert result["enrich_method"] == "sdmx_dataflow_annotations"
+
+    def test_no_agency_returns_none(self) -> None:
+        """Se l'attributo agencyID non c'è, sdmx_agency deve essere None, non un default."""
+        import xml.etree.ElementTree as ET
+        from bulk_source_check import _parse_sdmx_annotations
+        root = ET.fromstring(_SDMX_XML_NO_AGENCY)
+        result = _parse_sdmx_annotations(root, "https://example.test/dataflow/IT1", "42_999")
+        assert result["sdmx_flow"] == "42_999"
+        assert result["sdmx_version"] == "2.0"
+        assert result["sdmx_agency"] is None, \
+            f"expected None, got {result['sdmx_agency']!r}"
+
+    def test_extracts_keywords(self) -> None:
+        """Le annotation keywords continuano a funzionare."""
+        import xml.etree.ElementTree as ET
+        from bulk_source_check import _parse_sdmx_annotations
+        xml_with_ann = _SDMX_XML.replace(
+            "<common:Name>Test dataflow</common:Name>",
+            "<common:Name>Test dataflow</common:Name>\n"
+            "        <common:Annotation>\n"
+            "          <common:AnnotationType>LAYOUT_DATAFLOW_KEYWORDS</common:AnnotationType>\n"
+            "          <common:AnnotationText>gini+regionale+reddito</common:AnnotationText>\n"
+            "        </common:Annotation>",
+        )
+        root = ET.fromstring(xml_with_ann)
+        result = _parse_sdmx_annotations(root, "https://example.test/dataflow/IT1", "32_221")
+        assert result["enriched_tags"] == "gini, regionale, reddito"
+
+
+class TestSdmxEnrichWithInventory:
+    """contract: _enrich_with_inventory usa base_url (non api_base_url) per SDMX."""
+
+    def _make_sdmx_row(self, **overrides) -> dict:
+        import numpy as np
+        base = {
+            "source_id": "istat_sdmx",
+            "item_id": "32_221",
+            "item_name": "32_221",
+            "item_slug": np.nan,
+            "title": "Test SDMX",
+            "organization": np.nan,
+            "tags": np.nan,
+            "notes_excerpt": np.nan,
+            "format": np.nan,
+            "protocol": "sdmx",
+            "source_url": np.nan,
+            "api_base_url": "https://esploradati.istat.it/SDMXWS/rest",  # NO dataflow/IT1
+            "landing_page": np.nan,
+            "distribution_url": np.nan,
+            "url": np.nan,
+            "granularity": np.nan,
+            "year_signal": np.nan,
+            "encoding_suggested": np.nan,
+            "delim_suggested": np.nan,
+            "decimal_suggested": np.nan,
+            "skip_suggested": np.nan,
+        }
+        base.update(overrides)
+        return base
+
+    def test_uses_base_url_not_api_base_url(self, monkeypatch) -> None:
+        """base_url dal registry (con /dataflow/IT1) viene usato, non api_base_url."""
+        import pandas as pd
+        import yaml
+        from bulk_source_check import _enrich_with_inventory
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        # Mock _fetch_sdmx_dataflow per catturare quale URL riceve
+        captured_args = {}
+
+        def _mock_fetch(base_url, flow_id):
+            captured_args["base_url"] = base_url
+            captured_args["flow_id"] = flow_id
+            import xml.etree.ElementTree as ET
+            return ET.fromstring(_SDMX_XML)
+
+        import bulk_source_check as bsc
+        monkeypatch.setattr(bsc, "_fetch_sdmx_dataflow", _mock_fetch)
+
+        row = pd.Series(self._make_sdmx_row())
+        result = _enrich_with_inventory(row, registry)
+
+        # Verifica che _fetch_sdmx_dataflow abbia ricevuto base_url dal registry
+        assert captured_args["base_url"] == registry["istat_sdmx"]["base_url"], \
+            f"atteso {registry['istat_sdmx']['base_url']}, ottenuto {captured_args['base_url']}"
+        assert captured_args["flow_id"] == "32_221"
+        # Verifica i campi SDMX nel risultato
+        assert result["sdmx_flow"] == "32_221"
+        assert result["sdmx_version"] == "1.0"
+        assert result["sdmx_agency"] == "IT1"
+        assert result["enrich_method"] == "sdmx_dataflow_annotations"
+
+    def test_sdmx_passes_url_filter(self) -> None:
+        """Item con protocol==\"sdmx\" passano il filtro URL anche senza landing_page."""
+        import pandas as pd
+        row = pd.Series(self._make_sdmx_row())
+        # Stessa logica del filtro reale in main(): usa .notna() per NaN
+        has_url = row["landing_page"] if pd.notna(row.get("landing_page")) else False
+        has_url = has_url or (row["distribution_url"] if pd.notna(row.get("distribution_url")) else False)
+        has_url = has_url or (row["protocol"] == "sdmx")
+        assert has_url is True
+        # Verifica anche che SENZA protocol sdmx fallirebbe
+        row_no_sdmx = pd.Series(self._make_sdmx_row(protocol="ckan"))
+        has_url_no_sdmx = row_no_sdmx["landing_page"] if pd.notna(row_no_sdmx.get("landing_page")) else False
+        has_url_no_sdmx = has_url_no_sdmx or (row_no_sdmx["distribution_url"] if pd.notna(row_no_sdmx.get("distribution_url")) else False)
+        has_url_no_sdmx = has_url_no_sdmx or (row_no_sdmx["protocol"] == "sdmx")
+        assert has_url_no_sdmx is False
+
+
+class TestSdmxCheckRowPassthrough:
+    """contract: _check_row passa sdmx_flow/version/agency nel result dict."""
+
+    def test_sdmx_fields_in_result(self, monkeypatch) -> None:
+        import pandas as pd
+        import numpy as np
+        import yaml
+        from bulk_source_check import _check_row
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        # Mock tutte le funzioni HTTP per evitare chiamate reali
+        import xml.etree.ElementTree as ET
+
+        def _mock_fetch(base_url, flow_id):
+            return ET.fromstring(_SDMX_XML)
+
+        def _mock_preview(url, **kwargs):
+            return {"enrich_method": "csv_preview"}
+
+        def _mock_head(url, **kwargs):
+            return 200, True, None, "application/xml"
+
+        import bulk_source_check as bsc
+        monkeypatch.setattr(bsc, "_fetch_sdmx_dataflow", _mock_fetch)
+        monkeypatch.setattr(bsc, "_fetch_data_preview", _mock_preview)
+        monkeypatch.setattr(bsc, "_http_head_with_retry", _mock_head)
+
+        row = pd.Series({
+            "source_id": "istat_sdmx",
+            "item_id": "32_221",
+            "item_name": "32_221",
+            "item_slug": np.nan,
+            "title": "Test SDMX",
+            "organization": np.nan,
+            "tags": np.nan,
+            "notes_excerpt": np.nan,
+            "format": np.nan,
+            "protocol": "sdmx",
+            "source_url": np.nan,
+            "api_base_url": np.nan,
+            "landing_page": np.nan,
+            "distribution_url": np.nan,
+            "url": np.nan,
+            "granularity": np.nan,
+            "year_signal": np.nan,
+            "encoding_suggested": np.nan,
+            "delim_suggested": np.nan,
+            "decimal_suggested": np.nan,
+            "skip_suggested": np.nan,
+            "source_status": "active",
+        })
+        result = _check_row(row, "2026-05-21T12:00:00", registry)
+
+        assert result["sdmx_flow"] == "32_221"
+        assert result["sdmx_version"] == "1.0"
+        assert result["sdmx_agency"] == "IT1"
+        assert result["enrich_method"] == "sdmx_dataflow_annotations"
