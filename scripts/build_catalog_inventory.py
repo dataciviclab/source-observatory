@@ -64,6 +64,9 @@ DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
 
 
 _SOURCE_TIMEOUT = 120  # timeout individuale per fonte (2 min)
+# Timestamp di effettivo avvio thread executor (non di submission).
+# Usato dal timeout loop per non timeoutare fonti in coda (queued).
+_SOURCE_STARTED: dict[str, float] = {}
 
 
 def _collect_source(
@@ -75,9 +78,13 @@ def _collect_source(
     esplicito via HttpClient. Il timeout globale per fonte è gestito dal
     chiamante via source_timing check nel loop wait()/heartbeat.
 
+    Registra l'effettivo avvio in _SOURCE_STARTED per evitare che fonti
+    in coda (queued) vengano timeoutate prima di partire.
+
     Il vantaggio: niente GIL contention su join(), niente daemon thread leak,
     niente doppio annidamento di thread.
     """
+    _SOURCE_STARTED[source_id] = time.time()
     try:
         res = dispatch(source_id, source_cfg, captured_at)
         return source_id, res.rows, res.warning, res.summary, None
@@ -126,6 +133,8 @@ def main() -> None:
     registry = load_registry()
     captured_at = now_utc_iso()
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    _SOURCE_STARTED.clear()
 
     all_rows: list[dict[str, Any]] = []
     report: dict[str, Any] = {
@@ -243,12 +252,17 @@ def main() -> None:
                         source_timing[sid] = now - submit_times[sid]
                     collected[sid] = (rows, warning, summary, err)
 
-            # Per-source timeout: usa source_timeout[sid] dal registry,
-            # fallback a _SOURCE_TIMEOUT (120s).
+            # Per-source timeout: usa source_timeout[sid] dal registry
+            # (fallback _SOURCE_TIMEOUT) MA solo per fonti effettivamente
+            # avviate (presenti in _SOURCE_STARTED). Fonti in coda (queued)
+            # non vengono timeoutate — il timeout parte dall'effettiva
+            # esecuzione, non dalla submission.
             for f in list(pending):
                 sid = future_to_id[f]
+                if sid not in _SOURCE_STARTED:
+                    continue
                 to = source_timeout.get(sid, _SOURCE_TIMEOUT)
-                if now - submit_times[sid] >= to:
+                if now - _SOURCE_STARTED[sid] >= to:
                     pending.discard(f)
                     f.cancel()
                     if sid not in source_timing:
@@ -419,12 +433,12 @@ def main() -> None:
     print(f"Wrote {len(all_rows)} rows to {out_parquet}")
     print(f"Wrote report to {out_report}")
 
-    # os._exit(0) necessario perché i worker thread di ThreadPoolExecutor
-    # sono non-daemon in Python 3.12. Quando main() ritorna, Python chiama
-    # threading._shutdown() che fa join dei worker — e possono essere bloccati
-    # su HTTP request per minuti (fonti in timeout). Il lavoro è già completato.
-    os._exit(0)
-
 
 if __name__ == "__main__":
     main()
+    # os._exit(0) fuori da main() così main() è testabile.
+    # Necessario perché i worker thread di ThreadPoolExecutor sono non-daemon
+    # in Python 3.12: quando main() ritorna, Python chiama threading._shutdown()
+    # che fa join dei worker — bloccati su HTTP request in timeout.
+    # Il lavoro (parquet, report) è già completato.
+    os._exit(0)

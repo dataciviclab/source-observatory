@@ -157,7 +157,9 @@ def _probe_content_type(url: str, timeout: float = 5) -> str | None:
             headers={"User-Agent": USER_AGENT},
         )
         if response.ok:
-            ct = (response.headers or {}).get("content-type", "")
+            # dict() esplicito evita mypy error su CaseInsensitiveDict.get()
+            # (tipi Never negli stub di types-requests)
+            ct = dict(response.headers).get("content-type", "")
             return _content_type_to_format(ct)
     except Exception:
         pass
