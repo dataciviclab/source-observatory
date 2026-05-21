@@ -104,6 +104,11 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 
     metadata_url = annotations.get("METADATA_URL")
 
+    # Estrai version e agency dal Dataflow XML (per scaffold toolkit)
+    df_elem = xml_root.find(".//structure:Dataflow", SDMX_NS)
+    sdmx_version = df_elem.attrib.get("version") if df_elem is not None else None
+    sdmx_agency = df_elem.attrib.get("agencyID") if df_elem is not None else None
+
     return {
         "enriched_title": None,
         "enriched_tags": ", ".join(keywords[:10]) if keywords else None,
@@ -114,6 +119,9 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
         "year_min": year_min,
         "year_max": year_max,
         "enrich_method": "sdmx_dataflow_annotations",
+        "sdmx_flow": flow_id,
+        "sdmx_version": sdmx_version,
+        "sdmx_agency": sdmx_agency or "IT1",
     }
 
 
@@ -150,14 +158,11 @@ def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
         # CKAN senza slug valido → skip package_show, passa a HTML fallback sotto
 
     if protocol == "sdmx" and base_url and item_name:
-        sdmx_base = base_url
-        # usa api_base_url pre-calcolata se disponibile
-        api_base_url = row.get("api_base_url")
-        if isinstance(api_base_url, str) and api_base_url.startswith("http"):
-            sdmx_base = api_base_url
-        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name)
+        # base_url dal registry ha il path completo (es. .../dataflow/IT1).
+        # Non usare api_base_url — più corto, _fetch_sdmx_dataflow() fallisce.
+        xml_root = _fetch_sdmx_dataflow(base_url, item_name)
         if xml_root is not None:
-            return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
+            return _parse_sdmx_annotations(xml_root, base_url, item_name)
 
     # HTML protocol: direct data URL (CSV/JSON/XLS) — fetch content preview
     if protocol == "html":
@@ -270,13 +275,12 @@ def _enrich_with_inventory(
 
     # SDMX: always use dataflow annotations (structured, not in inventory format)
     if protocol == "sdmx" and base_url and item_name:
-        sdmx_base = base_url
-        api_base_url = row.get("api_base_url")
-        if isinstance(api_base_url, str) and api_base_url.startswith("http"):
-            sdmx_base = api_base_url
-        xml_root = _fetch_sdmx_dataflow(sdmx_base, item_name)
+        # base_url dal registry ha il path completo (es. .../dataflow/IT1).
+        # api_base_url dall'inventory è più corto (.../rest) — non usarlo
+        # perché _fetch_sdmx_dataflow() si aspetta il path con /dataflow/IT1.
+        xml_root = _fetch_sdmx_dataflow(base_url, item_name)
         if xml_root is not None:
-            return _parse_sdmx_annotations(xml_root, sdmx_base, item_name)
+            return _parse_sdmx_annotations(xml_root, base_url, item_name)
 
     def _enc(r: dict) -> dict:
         """Aggiunge encoding dall'inventory row a qualsiasi result dict,
@@ -574,6 +578,10 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "needs_review": (granularity == "non_determinato") or pd.isna(year_min),
         "intake_score": None,  # placeholder, calcolato sotto
         "intake_candidate": None,
+        # SDMX — pass-through dal Dataflow XML per scaffold toolkit
+        "sdmx_flow": enrich.get("sdmx_flow"),
+        "sdmx_version": enrich.get("sdmx_version"),
+        "sdmx_agency": enrich.get("sdmx_agency"),
     }
 
 
@@ -712,7 +720,9 @@ def main() -> None:
         logger.info("  source_ids filter %s: %d items", args.source_ids, len(df))
 
     if args.only_with_url:
-        has_url = df["landing_page"].notna() | df["distribution_url"].notna()
+        # SDMX items non hanno landing_page/distribution_url (accedono via API REST),
+        # ma hanno api_base_url + item_name per l'enrichment.
+        has_url = df["landing_page"].notna() | df["distribution_url"].notna() | (df["protocol"] == "sdmx")
         df = df[has_url]
         logger.info("  URL present in catalog filter: %d items", len(df))
 

@@ -56,6 +56,10 @@ _EMPTY_ENRICH: dict[str, Any] = {
     "year_min": None,
     "year_max": None,
     "enrich_method": None,
+    # SDMX — popolati solo per item SDMX (flow, version, agency da Dataflow XML)
+    "sdmx_flow": None,
+    "sdmx_version": None,
+    "sdmx_agency": None,
 }
 
 
