@@ -18,7 +18,7 @@ select = ["E4", "E7", "E9", "F", "I", "W"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "scripts/collectors"]
-addopts = "-q --tb=line --cov=scripts/ --cov=mcp/"
+addopts = "-q --tb=line --cov=scripts/ --cov=mcp/ --timeout=30"
 filterwarnings = ["ignore::DeprecationWarning"]
 markers = [
     "contract: interfaccia pubblica, artifact format, contratto API",
