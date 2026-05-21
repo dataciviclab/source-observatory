@@ -4,6 +4,7 @@ import json
 
 import duckdb  # noqa: E402
 import pandas as pd  # must be before so_server_core import
+import pytest
 import so_server_core as core  # noqa: E402  # conftest aggiunge mcp/ a sys.path
 
 
@@ -982,3 +983,4 @@ def test_find_by_url_returns_empty_when_no_match(tmp_path, monkeypatch) -> None:
 def test_find_by_url_rejects_empty_url() -> None:
     result = core.find_by_url("")
     assert result["error"] == "empty_url"
+pytestmark = pytest.mark.contract

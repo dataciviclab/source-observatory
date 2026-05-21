@@ -1,11 +1,11 @@
 """Test per radar_check.py."""
-
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
 import jsonschema
+import pytest
 import radar_check
 from lab_connectors.http import HttpFallbackError, HttpResult
 
@@ -280,3 +280,4 @@ class _FakeClient:
 
     def head(self, url, **kwargs):
         return self._result_fn(url, **kwargs)
+pytestmark = pytest.mark.contract

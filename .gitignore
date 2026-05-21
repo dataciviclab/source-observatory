@@ -27,3 +27,4 @@ data/portal_scout/*
 !data/portal_scout/portal_scout_shortlist.md
 
 observatory-results/
+.coverage

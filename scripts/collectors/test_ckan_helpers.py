@@ -1,3 +1,5 @@
+import pytest
+
 from collectors.ckan import _has_datastore_active, _resource_count, _resource_format
 
 
@@ -41,3 +43,4 @@ def test_resource_count():
     assert _resource_count({"resources": [{"id": "1"}, {"id": "2"}, {"id": "3"}]}) == 3
     assert _resource_count({}) == 0
     assert _resource_count({"resources": []}) == 0
+pytestmark = pytest.mark.adapter

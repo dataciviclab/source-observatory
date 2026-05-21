@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from collectors.ckan import (
     _ckan_api_base,
     _has_datastore_active,
@@ -274,3 +276,4 @@ class TestPackageShowSample:
             assert warning is None
         finally:
             monkeypatch.setattr(ckan_module, "ckan_get_json", original)
+pytestmark = pytest.mark.adapter

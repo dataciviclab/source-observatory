@@ -1,9 +1,9 @@
 """Tests for build_catalog_signals.py."""
-
 import json
 from pathlib import Path
 
 import jsonschema
+import pytest
 from build_catalog_signals import _classify, build_signals, build_watch_report
 
 _SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
@@ -260,3 +260,4 @@ def test_csv_magnet_signal_schema() -> None:
     }
     schema = _load_schema("catalog_signals.schema.json")
     jsonschema.validate(instance=payload, schema=schema)
+pytestmark = pytest.mark.contract
