@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from collectors.ckan import _ckan_api_base
 from lab_connectors.http import HttpResult
 from source_check_analyze import (
@@ -777,3 +778,4 @@ class TestSdmxCheckRowPassthrough:
         assert result["sdmx_version"] == "1.0"
         assert result["sdmx_agency"] == "IT1"
         assert result["enrich_method"] == "sdmx_dataflow_annotations"
+pytestmark = pytest.mark.contract

@@ -4,6 +4,7 @@ import build_catalog_inventory
 import collectors.ckan
 import collectors.html as html_collector
 import collectors.sparql
+import pytest
 from lab_connectors.http import HttpResult
 
 
@@ -735,3 +736,4 @@ class TestContentTypeProbe:
         bf = result.summary.get("by_format", {})
         assert "CSV" in bf, f"by_format non contiene CSV dopo probe: {bf}"
         assert "ZIP" not in bf, f"by_format contiene ancora ZIP pre-probe: {bf}"
+pytestmark = pytest.mark.contract

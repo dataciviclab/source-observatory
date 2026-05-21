@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 
+import pytest
 import so_server  # noqa: E402  # conftest aggiunge mcp/ a sys.path
 
 
@@ -71,3 +72,4 @@ def test_guard_timed_returns_dict_result() -> None:
 
     result = guard_timed(working, "working_tool", logger_name="test-server")
     assert result == {"result_key": 42, "nested": {"a": 1}}
+pytestmark = pytest.mark.smoke
