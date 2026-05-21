@@ -745,7 +745,6 @@ class TestSdmxCheckRowPassthrough:
             return 200, True, None, "application/xml"
 
         import bulk_source_check as bsc
-        from source_check_fetch import _tracked_http_get
         monkeypatch.setattr(bsc, "_fetch_sdmx_dataflow", _mock_fetch)
         monkeypatch.setattr(bsc, "_fetch_data_preview", _mock_preview)
         monkeypatch.setattr(bsc, "_http_head_with_retry", _mock_head)
