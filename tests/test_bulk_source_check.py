@@ -1,6 +1,8 @@
 """Tests per bulk_source_check: regole non ovvie, edge case, bug già visti."""
 from __future__ import annotations
 
+from pathlib import Path
+
 from lab_connectors.http import HttpResult
 
 from source_check_analyze import (

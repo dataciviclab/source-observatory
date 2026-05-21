@@ -7,7 +7,6 @@ import pandas as pd  # must be before so_server_core import
 import so_server_core as core  # noqa: E402  # conftest aggiunge mcp/ a sys.path
 
 import duckdb  # noqa: E402
-import pytest  # noqa: E402
 
 
 def _write_parquet(path, rows: list[dict]) -> None:
