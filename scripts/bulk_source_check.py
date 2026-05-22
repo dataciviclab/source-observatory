@@ -691,7 +691,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--circuit-fail-threshold",
         type=int,
-        default=0,
+        default=3,
         metavar="N",
         help="Dopo N errori consecutivi (timeout/connessione/HTTP 5xx) sullo stesso host, "
         "salta ulteriori HEAD/GET per quel host nel run (0 = disabilitato).",
