@@ -65,7 +65,7 @@ _EMPTY_ENRICH: dict[str, Any] = {
 
 def configure_source_check_http(
     *,
-    circuit_fail_threshold: int = 0,
+    circuit_fail_threshold: int = 3,
     http_timeout: tuple[float, float] | None = None,
     http_max_retries: int = 1,
 ) -> None:
