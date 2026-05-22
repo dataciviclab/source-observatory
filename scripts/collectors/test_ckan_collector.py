@@ -12,22 +12,7 @@ from collectors.ckan import (
     extract_ckan_inventory_row,
 )
 
-
-class _FakeOk:
-    status_code = 200
-
-    def raise_for_status(self):
-        pass
-
-    def get(self, key, default=None):
-        return default
-
-    def json(self):
-        return {"success": True, "result": self._result}
-
-    def __init__(self, result):
-        self._result = result
-        self.headers = {"content-type": "application/json"}
+pytestmark = pytest.mark.adapter
 
 
 class TestResourceHelpers:
@@ -264,7 +249,7 @@ class TestPackageShowSample:
         original = ckan_module.ckan_get_json
 
         try:
-            monkeypatch.setattr(ckan_module, "ckan_get_json", lambda *a, **k: _FakeOk({}))
+            monkeypatch.setattr(ckan_module, "ckan_get_json", lambda *a, **k: {"success": True, "result": {}})
             enriched, warning = collect_ckan_inventory_via_package_show_sample(
                 source_id="test",
                 source_cfg={"source_kind": "ckan", "protocol": "CKAN", "base_url": "http://api"},

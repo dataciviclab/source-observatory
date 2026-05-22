@@ -547,25 +547,6 @@ def test_source_radar_context_no_file(tmp_path, monkeypatch) -> None:
 # ─── Tests for HTTP tools (mocked) ─────────────────────────────────────────────
 
 
-class FakeResponse:
-    def __init__(self, *, status_code: int = 200, json_data: dict, headers: dict | None = None):
-        self._json = json_data
-        self.status_code = status_code
-        self.headers = headers or {"content-type": "application/json"}
-
-    def raise_for_status(self) -> None:
-        if self.status_code >= 400:
-            raise Exception(f"HTTP {self.status_code}")
-
-    @property
-    def text(self) -> str:
-        return json.dumps(self._json)
-
-
-def _fake_observatory_get(url: str, **kwargs):
-    return FakeResponse(json_data={"success": True, "result": {}})
-
-
 def test_ckan_package_show_invalid_endpoint() -> None:
     """Test that _ckan_package_show rejects empty params."""
     result = core._ckan_package_show("", "544")
