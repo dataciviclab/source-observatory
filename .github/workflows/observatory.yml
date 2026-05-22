@@ -160,9 +160,11 @@ jobs:
           stamp=$(python3 -c "from datetime import datetime, timezone; print(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S'))")
           prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
           prefix="${prefix%/}"
-          gcloud storage cp data/catalog_inventory/generated/source_check_results.parquet \
+          python scripts/gha/gcs_upload.py \
+            data/catalog_inventory/generated/source_check_results.parquet \
             "$prefix/source-check/source_check_results.parquet"
-          gcloud storage cp data/catalog_inventory/generated/source_check_results.parquet \
+          python scripts/gha/gcs_upload.py \
+            data/catalog_inventory/generated/source_check_results.parquet \
             "$prefix/source-check/snapshots/source_check_${stamp}.parquet"
 
       - name: Upload inventory snapshot to GCS
@@ -175,10 +177,18 @@ jobs:
           ")
           prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
           prefix="${prefix%/}"
-          gcloud storage cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/catalog_inventory_latest.parquet"
-          gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/catalog_inventory_report.json"
-          gcloud storage cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/snapshots/catalog_inventory_${stamp}.parquet"
-          gcloud storage cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/snapshots/catalog_inventory_report_${stamp}.json"
+          python scripts/gha/gcs_upload.py \
+            data/catalog_inventory/generated/catalog_inventory_latest.parquet \
+            "$prefix/catalog_inventory_latest.parquet"
+          python scripts/gha/gcs_upload.py \
+            data/catalog_inventory/generated/catalog_inventory_report.json \
+            "$prefix/catalog_inventory_report.json"
+          python scripts/gha/gcs_upload.py \
+            data/catalog_inventory/generated/catalog_inventory_latest.parquet \
+            "$prefix/snapshots/catalog_inventory_${stamp}.parquet"
+          python scripts/gha/gcs_upload.py \
+            data/catalog_inventory/generated/catalog_inventory_report.json \
+            "$prefix/snapshots/catalog_inventory_report_${stamp}.json"
 
       # ═══════════════════════════════════════════════════════════════════
       # STEP 4 — ARTIFACTS + SUMMARIES
