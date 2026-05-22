@@ -3,6 +3,8 @@ istat_sdmx:
   protocol: sdmx
   observation_mode: catalog-watch
   base_url: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1
+  inventory:
+    timeout: 300
   last_probed: '2026-05-22'
   catalog_baseline:
     captured_at: '2026-04-10'
@@ -81,12 +83,12 @@ openbdap:
   base_url: 
     https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
   inventory:
-    timeout: 300
+    timeout: 600
     skip_package_search: true
     skip_package_search_reason: timeout sistematico a 60s
     skip_current_list: true
     package_show_sample: true
-    sample_size: 4000
+    sample_size: 2000
   last_probed: '2026-05-22'
   catalog_baseline:
     captured_at: '2026-04-02'
