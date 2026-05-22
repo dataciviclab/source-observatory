@@ -8,44 +8,15 @@ import jsonschema
 import pytest
 import radar_check
 from lab_connectors.http import HttpFallbackError, HttpResult
+from lab_connectors.testing import FakeHttpClient, fake_response
+
+pytestmark = pytest.mark.contract
 
 _SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 
 
 def _load_schema(name: str) -> dict:
     return json.loads((_SCHEMA_DIR / name).read_text(encoding="utf-8"))
-
-
-class FakeResponse:
-    def __init__(
-        self,
-        status_code: int = 200,
-        json_payload: dict | None = None,
-        content_type: str = "application/json",
-        url: str = "https://example.test/api/3/action/status",
-        headers: dict | None = None,
-    ) -> None:
-        self.status_code = status_code
-        self._json_payload = json_payload
-        self._content_type = content_type
-        self.url = url
-        self.headers = headers or {
-            "content-type": content_type,
-        }
-
-    def json(self) -> dict:
-        if self._json_payload is None:
-            raise json.JSONDecodeError("Expecting value", "doc", 0)
-        return self._json_payload
-
-    def raise_for_status(self) -> None:
-        pass
-
-    def __enter__(self) -> "FakeResponse":
-        return self
-
-    def __exit__(self, *args: object) -> None:
-        pass
 
 
 class TestClassify:
@@ -68,10 +39,8 @@ class TestClassify:
 
 class TestValidateCkan:
     def test_validate_ckan_action_response_ok(self) -> None:
-        response = FakeResponse(
-            status_code=200,
-            json_payload={"success": True, "result": []},
-        )
+        response = fake_response(200, json_data={"success": True, "result": []},
+                                 headers={"content-type": "application/json"})
         status, note = radar_check.validate_ckan_action_response(
             "https://example.test/api/3/action/package_list", response
         )
@@ -79,10 +48,8 @@ class TestValidateCkan:
         assert note is None
 
     def test_validate_ckan_action_response_missing_success(self) -> None:
-        response = FakeResponse(
-            status_code=200,
-            json_payload={"result": []},
-        )
+        response = fake_response(200, json_data={"result": []},
+                                 headers={"content-type": "application/json"})
         status, note = radar_check.validate_ckan_action_response(
             "https://example.test/api/3/action/package_list", response
         )
@@ -90,10 +57,9 @@ class TestValidateCkan:
         assert "missing" in (note or "").lower()
 
     def test_validate_ckan_action_response_non_json(self) -> None:
-        response = FakeResponse(
-            status_code=200,
-            content_type="text/html",
-            json_payload=None,
+        response = fake_response(
+            200,
+            text="<html>",
             headers={"content-type": "text/html"},
         )
         status, note = radar_check.validate_ckan_action_response(
@@ -106,18 +72,14 @@ class TestValidateCkan:
 class TestProbe:
     def test_probe_url_success(self, monkeypatch) -> None:
         """Primary request succeeds — ssl_fallback_used=None."""
-
-        def fake_get(url, **kwargs):
-            return HttpResult(
-                response=FakeResponse(
-                    status_code=200,
-                    json_payload={"success": True, "result": []},
-                ),
-                err=None,
-                ssl_fallback_used=None,
-            )
-
-        monkeypatch.setattr(radar_check, "HttpClient", lambda **kw: _FakeClient(fake_get))
+        fake = FakeHttpClient()
+        fake.responses["https://demo.test/api/3/action/package_list"] = HttpResult(
+            response=fake_response(200, json_data={"success": True, "result": []},
+                                   headers={"content-type": "application/json"}),
+            err=None,
+            ssl_fallback_used=None,
+        )
+        monkeypatch.setattr(radar_check, "HttpClient", lambda **kw: fake)
         result = radar_check.probe_url("https://demo.test/api/3/action/package_list")
         assert result.status == "GREEN"
         assert result.http_code == "200"
@@ -127,14 +89,13 @@ class TestProbe:
         """Timeout → YELLOW."""
         import requests as real_requests
 
-        def fake_get(url, **kwargs):
-            return HttpResult(
-                response=None,
-                err=real_requests.exceptions.Timeout("Connection timed out"),
-                ssl_fallback_used=False,
-            )
-
-        monkeypatch.setattr(radar_check, "HttpClient", lambda **kw: _FakeClient(fake_get))
+        fake = FakeHttpClient()
+        fake.responses["https://slow.test/api/3/action"] = HttpResult(
+            response=None,
+            err=real_requests.exceptions.Timeout("Connection timed out"),
+            ssl_fallback_used=False,
+        )
+        monkeypatch.setattr(radar_check, "HttpClient", lambda **kw: fake)
         result = radar_check.probe_url("https://slow.test/api/3/action")
         assert result.status == "YELLOW"
         assert "Timeout" in (result.note or "")
@@ -143,32 +104,27 @@ class TestProbe:
         """ConnectionError → RED."""
         import requests as real_requests
 
-        def fake_get(url, **kwargs):
-            return HttpResult(
-                response=None,
-                err=real_requests.exceptions.ConnectionError("Connection refused"),
-                ssl_fallback_used=False,
-            )
-
-        monkeypatch.setattr(radar_check, "HttpClient", lambda **kw: _FakeClient(fake_get))
+        fake = FakeHttpClient()
+        fake.responses["https://dead.test/api/3/action"] = HttpResult(
+            response=None,
+            err=real_requests.exceptions.ConnectionError("Connection refused"),
+            ssl_fallback_used=False,
+        )
+        monkeypatch.setattr(radar_check, "HttpClient", lambda **kw: fake)
         result = radar_check.probe_url("https://dead.test/api/3/action")
         assert result.status == "RED"
         assert "Connection error" in (result.note or "")
 
     def test_probe_url_ssl_fallback_success(self, monkeypatch) -> None:
         """SSL error first, fallback succeeds — ssl_fallback_used=True."""
-
-        def fake_get(url, **kwargs):
-            return HttpResult(
-                response=FakeResponse(
-                    status_code=200,
-                    json_payload={"success": True},
-                ),
-                err=None,
-                ssl_fallback_used=True,
-            )
-
-        monkeypatch.setattr(radar_check, "HttpClient", lambda **kw: _FakeClient(fake_get))
+        fake = FakeHttpClient()
+        fake.responses["https://ssl-broken.test/api/3/action"] = HttpResult(
+            response=fake_response(200, json_data={"success": True},
+                                   headers={"content-type": "application/json"}),
+            err=None,
+            ssl_fallback_used=True,
+        )
+        monkeypatch.setattr(radar_check, "HttpClient", lambda **kw: fake)
         result = radar_check._probe_once("https://ssl-broken.test/api/3/action")
         assert result.ssl_fallback_used is True
         assert result.status == "GREEN"
@@ -180,18 +136,17 @@ class TestProbe:
         """
         import requests as real_requests
 
-        def fake_get(url, **kwargs):
-            ssl_exc = real_requests.exceptions.SSLError("SSL cert verify failed")
-            fallback_exc = real_requests.exceptions.ConnectionError(
-                "Connection refused after fallback"
-            )
-            return HttpResult(
-                response=None,
-                err=HttpFallbackError(primary_error=ssl_exc, fallback_error=fallback_exc),
-                ssl_fallback_used=False,
-            )
-
-        monkeypatch.setattr(radar_check, "HttpClient", lambda **kw: _FakeClient(fake_get))
+        ssl_exc = real_requests.exceptions.SSLError("SSL cert verify failed")
+        fallback_exc = real_requests.exceptions.ConnectionError(
+            "Connection refused after fallback"
+        )
+        fake = FakeHttpClient()
+        fake.responses["https://ssl-broken.test/api/3/action"] = HttpResult(
+            response=None,
+            err=HttpFallbackError(primary_error=ssl_exc, fallback_error=fallback_exc),
+            ssl_fallback_used=False,
+        )
+        monkeypatch.setattr(radar_check, "HttpClient", lambda **kw: fake)
         result = radar_check._probe_once("https://ssl-broken.test/api/3/action")
         # ssl_failure_err is the primary SSLError → ssl_fallback_used=True in ProbeResult
         assert result.ssl_fallback_used is True
@@ -264,20 +219,3 @@ class TestBuildReport:
         jsonschema.validate(instance=summary, schema=schema)
         # Verify sources_list mirrors summary.sources
         assert len(sources_list) == summary["sources_total"]
-
-
-# ── helper ────────────────────────────────────────────────────────────────────────
-
-
-class _FakeClient:
-    """Fake HttpClient that returns a predetermined HttpResult for any get() call."""
-
-    def __init__(self, result_fn):
-        self._result_fn = result_fn
-
-    def get(self, url, **kwargs):
-        return self._result_fn(url, **kwargs)
-
-    def head(self, url, **kwargs):
-        return self._result_fn(url, **kwargs)
-pytestmark = pytest.mark.contract

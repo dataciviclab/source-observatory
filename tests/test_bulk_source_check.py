@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from collectors.ckan import _ckan_api_base
 from lab_connectors.http import HttpResult
+from lab_connectors.testing import fake_response
 from source_check_analyze import (
     _infer_granularity,
     _infer_years,
@@ -13,13 +14,18 @@ from source_check_analyze import (
 )
 
 
-class _FakeResp:
-    """Minimal response stub for HttpClient mock."""
-    def __init__(self, headers: dict[str, str] | None = None, status_code: int = 200, url: str = "", content: bytes = b""):
-        self.headers = headers or {}
-        self.status_code = status_code
-        self.url = url
-        self.content = content
+def _resp(
+    status_code: int = 200,
+    text: str = "",
+    headers: dict[str, str] | None = None,
+    url: str = "",
+):
+    """Shortcut: fake_response + url."""
+    r = fake_response(status_code, text=text, headers=headers)
+    r.url = url
+    return r
+
+
 
 
 # ── _infer_granularity ────────────────────────────────────────────────────────
@@ -199,7 +205,7 @@ class TestHttpHeadWithRetrySSL:
         def fake_head(self, url, **kwargs):
             head_called[0] = True
             return HttpResult(
-                response=_FakeResp(headers={"Content-Type": "text/csv"}, status_code=200, url=url),
+                response=_resp(200, headers={"Content-Type": "text/csv"}, url=url),
                 err=None,
             )
 
@@ -239,10 +245,10 @@ def test_fetch_data_preview_returns_new_fields(monkeypatch) -> None:
 
     def fake_get(self, url, **kwargs):
         return HttpResult(
-            response=_FakeResp(
-                content=b"col1,col2,col3\n1,2,3\n4,5,6",
+            response=_resp(
+                200,
+                text="col1,col2,col3\n1,2,3\n4,5,6",
                 headers={"Content-Type": "text/csv"},
-                status_code=200,
                 url=url,
             ),
             err=None,
@@ -307,23 +313,14 @@ def test_fetch_data_preview_head_infers_csv_without_extension(monkeypatch) -> No
     def fake_head(self, url, **kwargs):
         calls["head"] += 1
         return HttpResult(
-            response=_FakeResp(
-                headers={"Content-Type": "text/csv; charset=utf-8"},
-                status_code=200,
-                url=url,
-            ),
+            response=_resp(200, headers={"Content-Type": "text/csv; charset=utf-8"}, url=url),
             err=None,
         )
 
     def fake_get(self, url, **kwargs):
         calls["get"] += 1
         return HttpResult(
-            response=_FakeResp(
-                content=b"a,b\n1,2\n",
-                headers={"Content-Type": "text/csv"},
-                status_code=200,
-                url=url,
-            ),
+            response=_resp(200, text="a,b\n1,2\n", headers={"Content-Type": "text/csv"}, url=url),
             err=None,
         )
 
@@ -346,12 +343,12 @@ def test_fetch_data_preview_content_disposition_filename(monkeypatch) -> None:
 
     def fake_head(self, url, **kwargs):
         return HttpResult(
-            response=_FakeResp(
+            response=_resp(
+                200,
                 headers={
                     "Content-Type": "application/octet-stream",
                     "Content-Disposition": 'attachment; filename="report.csv"',
                 },
-                status_code=200,
                 url=url,
             ),
             err=None,
@@ -359,12 +356,7 @@ def test_fetch_data_preview_content_disposition_filename(monkeypatch) -> None:
 
     def fake_get(self, url, **kwargs):
         return HttpResult(
-            response=_FakeResp(
-                content=b"x,y\n3,4\n",
-                headers={"Content-Type": "text/csv"},
-                status_code=200,
-                url=url,
-            ),
+            response=_resp(200, text="x,y\n3,4\n", headers={"Content-Type": "text/csv"}, url=url),
             err=None,
         )
 
@@ -384,12 +376,7 @@ def test_fetch_data_preview_tsv_extension(monkeypatch) -> None:
 
     def fake_get(self, url, **kwargs):
         return HttpResult(
-            response=_FakeResp(
-                content=b"a\tb\tc\n1\t2\t3\n",
-                headers={"Content-Type": "text/tab-separated-values"},
-                status_code=200,
-                url=url,
-            ),
+            response=_resp(200, text="a\tb\tc\n1\t2\t3\n", headers={"Content-Type": "text/tab-separated-values"}, url=url),
             err=None,
         )
 
@@ -408,17 +395,10 @@ def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
     from lab_connectors.http import HttpClient
     from source_check_fetch import _fetch_data_preview
 
-    # TSV content with Latin-1 byte 0xf9 (non UTF-8)
-    tsv_content = "col1\tcol2\tcol3\n1\t2\t3\n4\t5\t6".encode("latin-1")
-
     def fake_get(self, url, **kwargs):
         return HttpResult(
-            response=_FakeResp(
-                content=tsv_content,
-                headers={"Content-Type": "application/octet-stream"},
-                status_code=200,
-                url=url,
-            ),
+            response=_resp(200, text="col1\tcol2\tcol3\n1\t2\t3\n4\t5\t6",
+                          headers={"Content-Type": "application/octet-stream"}, url=url),
             err=None,
         )
 

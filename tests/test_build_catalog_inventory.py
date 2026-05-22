@@ -6,37 +6,9 @@ import collectors.html as html_collector
 import collectors.sparql
 import pytest
 from lab_connectors.http import HttpResult
+from lab_connectors.testing import FakeHttpClient, fake_response
 
-
-class FakeJsonResponse:
-    def __init__(
-        self,
-        payload: dict | None,
-        *,
-        status_code: int = 200,
-        text: str = "",
-        headers: dict[str, str] | None = None,
-    ) -> None:
-        self._payload = payload
-        self.status_code = status_code
-        self.text = text
-        self.headers = headers or {"content-type": "application/json"}
-
-    def raise_for_status(self) -> None:
-        return None
-
-    def json(self) -> dict:
-        if self._payload is None:
-            raise ValueError("invalid json")
-        return self._payload
-
-
-class _FakeClient:
-    def __init__(self, result_fn):
-        self._result_fn = result_fn
-
-    def get(self, url, **kwargs):
-        return self._result_fn(url, **kwargs)
+pytestmark = pytest.mark.contract
 
 
 def test_collect_ckan_inventory_merges_current_list_metadata(monkeypatch) -> None:
@@ -315,8 +287,8 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
 
 def test_ckan_get_json_reports_non_json_response(monkeypatch) -> None:
     def fake_get(*_args, **_kwargs):
-        return FakeJsonResponse(
-            None,
+        return fake_response(
+            200,
             text="<html>Request Rejected</html>",
             headers={"content-type": "text/html"},
         )
@@ -402,7 +374,7 @@ def test_collect_sparql_inventory_groups_distribution_bindings(monkeypatch) -> N
         assert kwargs["headers"]["Accept"] == "application/sparql-results+json"
         assert kwargs["params"]["format"] == "application/sparql-results+json"
         assert "LIMIT 10" in kwargs["params"]["query"]
-        return FakeJsonResponse(payload)
+        return fake_response(200, json_data=payload, headers={"content-type": "application/sparql-results+json"})
 
     monkeypatch.setattr(collectors.sparql, "observatory_get", fake_get)
 
@@ -586,23 +558,23 @@ class TestScanAreaPagesPagination:
 
     def test_page_url_template_stops_on_empty_page(self, monkeypatch):
         """Collector stops when a page has no links at all (empty HTML, no <a> tags)."""
-        import collectors.html as html_collector
-
-        call_count = [0]
-
-        def fake_ssl_get(url, **kwargs):
-            call_count[0] += 1
-            page = call_count[0]
-            if page == 1:
-                html = '<a href="https://docs.example.com/file1.csv">file1.csv</a>'
-            elif page == 2:
-                html = '<a href="https://docs.example.com/file2.csv">file2.csv</a>'
-            else:
-                html = "<html><body><p>No results</p></body></html>"
-            response = FakeJsonResponse(payload=None, text=html, headers={"content-type": "text/html"})
-            return HttpResult(response=response, err=None, ssl_fallback_used=None)
-
-        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: _FakeClient(fake_ssl_get))
+        fake = FakeHttpClient()
+        fake.responses["https://example.com/data?page=0"] = HttpResult(
+            response=fake_response(200, text='<a href="https://docs.example.com/file1.csv">file1.csv</a>',
+                                   headers={"content-type": "text/html"}),
+            err=None, ssl_fallback_used=None,
+        )
+        fake.responses["https://example.com/data?page=1"] = HttpResult(
+            response=fake_response(200, text='<a href="https://docs.example.com/file2.csv">file2.csv</a>',
+                                   headers={"content-type": "text/html"}),
+            err=None, ssl_fallback_used=None,
+        )
+        fake.responses["https://example.com/data?page=2"] = HttpResult(
+            response=fake_response(200, text="<html><body><p>No results</p></body></html>",
+                                   headers={"content-type": "text/html"}),
+            err=None, ssl_fallback_used=None,
+        )
+        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
         summary, rows = html_collector._scan_area_pages(
             area_pages=[],
@@ -626,23 +598,28 @@ class TestScanAreaPagesPagination:
 
     def test_page_url_template_continues_when_all_links_are_duplicates(self, monkeypatch):
         """Collector continues past pages where all links are duplicates of previous pages."""
-        call_count = [0]
-
-        def fake_ssl_get(url, **kwargs):
-            call_count[0] += 1
-            page = call_count[0]
-            if page == 1:
-                html = '<a href="https://docs.example.com/file1.csv">file1.csv</a>'
-            elif page == 2:
-                html = '<a href="https://docs.example.com/file1.csv">file1.csv</a>'
-            elif page == 3:
-                html = '<a href="https://docs.example.com/file2.csv">file2.csv</a>'
-            else:
-                html = "<html><body></body></html>"
-            response = FakeJsonResponse(payload=None, text=html, headers={"content-type": "text/html"})
-            return HttpResult(response=response, err=None, ssl_fallback_used=None)
-
-        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: _FakeClient(fake_ssl_get))
+        fake = FakeHttpClient()
+        fake.responses["https://example.com/data?page=0"] = HttpResult(
+            response=fake_response(200, text='<a href="https://docs.example.com/file1.csv">file1.csv</a>',
+                                   headers={"content-type": "text/html"}),
+            err=None, ssl_fallback_used=None,
+        )
+        fake.responses["https://example.com/data?page=1"] = HttpResult(
+            response=fake_response(200, text='<a href="https://docs.example.com/file1.csv">file1.csv</a>',
+                                   headers={"content-type": "text/html"}),
+            err=None, ssl_fallback_used=None,
+        )
+        fake.responses["https://example.com/data?page=2"] = HttpResult(
+            response=fake_response(200, text='<a href="https://docs.example.com/file2.csv">file2.csv</a>',
+                                   headers={"content-type": "text/html"}),
+            err=None, ssl_fallback_used=None,
+        )
+        fake.responses["https://example.com/data?page=3"] = HttpResult(
+            response=fake_response(200, text="<html><body></body></html>",
+                                   headers={"content-type": "text/html"}),
+            err=None, ssl_fallback_used=None,
+        )
+        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
         summary, rows = html_collector._scan_area_pages(
             area_pages=[],
@@ -663,15 +640,14 @@ class TestScanAreaPagesPagination:
 
     def test_page_url_template_respects_page_max(self, monkeypatch):
         """Collector stops at page_max even if pages still have links."""
-        call_count = [0]
-
-        def fake_ssl_get(url, **kwargs):
-            call_count[0] += 1
-            html = f'<a href="https://docs.example.com/file{call_count[0]}.csv">file.csv</a>'
-            response = FakeJsonResponse(payload=None, text=html, headers={"content-type": "text/html"})
-            return HttpResult(response=response, err=None, ssl_fallback_used=None)
-
-        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: _FakeClient(fake_ssl_get))
+        fake = FakeHttpClient()
+        for i in range(3):
+            fake.responses[f"https://example.com/data?page={i}"] = HttpResult(
+                response=fake_response(200, text=f'<a href="https://docs.example.com/file{i}.csv">file.csv</a>',
+                                       headers={"content-type": "text/html"}),
+                err=None, ssl_fallback_used=None,
+            )
+        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
         summary, rows = html_collector._scan_area_pages(
             area_pages=[],
@@ -695,16 +671,19 @@ class TestContentTypeProbe:
 
     def test_probe_updates_by_format_in_summary(self, monkeypatch):
         """Dopo il probe, by_format deve riflettere i formati aggiornati, non quelli pre-probe."""
-        # Un link ZIP -> probe dice CSV -> by_format deve contenere CSV non ZIP
-        html_page = '<a href="https://example.test/data.zip">data</a>'
-
-        def fake_ssl_get(url, **kwargs):
-            return HttpResult(
-                response=FakeJsonResponse(payload=None, text=html_page, headers={"content-type": "text/html"}),
-                err=None, ssl_fallback_used=None,
-            )
-
-        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: _FakeClient(fake_ssl_get))
+        fake = FakeHttpClient()
+        fake.responses["https://example.test/data?page=0"] = HttpResult(
+            response=fake_response(200, text='<a href="https://example.test/data.zip">data</a>',
+                                   headers={"content-type": "text/html"}),
+            err=None, ssl_fallback_used=None,
+        )
+        # Il collector fa anche una GET alla base_url per l'area page iniziale
+        fake.responses["https://example.test"] = HttpResult(
+            response=fake_response(200, text='<a href="https://example.test/data.zip">data</a>',
+                                   headers={"content-type": "text/html"}),
+            err=None, ssl_fallback_used=None,
+        )
+        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
         # Monkeypatch _probe_content_type per simulare che data.zip sia in realtà CSV
         original_probe = html_collector._probe_content_type
@@ -736,4 +715,3 @@ class TestContentTypeProbe:
         bf = result.summary.get("by_format", {})
         assert "CSV" in bf, f"by_format non contiene CSV dopo probe: {bf}"
         assert "ZIP" not in bf, f"by_format contiene ancora ZIP pre-probe: {bf}"
-pytestmark = pytest.mark.contract
