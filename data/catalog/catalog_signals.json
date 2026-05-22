@@ -1,14 +1,13 @@
 {
-  "captured_at": "2026-05-18T10:24:52+00:00",
+  "captured_at": "2026-05-22T11:37:12+00:00",
   "sources_checked": 15,
   "signals": [
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
       "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 4849,
-      "detail": "4849 item (dataflow_count), in linea con la baseline.",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {
@@ -24,9 +23,8 @@
       "source": "openbdap",
       "protocol": "ckan",
       "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 3773,
-      "detail": "3773 item (package_list), in linea con la baseline.",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {
@@ -635,8 +633,9 @@
       "source": "dati_camera",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 104,
+      "detail": "104 item (sparql_query), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -1167,14 +1166,14 @@
             2026
           ],
           "count": 1,
-          "sample": "elenco-farmaci-MR-l648_15.05.2026"
+          "sample": "elenco-farmaci-MR-l648_22.05.2026"
         },
         "lista-farmaci-malattie-rare": {
           "years": [
             2026
           ],
           "count": 1,
-          "sample": "lista-farmaci-malattie-rare_15.05.2026"
+          "sample": "lista-farmaci-malattie-rare_22.05.2026"
         },
         "programmi": {
           "years": [
@@ -1195,14 +1194,14 @@
             2026
           ],
           "count": 2,
-          "sample": "Elenco_Registri_PT_attivi_14.05.2026"
+          "sample": "Elenco_Registri_PT_attivi_21.05.2026"
         },
         "Strutture": {
           "years": [
             2026
           ],
           "count": 1,
-          "sample": "Strutture_registri_regioni_2026-03-05"
+          "sample": "Strutture_registri_regioni_2026-05-20"
         },
         "Lista-": {
           "years": [
@@ -1218,7 +1217,7 @@
             2026
           ],
           "count": 2,
-          "sample": "Accordi_pa_privati_2026_al_28.04.2026"
+          "sample": "Accordi_pa_privati_2026_al_22.05.2026"
         },
         "provvedimenti": {
           "years": [
