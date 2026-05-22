@@ -1,13 +1,14 @@
 {
-  "captured_at": "2026-05-22T11:37:12+00:00",
+  "captured_at": "2026-05-22T12:27:45+00:00",
   "sources_checked": 15,
   "signals": [
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 4849,
+      "detail": "4849 item (dataflow_count), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -23,8 +24,9 @@
       "source": "openbdap",
       "protocol": "ckan",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 3781,
+      "detail": "3781 item (package_list), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -1331,7 +1333,7 @@
       "signal_type": "csv_magnet",
       "result": "scan_completed",
       "metric_value": 8,
-      "detail": "8 link data (XLS 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1",
+      "detail": "8 link data (XLSX 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1",
       "prefix_matrix": {
         "Civile": 1,
         "Indicatori": 2,

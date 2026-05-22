@@ -1,6 +1,6 @@
 # Catalog Watch Report
 
-_Generato: 2026-05-22T11:37:12+00:00 — 15 fonti controllate_
+_Generato: 2026-05-22T12:27:45+00:00 — 15 fonti controllate_
 
 ## Segnali attivi
 
@@ -35,7 +35,7 @@ _Generato: 2026-05-22T11:37:12+00:00 — 15 fonti controllate_
 ### • `giustizia_statistiche` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 8 link data (XLS 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1
+- **Dettaglio**: 8 link data (XLSX 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1
 - **Item**: 8
 - **Azione**: low signal
 
