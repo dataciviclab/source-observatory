@@ -5,13 +5,25 @@ Procedure ripetibili per osservare, inventariare e valutare fonti pubbliche.
 ## Le 3 skill
 
 | Skill | Entry | Output |
-|---|---|---|
+|---|---|---|---|
 | [portal-scout.md](./portal-scout.md) | URL portale | go registry / no-go / need-more-info |
-| [catalog-inventory-scout.md](./catalog-inventory-scout.md) | source_id o tema | shortlist item → source-check |
-| [source-check.md](./source-check.md) | item specifico | go DI / watchlist / no-go |
+| [catalog-inventory-scout.md](./catalog-inventory-scout.md) | source_id o tema | issue SO → source-check |
+| [source-check.md](./source-check.md) | item specifico | go intake / watchlist / no-go |
 
 ## Flusso
 
+```
+proposta / URL
+    ↓
+portal-scout        → identifica protocollo, decide se aggiungere al registry
+    ↓
+catalog-inventory   → triage item → issue SO per source-check
+    ↓
+source-check        → verifica singolo item → go intake / watchlist / no-go
+    ↓
+    → DI (issue intake)
+    → watchlist
+    → archivio
 ```
 proposta / URL
     ↓
@@ -21,7 +33,7 @@ catalog-inventory   → enumerare item (se catalog-watch)
     ↓
 source-check        → verifica singolo item → go DI / watchlist / no-go
     ↓
-    → DI (go Discussion / candidate)
+    → DI (go intake / candidate)
     → watchlist
     → archivio
 ```

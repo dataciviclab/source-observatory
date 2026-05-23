@@ -1,6 +1,6 @@
 ---
 name: catalog-inventory-scout
-description: Triage di un catalog inventory per ricavare una shortlist di segnali da mandare a source-check, catalog-watch o watchlist.
+description: Triage di un catalog inventory per ricavare shortlist di item da verificare con source-check e aprire issue in SO.
 license: MIT
 metadata:
   version: "1.0"
@@ -65,7 +65,7 @@ Dichiara cosa stai cercando (es. nuovi dataset su un tema specifico, aggiornamen
 
 ### 3. Classifica gli item
 Per ogni item interessante, assegna una classe semplice:
-- `source-check`: item pronto per la verifica profonda.
+- `go intake`: item promettente, merita un source-check.
 - `watchlist`: interessante ma non prioritario.
 - `ignore`: rumore o fuori scopo.
 
@@ -73,8 +73,13 @@ Per ogni item interessante, assegna una classe semplice:
 Mantieni una lista corta e leggibile. Per ogni item annota titolo, URL e motivazione.
 Controlla brevemente se l'item è già coperto da filoni vivi in `dataset-incubator` o discussioni aperte.
 
-### 5. Apri l'issue di scout
+### 5. Apri issue in SO per source-check
+
 Usa il template [Catalog inventory scout](../.github/ISSUE_TEMPLATE/catalog-inventory-scout.yml) per documentare il risultato del triage.
+
+Per ogni item classificato `go intake`, il prossimo passo è eseguire un
+[source-check](./source-check.md) che ne verifichi l'accesso reale, la forma e
+la pertinenza con una domanda civica, e che porti a una issue intake in DI.
 
 ## Boundary con altri workflow
 
@@ -84,5 +89,6 @@ Usa il template [Catalog inventory scout](../.github/ISSUE_TEMPLATE/catalog-inve
 
 ## Output atteso
 
-- Issue di tipo `catalog-scout` con shortlist ragionata.
-- Decisione sui passi successivi per gli item in shortlist.
+- Issue di tipo `catalog-scout` con shortlist ragionata, aperta in SO.
+- Per ogni item `go intake` → il prossimo passo è un [source-check](./source-check.md)
+  che apre issue intake in `dataset-incubator`.
