@@ -184,10 +184,8 @@ def _http_head_with_retry(url: str, max_retries: int = 1) -> tuple[Optional[int]
             cd = resp.headers.get("Content-Disposition")
             # Format detection via toolkit (pure, no HTTP)
             fmt = _toolkit_preview_kind(url, ct, cd)
-            # Toolkit restituisce lowercase; SO upstream si aspetta uppercase
-            fmt_upper = fmt.upper() if fmt else None
             reachable = resp.status_code < 400
-            return resp.status_code, reachable, "", fmt_upper
+            return resp.status_code, reachable, "", fmt
 
         if result.err is not None:
             err_name = type(result.err).__name__
@@ -211,8 +209,12 @@ def _fetch_ckan_package(base_api: str, item_name: str) -> Optional[dict]:
     portal_url = f"{parsed.scheme}://{parsed.netloc}"
     client = _get_circuit_client()
     try:
-        return _toolkit_ckan_package(portal_url, item_name, client=client)
-    except Exception:
+        pkg = _toolkit_ckan_package(portal_url, item_name, client=client)
+        if pkg is None:
+            logger.warning("CKAN package_show returned None for %s (portal: %s)", item_name, portal_url)
+        return pkg
+    except Exception as exc:
+        logger.error("CKAN package_show failed for %s (portal: %s): %s", item_name, portal_url, exc)
         return None
 
 
@@ -371,7 +373,7 @@ def _fetch_data_preview(
         result["enrich_method"] = "csv_preview_skipped"
         return result
 
-    fmt = kind
+    fmt = kind.lower()
     resource_kind = kind
 
     try:
