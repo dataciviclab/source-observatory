@@ -1,7 +1,7 @@
-name: Catalog inventory scout
+name: Inventory triage
 description: Triage di un catalog inventory esistente per produrre una shortlist.
-title: "catalog-scout: <catalogo>"
-labels: ["catalog-scout", "scouting"]
+title: "inventory-triage: <catalogo>"
+labels: ["inventory-triage", "scouting"]
 body:
   - type: input
     id: catalog_name

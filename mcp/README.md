@@ -60,7 +60,7 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 | `so_ckan_package_show` | conferma CKAN e verifica enumerateabilita |
 | `so_registry_query` | pre-check: gia nel registry? |
 
-### SO_02 — catalog-inventory-scout
+### SO_02 — inventory-triage
 
 | Tool | Uso |
 |---|---|
@@ -198,7 +198,7 @@ Non deve:
 Le 3 skill operative sono in `skills/`:
 
 - `portal-scout.md` — dado un URL, identifica protocollo e decide go registry
-- `catalog-inventory-scout.md` — browse inventory, estrai shortlist per source-check
-- `source-check.md` — verifica singolo item, verdict go DI / watchlist / no-go
+- `inventory-triage.md` — browse inventory, estrai shortlist per source-check
+- `source-check.md` — verifica singolo item, verdict go intake / watchlist / no-go
 
-Il workflow di riferimento è `skills/portal-scout.md`, `skills/source-check.md` e `skills/catalog-inventory-scout.md`.
+Il workflow di riferimento è `skills/portal-scout.md`, `skills/source-check.md` e `skills/inventory-triage.md`.

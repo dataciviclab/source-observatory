@@ -1,5 +1,5 @@
 ---
-name: catalog-inventory-scout
+name: inventory-triage
 description: Triage di un catalog inventory per ricavare shortlist di item da verificare con source-check e aprire issue in SO.
 license: MIT
 metadata:
@@ -8,9 +8,9 @@ metadata:
   tags: [source-observatory, scouting, triage, inventory]
 ---
 
-# Workflow: catalog-inventory-scout
+# Workflow: inventory-triage
 
-Workflow canonico di `source-observatory` per fare scouting disciplinato a partire da un catalog inventory.
+Workflow canonico di `source-observatory` per fare triage disciplinato a partire da un catalog inventory.
 Versione: 1.0 - 2026-04-15
 
 ## Obiettivo di fase
@@ -75,7 +75,7 @@ Controlla brevemente se l'item è già coperto da filoni vivi in `dataset-incuba
 
 ### 5. Apri issue in SO per source-check
 
-Usa il template [Catalog inventory scout](../.github/ISSUE_TEMPLATE/catalog-inventory-scout.yml) per documentare il risultato del triage.
+Usa il template [Inventory triage](../.github/ISSUE_TEMPLATE/inventory-triage.yml) per documentare il risultato del triage.
 
 Per ogni item classificato `go intake`, il prossimo passo è eseguire un
 [source-check](./source-check.md) che ne verifichi l'accesso reale, la forma e
@@ -83,12 +83,12 @@ la pertinenza con una domanda civica, e che porti a una issue intake in DI.
 
 ## Boundary con altri workflow
 
-- `catalog-inventory-scout` -> prepara il terreno via triage di una lista.
+- `inventory-triage` -> prepara il terreno via triage di una lista.
 - [source-check.md](./source-check.md) -> verifica una fonte specifica.
 - `CATALOG_WATCH_REPORT.md` / `catalog_signals.json` -> segnali differenziali prodotti automaticamente dalla CI.
 
 ## Output atteso
 
-- Issue di tipo `catalog-scout` con shortlist ragionata, aperta in SO.
+- Issue di tipo `inventory-triage` con shortlist ragionata, aperta in SO.
 - Per ogni item `go intake` → il prossimo passo è un [source-check](./source-check.md)
   che apre issue intake in `dataset-incubator`.

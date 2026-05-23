@@ -7,7 +7,7 @@ Procedure ripetibili per osservare, inventariare e valutare fonti pubbliche.
 | Skill | Entry | Output |
 |---|---|---|---|
 | [portal-scout.md](./portal-scout.md) | URL portale | go registry / no-go / need-more-info |
-| [catalog-inventory-scout.md](./catalog-inventory-scout.md) | source_id o tema | issue SO → source-check |
+| [inventory-triage.md](./inventory-triage.md) | source_id o tema | issue SO → source-check |
 | [source-check.md](./source-check.md) | item specifico | go intake / watchlist / no-go |
 
 ## Flusso
@@ -17,7 +17,7 @@ proposta / URL
     ↓
 portal-scout        → identifica protocollo, decide se aggiungere al registry
     ↓
-catalog-inventory   → triage item → issue SO per source-check
+inventory-triage    → triage item → issue SO per source-check
     ↓
 source-check        → verifica singolo item → go intake / watchlist / no-go
     ↓
@@ -35,7 +35,7 @@ Non sono skill themselves — sono strumenti a disposizione di chi esegue una sk
 ## Boundary rapido
 
 - `portal-scout` — questo portale è osservabile?
-- `catalog-inventory-scout` — cosa c'è in questo catalogo?
+- `inventory-triage` — cosa c'è in questo catalogo?
 - `source-check` — questo dataset merita il funnel del Lab?
 
 ## Runbook operativo

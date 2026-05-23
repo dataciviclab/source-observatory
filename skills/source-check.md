@@ -1,33 +1,40 @@
 ---
 name: source-check
-description: Workflow canonico per verificare se una fonte pubblica merita il funnel del Lab.
+description: Workflow canonico per verificare se una fonte pubblica merita un intake issue in dataset-incubator.
 license: MIT
 metadata:
-  version: "1.2"
+  version: "2.0"
   owner: "DataCivicLab"
 ---
 
 # Workflow: source-check
 
-**Stato: Operativo (Compact Mode)**
-Verifica se una fonte regge davvero come pista del Lab prima di aprire Discussion o pipeline.
+**Stato: Operativo**
+Verifica se una fonte regge davvero come pista del Lab, poi produce issue
+intake in `dataset-incubator` + reply nella Discussion Domanda di riferimento.
 
 ## 1. Obiettivo e Boundary
 
 - **SÌ**: Verificare accesso reale e forma minima (formato, granularità, copertura).
 - **SÌ**: Distinguere tra fonte "viva" e fonte "utile" (domanda civica).
 - **SÌ**: Fissare un perimetro v0 e un verdetto unico.
-- **NO**: Fare intake in `dataset-incubator` o monitoraggio ricorrente.
-- **NO**: Sostituire l'health check radar o `catalog-watch`.
+- **SÌ**: Aprire issue intake in `dataset-incubator` se la pista regge.
+- **NO**: Fare run di pipeline o sostituire l'health check radar.
+- **NO**: Sostituire `catalog-watch` o il monitoraggio ricorrente.
 
-## 2. Preconditions e Stop Rules
+## 2. Pre-requisiti
 
+Prima di iniziare, deve esistere una **Discussion categoria `Domanda`** in
+`dataciviclab` che inquadri la domanda civica. Se non esiste (es. fonte emersa
+da triage interno), apriline una — la Domanda è l'ancora pubblica del filone.
+
+- [ ] Hai una Discussion Domanda di riferimento (# o URL)
 - [ ] Hai una fonte concreta (URL, endpoint o file), non solo un tema.
 - [ ] Esiste un possibile uso civico plausibile.
-- [ ] **STOP**: Se il caso è già maturo per Discussion/PI o se appartiene al monitoraggio.
-- [ ] **STOP**: Se la fonte è totalmente opaca (niente metadata o preview).
+- **STOP**: Se il caso è già maturo per intake o se appartiene al monitoraggio.
+- **STOP**: Se la fonte è totalmente opaca (niente metadati o preview).
 
-## 2b. Soglie go Discussion (checklist binaria)
+## 2b. Soglie go intake (checklist binaria)
 
 - [ ] Accesso reale confermato (non solo metadato).
 - [ ] ≥1 dimensione analitica utile (geo, temporale, categoriale).
@@ -39,7 +46,8 @@ Verifica se una fonte regge davvero come pista del Lab prima di aprire Discussio
 
 ## 3. Pre-check MCP (obbligatorio prima di iniziare)
 
-Prima di toccare la fonte, consulta gli artifact SO via MCP per evitare duplicati e orientarti:
+Prima di toccare la fonte, consulta gli artifact SO via MCP per evitare
+duplicati e orientarti:
 
 ```
 1. so_find_by_url(<URL>)       → la fonte è già in source_check o inventory?
@@ -48,39 +56,49 @@ Prima di toccare la fonte, consulta gli artifact SO via MCP per evitare duplicat
 4. so_probe_url(<URL>)          → reachability rapida
 ```
 
-**Se `so_find_by_url` trova risultati**: la fonte è già catalogata — consulta i risultati prima di proseguire e possibilmente riutilizza evidenze esistenti.
+**Se `so_find_by_url` trova risultati**: la fonte è già catalogata — consulta
+i risultati prima di proseguire e possibilmente riutilizza evidenze esistenti.
 
-**Se `so_radar_summary` mostra RED**: valuta se il source-check ha senso (fonte temporaneamente down).
+**Se `so_radar_summary` mostra RED**: valuta se il source-check ha senso (fonte
+temporaneamente down).
 
-**Se la fonte non è ancora nel radar**: procedi normalmente, ma annota `source_id` provvisorio nella nota.
+**Se la fonte non è ancora nel radar**: procedi normalmente, ma annota
+`source_id` provvisorio nella nota.
 
 ## 4. Accesso Reale
 
-Verifica raggiungibilità e leggibilità (redirect, login, WAF). Qualifica come `verificato` o `inferito`.
+Verifica raggiungibilità e leggibilità (redirect, login, WAF). Qualifica come
+`verificato` o `inferito`.
 
-1. **Shape minima**: Controlla formato, granularità (cosa rappresenta una riga) e copertura.
+1. **Shape minima**: Controlla formato, granularità (cosa rappresenta una riga)
+   e copertura.
 2. **Sufficienza Semantica**:
    - [ ] Il dato è leggibile subito?
    - [ ] Messaggi/Valori chiave sono autonomi?
    - [ ] Esiste un output minimo senza join esterne?
-3. **Domanda Civica**: Formula in una riga *perché* non è solo un "elenco" ma serve a una domanda reale.
-4. **Perimetro v0**: Fissa geografia e finestra temporale iniziale (preferisci perimetro stretto).
-5. **Deduplica**: Controlla se il filone è già vivo in `Discussion` o `dataset-incubator`.
+3. **Domanda Civica**: Formula in una riga *perché* non è solo un "elenco" ma
+   serve a una domanda reale.
+4. **Perimetro v0**: Fissa geografia e finestra temporale iniziale (preferisci
+   perimetro stretto).
+5. **Deduplica**: Controlla se il filone è già vivo in Discussion o
+   `dataset-incubator`.
 
 ## 5. Verdict e Output
 
 Scegli un solo verdetto:
-- `go Discussion`: La fonte regge come pista autonoma.
+- `go intake`: La fonte regge. Si apre issue intake in DI.
 - `watchlist`: Promettente ma non pronta/accessibile ora.
 - `support dataset`: Utile solo come supporto/join.
 - `aggiorna esistente`: Il filone è già vivo, aggiorna l'artefatto esistente.
 - `no-go`: Accesso, formato o valore non reggono.
 
-**Output richiesto**: nota o commento sull'issue SO con verdetto, accesso reale (stato + URL), shape, domanda civica, qualificatore e next step esplicito.
+**Output richiesto** — nota o commento sull'issue SO con:
 
 Schema commento:
 ```
 **Verdict**: [verdetto]
+
+**Discussion Domanda**: [#N](URL)
 
 **Accesso**: [verificato/inferito] — [URL]
 **Shape**: [formato, granularità, copertura]
@@ -91,34 +109,50 @@ Schema commento:
 **Next step**: [azione esplicita]
 ```
 
-## 6. Se verdict = go Discussion
+Se `verdict ≠ go intake`, il next step può essere `watchlist`, `no-go` o
+`aggiornare issue #N` — in tutti i casi, lascia una reply nella Discussion
+Domanda con l'esito.
 
-Il verdetto `go Discussion` significa: la fonte merita una Discussion. Il workflow deve almeno preparare il testo; pubblicarlo è un passo separato, consentito solo se il maintainer conferma o se il task lo richiede esplicitamente.
+## 6. Se verdict = go intake
 
-Prepara una discussion in `dataciviclab` categoria **Datasets** con questo schema compatto:
+Il verdetto `go intake` significa: la fonte regge, il perimetro è chiaro, e
+serve un ticket tecnico eseguibile.
 
-**Titolo**: `[fonte breve] — [domanda civica in max 8 parole]`
+### 6a. Apri issue intake in dataset-incubator
 
-**Body** (max 15 righe):
+Usa il template `new-candidate.yml`. Compila:
+
+- **Title**: `{slug}: {dataset name}`
+- **Discussion Domanda**: link alla Domanda di riferimento
+- **Fonte**: URL esatto + tipo (HTTP, CKAN, SDMX, ...)
+- **Perimetro v0**: geografia, periodo, metrica principale
+- **Shape**: formato, granularità, colonne candidate (se già note)
+- **Note tecniche**: encoding, delimiter, skip rows, autenticazione (se note)
+
+L'issue intake non deve ri-nascondere la domanda civica — quella sta già nella
+Discussion Domanda. L'issue è tecnica: cosa serve per far girare la pipeline.
+
+### 6b. Reply nella Discussion Domanda
+
+Lascia una reply pubblica nella Discussion Domanda:
+
 ```
-## Fonte ufficiale
-[ente + link/endpoint principale — 1-2 righe]
+## Scouting: fonte verificata ✅
 
-## Domanda civica
-[1 domanda, max 2 righe]
+Abbiamo trovato dati pertinenti:
+- **Fonte**: [ente — URL diretto]
+- **Copertura**: [periodo]
+- **Granularità**: [comune/regionale/nazionale, ...]
 
-## Perimetro v0
-- [geografia]
-- [periodo]
-- [metrica principale]
+✋ Aperta issue tecnica: [#ISSUE](link issue DI) — seguiamo il lavoro lì.
 
-→ Source-check completo: [link issue SO]
+Ci risentiamo quando i dati sono pronti per l'analisi.
 ```
 
-Poi:
-- Se pubblicata, aggiungi label `go-discussion` e commento con link alla discussion.
-- Se non pubblicata, lascia come next step `preparare/pubblicare Discussion Datasets`.
-- **Non chiudere** l'issue SO solo per il source-check: resta audit trail finché il maintainer non decide.
+### 6c. Tracciabilità
+
+- Assegna label `source-checked` all'issue SO
+- L'issue SO resta aperta come audit trail finché il maintainer non decide
 
 ## 7. Qualificatori Semantici (da annotare)
 
@@ -127,4 +161,6 @@ Poi:
 - `too-thin-for-v0`: Troppo scarno per il funnel attuale.
 
 ---
-**Done**: Fonte verificata, verdetto unico espresso, next step scritto in nota o issue.
+
+**Done**: Fonte verificata, verdetto unico espresso, issue intake in DI +
+reply pubblica nella Domanda.
