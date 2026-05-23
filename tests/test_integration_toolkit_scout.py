@@ -5,7 +5,7 @@ Nessuna dipendenza di rete — solo funzioni pure.
 """
 
 from toolkit.scout.http import resolve_preview_kind
-from toolkit.scout.infer import infer_years, infer_granularity
+from toolkit.scout.infer import infer_granularity, infer_years
 
 
 def test_preview_kind_uppercase():
