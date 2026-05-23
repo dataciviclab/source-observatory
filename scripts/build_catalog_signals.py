@@ -190,7 +190,7 @@ def _classify(
                     "result": "inventory change",
                     "metric_value": rows,
                     "detail": f"{rows} item ({method}), delta {delta_str} rispetto al run precedente ({prev_rows}).",
-                    "suggested_action": "verificare se variazione attesa; avviare catalog-inventory-scout se nuovi dataset",
+                    "suggested_action": "verificare se variazione attesa; avviare inventory-triage se nuovi dataset",
                 }
 
         # Stabile

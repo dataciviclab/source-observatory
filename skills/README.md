@@ -5,7 +5,7 @@ Procedure ripetibili per osservare, inventariare e valutare fonti pubbliche.
 ## Le 3 skill
 
 | Skill | Entry | Output |
-|---|---|---|---|
+|---|---|---|
 | [portal-scout.md](./portal-scout.md) | URL portale | go registry / no-go / need-more-info |
 | [inventory-triage.md](./inventory-triage.md) | source_id o tema | issue SO → source-check |
 | [source-check.md](./source-check.md) | item specifico | go intake / watchlist / no-go |
