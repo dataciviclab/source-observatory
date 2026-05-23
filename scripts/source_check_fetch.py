@@ -16,10 +16,12 @@ from typing import Any, Optional
 
 from lab_connectors.http import HttpClient, HttpResult
 
-# Importa da toolkit.scout le funzioni HTTP/fetch condivise
+# HTTP/fetch condivise da toolkit.scout (sostituiscono versioni locali)
 from toolkit.scout.http import (
-    fetch_ckan_package as _fetch_ckan_package,
-    fetch_sdmx_years as _fetch_sdmx_years,
+    DEFAULT_TIMEOUT,
+    fetch_ckan_package as _toolkit_ckan_package,
+    fetch_html_body as _toolkit_html_body,
+    fetch_sdmx_years as _toolkit_sdmx_years,
 )
 
 logger = logging.getLogger(__name__)
@@ -304,40 +306,34 @@ def _http_head_with_retry(url: str, max_retries: int = 1) -> tuple[Optional[int]
 
 
 def _content_type_format(url: str) -> Optional[str]:
-    """Extract format from Content-Type via HEAD."""
+    """Extract format from Content-Type via HEAD.
+    
+    Versione semplificata: usa toolkit.scout per il probe HTTP.
+    """
     if not isinstance(url, str) or not url.startswith("http"):
         return None
     try:
-        result = _tracked_http_head(url)
-        if result is None or not result.is_ok or result.response is None:
-            return None
-        ct = result.response.headers.get("Content-Type", "") or ""
-        return _format_from_content_type(ct)
+        from toolkit.scout.http import probe_url_headers
+        probe = probe_url_headers(url)
+        return probe.get("content_type")
     except Exception:
-        pass
-    return None
+        return None
 
 
-# ── CKAN fetch ─────────────────────────────────────────────────────────────
+# ── CKAN fetch (wrapper: adatta base_api di SO a portal_url di toolkit) ─────
 
 
 def _fetch_ckan_package(base_api: str, item_name: str) -> Optional[dict]:
-    """Fetch CKAN package_show."""
-    url = f"{base_api}/package_show?id={item_name}"
+    """Fetch CKAN package_show usando toolkit.scout.http."""
+    # toolkit.scout prende (portal_url, dataset_id, *, timeout).
+    # base_api e' come "https://example.com/api/3/action".
+    # Estraiamo il portal_url e delegiamo a toolkit.
+    parsed = urllib.parse.urlparse(base_api)
+    portal_url = f"{parsed.scheme}://{parsed.netloc}"
     try:
-        result = _tracked_http_get(url)
-        if result is None or not result.is_ok or result.response is None:
-            return None
-        r = result.response
-        if r.status_code != 200:
-            return None
-        data = r.json()
-        if not data.get("success"):
-            return None
-        return data.get("result")
+        return _toolkit_ckan_package(portal_url, item_name, timeout=_http_timeout[0] if isinstance(_http_timeout, tuple) else DEFAULT_TIMEOUT)
     except Exception:
-        pass
-    return None
+        return None
 
 
 # ── SDMX fetch ─────────────────────────────────────────────────────────────
@@ -349,52 +345,16 @@ def _fetch_sdmx_years(
     *,
     allow_fetch: bool = True,
 ) -> tuple[Optional[int], Optional[int]]:
-    """Chiama l'endpoint dati SDMX per ricavare year_min/year_max dalla dimensione TIME_PERIOD.
+    """Chiama endpoint SDMX per anni, usando toolkit.scout.http.
 
-    Args:
-        base_url: URL base del servizio SDMX.
-        flow_id: Identificativo del flusso SDMX.
-        allow_fetch: Se False, salta la chiamata HTTP (rispetta --no-sdmx-years).
+    Mantiene il parametro allow_fetch (specifico SO) e lo gestisce
+    prima di delegare a toolkit.
     """
     if not allow_fetch:
         return None, None
     try:
-        base = base_url.split("?")[0].rstrip("/")
-        if "/dataflow/" in base:
-            sdmx_root = base[: base.index("/dataflow/")]
-        elif base.endswith("/dataflow"):
-            sdmx_root = base[: -len("/dataflow")]
-        else:
-            sdmx_root = base
-        url = f"{sdmx_root}/data/{flow_id}?lastNObservations=1"
-        result = _tracked_http_get(url, headers={"Accept": "application/xml"})
-        if result is None or not result.is_ok or result.response is None:
-            return None, None
-        r = result.response
-        if r.status_code != 200:
-            return None, None
-        root = ET.fromstring(r.text)
-        time_values: list[str] = []
-        for val_el in root.findall(".//generic:ObsKey/generic:Value", SDMX_NS):
-            if val_el.get("id") == "TIME_PERIOD":
-                v = val_el.get("value")
-                if v:
-                    time_values.append(v)
-        for obs_el in root.findall(".//generic:Obs", SDMX_NS):
-            v = obs_el.get("TIME_PERIOD")
-            if v:
-                time_values.append(v)
-        for obs_el in root.findall(".//generic:ObsValue", SDMX_NS):
-            v = obs_el.get("TIME_PERIOD")
-            if v:
-                time_values.append(v)
-        years: list[int] = []
-        for tv in time_values:
-            found = _YEAR_RE.findall(tv)
-            years.extend(int(y) for y in found)
-        if not years:
-            return None, None
-        return min(years), max(years)
+        timeout = _http_timeout[0] if isinstance(_http_timeout, tuple) else DEFAULT_TIMEOUT
+        return _toolkit_sdmx_years(base_url, flow_id, timeout=timeout)
     except Exception:
         return None, None
 
@@ -423,26 +383,24 @@ def _fetch_sdmx_dataflow(base_url: str, flow_id: str) -> Optional[ET.Element]:
     return None
 
 
-# ── HTML fetch ─────────────────────────────────────────────────────────────
+# ── HTML fetch (usa toolkit.scout.http) ────────────────────────────────────
 
 
 def _fetch_html_metadata(url: str) -> dict:
-    """Scarica pagina HTML e cerca metadati (formato, link risorse)."""
+    """Scarica pagina HTML e cerca metadati (formato), via toolkit.scout.http."""
     if not isinstance(url, str) or not url.startswith("http"):
         result = _EMPTY_ENRICH.copy()
         result["enrich_method"] = "html_scrape_invalid_url"
         return result
 
     try:
-        http_result = _tracked_http_get(url)
-        if http_result is None or not http_result.is_ok or http_result.response is None:
+        body = _toolkit_html_body(url)
+        if not body or not body.get("html_text"):
             err = _EMPTY_ENRICH.copy()
             err["enrich_method"] = "html_scrape_fetch_failed"
             return err
 
-        r = http_result.response
-        html = r.text
-
+        html = body["html_text"]
         resource_format: Optional[str] = None
         patterns = [
             (r'\.(csv|xlsx?|json|xml|zip|parquet)\b', 1),

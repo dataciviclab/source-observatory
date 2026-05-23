@@ -28,3 +28,4 @@ data/portal_scout/*
 
 observatory-results/
 .coverage
+*.py,cover
