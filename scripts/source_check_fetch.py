@@ -16,14 +16,19 @@ import xml.etree.ElementTree as ET
 from typing import Any, Optional
 
 from lab_connectors.http import HttpClient, HttpResult
-
-# Toolkit — funzioni HTTP/fetch centralizzate
 from toolkit.scout.http import (
-    DEFAULT_TIMEOUT,
     fetch_ckan_package as _toolkit_ckan_package,
+)
+from toolkit.scout.http import (
     fetch_html_body as _toolkit_html_body,
+)
+from toolkit.scout.http import (
     fetch_sdmx_years as _toolkit_sdmx_years,
+)
+from toolkit.scout.http import (
     probe_url_headers as _toolkit_probe_headers,
+)
+from toolkit.scout.http import (
     resolve_preview_kind as _toolkit_preview_kind,
 )
 

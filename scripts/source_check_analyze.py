@@ -6,15 +6,11 @@ Le inferenze pure (anni, granularità) ora vengono da toolkit.scout.infer.
 """
 from __future__ import annotations
 
-import re
 from typing import Optional
 
 import pandas as pd
-
-# Inferenze pure da toolkit.scout (sostituiscono le versioni locali)
 from toolkit.scout.infer import infer_granularity as _infer_granularity
 from toolkit.scout.infer import infer_years as _infer_years
-
 
 # ── CKAN analysis ─────────────────────────────────────────────────────────────
 
@@ -64,9 +60,9 @@ def _parse_ckan_package(pkg: dict) -> dict:
     if temporal_start is None and temporal_end is None:
         periodo = extras.get("Periodo di riferimento") or extras.get("periodo di riferimento")
         if periodo:
-            years = _YEAR_RE.findall(str(periodo))
-            if len(years) >= 2:
-                temporal_start, temporal_end = years[0], years[-1]
+            ymin, ymax = _infer_years(str(periodo))
+            if ymin is not None and ymax is not None:
+                temporal_start, temporal_end = str(ymin), str(ymax)
 
     notes = (pkg.get("notes") or "").strip()
     title = pkg.get("title") or None
