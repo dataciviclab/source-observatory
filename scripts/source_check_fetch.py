@@ -16,6 +16,12 @@ from typing import Any, Optional
 
 from lab_connectors.http import HttpClient, HttpResult
 
+# Importa da toolkit.scout le funzioni HTTP/fetch condivise
+from toolkit.scout.http import (
+    fetch_ckan_package as _fetch_ckan_package,
+    fetch_sdmx_years as _fetch_sdmx_years,
+)
+
 logger = logging.getLogger(__name__)
 
 # Default HTTP (retro-compatibile se configure_source_check_http non è chiamato).
