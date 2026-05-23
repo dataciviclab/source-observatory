@@ -10,4 +10,4 @@ mcp>=1.27.1
 fastmcp>=3.2.4
 # Path contract GCS — vedere lab-connectors/gcs/paths.py
 lab-connectors[duckdb,gcs] @ git+https://github.com/dataciviclab/lab-connectors.git@v0.10.0
-dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@v1.10.0
+dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@v1.10.1
