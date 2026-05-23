@@ -25,18 +25,6 @@ source-check        → verifica singolo item → go intake / watchlist / no-go
     → watchlist
     → archivio
 ```
-proposta / URL
-    ↓
-portal-scout        → identifica protocollo, decide se aggiungere al registry
-    ↓
-catalog-inventory   → enumerare item (se catalog-watch)
-    ↓
-source-check        → verifica singolo item → go DI / watchlist / no-go
-    ↓
-    → DI (go intake / candidate)
-    → watchlist
-    → archivio
-```
 
 ## MCP Tools
 
