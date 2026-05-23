@@ -73,8 +73,8 @@ Le skills in `skills/` sono guide operative per agenti e review umana.
 
 | Skill | Cosa fa |
 |---|---|
-| `source-check.md` | Valuta se una fonte regge come pista del Lab |
-| `catalog-inventory-scout.md` | Triage di un inventory per una shortlist |
+| `source-check.md` | Verifica una fonte specifica — porta a issue intake in DI |
+| `inventory-triage.md` | Triage di un inventory per una shortlist — porta a issue SO per source-check |
 | `portal-scout.md` | Identifica protocollo e decide se aggiungere al registry |
 
 Il layer MCP (`mcp/so_server_core.py`) è il modo consigliato per consultare gli artifact senza scaricare file.

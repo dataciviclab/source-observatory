@@ -72,18 +72,34 @@ body:
       placeholder: "MIT incidenti 2001-2018"
     validations:
       required: false
+  - type: input
+    id: discussion_url
+    attributes:
+      label: Discussion Domanda di riferimento
+      description: "Link alla Discussion Domanda in dataciviclab che ha motivato lo scouting."
+      placeholder: "https://github.com/orgs/dataciviclab/discussions/N"
+    validations:
+      required: true
   - type: dropdown
     id: verdict
     attributes:
       label: Verdict
       options:
-        - go Discussion
+        - go intake
         - watchlist
         - support dataset
         - aggiorna artefatto esistente
-        - not now
+        - no-go
     validations:
       required: true
+  - type: input
+    id: intake_issue
+    attributes:
+      label: Issue intake (solo se go intake)
+      description: "Link all'issue intake aperta in dataset-incubator."
+      placeholder: "https://github.com/dataciviclab/dataset-incubator/issues/N"
+    validations:
+      required: false
   - type: textarea
     id: notes
     attributes:

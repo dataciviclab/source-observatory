@@ -39,7 +39,7 @@ Manutenzione del Registry:
 Boundary:
 
 - Se il problema è di contenuto (non infrastrutturale) -> [source-check.md](../skills/source-check.md)
-- Se il catalogo è cambiato ma la fonte è viva -> [catalog-inventory-scout.md](../skills/catalog-inventory-scout.md)
+- Se il catalogo è cambiato ma la fonte è viva -> [inventory-triage.md](../skills/inventory-triage.md)
 
 ## Catalog-watch
 
