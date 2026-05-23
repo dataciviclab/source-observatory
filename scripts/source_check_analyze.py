@@ -2,64 +2,15 @@
 Analyze fase per bulk source-check.
 
 Funzioni di analisi pura (nessuna dipendenza HTTP o I/O).
-Estratto da bulk_source_check.py.
+Le inferenze pure (anni, granularità) ora vengono da toolkit.scout.infer.
 """
 from __future__ import annotations
 
-import re
 from typing import Optional
 
 import pandas as pd
-
-# ── euristica granularità ─────────────────────────────────────────────────────
-
-
-_GRAN_PATTERNS: list[tuple[str, str]] = [
-    (r"\bcomun[ei]\b|\bmunicip", "comune"),
-    (r"\bprovinc", "provincia"),
-    (
-        r"\bregion[ei]\b|\bregioni\b|piemonte|lombardia|veneto|emilia|toscana|lazio|campania|puglia|sicilia|sardegna|abruzzo|umbria|marche|molise|calabria|basilicata|friuli|trentin|liguria|valle d['\s]aosta",
-        "regione",
-    ),
-    (r"\bnazional[ei]\b|\bitali[ae]\b|\bnazione\b|\bnational\b|\bregional\b", "nazionale"),
-    (r"(?<![a-zA-Z])(REG|reg)(?![a-zA-Z])", "regione"),
-    (r"\beurope[ao]\b|\bue\b|\beuropa\b|\beuropean\b", "europeo"),
-]
-
-
-def _infer_granularity(text: str) -> str:
-    low = text.lower()
-    for pattern, label in _GRAN_PATTERNS:
-        if re.search(pattern, low):
-            return label
-    return "non_determinato"
-
-
-# ── euristica anni ────────────────────────────────────────────────────────────
-
-_YEAR_RE = re.compile(r"(?<!\d)(19\d{2}|20[012]\d)(?!\d)")
-_YEAR_START_RE = re.compile(r"(?:^|(?<!\d))(20[012]\d)")
-_COMPACT_YEAR_PAIR_RE = re.compile(r"(20[012]\d)(\d{2})(?=20|$|\D)")
-
-
-def _infer_years(text: str) -> tuple[Optional[int], Optional[int]]:
-    years: set[int] = set()
-    for y in _YEAR_RE.findall(text):
-        years.add(int(y))
-    for y in _YEAR_START_RE.findall(text):
-        years.add(int(y))
-    for first_str, second_str in _COMPACT_YEAR_PAIR_RE.findall(text):
-        y1 = int(first_str)
-        y2_2digit = int(second_str)
-        if y2_2digit <= 30:
-            y2 = 2000 + y2_2digit
-            if y2 > y1 and y2 - y1 <= 10:
-                years.add(y1)
-                years.add(y2)
-    if not years:
-        return None, None
-    return min(years), max(years)
-
+from toolkit.scout.infer import infer_granularity as _infer_granularity
+from toolkit.scout.infer import infer_years as _infer_years
 
 # ── CKAN analysis ─────────────────────────────────────────────────────────────
 
@@ -109,9 +60,9 @@ def _parse_ckan_package(pkg: dict) -> dict:
     if temporal_start is None and temporal_end is None:
         periodo = extras.get("Periodo di riferimento") or extras.get("periodo di riferimento")
         if periodo:
-            years = _YEAR_RE.findall(str(periodo))
-            if len(years) >= 2:
-                temporal_start, temporal_end = years[0], years[-1]
+            ymin, ymax = _infer_years(str(periodo))
+            if ymin is not None and ymax is not None:
+                temporal_start, temporal_end = str(ymin), str(ymax)
 
     notes = (pkg.get("notes") or "").strip()
     title = pkg.get("title") or None
