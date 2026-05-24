@@ -549,3 +549,80 @@ terna_opendata:
       - GenerationPlants
   datasets_in_use:
     - terna_electricity_by_source
+ministero_interno:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:ministero-dell-interno
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: "package_search con fq=organization:ministero-dell-interno
+      restituisce 38 dataset con metadata completi."
+  last_probed: '2026-05-24'
+  catalog_baseline:
+    captured_at: '2026-05-24'
+    metric: package_count
+    value: 38
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con fq=organization:ministero-dell-interno
+      su dati.gov.it. 38 dataset su elezioni (per comune) e ANPR (popolazione).
+  verdict: go
+  note: "Fonte via dati.gov.it. Dati elezioni (Politiche 2022, Comunali 2024,
+    Europee 2024, Regionali) per comune + ANPR (popolazione residente, cambi
+    residenza, certificati, AIRE). Alto valore civico per analisi territoriale del voto."
+  datasets_in_use: []
+agid:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:agenzia-per-l-italia-digitale
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: "package_search con fq=organization:agenzia-per-l-italia-digitale
+      restituisce 40 dataset con metadata completi."
+  last_probed: '2026-05-24'
+  catalog_baseline:
+    captured_at: '2026-05-24'
+    metric: package_count
+    value: 40
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con fq=organization:agenzia-per-l-italia-digitale
+      su dati.gov.it. 40 dataset IPA (enti, PEC, domicili digitali, servizi, RTD).
+  verdict: go
+  note: "Fonte via dati.gov.it. IPA — Indice delle PA: enti, unita organizzative,
+    PEC, domicili digitali, responsabili transizione digitale, servizi digitali,
+    fatturazione elettronica, cloud. Codice_IPA chiave di join con ANAC."
+  datasets_in_use: []
+mimit_rna:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:ministero-delle-imprese-e-del-made-in-italy
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: "package_search con fq=organization:ministero-delle-imprese-e-del-made-in-italy
+      restituisce 370 dataset (RNA Aiuti + RNA Misure) con metadata."
+  last_probed: '2026-05-24'
+  catalog_baseline:
+    captured_at: '2026-05-24'
+    metric: package_count
+    value: 370
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con fq=organization:ministero-delle-imprese-e-del-made-in-italy
+      su dati.gov.it. 370 dataset (133 RNA Aiuti + 237 RNA Misure).
+  verdict: go
+  note: "Fonte via dati.gov.it. RNA — Registro Nazionale Aiuti di Stato.
+    133 dataset mensili Aiuti (2017-2026, XML, ~14.500 record/mese) +
+    237 dataset Misure (1994-2023). File su www.rna.gov.it scaricabili
+    (200 MB/mese, XML strutturato). Altissimo valore civico: tracciamento
+    aiuti pubblici alle imprese con beneficiario, CF, importo, regione, CUP."
+  datasets_in_use: []
