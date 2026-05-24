@@ -185,7 +185,7 @@ def extract_ckan_inventory_row(
 
 def _ckan_search_params(source_cfg: dict[str, Any], *, page_size: int, start: int) -> dict[str, Any]:
     """Build package_search params, optionally adding fq from inventory config."""
-    inv = source_cfg.get("inventory", {})
+    inv = source_cfg.get("inventory") or {}
     params: dict[str, Any] = {"rows": page_size, "start": start}
     fq = inv.get("fq")
     if fq:
@@ -468,11 +468,12 @@ def collect_ckan_inventory_via_package_search_offset(
     total_count: int | None = None
     offset = 0
 
+    _fq = (source_cfg.get("inventory") or {}).get("fq")
+
     while True:
-        _fq = (source_cfg.get("inventory") or {}).get("fq")
-        params = f"rows={page_size}&offset={offset}&q=*:*"
+        params: dict[str, Any] = {"rows": page_size, "offset": offset, "q": "*:*"}
         if _fq:
-            params += f"&fq={_fq}"
+            params["fq"] = _fq
         try:
             payload = ckan_get_json(endpoint, params=params, timeout=60)
         except Exception as exc:

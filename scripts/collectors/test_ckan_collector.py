@@ -4,11 +4,13 @@ import pytest
 
 from collectors.ckan import (
     _ckan_api_base,
+    _ckan_search_params,
     _has_datastore_active,
     _resource_count,
     _resource_format,
     ckan_action_endpoint,
     collect_ckan_inventory_via_package_show_sample,
+    collect_ckan_inventory_via_search,
     extract_ckan_inventory_row,
 )
 
@@ -261,4 +263,94 @@ class TestPackageShowSample:
             assert warning is None
         finally:
             monkeypatch.setattr(ckan_module, "ckan_get_json", original)
+
+
+class TestCkanSearchParams:
+    """Test per _ckan_search_params — costruzione params con/senza fq."""
+
+    def test_without_fq(self):
+        params = _ckan_search_params({"inventory": {}}, page_size=100, start=0)
+        assert params == {"rows": 100, "start": 0}
+
+    def test_with_fq(self):
+        params = _ckan_search_params(
+            {"inventory": {"fq": "organization:anac"}},
+            page_size=100, start=0,
+        )
+        assert params == {"rows": 100, "start": 0, "fq": "organization:anac"}
+
+    def test_with_fq_no_inventory_key(self):
+        """Se inventory non esiste, non crasha."""
+        params = _ckan_search_params({}, page_size=50, start=25)
+        assert params == {"rows": 50, "start": 25}
+
+    def test_with_fq_inventory_is_none(self):
+        params = _ckan_search_params({"inventory": None}, page_size=10, start=5)
+        assert params == {"rows": 10, "start": 5}
+
+    def test_fq_with_spaces_and_special_chars(self):
+        """Verifica che fq con caratteri speciali venga passato così com'è
+        (la codifica URL è gestita da requests.get(params=...))."""
+        fq_val = 'organization:"ministero-delle-imprese-e-del-made-in-italy"'
+        params = _ckan_search_params(
+            {"inventory": {"fq": fq_val}},
+            page_size=100, start=0,
+        )
+        assert params["fq"] == fq_val
+
+
+class TestSearchWithFqPropagation:
+    """Test che fq venga propagato da source_cfg a ckan_get_json."""
+
+    def test_via_search_passes_fq_to_ckan_get_json(self, monkeypatch):
+        captured_params: dict | None = None
+
+        def fake_ckan_get_json(endpoint, **kwargs):
+            nonlocal captured_params
+            captured_params = kwargs.get("params")
+            return {"success": True, "result": {"results": [], "count": 0}}
+
+        monkeypatch.setattr("collectors.ckan.ckan_get_json", fake_ckan_get_json)
+
+        source_cfg = {
+            "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+            "inventory": {"fq": "organization:anac"},
+        }
+        try:
+            collect_ckan_inventory_via_search(
+                source_id="test-fq", source_cfg=source_cfg, captured_at="2026-05-24"
+            )
+        except Exception:
+            pass  # può sollevare ValueError per results vuoti
+
+        assert captured_params is not None, "ckan_get_json non è stata chiamata"
+        assert captured_params.get("fq") == "organization:anac", (
+            f"expected fq='organization:anac', got {captured_params}"
+        )
+
+    def test_via_search_without_fq(self, monkeypatch):
+        captured_params: dict | None = None
+
+        def fake_ckan_get_json(endpoint, **kwargs):
+            nonlocal captured_params
+            captured_params = kwargs.get("params")
+            return {"success": True, "result": {"results": [], "count": 0}}
+
+        monkeypatch.setattr("collectors.ckan.ckan_get_json", fake_ckan_get_json)
+
+        source_cfg = {
+            "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+            "inventory": {},
+        }
+        try:
+            collect_ckan_inventory_via_search(
+                source_id="test-no-fq", source_cfg=source_cfg, captured_at="2026-05-24"
+            )
+        except Exception:
+            pass
+
+        assert captured_params is not None, "ckan_get_json non è stata chiamata"
+        assert "fq" not in captured_params, (
+            f"fq non dovrebbe essere presente, ma c'è: {captured_params}"
+        )
 pytestmark = pytest.mark.adapter
