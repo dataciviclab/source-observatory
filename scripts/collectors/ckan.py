@@ -183,6 +183,16 @@ def extract_ckan_inventory_row(
     }
 
 
+def _ckan_search_params(source_cfg: dict[str, Any], *, page_size: int, start: int) -> dict[str, Any]:
+    """Build package_search params, optionally adding fq from inventory config."""
+    inv = source_cfg.get("inventory", {})
+    params: dict[str, Any] = {"rows": page_size, "start": start}
+    fq = inv.get("fq")
+    if fq:
+        params["fq"] = fq
+    return params
+
+
 def collect_ckan_inventory_via_search(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> list[dict[str, Any]]:
@@ -193,7 +203,7 @@ def collect_ckan_inventory_via_search(
     rows: list[dict[str, Any]] = []
 
     while True:
-        payload = ckan_get_json(endpoint, params={"rows": page_size, "start": start})
+        payload = ckan_get_json(endpoint, params=_ckan_search_params(source_cfg, page_size=page_size, start=start))
         if not payload.get("success"):
             raise ValueError(f"CKAN package_search failed for {source_id}")
 
@@ -459,7 +469,10 @@ def collect_ckan_inventory_via_package_search_offset(
     offset = 0
 
     while True:
+        _fq = (source_cfg.get("inventory") or {}).get("fq")
         params = f"rows={page_size}&offset={offset}&q=*:*"
+        if _fq:
+            params += f"&fq={_fq}"
         try:
             payload = ckan_get_json(endpoint, params=params, timeout=60)
         except Exception as exc:
