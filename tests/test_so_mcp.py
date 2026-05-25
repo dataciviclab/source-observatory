@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 
+import _artifact
+import _html
+import _probe
 import duckdb  # noqa: E402
 import pandas as pd  # must be before so_server_core import
 import pytest
@@ -27,7 +30,7 @@ def test_query_inventory_filters_and_orders(tmp_path, monkeypatch) -> None:
             {"source_id": "b", "item_id": "other", "intake_score": 90},
         ],
     )
-    monkeypatch.setattr(core, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
 
     result = core.query_inventory(source_id="a", min_score=40, limit=10)
 
@@ -61,7 +64,7 @@ def test_query_inventory_reads_gcs_when_configured(tmp_path, monkeypatch) -> Non
 
     monkeypatch.setenv("SO_ARTIFACT_BACKEND", "gcs")
     monkeypatch.setenv("CATALOG_INVENTORY_GCS_PREFIX", "gs://bucket")
-    monkeypatch.setattr(core.requests, "get", fake_get)
+    monkeypatch.setattr(_artifact.requests, "get", fake_get)
 
     result = core.query_inventory(source_id="gcs_src", limit=10)
 
@@ -87,7 +90,7 @@ def test_query_signals_filters_and_limits(tmp_path, monkeypatch) -> None:
         ),
         encoding="utf-8",
     )
-    monkeypatch.setattr(core, "_SIGNALS_JSON", signals_path)
+    monkeypatch.setattr(_artifact, "_SIGNALS_JSON", signals_path)
 
     result = core.query_signals(source_id="a", limit=1)
 
@@ -113,7 +116,7 @@ def test_radar_summary_filters_source(tmp_path, monkeypatch) -> None:
         ),
         encoding="utf-8",
     )
-    monkeypatch.setattr(core, "_RADAR_JSON", radar_path)
+    monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
 
     result = core.radar_summary(source_id="b")
 
@@ -137,7 +140,7 @@ def test_inventory_status_summarizes_report(tmp_path, monkeypatch) -> None:
         ),
         encoding="utf-8",
     )
-    monkeypatch.setattr(core, "_INVENTORY_REPORT", report_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
 
     summary = core.inventory_status()
     filtered = core.inventory_status(source_id="b")
@@ -196,7 +199,7 @@ def test_catalog_inventory_search_filters_rows(tmp_path, monkeypatch) -> None:
             },
         ],
     )
-    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inventory_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
     result = core.catalog_inventory_search("dipendenti", source_id="openbdap")
 
@@ -243,7 +246,7 @@ def test_discover_sdmx_reads_inventory(tmp_path, monkeypatch) -> None:
             },
         ],
     )
-    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inventory_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
     result = core.discover_sdmx(["prezzi"], limit=5)
 
@@ -284,8 +287,8 @@ def test_discover_sdmx_reports_missing_source_from_inventory_report(tmp_path, mo
         ),
         encoding="utf-8",
     )
-    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inventory_path)
-    monkeypatch.setattr(core, "_INVENTORY_REPORT", report_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
 
     result = core.discover_sdmx(["prezzi"], limit=5)
 
@@ -381,7 +384,7 @@ def test_recommend_sources(tmp_path, monkeypatch) -> None:
             },
         ],
     )
-    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inventory_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
     result = core.recommend_sources("INPS")
 
@@ -443,8 +446,8 @@ def test_inventory_diff(tmp_path, monkeypatch) -> None:
             for i in range(2325)
         ],
     )
-    monkeypatch.setattr(core, "_INVENTORY_REPORT", report_path)
-    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inventory_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
     result = core.inventory_diff("inps")
 
@@ -457,7 +460,7 @@ def test_inventory_diff(tmp_path, monkeypatch) -> None:
 def test_inventory_diff_source_not_in_report(tmp_path, monkeypatch) -> None:
     report_path = tmp_path / "catalog_inventory_report.json"
     report_path.write_text(json.dumps({"sources": {}}), encoding="utf-8")
-    monkeypatch.setattr(core, "_INVENTORY_REPORT", report_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
 
     result = core.inventory_diff("unknown_source")
 
@@ -476,10 +479,10 @@ def test_inventory_diff_parquet_not_found(tmp_path, monkeypatch) -> None:
         ),
         encoding="utf-8",
     )
-    monkeypatch.setattr(core, "_INVENTORY_REPORT", report_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
     # Point to non-existent parquet
     monkeypatch.setattr(
-        core, "_INVENTORY_PARQUET", tmp_path / "nonexistent.parquet"
+        _artifact, "_INVENTORY_PARQUET", tmp_path / "nonexistent.parquet"
     )
 
     result = core.inventory_diff("inps")
@@ -502,7 +505,7 @@ def test_source_radar_context_red(tmp_path, monkeypatch) -> None:
         }),
         encoding="utf-8",
     )
-    monkeypatch.setattr(core, "_RADAR_JSON", radar_path)
+    monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
 
     result = core._source_radar_context("dati_salute")
     assert result is not None
@@ -521,7 +524,7 @@ def test_source_radar_context_green(tmp_path, monkeypatch) -> None:
         }),
         encoding="utf-8",
     )
-    monkeypatch.setattr(core, "_RADAR_JSON", radar_path)
+    monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
 
     result = core._source_radar_context("istat_sdmx")
     assert result == "status=GREEN"
@@ -531,7 +534,7 @@ def test_source_radar_context_unknown_source(tmp_path, monkeypatch) -> None:
     """Source not in radar returns None."""
     radar_path = tmp_path / "radar_summary.json"
     radar_path.write_text(json.dumps({"sources": []}), encoding="utf-8")
-    monkeypatch.setattr(core, "_RADAR_JSON", radar_path)
+    monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
 
     result = core._source_radar_context("unknown_source")
     assert result is None
@@ -539,7 +542,7 @@ def test_source_radar_context_unknown_source(tmp_path, monkeypatch) -> None:
 
 def test_source_radar_context_no_file(tmp_path, monkeypatch) -> None:
     """No radar file returns None."""
-    monkeypatch.setattr(core, "_RADAR_JSON", tmp_path / "nonexistent.json")
+    monkeypatch.setattr(_artifact, "_RADAR_JSON", tmp_path / "nonexistent.json")
     result = core._source_radar_context("dati_salute")
     assert result is None
 
@@ -718,7 +721,7 @@ def test_probe_url_ssl_fallback_used_when_head_fallback_succeeds(monkeypatch) ->
             # HttpClient catches SSLError internally, returns result with ssl_fallback_used=True
             return _FakeHttpResult()
 
-    monkeypatch.setattr(core, "HttpClient", _FakeHttpClient)
+    monkeypatch.setattr(_probe, "HttpClient", _FakeHttpClient)
 
     result = core.probe_url("https://expired-cert.example.com/file.csv")
 
@@ -773,7 +776,7 @@ def test_probe_url_ssl_fallback_from_get_fallback(monkeypatch) -> None:
         def get(self, url, headers=None, params=None):
             return _FakeGetWithSSLFallbackResult()
 
-    monkeypatch.setattr(core, "HttpClient", _FakeHttpClient)
+    monkeypatch.setattr(_probe, "HttpClient", _FakeHttpClient)
 
     result = core.probe_url("https://expired-cert.example.com/file.csv")
 
@@ -808,7 +811,7 @@ def test_html_extract_links_ssl_fallback_failure_returns_reachable_false(monkeyp
         def get(self, url, headers=None, params=None):
             return _FakeHttpResultError(ValueError("unexpected internal error"))
 
-    monkeypatch.setattr(core, "HttpClient", _FakeHttpClient)
+    monkeypatch.setattr(_html, "HttpClient", _FakeHttpClient)
 
     result = core._html_extract_links("https://expired-cert.example.com/page.html")
 
@@ -873,8 +876,8 @@ def test_find_by_url_finds_by_url_in_source_check(tmp_path, monkeypatch) -> None
     )
     inv_path = tmp_path / "catalog_inventory_latest.parquet"
     _write_catalog_inventory_parquet(inv_path, [{"dummy": 0}])
-    monkeypatch.setattr(core, "_CHECK_PARQUET", check_path)
-    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inv_path)
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", check_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inv_path)
 
     result = core.find_by_url("PENSIONI-2024.csv")
 
@@ -904,8 +907,8 @@ def test_find_by_url_finds_by_item_name_in_inventory(tmp_path, monkeypatch) -> N
             },
         ],
     )
-    monkeypatch.setattr(core, "_CHECK_PARQUET", check_path)
-    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inv_path)
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", check_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inv_path)
 
     # Search by item_name substring
     result = core.find_by_url("Pensioni erogate")
@@ -935,8 +938,8 @@ def test_find_by_url_finds_by_item_id_in_inventory(tmp_path, monkeypatch) -> Non
             },
         ],
     )
-    monkeypatch.setattr(core, "_CHECK_PARQUET", check_path)
-    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inv_path)
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", check_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inv_path)
 
     result = core.find_by_url("ID-5257")
 
@@ -950,8 +953,8 @@ def test_find_by_url_returns_empty_when_no_match(tmp_path, monkeypatch) -> None:
     _write_source_check_parquet(check_path, [{"url": "https://example.test/other.csv", "url_checked": "", "item_id": "none"}])
     inv_path = tmp_path / "catalog_inventory_latest.parquet"
     _write_catalog_inventory_parquet(inv_path, [{"item_id": "other", "item_name": "Other", "title": "Other"}])
-    monkeypatch.setattr(core, "_CHECK_PARQUET", check_path)
-    monkeypatch.setattr(core, "_INVENTORY_PARQUET", inv_path)
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", check_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inv_path)
 
     result = core.find_by_url("nonexistent-filename.csv")
 

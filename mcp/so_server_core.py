@@ -1,1679 +1,237 @@
 """
-SO MCP core: read-only artifact queries and lightweight probes.
+SO MCP core — facade module.
 
-Artifact paths are resolved relative to the source-observatory repository.
+Re-exports all public functions, constants, and helpers from the refactored
+``_*.py`` modules for backward compatibility with ``so_server.py`` and tests
+that ``import so_server_core as core``.
+
+Each import statement below maps to a specific sub-module.
+
+This file has ``__all__`` and uses ``# noqa: F401`` on its import blocks
+so that Ruff treats them as intentional re-exports rather than unused imports.
 """
 from __future__ import annotations
 
-import importlib.util
-import json
-import os
-import re
-import subprocess
-import sys
-import tempfile
-import unicodedata
-from contextlib import AbstractContextManager, contextmanager
-from dataclasses import dataclass
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any
-from urllib.parse import urlparse
+__all__ = [
+    # Path constants
+    "_CHECK_PARQUET",
+    "_INVENTORY_PARQUET",
+    "_INVENTORY_REPORT",
+    "_SIGNALS_JSON",
+    "_RADAR_JSON",
+    "_RADAR_HISTORY_JSON",
+    "_STATUS_MD",
+    "_REGISTRY_YAML",
+    "_REPO_ROOT",
+    "_COLLECTORS_BASE",
+    "_DEFAULT_CACHE_MAX_AGE_HOURS",
+    "_DEFAULT_GCS_PREFIXES",
+    "_SOURCE_CHECK_ARTIFACT",
+    "_CATALOG_INVENTORY_ARTIFACT",
+    "_CATALOG_INVENTORY_REPORT_ARTIFACT",
+    "_FORMAT_BY_CONTENT_TYPE",
+    "_FORMAT_BY_SUFFIX",
+    # Env loading
+    "_load_env_file_once",
+    "_env",
+    "_artifact_backend",
+    "_cache_max_age_hours",
+    "_gcs_prefix",
+    # Collector base lazy load
+    "_get_observatory_get",
+    "_collectors_base",
+    "observatory_get",
+    # Artifact types
+    "_ParquetArtifact",
+    "_JsonArtifact",
+    # Factory functions
+    "_source_check_parquet",
+    "_catalog_inventory_parquet",
+    "_catalog_inventory_report_artifact",
+    # Helpers
+    "_artifact_not_found",
+    "_display_path",
+    "_table_columns",
+    "_select_expr",
+    "_artifact_cache_info",
+    "_public_url",
+    "_download_public_to_temp",
+    "_copy_gcs_to_temp",
+    "_resolved_artifact",
+    "_resolved_parquet",
+    "_resolved_json",
+    "_parquet_not_found",
+    "_json_not_found",
+    "_load_inventory_report",
+    "_inventory_source_status",
+    # External libs (monkeypatched by tests)
+    "requests",
+    "HttpClient",
+    # Inventory
+    "query_inventory",
+    "inventory_status",
+    "catalog_inventory_search",
+    "_source_radar_context",
+    "inventory_diff",
+    # Signals
+    "query_signals",
+    # Radar
+    "radar_summary",
+    "radar_history",
+    "radar_status_md",
+    "radar_delta",
+    # Registry
+    "registry_query",
+    # Find by URL
+    "find_by_url",
+    # Probe
+    "probe_url",
+    "_guess_format",
+    # CKAN
+    "_ckan_package_show",
+    "_ckan_get_json",
+    "_ckan_action_endpoint",
+    # SPARQL
+    "_sparql_query_raw",
+    # HTML
+    "_html_extract_links",
+    "_extract_links_from_html",
+    # SDMX
+    "discover_sdmx",
+    "_read_sdmx_inventory_rows",
+    "_score_dataflow",
+    # Topic
+    "infer_topic",
+    "_score_text_by_topics",
+    "_TOPIC_KEYWORDS",
+    # Recommend
+    "recommend_sources",
+]
 
-import duckdb
-import requests
-from lab_connectors.duckdb import safe_connect
-from lab_connectors.gcs.paths import CLEAN_BUCKET
-from lab_connectors.http import HttpClient
+# ── Shared artifact infrastructure ──────────────────────────────────────────
 
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-_COLLECTORS_BASE = _REPO_ROOT / "scripts" / "collectors" / "base.py"
-_CHECK_PARQUET = (
-    _REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
+# ── External libs (monkeypatched by tests) ──────────────────────────────────
+import requests  # noqa: F401
+from _artifact import (  # noqa: F401
+    _CATALOG_INVENTORY_ARTIFACT,
+    _CATALOG_INVENTORY_REPORT_ARTIFACT,
+    _CHECK_PARQUET,
+    _COLLECTORS_BASE,
+    _DEFAULT_CACHE_MAX_AGE_HOURS,
+    _DEFAULT_GCS_PREFIXES,
+    _FORMAT_BY_CONTENT_TYPE,
+    _FORMAT_BY_SUFFIX,
+    _INVENTORY_PARQUET,
+    _INVENTORY_REPORT,
+    _RADAR_HISTORY_JSON,
+    _RADAR_JSON,
+    _REGISTRY_YAML,
+    _REPO_ROOT,
+    _SIGNALS_JSON,
+    _SOURCE_CHECK_ARTIFACT,
+    _STATUS_MD,
+    _artifact_backend,
+    _artifact_cache_info,
+    _artifact_not_found,
+    _cache_max_age_hours,
+    _catalog_inventory_parquet,
+    _catalog_inventory_report_artifact,
+    _collectors_base,
+    _copy_gcs_to_temp,
+    _display_path,
+    _download_public_to_temp,
+    _env,
+    _gcs_prefix,
+    _get_observatory_get,
+    _inventory_source_status,
+    _json_not_found,
+    _JsonArtifact,
+    _load_env_file_once,
+    _load_inventory_report,
+    _parquet_not_found,
+    _ParquetArtifact,
+    _public_url,
+    _resolved_artifact,
+    _resolved_json,
+    _resolved_parquet,
+    _select_expr,
+    _source_check_parquet,
+    _table_columns,
+    observatory_get,
 )
-_INVENTORY_PARQUET = (
-    _REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_latest.parquet"
+
+# ── CKAN ────────────────────────────────────────────────────────────────────
+from _ckan import (  # noqa: F401
+    _ckan_action_endpoint,
+    _ckan_get_json,
+    _ckan_package_show,
 )
-_INVENTORY_REPORT = (
-    _REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_report.json"
+
+# ── Find by URL ─────────────────────────────────────────────────────────────
+from _find_url import (  # noqa: F401
+    find_by_url,
 )
-_SIGNALS_JSON = _REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
-_RADAR_JSON = _REPO_ROOT / "data" / "radar" / "radar_summary.json"
-_RADAR_HISTORY_JSON = _REPO_ROOT / "data" / "radar" / "radar_history.json"
-_STATUS_MD = _REPO_ROOT / "data" / "radar" / "STATUS.md"
-_REGISTRY_YAML = _REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
-_DEFAULT_CACHE_MAX_AGE_HOURS = 24
 
-# ── CKAN package_show helper ─────────────────────────────────────────────────
-
-def _ckan_action_endpoint(base_url: str, action: str) -> str:
-    """Build a CKAN API action URL from a base URL.
-
-    If base_url already contains /api/3/action, appends the action directly.
-    Otherwise appends /api/3/action/{action}.
-    """
-    base = base_url.rstrip("/")
-    if "/api/3/action" in base:
-        return f"{base}/{action}"
-    return f"{base}/api/3/action/{action}"
-
-
-def _ckan_get_json(url: str, timeout: int = 30, params: dict | None = None) -> dict[str, Any]:
-    """Simple HTTP GET returning JSON — uses HttpClient with SSL fallback."""
-    client = HttpClient(timeout=timeout)
-    result = client.get(url, params=params or {})
-    if not result.is_ok:
-        raise result.err
-    response = result.response
-    response.raise_for_status()
-    content_type = (response.headers.get("content-type") or "").lower()
-    if "json" not in content_type:
-        preview = response.text[:200].replace("\n", " ").strip()
-        raise ValueError(
-            f"Non-JSON content-type (status={response.status_code}, "
-            f"content_type={content_type or 'unknown'}, preview={preview!r})"
-        )
-    try:
-        return response.json()
-    except ValueError as exc:
-        preview = response.text[:200].replace("\n", " ").strip()
-        raise ValueError(
-            f"Invalid JSON (status={response.status_code}, "
-            f"content_type={content_type or 'unknown'}, preview={preview!r})"
-        ) from exc
-
-
-def _ckan_package_show(endpoint: str, package_id: str, timeout: int = 30) -> dict[str, Any]:
-    """Fetch a single CKAN package_show.
-
-    Args:
-        endpoint: CKAN portal base URL (e.g. https://dati.gov.it).
-            Can include /api/3/action or not — normalized automatically.
-        package_id: CKAN dataset ID or name.
-        timeout: request timeout in seconds (default 30, max 120).
-
-    Returns dict with keys:
-        success: True if dataset found
-        item_id, name, title, notes (first 300 chars), organization,
-        tags (comma-joined), format (resource formats), resource_count,
-        datastore_active (bool), landing_page, distribution_url,
-        source_url (API endpoint used)
-    OR error + message on failure.
-    """
-    if not endpoint or not package_id:
-        return {"error": "invalid_params", "message": "endpoint and package_id are required"}
-
-    api_url = _ckan_action_endpoint(endpoint, "package_show")
-    params = {"id": package_id}
-
-    try:
-        payload = _ckan_get_json(api_url, params=params, timeout=timeout)
-    except Exception as exc:
-        return {
-            "error": type(exc).__name__,
-            "message": str(exc)[:200],
-            "tried_url": api_url,
-            "package_id": package_id,
-        }
-
-    if not payload.get("success"):
-        return {
-            "error": "ckan_error",
-            "message": f"success=false for {package_id}",
-            "tried_url": api_url,
-            "package_id": package_id,
-            "ckan_response": payload.get("error") or payload,
-        }
-
-    item = payload.get("result")
-    if not isinstance(item, dict):
-        return {
-            "error": "ckan_error",
-            "message": f"result non-dict for {package_id}",
-            "tried_url": api_url,
-            "package_id": package_id,
-        }
-
-    # Organization
-    organization = (item.get("organization") or {}).get("title") or (
-        item.get("organization") or {}
-    ).get("name")
-    if not organization:
-        organization = item.get("author") or item.get("maintainer")
-
-    # Tags
-    tag_items = item.get("tags") or []
-    tags: list[str] = []
-    for tag_item in tag_items:
-        if isinstance(tag_item, dict):
-            tag_value = tag_item.get("display_name") or tag_item.get("name")
-        elif isinstance(tag_item, str):
-            tag_value = tag_item.strip()
-        else:
-            tag_value = None
-        if tag_value:
-            tags.append(tag_value)
-
-    # Resource formats
-    resources = item.get("resources") or []
-    formats: list[str] = []
-    for r in resources:
-        fmt = str(r.get("format") or "").strip().lower()
-        if fmt:
-            formats.append(fmt)
-    format_str = ",".join(dict.fromkeys(formats)) if formats else None
-
-    # Landing page
-    landing = item.get("url")
-    if not landing:
-        for r in resources:
-            u = r.get("url")
-            if u and isinstance(u, str) and u.strip():
-                landing = u.strip()
-                break
-
-    # Datastore active
-    datastore_active = any(
-        str(r.get("datastore_active") or "").lower() == "true" for r in resources
-    )
-
-    notes = (item.get("notes") or "").strip()
-
-    return {
-        "success": True,
-        "item_id": item.get("id") or item.get("name"),
-        "name": item.get("name"),
-        "title": item.get("title"),
-        "notes_excerpt": notes[:300] if notes else None,
-        "organization": organization,
-        "tags": ", ".join(tags) if tags else None,
-        "format": format_str,
-        "resource_count": len(resources),
-        "datastore_active": datastore_active,
-        "landing_page": landing,
-        "distribution_url": resources[0].get("url") if resources else None,
-        "source_url": api_url,
-    }
-_DEFAULT_GCS_PREFIXES = {
-    "CATALOG_INVENTORY_GCS_PREFIX": f"gs://{CLEAN_BUCKET}/catalog_inventory",
-}
-_SOURCE_CHECK_ARTIFACT = "source_check_results.parquet"
-_CATALOG_INVENTORY_ARTIFACT = "catalog_inventory_latest.parquet"
-_CATALOG_INVENTORY_REPORT_ARTIFACT = "catalog_inventory_report.json"
-
-_FORMAT_BY_CONTENT_TYPE = {
-    "text/csv": "CSV",
-    "application/json": "JSON",
-    "application/ld+json": "JSON",
-    "application/vnd.ms-excel": "XLS",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
-    "application/xml": "XML",
-    "text/xml": "XML",
-    "application/pdf": "PDF",
-    "application/parquet": "PARQUET",
-    "text/html": "HTML",
-    "text/plain": "TXT",
-    "application/octet-stream": "BIN",
-    "text/tab-separated-values": "TSV",
-    "application/gzip": "GZ",
-    "application/zip": "ZIP",
-    "application/x-tar": "TAR",
-    "application/vnd.oasis.opendocument.spreadsheet": "ODS",
-}
-_FORMAT_BY_SUFFIX = {
-    ".csv": "CSV",
-    ".json": "JSON",
-    ".geojson": "JSON",
-    ".xlsx": "XLSX",
-    ".xls": "XLS",
-    ".xml": "XML",
-    ".pdf": "PDF",
-    ".parquet": "PARQUET",
-    ".zip": "ZIP",
-}
-
-_ENV_LOADED = False
-
-
-_collectors_base = None
-observatory_get = None
-
-
-def _get_observatory_get() -> Any:
-    """Lazy-load observatory_get from collectors.base (used only for POST cases like SPARQL)."""
-    global _collectors_base, observatory_get
-    if _collectors_base is None:
-        spec = importlib.util.spec_from_file_location("_so_collectors_base", _COLLECTORS_BASE)
-        if spec is None or spec.loader is None:
-            raise ImportError(f"Cannot load collectors base from {_COLLECTORS_BASE}")
-        _collectors_base = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = _collectors_base
-        spec.loader.exec_module(_collectors_base)
-        observatory_get = _collectors_base.observatory_get
-    return observatory_get
-
-
-@dataclass(frozen=True)
-class _ParquetArtifact:
-    name: str
-    local_path: Path
-    gcs_env: str
-    gcs_key: str
-
-    def gcs_uri(self) -> str | None:
-        prefix = _gcs_prefix(self.gcs_env)
-        if prefix is None:
-            return None
-        return f"{prefix.rstrip('/')}/{self.gcs_key}"
-
-
-@dataclass(frozen=True)
-class _JsonArtifact:
-    name: str
-    local_path: Path
-    gcs_env: str
-    gcs_key: str
-
-    def gcs_uri(self) -> str | None:
-        prefix = _gcs_prefix(self.gcs_env)
-        if prefix is None:
-            return None
-        return f"{prefix.rstrip('/')}/{self.gcs_key}"
-
-
-def _source_check_parquet() -> _ParquetArtifact:
-    return _ParquetArtifact(
-        name=_SOURCE_CHECK_ARTIFACT,
-        local_path=_CHECK_PARQUET,
-        gcs_env="CATALOG_INVENTORY_GCS_PREFIX",
-        gcs_key="source-check/source_check_results.parquet",
-    )
-
-
-def _catalog_inventory_parquet() -> _ParquetArtifact:
-    return _ParquetArtifact(
-        name=_CATALOG_INVENTORY_ARTIFACT,
-        local_path=_INVENTORY_PARQUET,
-        gcs_env="CATALOG_INVENTORY_GCS_PREFIX",
-        gcs_key="catalog_inventory_latest.parquet",
-    )
-
-
-def _catalog_inventory_report_artifact() -> _JsonArtifact:
-    return _JsonArtifact(
-        name=_CATALOG_INVENTORY_REPORT_ARTIFACT,
-        local_path=_INVENTORY_REPORT,
-        gcs_env="CATALOG_INVENTORY_GCS_PREFIX",
-        gcs_key="catalog_inventory_report.json",
-    )
-
-
-def _artifact_not_found(path: Path, artifact_name: str) -> dict[str, Any]:
-    return {
-        "error": "artifact_not_found",
-        "artifact": artifact_name,
-        "message": f"{artifact_name} not found at {path}",
-        "hint": "Fetch the latest GitHub Actions artifact or run the SO workflow locally.",
-    }
-
-
-def _display_path(path: Path) -> str:
-    try:
-        return str(path.relative_to(_REPO_ROOT))
-    except ValueError:
-        return str(path)
-
-
-def _table_columns(con: duckdb.DuckDBPyConnection, parquet_path: str) -> list[str]:
-    return [row[0] for row in con.execute(f'DESCRIBE FROM "{parquet_path}"').fetchall()]
-
-
-def _select_expr(column: str, columns: set[str]) -> str:
-    if column in columns:
-        return column
-    return f"NULL AS {column}"
-
-
-def _load_env_file_once() -> None:
-    global _ENV_LOADED
-    if _ENV_LOADED:
-        return
-    _ENV_LOADED = True
-    env_path = Path(os.environ.get("SO_ENV_FILE") or _REPO_ROOT.parent / ".env")
-    if not env_path.exists():
-        return
-    for line in env_path.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#") or "=" not in stripped:
-            continue
-        key, value = stripped.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip("'\"")
-        if key and key not in os.environ:
-            os.environ[key] = value
-
-
-def _env(name: str) -> str | None:
-    _load_env_file_once()
-    value = os.environ.get(name)
-    return value.strip() if value and value.strip() else None
-
-
-def _artifact_backend() -> str:
-    backend = (_env("SO_ARTIFACT_BACKEND") or "auto").lower()
-    if backend not in {"auto", "gcs", "local"}:
-        return "auto"
-    return backend
-
-
-def _cache_max_age_hours() -> int:
-    raw = _env("SO_CACHE_MAX_AGE_HOURS")
-    if raw is None:
-        return _DEFAULT_CACHE_MAX_AGE_HOURS
-    try:
-        return max(1, int(raw))
-    except ValueError:
-        return _DEFAULT_CACHE_MAX_AGE_HOURS
-
-
-def _gcs_prefix(env_name: str) -> str | None:
-    return _env(f"SO_{env_name}") or _env(env_name) or _DEFAULT_GCS_PREFIXES.get(env_name)
-
-
-def _artifact_cache_info(
-    path: Path,
-    *,
-    source: str = "local_cache",
-    uri: str | None = None,
-    fallback_warning: str | None = None,
-) -> dict[str, Any]:
-    stat = path.stat()
-    modified_at = datetime.fromtimestamp(stat.st_mtime, timezone.utc)
-    age_hours = (datetime.now(timezone.utc) - modified_at).total_seconds() / 3600
-    max_age_hours = _cache_max_age_hours()
-    stale = source == "local_cache" and age_hours > max_age_hours
-    info: dict[str, Any] = {
-        "source": source,
-        "path": _display_path(path),
-        "uri": uri,
-        "modified_at": modified_at.isoformat(),
-        "age_hours": round(age_hours, 2),
-        "max_age_hours": max_age_hours,
-        "stale": stale,
-        "source_of_truth": "GitHub Actions artifact or configured GCS prefix",
-    }
-    if source == "gcs":
-        info["source_of_truth"] = "configured GCS prefix"
-    if stale:
-        info["warning"] = (
-            "Local artifact cache is older than the operational freshness threshold; "
-            "refresh it from CI/GCS or regenerate it before using results as current."
-        )
-    if fallback_warning:
-        info["fallback_warning"] = fallback_warning
-    return info
-
-
-def _public_url(uri: str) -> str:
-    if uri.startswith("gs://"):
-        bucket_and_path = uri.removeprefix("gs://")
-        bucket, _, object_name = bucket_and_path.partition("/")
-        return f"https://storage.googleapis.com/{bucket}/{object_name}"
-    return uri
-
-
-def _download_public_to_temp(uri: str, tmp_path: Path) -> None:
-    response = requests.get(_public_url(uri), timeout=120, stream=True)
-    response.raise_for_status()
-    with tmp_path.open("wb") as fh:
-        for chunk in response.iter_content(chunk_size=1024 * 1024):
-            if chunk:
-                fh.write(chunk)
-
-
-def _copy_gcs_to_temp(uri: str, artifact_name: str) -> Path:
-    suffix = Path(artifact_name).suffix or ".tmp"
-    tmp = tempfile.NamedTemporaryFile(prefix=f"so_mcp_{artifact_name}_", suffix=suffix, delete=False)
-    tmp_path = Path(tmp.name)
-    tmp.close()
-    try:
-        try:
-            _download_public_to_temp(uri, tmp_path)
-        except requests.RequestException:
-            subprocess.run(
-                ["gcloud", "storage", "cp", uri, str(tmp_path)],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=120,
-            )
-    except Exception:
-        tmp_path.unlink(missing_ok=True)
-        raise
-    return tmp_path
-
-
-@contextmanager
-def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
-    backend = _artifact_backend()
-    uri = artifact.gcs_uri()
-    fallback_warning = None
-
-    if backend in {"auto", "gcs"} and uri:
-        tmp_path: Path | None = None
-        try:
-            tmp_path = _copy_gcs_to_temp(uri, artifact.name)
-        except Exception as exc:
-            if backend == "gcs":
-                raise RuntimeError(f"Cannot read {artifact.name} from GCS {uri}: {exc}") from exc
-            fallback_warning = f"Cannot read GCS artifact {uri}; using local cache if available."
-        else:
-            try:
-                yield tmp_path, _artifact_cache_info(tmp_path, source="gcs", uri=uri)
-                return
-            finally:
-                tmp_path.unlink(missing_ok=True)
-
-    if artifact.local_path.exists():
-        yield artifact.local_path, _artifact_cache_info(
-            artifact.local_path,
-            source="local_cache",
-            uri=uri,
-            fallback_warning=fallback_warning,
-        )
-        return
-
-    raise FileNotFoundError(
-        f"{artifact.name} not found locally at {artifact.local_path}"
-        + (f" and no readable GCS artifact at {uri}" if uri else "")
-    )
-
-
-def _resolved_parquet(artifact: _ParquetArtifact) -> AbstractContextManager[tuple[Path, dict[str, Any]]]:
-    return _resolved_artifact(artifact)
-
-
-def _resolved_json(artifact: _JsonArtifact) -> AbstractContextManager[tuple[Path, dict[str, Any]]]:
-    return _resolved_artifact(artifact)
-
-
-def _parquet_not_found(artifact: _ParquetArtifact) -> dict[str, Any]:
-    return _artifact_not_found(artifact.local_path, artifact.name)
-
-
-def _json_not_found(artifact: _JsonArtifact) -> dict[str, Any]:
-    return _artifact_not_found(artifact.local_path, artifact.name)
-
-
-def _load_inventory_report() -> tuple[dict[str, Any], dict[str, Any]] | None:
-    artifact = _catalog_inventory_report_artifact()
-    try:
-        with _resolved_json(artifact) as (path, cache):
-            with path.open(encoding="utf-8") as fh:
-                return json.load(fh), cache
-    except FileNotFoundError:
-        return None
-
-
-def query_signals(source_id: str | None = None, limit: int | None = None) -> dict[str, Any]:
-    """Query catalog_signals.json with optional source filter."""
-    if not _SIGNALS_JSON.exists():
-        return _artifact_not_found(_SIGNALS_JSON, "catalog_signals.json")
-
-    with _SIGNALS_JSON.open(encoding="utf-8") as fh:
-        signals_doc = json.load(fh)
-
-    signals = signals_doc.get("signals", [])
-    if source_id:
-        signals = [signal for signal in signals if signal.get("source") == source_id]
-
-    safe_limit = None if limit is None else max(1, min(int(limit), 200))
-    selected = signals[-safe_limit:] if safe_limit is not None else signals
-    return {
-        "artifact": _display_path(_SIGNALS_JSON),
-        "captured_at": signals_doc.get("captured_at", ""),
-        "filters": {"source_id": source_id, "limit": safe_limit},
-        "signals": selected,
-        "returned": len(selected),
-    }
-
-
-def radar_summary(source_id: str | None = None) -> dict[str, Any]:
-    """Return radar health summary, optionally for one source."""
-    if not _RADAR_JSON.exists():
-        return _artifact_not_found(_RADAR_JSON, "radar_summary.json")
-
-    with _RADAR_JSON.open(encoding="utf-8") as fh:
-        radar_doc = json.load(fh)
-
-    sources = radar_doc.get("sources", [])
-    if not isinstance(sources, list):
-        sources = []
-    if source_id:
-        sources = [source for source in sources if source.get("id") == source_id]
-
-    return {
-        "artifact": _display_path(_RADAR_JSON),
-        "generated_at": radar_doc.get("generated_at"),
-        "probe_date": radar_doc.get("probe_date"),
-        "sources_total": radar_doc.get("sources_total"),
-        "status_counts": radar_doc.get("status_counts", {}),
-        "persistent_red": radar_doc.get("persistent_red"),
-        "filters": {"source_id": source_id},
-        "sources": sources,
-        "returned": len(sources),
-    }
-
-
-def radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, Any]:
-    """Return radar_history.json: probe history per fonte, per calcolare streak/persistent."""
-    if not _RADAR_HISTORY_JSON.exists():
-        return _artifact_not_found(_RADAR_HISTORY_JSON, "radar_history.json")
-
-    with _RADAR_HISTORY_JSON.open(encoding="utf-8") as fh:
-        history_doc = json.load(fh)
-
-    probes = history_doc.get("probes", [])
-    if not isinstance(probes, list):
-        probes = []
-
-    safe_limit = max(1, min(int(limit or 5), 20))
-    recent_probes = list(reversed(probes))[-safe_limit:] if probes else []
-
-    sources_map: dict[str, list[dict[str, Any]]] = {}
-    for probe in recent_probes:
-        for src in probe.get("sources", []):
-            sid = src.get("id", "unknown")
-            if source_id and sid != source_id:
-                continue
-            if sid not in sources_map:
-                sources_map[sid] = []
-            sources_map[sid].append({
-                "probe_date": probe.get("probe_date"),
-                "status": src.get("status"),
-                "http_code": src.get("http_code"),
-                "note": src.get("note"),
-            })
-
-    results = []
-    for sid, entries in sorted(sources_map.items()):
-        entries.sort(key=lambda e: e.get("probe_date") or "", reverse=True)
-        red_count = sum(1 for e in entries if e.get("status") == "RED")
-        results.append({
-            "source_id": sid,
-            "probes": entries,
-            "recent_red_count": red_count,
-            "current_status": entries[0].get("status") if entries else None,
-        })
-
-    return {
-        "artifact": _display_path(_RADAR_HISTORY_JSON),
-        "captured_at": history_doc.get("captured_at"),
-        "filters": {"source_id": source_id, "limit": safe_limit},
-        "sources": results,
-        "returned": len(results),
-        "probes_in_window": len(recent_probes),
-    }
-
-
-def radar_status_md() -> dict[str, Any]:
-    """Return STATUS.md content as plain text for human-readable radar state."""
-    if not _STATUS_MD.exists():
-        return _artifact_not_found(_STATUS_MD, "STATUS.md")
-
-    content = _STATUS_MD.read_text(encoding="utf-8")
-    stat = _STATUS_MD.stat()
-    modified_at = datetime.fromtimestamp(stat.st_mtime, timezone.utc)
-    age_hours = (datetime.now(timezone.utc) - modified_at).total_seconds() / 3600
-
-    return {
-        "artifact": _display_path(_STATUS_MD),
-        "modified_at": modified_at.isoformat(),
-        "age_hours": round(age_hours, 2),
-        "content": content,
-    }
-
-
-# DEPRECATED: so_radar_delta tool removed — function kept for potential future use
-# but not exposed via MCP. The same logic is available via so_radar_history + so_radar_summary.
-def radar_delta() -> dict[str, Any]:
-    """Compare latest and previous probe to return only changed sources."""
-    if not _RADAR_HISTORY_JSON.exists():
-        return _artifact_not_found(_RADAR_HISTORY_JSON, "radar_history.json")
-
-    with _RADAR_HISTORY_JSON.open(encoding="utf-8") as fh:
-        history_doc = json.load(fh)
-
-    probes = history_doc.get("probes", [])
-    if not isinstance(probes, list) or len(probes) < 2:
-        return {
-            "artifact": _display_path(_RADAR_HISTORY_JSON),
-            "captured_at": history_doc.get("captured_at"),
-            "message": "Not enough probes to compute delta (need at least 2)",
-            "changes": [],
-            "new_red": [],
-            "recoveries": [],
-            "persistent_red": [],
-        }
-
-    latest = probes[-1]
-    previous = probes[-2]
-    latest_sources = {s["id"]: s for s in latest.get("sources", [])}
-    prev_sources = {s["id"]: s for s in previous.get("sources", [])}
-
-    changes = []
-    new_red = []
-    recoveries = []
-    persistent_red = []
-
-    all_ids = set(latest_sources.keys()) | set(prev_sources.keys())
-    for sid in sorted(all_ids):
-        curr = latest_sources.get(sid)
-        prev = prev_sources.get(sid)
-
-        curr_status = curr.get("status") if curr else None
-        prev_status = prev.get("status") if prev else None
-
-        if curr_status != prev_status:
-            changes.append({
-                "source_id": sid,
-                "previous": prev_status,
-                "current": curr_status,
-                "http_code": curr.get("http_code") if curr else None,
-                "note": curr.get("note") if curr else None,
-            })
-            if curr_status == "RED":
-                new_red.append(sid)
-            elif prev_status == "RED" and curr_status != "RED":
-                recoveries.append(sid)
-
-        if curr_status == "RED":
-            streak = 0
-            for probe in reversed(probes):
-                src = next((s for s in probe.get("sources", []) if s.get("id") == sid), None)
-                if src and src.get("status") == "RED":
-                    streak += 1
-                else:
-                    break
-            if streak >= 2:
-                persistent_red.append(sid)
-
-    return {
-        "artifact": _display_path(_RADAR_HISTORY_JSON),
-        "captured_at": history_doc.get("captured_at"),
-        "probe_date_latest": latest.get("probe_date"),
-        "probe_date_previous": previous.get("probe_date"),
-        "changes": changes,
-        "new_red": new_red,
-        "recoveries": recoveries,
-        "persistent_red": persistent_red,
-        "changed_count": len(changes),
-    }
-
-
-def find_by_url(url: str) -> dict[str, Any]:
-    """Find a URL across source_check_results and catalog_inventory."""
-    clean_url = (url or "").strip()
-    if not clean_url:
-        return {"error": "empty_url", "message": "Provide a non-empty URL."}
-
-    results: dict[str, Any] = {
-        "query_url": clean_url,
-        "source_check_results": [],
-        "catalog_inventory": [],
-    }
-
-    source_check_artifact = _source_check_parquet()
-    try:
-        with _resolved_parquet(source_check_artifact) as (resolved_path, cache):
-            parquet_path = str(resolved_path)
-            with safe_connect() as con:
-                cols = _table_columns(con, parquet_path)
-                url_cols = [c for c in cols if c in ("url", "url_checked", "distribution_url", "landing_page", "source_url")]
-                if not url_cols:
-                    results["source_check_error"] = "No URL columns found in parquet"
-                else:
-                    where = " OR ".join(
-                        f"lower(coalesce(cast({c} as varchar), '')) LIKE ?"
-                        for c in url_cols
-                    )
-                    like = f"%{clean_url.lower()}%"
-                    sql = f'SELECT * FROM "{parquet_path}" WHERE {where} LIMIT 10'
-                    rows = con.execute(sql, [like] * len(url_cols)).fetchall()
-                    results["source_check_results"] = [dict(zip(cols, row)) for row in rows]
-                    results["source_check_cache"] = cache
-    except FileNotFoundError:
-        results["source_check_error"] = f"{source_check_artifact.name} not found"
-
-    catalog_artifact = _catalog_inventory_parquet()
-    try:
-        with _resolved_parquet(catalog_artifact) as (resolved_path, cache):
-            parquet_path = str(resolved_path)
-            with safe_connect() as con:
-                cols = _table_columns(con, parquet_path)
-                # Search URL columns + descriptive columns for better match coverage
-                search_cols = [
-                    c for c in cols
-                    if c in ("url", "url_checked", "distribution_url", "landing_page",
-                             "source_url", "item_name", "item_id", "title", "notes_excerpt")
-                ]
-                if not search_cols:
-                    results["catalog_inventory_error"] = "No searchable columns found in parquet"
-                else:
-                    where = " OR ".join(
-                        f"lower(coalesce(cast({c} as varchar), '')) LIKE ?"
-                        for c in search_cols
-                    )
-                    like = f"%{clean_url.lower()}%"
-                    sql = f'SELECT * FROM "{parquet_path}" WHERE {where} LIMIT 10'
-                    rows = con.execute(sql, [like] * len(search_cols)).fetchall()
-                    results["catalog_inventory"] = [dict(zip(cols, row)) for row in rows]
-                    results["catalog_inventory_cache"] = cache
-    except FileNotFoundError:
-        results["catalog_inventory_error"] = f"{catalog_artifact.name} not found"
-
-    return results
-
-
-def registry_query(
-    protocol: str | None = None,
-    source_kind: str | None = None,
-    observation_mode: str | None = None,
-    source_id: str | None = None,
-) -> dict[str, Any]:
-    """Query sources_registry.yaml with optional filters."""
-    if not _REGISTRY_YAML.exists():
-        return _artifact_not_found(_REGISTRY_YAML, "sources_registry.yaml")
-
-    import yaml
-    with _REGISTRY_YAML.open(encoding="utf-8") as fh:
-        registry = yaml.safe_load(fh)
-
-    if not isinstance(registry, dict):
-        return {"error": "invalid_registry", "message": "Registry is not a dict."}
-
-    results = []
-    for sid, info in sorted(registry.items()):
-        if source_id and sid != source_id:
-            continue
-        if source_kind and info.get("source_kind") != source_kind:
-            continue
-        if protocol and info.get("protocol") != protocol:
-            continue
-        if observation_mode and info.get("observation_mode") != observation_mode:
-            continue
-        results.append({
-            "source_id": sid,
-            "source_kind": info.get("source_kind"),
-            "protocol": info.get("protocol"),
-            "observation_mode": info.get("observation_mode"),
-            "base_url": info.get("base_url"),
-            "verdict": info.get("verdict"),
-            "last_probed": info.get("last_probed"),
-            "datasets_in_use": info.get("datasets_in_use", []),
-            "note": info.get("note"),
-        })
-
-    return {
-        "artifact": _display_path(_REGISTRY_YAML),
-        "filters": {
-            "source_id": source_id,
-            "protocol": protocol,
-            "source_kind": source_kind,
-            "observation_mode": observation_mode,
-        },
-        "results": results,
-        "returned": len(results),
-    }
-
-
-def query_inventory(
-    source_id: str | None = None,
-    min_score: int | None = None,
-    limit: int = 50,
-    has_results: bool | None = None,
-) -> dict[str, Any]:
-    """Query source_check_results.parquet with optional source and score filters."""
-    safe_limit = max(1, min(int(limit or 50), 200))
-    artifact = _source_check_parquet()
-    try:
-        with _resolved_parquet(artifact) as (resolved_path, cache):
-            parquet_path = str(resolved_path)
-            with safe_connect() as con:
-                cols = _table_columns(con, parquet_path)
-                query = f'SELECT * FROM "{parquet_path}"'
-                filters: list[str] = []
-                params: list[Any] = []
-
-                if source_id:
-                    filters.append("source_id = ?")
-                    params.append(source_id)
-                if min_score is not None:
-                    filters.append("intake_score >= ?")
-                    params.append(min_score)
-                if has_results is not None:
-                    if has_results:
-                        filters.append("intake_score IS NOT NULL AND intake_score > 0")
-                    else:
-                        filters.append("(intake_score IS NULL OR intake_score = 0)")
-                if filters:
-                    query += " WHERE " + " AND ".join(filters)
-                query += f" ORDER BY intake_score DESC NULLS LAST LIMIT {safe_limit}"
-
-                rows = con.execute(query, params).fetchall()
-    except FileNotFoundError:
-        return _parquet_not_found(artifact)
-
-    return {
-        "artifact": _display_path(_CHECK_PARQUET),
-        "cache": cache,
-        "gcs_uri": artifact.gcs_uri(),
-        "filters": {"source_id": source_id, "min_score": min_score, "limit": safe_limit, "has_results": has_results},
-        "results": [dict(zip(cols, row)) for row in rows],
-        "returned": len(rows),
-        "has_more": len(rows) == safe_limit,
-    }
-
-
-def inventory_status(source_id: str | None = None) -> dict[str, Any]:
-    """Return catalog inventory build status from catalog_inventory_report.json."""
-    loaded = _load_inventory_report()
-    if loaded is None:
-        return _json_not_found(_catalog_inventory_report_artifact())
-    report, cache = loaded
-
-    sources = report.get("sources", {})
-    if not isinstance(sources, dict):
-        sources = {}
-
-    status_counts: dict[str, int] = {}
-    rows_total = 0
-    for info in sources.values():
-        if not isinstance(info, dict):
-            continue
-        status = str(info.get("status") or "unknown")
-        status_counts[status] = status_counts.get(status, 0) + 1
-        rows = info.get("rows")
-        if isinstance(rows, int):
-            rows_total += rows
-
-    if source_id:
-        source_info = sources.get(source_id)
-        return {
-            "artifact": _display_path(_INVENTORY_REPORT),
-            "cache": cache,
-            "captured_at": report.get("captured_at"),
-            "filters": {"source_id": source_id},
-            "source": source_info if isinstance(source_info, dict) else None,
-            "returned": 1 if isinstance(source_info, dict) else 0,
-        }
-
-    compact_sources = []
-    for key, info in sorted(sources.items()):
-        if not isinstance(info, dict):
-            continue
-        compact_sources.append(
-            {
-                "source_id": key,
-                "status": info.get("status"),
-                "protocol": info.get("protocol"),
-                "rows": info.get("rows"),
-                "method": info.get("method"),
-                "error": info.get("error"),
-            }
-        )
-
-    return {
-        "artifact": _display_path(_INVENTORY_REPORT),
-        "cache": cache,
-        "captured_at": report.get("captured_at"),
-        "registry_path": report.get("registry_path"),
-        "status_counts": status_counts,
-        "rows_total": rows_total,
-        "sources": compact_sources,
-        "returned": len(compact_sources),
-    }
-
-
-def catalog_inventory_search(
-    query: str,
-    source_id: str | None = None,
-    protocol: str | None = None,
-    limit: int = 25,
-) -> dict[str, Any]:
-    """Search catalog_inventory_latest.parquet across key text fields."""
-    clean_query = (query or "").strip().lower()
-    if not clean_query:
-        return {"error": "empty_query", "message": "Provide a non-empty query."}
-
-    safe_limit = max(1, min(int(limit or 25), 200))
-    artifact = _catalog_inventory_parquet()
-    try:
-        with _resolved_parquet(artifact) as (resolved_path, cache):
-            parquet_path = str(resolved_path)
-            with safe_connect() as con:
-                columns = set(_table_columns(con, parquet_path))
-                search_columns = [
-                    column
-                    for column in (
-                        "item_id",
-                        "item_name",
-                        "title",
-                        "tags",
-                        "notes_excerpt",
-                        "topic",
-                        "theme",
-                    )
-                    if column in columns
-                ]
-                if not search_columns:
-                    return {"error": "schema_mismatch", "message": "No searchable text columns found."}
-                where = [
-                    "("
-                    + " OR ".join(
-                        f"lower(coalesce(cast({column} as varchar), '')) LIKE ?"
-                        for column in search_columns
-                    )
-                    + ")"
-                ]
-                like = f"%{clean_query}%"
-                params: list[Any] = [like] * len(search_columns)
-                if source_id:
-                    where.append("source_id = ?")
-                    params.append(source_id)
-                if protocol:
-                    where.append("protocol = ?")
-                    params.append(protocol)
-
-                select_columns = [
-                    "source_id",
-                    "protocol",
-                    "item_id",
-                    "item_name",
-                    "title",
-                    "organization",
-                    "tags",
-                    "landing_page",
-                    "distribution_url",
-                    "format",
-                    "source_status",
-                    "inventory_method",
-                    "item_kind",
-                    "api_base_url",
-                    "captured_at",
-                    "civic_priority",
-                ]
-                select_sql = ", ".join(_select_expr(column, columns) for column in select_columns)
-                sql = f"""
-                    SELECT {select_sql}
-                    FROM "{parquet_path}"
-                    WHERE {" AND ".join(where)}
-                    ORDER BY source_id NULLS LAST, title NULLS LAST, item_id
-                    LIMIT {safe_limit}
-                """
-                rows = con.execute(sql, params).fetchall()
-                cols = [desc[0] for desc in con.description]
-    except FileNotFoundError:
-        return _parquet_not_found(artifact)
-
-    result: dict[str, Any] = {
-        "artifact": _display_path(_INVENTORY_PARQUET),
-        "cache": cache,
-        "filters": {
-            "query": clean_query,
-            "source_id": source_id,
-            "protocol": protocol,
-            "limit": safe_limit,
-        },
-        "results": [dict(zip(cols, row)) for row in rows],
-        "returned": len(rows),
-        "has_more": len(rows) == safe_limit,
-    }
-    if not rows and source_id:
-        result["source_status"] = _inventory_source_status(source_id)
-    return result
-
-
-def _guess_format(url: str, content_type: str | None) -> str | None:
-    media_type = (content_type or "").split(";", 1)[0].strip().lower()
-    if media_type in _FORMAT_BY_CONTENT_TYPE:
-        return _FORMAT_BY_CONTENT_TYPE[media_type]
-
-    suffix = Path(urlparse(url).path).suffix.lower()
-    return _FORMAT_BY_SUFFIX.get(suffix)
-
-
-def probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
-    """Probe a single URL with HEAD and a small GET fallback."""
-    clean_url = (url or "").strip()
-    parsed = urlparse(clean_url)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        return {
-            "url": clean_url,
-            "http_status": None,
-            "content_type": None,
-            "format": None,
-            "size": None,
-            "is_reachable": False,
-            "error": "invalid_url",
-        }
-
-    safe_timeout = max(1, min(int(timeout or 15), 60))
-
-    # Track ssl_fallback_used from the result we actually use
-    ssl_used: bool | None = None
-
-    # Attempt 1: HEAD via HttpClient (SSL fallback built-in)
-    client = HttpClient(timeout=safe_timeout)
-    result = client.head(clean_url)
-
-    if result.is_ok:
-        response = result.response
-        ssl_used = result.ssl_fallback_used
-    elif result.is_ssl_fallback_failed:
-        # Both primary SSL and fallback failed
-        return {
-            "url": clean_url,
-            "http_status": None,
-            "content_type": None,
-            "format": _guess_format(clean_url, None),
-            "size": None,
-            "is_reachable": False,
-            "error": "ssl_fallback_failed",
-            "message": str(result.err)[:200],
-        }
-    elif result.ssl_fallback_used and result.response is not None:
-        # Primary SSL failed, fallback succeeded — GREEN with ssl_fallback_used
-        response = result.response
-        ssl_used = True
-    elif result.err is not None:
-        # Non-SSL error (connection error, etc.) — try GET with Range
-        result2 = client.get(
-            clean_url,
-            headers={"Range": "bytes=0-0"},
-        )
-        if result2.is_ok:
-            response = result2.response
-            ssl_used = result2.ssl_fallback_used
-        elif result2.is_ssl_fallback_failed:
-            return {
-                "url": clean_url,
-                "http_status": None,
-                "content_type": None,
-                "format": _guess_format(clean_url, None),
-                "size": None,
-                "is_reachable": False,
-                "error": "ssl_fallback_failed",
-                "message": str(result2.err)[:200],
-            }
-        elif result2.ssl_fallback_used and result2.response is not None:
-            response = result2.response
-            ssl_used = True
-        else:
-            return {
-                "url": clean_url,
-                "http_status": None,
-                "content_type": None,
-                "format": _guess_format(clean_url, None),
-                "size": None,
-                "is_reachable": False,
-                "error": type(result2.err).__name__,
-                "message": str(result2.err)[:200],
-            }
-    else:
-        # Unknown state — should not happen
-        return {
-            "url": clean_url,
-            "http_status": None,
-            "content_type": None,
-            "format": _guess_format(clean_url, None),
-            "size": None,
-            "is_reachable": False,
-            "error": "unknown_error",
-            "message": "unexpected state in probe_url",
-        }
-
-    content_type = response.headers.get("content-type")
-    content_length = response.headers.get("content-length")
-    try:
-        size = int(content_length) if content_length is not None else None
-    except ValueError:
-        size = None
-
-    return {
-        "url": clean_url,
-        "http_status": response.status_code,
-        "content_type": content_type,
-        "format": _guess_format(clean_url, content_type),
-        "size": size,
-        "is_reachable": response.status_code < 400,
-        "ssl_fallback_used": ssl_used,
-    }
-
-
-def _score_dataflow(text: str, keywords: list[str]) -> int:
-    low = text.lower()
-    score = 0
-    for keyword in keywords:
-        pattern = re.escape(keyword.lower())
-        if re.search(rf"\b{pattern}\b", low):
-            score += 3
-        elif keyword.lower() in low:
-            score += 1
-    return score
-
-
-def _inventory_source_status(source_id: str) -> dict[str, Any] | None:
-    loaded = _load_inventory_report()
-    if loaded is None:
-        return None
-    report, _cache = loaded
-    sources = report.get("sources")
-    if not isinstance(sources, dict):
-        return None
-    source_info = sources.get(source_id)
-    return source_info if isinstance(source_info, dict) else None
-
-
-def _read_sdmx_inventory_rows(parquet_path: Path) -> list[dict[str, Any]]:
-    with safe_connect() as con:
-        rows = con.execute(
-            f"""
-            SELECT source_id, item_id, item_name, title, tags, api_base_url, source_url
-            FROM "{parquet_path}"
-            WHERE source_id = 'istat_sdmx'
-            """
-        ).fetchall()
-    cols = [
-        "source_id",
-        "item_id",
-        "item_name",
-        "title",
-        "tags",
-        "api_base_url",
-        "source_url",
-    ]
-    return [dict(zip(cols, row)) for row in rows]
-
-
-def discover_sdmx(keywords: list[str] | str, limit: int = 30) -> dict[str, Any]:
-    """Discover ISTAT SDMX dataflows from local SO artifacts."""
-    if isinstance(keywords, str):
-        clean_keywords = [part.strip().lower() for part in keywords.split(",") if part.strip()]
-    else:
-        clean_keywords = [str(part).strip().lower() for part in keywords if str(part).strip()]
-    if not clean_keywords:
-        return {"error": "empty_keywords", "message": "Provide at least one keyword."}
-
-    safe_limit = max(1, min(int(limit or 30), 100))
-    try:
-        artifact = _catalog_inventory_parquet()
-        with _resolved_parquet(artifact) as (resolved_path, cache):
-            rows = _read_sdmx_inventory_rows(resolved_path)
-    except FileNotFoundError:
-        return _parquet_not_found(_catalog_inventory_parquet())
-
-    if not rows:
-        source_status = _inventory_source_status("istat_sdmx")
-        return {
-            "error": "source_unavailable",
-            "artifact": _display_path(_INVENTORY_PARQUET),
-            "cache": cache,
-            "source_id": "istat_sdmx",
-            "message": "No ISTAT SDMX rows found in catalog_inventory_latest.parquet.",
-            "source_status": source_status,
-            "filters": {"keywords": clean_keywords, "limit": safe_limit},
-            "dataflows": [],
-            "returned": 0,
-            "matched": 0,
-        }
-
-    results: list[dict[str, Any]] = []
-    for row in rows:
-        item = dict(row)
-        text = " ".join(
-            str(item.get(key) or "") for key in ("item_id", "item_name", "title", "tags")
-        )
-        score = _score_dataflow(text, clean_keywords)
-        if score <= 0:
-            continue
-        item["relevance_score"] = score
-        results.append(item)
-
-    results.sort(
-        key=lambda item: (
-            item["relevance_score"],
-            str(item.get("title") or item.get("item_name") or ""),
-        ),
-        reverse=True,
-    )
-    return {
-        "artifact": _display_path(_INVENTORY_PARQUET),
-        "cache": cache,
-        "filters": {"keywords": clean_keywords, "limit": safe_limit},
-        "dataflows": results[:safe_limit],
-        "returned": min(len(results), safe_limit),
-        "matched": len(results),
-    }
-
-
-# ─── Topic Inference (read-only, on-demand) ────────────────────────────────
-
-
-_TOPIC_KEYWORDS = {
-    "lavoro": ["lavoro", "occupazione", "disoccupazione", "forze_lavoro", "OECD", "LAU", "ISTAT", "disaoccupazione", "impiego"],
-    "economia": ["PIL", "GDP", "produzione", "valore_aggiunto", "conti_economici", "reddito", "economia", "crisi", "inflazione", "prezzi"],
-    "sanita": ["sanita", "salute", "ospedal", "medico", "SSN", " ASL", "patologie", "mortalita", "natalita", "speranza_vita"],
-    "istruzione": ["istruzione", "scuola", "universita", "studenti", "docenti", "iscritti", "laurea", "formazione", "educazione"],
-    "trasporti": ["trasporti", "mobilita", "traffico", "ferrovier", "aeroporto", "porto", " merci", "passeggeri", "veicoli"],
-    "ambiente": ["ambiente", "emissioni", "aria", "acqua", "rifiuti", "verde", "inquinamento", "clima"],
-    "agricoltura": ["agricoltura", "coltivaz", "allevamento", "pesca", "agro", "SEMI", "superficie", "produzione_agricola"],
-    "turismo": ["turismo", "flussi", "presenze", "arrivi", "strutture_ricettive", "viaggiatori", "pernottamenti"],
-    "giustizia": ["giustizia", "reati", "crimini", "carceri", "procedimenti", "tribunali", "denunce"],
-    "demografia": ["demografia", "popolazione", "natalita", "mortalita", "migrazioni", "invecchiamento", "indice_vecchiaia"],
-    "energia": ["energia", "elettricita", "gas", "petrolio", "rinnovabili", "consumi_energetici"],
-    "commercio": ["commercio", "export", "import", "interscambio", "merci", " esport", "import"],
-    "welfare": ["assistenza", "sussidi", "poverta", "esclusione", "inclusione", "bonus", "assegno", "sostegno", "nucleo_familiare", "ISEE", "handicap", "invalidita", "non_autosufficienza"],
-    "previdenza": ["pensione", "pensioni", "previdenza", "contributi", "pensionistico", "anzianita", "vecchiaia", "reversibilita", "quota"],
-    "casa": ["casa", "edilizia", "alloggi", "residenziale", "affitto", "proprieta", "catasto", "immobiliare", "mutuo", "sfratti"],
-    "cultura": ["cultura", "musei", "biblioteche", "patrimonio", "artistico", "archeologico", "monumenti", "spettacolo", "mostre"],
-    "bilancio": ["bilancio", "fiscalita", "tasse", "imposte", "tributi", "gettito", "spesa_pubblica", "debito", "entrate", "erariale", "IRPEF", "IVA", "IRES"],
-    "innovazione": ["innovazione", "digitale", "digitalizzaz", "tecnologia", "ICT", "banda_larga", "PA_digitale", "startup", "ricerca_sviluppo", "smart_city", "open_data", "interoperabilita"],
-    "sicurezza": ["sicurezza", "protezione_civile", "emergenza", "rischio", "prevenzione", "ordine_pubblico", "forze_ordine", "polizia", "vigili_fuoco", "protezione", "soccorso"],
-}
-
-
-def _score_text_by_topics(text: str) -> dict[str, int]:
-    """Score text against thematic topic keywords.
-
-    Returns dict of topic -> score. Score is sum of keyword matches.
-    Word-boundary matches = 3pt, substring matches = 1pt.
-    Accented characters are normalised via NFKD so that e.g.
-    ``'sanità'`` matches the keyword ``'sanita'``.
-    """
-    # Normalise Unicode: decompose accented chars, strip combining marks
-    text = unicodedata.normalize("NFKD", text)
-    text = text.encode("ascii", "ignore").decode("ascii")
-    low = text.lower()
-    scores: dict[str, int] = {}
-    for topic, keywords in _TOPIC_KEYWORDS.items():
-        score = 0
-        for kw in keywords:
-            kw_low = kw.lower()
-            pattern = re.escape(kw_low)
-            if re.search(rf"\b{pattern}\b", low):
-                score += 3
-            elif len(kw_low) > 4 and kw_low in low:
-                # Substring match solo per keyword > 4 caratteri,
-                # per evitare falsi positivi (es. "aria" in "sanitaria").
-                score += 1
-        if score > 0:
-            scores[topic] = score
-    return scores
-
-
-def infer_topic(text: str) -> dict[str, Any]:
-    """Infer thematic topics from any text string.
-
-    Matches against a fixed taxonomy of 20 topics: lavoro, economia, sanita,
-    istruzione, trasporti, ambiente, agricoltura, turismo, giustizia,
-    demografia, energia, commercio, welfare, previdenza, casa, cultura,
-    bilancio, innovazione, sicurezza.
-    Returns topics sorted by relevance score (desc), with scores.
-    Also returns top_match if a dominant topic exists (score >= 3).
-    """
-    if not text or not str(text).strip():
-        return {"error": "empty_text", "message": "Provide non-empty text to analyze."}
-
-    scores = _score_text_by_topics(str(text))
-    if not scores:
-        return {
-            "text_preview": str(text)[:80],
-            "topics": {},
-            "top_match": None,
-            "matched_count": 0,
-        }
-
-    sorted_topics = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    top_match = sorted_topics[0][0] if sorted_topics[0][1] >= 3 else None
-
-    return {
-        "text_preview": str(text)[:80],
-        "topics": dict(sorted_topics),
-        "top_match": top_match,
-        "matched_count": len(sorted_topics),
-    }
-
-
-# ─── Source Recommendation (read-only, on-demand) ─────────────────────────
-
-
-def recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
-    """Recommend sources from inventory matching a keyword.
-
-    Searches across item_name, title, tags, organization, notes_excerpt.
-    Returns top matching sources with their item counts.
-    """
-    if not keyword or not str(keyword).strip():
-        return {"error": "empty_keyword", "message": "Provide non-empty keyword."}
-
-    safe_limit = max(1, min(int(limit or 10), 50))
-    keyword_low = str(keyword).strip().lower()
-
-    try:
-        artifact = _catalog_inventory_parquet()
-        with _resolved_parquet(artifact) as (resolved_path, cache):
-            with safe_connect() as con:
-                total_row = con.execute(
-                    f'SELECT COUNT(*) FROM "{resolved_path}"'
-                ).fetchone()
-                total_items = total_row[0] if total_row else 0
-
-                rows = con.execute(
-                    f'''
-                    SELECT source_id, source_kind, protocol,
-                           COUNT(*) as item_count,
-                           STRING_AGG(DISTINCT organization, ', ') as organizations
-                    FROM "{resolved_path}"
-                    WHERE (
-                        LOWER(item_name) LIKE ? OR
-                        LOWER(title) LIKE ? OR
-                        LOWER(tags) LIKE ? OR
-                        LOWER(organization) LIKE ? OR
-                        LOWER(notes_excerpt) LIKE ?
-                    )
-                    GROUP BY source_id, source_kind, protocol
-                    ORDER BY item_count DESC
-                    LIMIT ?
-                    ''',
-                    [f"%{keyword_low}%"] * 5 + [safe_limit],
-                ).fetchall()
-    except FileNotFoundError:
-        return _parquet_not_found(_catalog_inventory_parquet())
-
-    cols = ["source_id", "source_kind", "protocol", "item_count", "organizations"]
-    sources = [dict(zip(cols, row)) for row in rows]
-
-    return {
-        "keyword": keyword.strip(),
-        "filters": {"limit": safe_limit},
-        "sources": sources,
-        "returned": len(sources),
-        "total_items_in_inventory": total_items,
-        "cache": cache,
-    }
-
-
-def _source_radar_context(source_id: str) -> str | None:
-    """Check radar_summary.json for source context (status, red_streak).
-
-    Schema reale di radar_summary.json::
-
-        {"sources": [{"id": "dati_salute", "status": "RED",
-                      "red_streak": 14, ...}, ...]}
-    """
-    if not _RADAR_JSON.exists():
-        return None
-    try:
-        with _RADAR_JSON.open(encoding="utf-8") as fh:
-            radar = json.load(fh)
-        sources_list = radar.get("sources") or []
-        info = None
-        for s in sources_list:
-            if isinstance(s, dict) and s.get("id") == source_id:
-                info = s
-                break
-        if not info:
-            return None
-        status = info.get("status", "unknown")
-        red_streak = info.get("red_streak")
-        if red_streak and status == "RED":
-            return f"RED da {red_streak} giorni, inventories non generati"
-        if status == "RED":
-            return "RED (nessun inventory generato)"
-        return f"status={status}"
-    except Exception:
-        return None
-
-
-# ─── Inventory Diff (read-only, on-demand) ──────────────────────────────────
-
-
-def inventory_diff(source_id: str) -> dict[str, Any]:
-    """Compare current inventory against baseline for a source.
-
-    Shows item count delta, baseline_date, and current_count.
-    Uses catalog_inventory_latest.parquet + catalog_inventory_report.json.
-    """
-    if not source_id:
-        return {"error": "invalid_params", "message": "source_id is required"}
-
-    # Load report for baseline
-    report_loaded = _load_inventory_report()
-    if report_loaded is None:
-        return {
-            "error": "report_not_found",
-            "message": "catalog_inventory_report.json not available",
-            "source_id": source_id,
-        }
-    report, _cache = report_loaded
-
-    source_info = (report.get("sources") or {}).get(source_id)
-    if not source_info:
-        # Check radar for context: maybe source is RED and has no inventory
-        radar_ctx = _source_radar_context(source_id)
-        msg = f"source_id '{source_id}' not found in inventory report"
-        if radar_ctx:
-            msg += f". Radar: {radar_ctx}"
-        return {
-            "error": "source_not_in_report",
-            "message": msg,
-            "source_id": source_id,
-            "radar_context": radar_ctx,
-        }
-
-    baseline = source_info.get("catalog_baseline", {})
-    baseline_value = baseline.get("value") or source_info.get("package_count") or source_info.get("dataflow_count") or source_info.get("rows")
-    baseline_date = baseline.get("captured_at") or source_info.get("last_inventory")
-
-    try:
-        artifact = _catalog_inventory_parquet()
-        with _resolved_parquet(artifact) as (resolved_path, cache):
-            with safe_connect() as con:
-                row = con.execute(
-                    f'SELECT COUNT(*) FROM "{resolved_path}" WHERE source_id = ?',
-                    [source_id],
-                ).fetchone()
-                current_count = row[0] if row else 0
-    except FileNotFoundError:
-        return _parquet_not_found(_catalog_inventory_parquet())
-
-    delta = (current_count or 0) - (baseline_value or 0)
-
-    notes: list[str] = []
-    if not baseline_date:
-        notes.append("baseline_date non disponibile — report non contiene captured_at o last_inventory per questa fonte")
-    if not baseline_value:
-        notes.append("baseline_value non disponibile — delta non calcolabile; current_count è il primo inventario")
-    notes.append("delta calcolato vs baseline nel registry; verificare se baseline_value è aggiornato")
-
-    return {
-        "source_id": source_id,
-        "baseline_date": baseline_date,
-        "baseline_value": baseline_value,
-        "current_count": current_count,
-        "delta": delta,
-        "delta_pct": round((delta / baseline_value * 100), 1) if baseline_value else None,
-        "cache": cache,
-        "note": " | ".join(notes),
-    }
-
-
-# ─── SPARQL Query (read-only, on-demand) ────────────────────────────────────
-
-
-def _sparql_query_raw(
-    endpoint: str,
-    query: str,
-    timeout: int = 60,
-    max_rows: int = 500,
-) -> dict[str, Any]:
-    """Execute a SPARQL SELECT query against any public endpoint.
-
-    Returns dict with rows, columns, and bindings count.
-    Uses HttpClient (POST not supported — falls back to observatory_get for SPARQL POST).
-    """
-    if not endpoint or not query:
-        return {"error": "invalid_params", "message": "endpoint and query are required"}
-    parsed = urlparse(endpoint)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        return {"error": "invalid_url", "message": f"Invalid SPARQL endpoint: {endpoint}"}
-    safe_timeout = max(1, min(int(timeout or 60), 120))
-    safe_max_rows = max(1, min(int(max_rows or 500), 5000))
-
-    # Inject LIMIT if not present
-    clean_query = query.strip()
-    if "LIMIT" not in clean_query.upper():
-        clean_query = f"{clean_query}\nLIMIT {safe_max_rows}"
-
-    # SPARQL POST is not supported by HttpClient — use requests directly for this case
-    try:
-        response = _get_observatory_get()(
-            endpoint,
-            params={"query": clean_query, "format": "application/sparql-results+json"},
-            headers={
-                "Accept": "application/sparql-results+json",
-                "User-Agent": "DataCivicLab-SourceObservatory/1.0",
-            },
-            timeout=safe_timeout,
-        )
-        response.raise_for_status()
-        payload = response.json()
-    except Exception as exc:
-        return {
-            "error": type(exc).__name__,
-            "message": str(exc)[:200],
-            "endpoint": endpoint,
-        }
-
-    bindings = ((payload.get("results") or {}).get("bindings")) or []
-    if not isinstance(bindings, list):
-        return {
-            "error": "invalid_response",
-            "message": "SPARQL endpoint did not return bindings list",
-            "endpoint": endpoint,
-        }
-
-    # Flatten bindings to rows
-    rows: list[dict[str, Any]] = []
-    for binding in bindings:
-        row: dict[str, Any] = {}
-        for var_name, var_value in binding.items():
-            if isinstance(var_value, dict):
-                row[var_name] = var_value.get("value")
-            else:
-                row[var_name] = var_value
-        rows.append(row)
-
-    return {
-        "endpoint": endpoint,
-        "query": clean_query,
-        "columns": list(rows[0].keys()) if rows else [],
-        "rows": rows,
-        "bindings": len(bindings),
-        "returned": len(rows),
-    }
-
-
-# ─── HTML Link Extraction (read-only, on-demand) ─────────────────────────────
-
-
-def _extract_links_from_html(html: str, base_url: str) -> list[dict[str, Any]]:
-    """Extract data download links from raw HTML.
-
-    Uses _DataLinksParser from collectors/html.py — same logic as csv_magnet.
-    Returns list of {url, format, title}.
-    """
-    DATA_EXTENSIONS = {".csv", ".json", ".xlsx", ".xls", ".ods", ".zip", ".xml", ".geojson"}
-    from html.parser import HTMLParser
-    from urllib.parse import urljoin
-
-    class Parser(HTMLParser):
-        def __init__(self):
-            super().__init__()
-            self.links: list[dict[str, str]] = []
-
-        def handle_starttag(self, tag, attrs):
-            if tag not in ("a", "area"):
-                return
-            attrs_dict = dict(attrs)
-            href = attrs_dict.get("href", "") or attrs_dict.get("xlink:href", "")
-            if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
-                return
-            full_url = urljoin(base_url, href)
-            lower = full_url.lower()
-            fmt = None
-            for ext in DATA_EXTENSIONS:
-                if ext in lower:
-                    fmt = ext.lstrip(".").upper()
-                    if fmt == "GEOJSON":
-                        fmt = "GEOJSON"
-                    break
-            if not fmt:
-                return
-            title = (attrs_dict.get("aria-label") or attrs_dict.get("title") or "").strip()
-            self.links.append({"url": full_url, "format": fmt, "title": title})
-
-    parser = Parser()
-    try:
-        parser.feed(html)
-    except Exception:
-        pass
-    return parser.links
-
-
-def _html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
-    """Extract file download links from an HTML page.
-
-    Returns {url, links: [{url, format, title}], total, content_type, is_reachable}.
-    Uses HttpClient with SSL fallback built-in.
-    """
-    if not url:
-        return {"error": "invalid_url", "message": "url is required"}
-    parsed = urlparse(url)
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        return {"error": "invalid_url", "message": f"Invalid URL: {url}"}
-
-    safe_timeout = max(1, min(int(timeout or 20), 60))
-    client = HttpClient(timeout=safe_timeout)
-    result = client.get(url)
-
-    if not result.is_ok:
-        return {
-            "url": url,
-            "is_reachable": False,
-            "error": type(result.err).__name__,
-            "message": str(result.err)[:200],
-        }
-
-    response = result.response
-    content_type = response.headers.get("content-type", "")
-
-    text_html = "text/html" in content_type.lower()
-    try:
-        html_text = response.text if text_html else ""
-    except Exception:
-        html_text = ""
-
-    links = _extract_links_from_html(html_text, url) if text_html else []
-
-    return {
-        "url": url,
-        "is_reachable": response.status_code < 400,
-        "http_status": response.status_code,
-        "content_type": content_type,
-        "links": links,
-        "total": len(links),
-        "formats": sorted({link["format"] for link in links}),
-        "ssl_fallback_used": result.ssl_fallback_used,
-    }
+# ── HTML ────────────────────────────────────────────────────────────────────
+from _html import (  # noqa: F401
+    _extract_links_from_html,
+    _html_extract_links,
+)
+
+# ── Inventory queries ───────────────────────────────────────────────────────
+from _inventory import (  # noqa: F401
+    _source_radar_context,
+    catalog_inventory_search,
+    inventory_diff,
+    inventory_status,
+    query_inventory,
+)
+
+# ── URL probing ─────────────────────────────────────────────────────────────
+from _probe import (  # noqa: F401
+    _guess_format,
+    probe_url,
+)
+
+# ── Radar queries ───────────────────────────────────────────────────────────
+from _radar import (  # noqa: F401
+    radar_delta,
+    radar_history,
+    radar_status_md,
+    radar_summary,
+)
+
+# ── Source recommendation ───────────────────────────────────────────────────
+from _recommend import (  # noqa: F401
+    recommend_sources,
+)
+
+# ── Registry queries ────────────────────────────────────────────────────────
+from _registry import (  # noqa: F401
+    registry_query,
+)
+
+# ── SDMX discovery ──────────────────────────────────────────────────────────
+from _sdmx import (  # noqa: F401
+    _read_sdmx_inventory_rows,
+    _score_dataflow,
+    discover_sdmx,
+)
+
+# ── Catalog signals ─────────────────────────────────────────────────────────
+from _signals import (  # noqa: F401
+    query_signals,
+)
+
+# ── SPARQL ──────────────────────────────────────────────────────────────────
+from _sparql import (  # noqa: F401
+    _sparql_query_raw,
+)
+
+# ── Topic inference ─────────────────────────────────────────────────────────
+from _topic import (  # noqa: F401
+    _TOPIC_KEYWORDS,
+    _score_text_by_topics,
+    infer_topic,
+)
+from lab_connectors.http import HttpClient  # noqa: F401
