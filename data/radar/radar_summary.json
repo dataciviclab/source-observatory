@@ -1,26 +1,26 @@
 {
-  "generated_at": "2026-05-24T06:46:15.072866+00:00",
-  "probe_date": "2026-05-24",
-  "sources_total": 23,
+  "generated_at": "2026-05-25T07:23:02.461597+00:00",
+  "probe_date": "2026-05-25",
+  "sources_total": 27,
   "status_counts": {
-    "GREEN": 18,
-    "YELLOW": 4,
+    "GREEN": 23,
+    "YELLOW": 3,
     "RED": 1
   },
   "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)"
     },
     {
       "id": "anac",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "403",
+      "http_code": "200",
       "note": null
     },
     {
@@ -47,9 +47,9 @@
     },
     {
       "id": "inail_opendata",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "aem",
-      "http_code": "200",
+      "http_code": "403",
       "note": null
     },
     {
@@ -89,17 +89,17 @@
     },
     {
       "id": "lavoro_opendata",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
       "http_code": "200",
-      "note": "CKAN API returned non-JSON content"
+      "note": null
     },
     {
       "id": "mur_ustat",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
+      "http_code": "200",
+      "note": null
     },
     {
       "id": "opencoesione",
@@ -168,6 +168,34 @@
       "id": "terna_opendata",
       "status": "GREEN",
       "protocol": "rest",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "ministero_interno",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "agid",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "mimit_rna",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "ministero_salute",
+      "status": "GREEN",
+      "protocol": "ckan",
       "http_code": "200",
       "note": null
     }
