@@ -29,7 +29,7 @@ Closes #
 
 - [ ] `pytest tests/` passa
 - [ ] `ruff check .` passa
-- [ ] `mypy scripts/` passa
+- [ ] `mypy scripts/ mcp/` passa
 - [ ] Comando manuale verificato (es. `python scripts/radar_check.py --source <id>`)
 
 ### Se modifichi il funnel
