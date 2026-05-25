@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import json
 
+import _artifact
+import _html
+import _probe
 import duckdb  # noqa: E402
 import pandas as pd  # must be before so_server_core import
 import pytest
 import so_server_core as core  # noqa: E402  # conftest aggiunge mcp/ a sys.path
-import _artifact
-import _probe
-import _html
 
 
 def _write_parquet(path, rows: list[dict]) -> None:

@@ -6,152 +6,232 @@ Re-exports all public functions, constants, and helpers from the refactored
 that ``import so_server_core as core``.
 
 Each import statement below maps to a specific sub-module.
+
+This file has ``__all__`` and uses ``# noqa: F401`` on its import blocks
+so that Ruff treats them as intentional re-exports rather than unused imports.
 """
+from __future__ import annotations
+
+__all__ = [
+    # Path constants
+    "_CHECK_PARQUET",
+    "_INVENTORY_PARQUET",
+    "_INVENTORY_REPORT",
+    "_SIGNALS_JSON",
+    "_RADAR_JSON",
+    "_RADAR_HISTORY_JSON",
+    "_STATUS_MD",
+    "_REGISTRY_YAML",
+    "_REPO_ROOT",
+    "_COLLECTORS_BASE",
+    "_DEFAULT_CACHE_MAX_AGE_HOURS",
+    "_DEFAULT_GCS_PREFIXES",
+    "_SOURCE_CHECK_ARTIFACT",
+    "_CATALOG_INVENTORY_ARTIFACT",
+    "_CATALOG_INVENTORY_REPORT_ARTIFACT",
+    "_FORMAT_BY_CONTENT_TYPE",
+    "_FORMAT_BY_SUFFIX",
+    # Env loading
+    "_load_env_file_once",
+    "_env",
+    "_artifact_backend",
+    "_cache_max_age_hours",
+    "_gcs_prefix",
+    # Collector base lazy load
+    "_get_observatory_get",
+    "_collectors_base",
+    "observatory_get",
+    # Artifact types
+    "_ParquetArtifact",
+    "_JsonArtifact",
+    # Factory functions
+    "_source_check_parquet",
+    "_catalog_inventory_parquet",
+    "_catalog_inventory_report_artifact",
+    # Helpers
+    "_artifact_not_found",
+    "_display_path",
+    "_table_columns",
+    "_select_expr",
+    "_artifact_cache_info",
+    "_public_url",
+    "_download_public_to_temp",
+    "_copy_gcs_to_temp",
+    "_resolved_artifact",
+    "_resolved_parquet",
+    "_resolved_json",
+    "_parquet_not_found",
+    "_json_not_found",
+    "_load_inventory_report",
+    "_inventory_source_status",
+    # External libs (monkeypatched by tests)
+    "requests",
+    "HttpClient",
+    # Inventory
+    "query_inventory",
+    "inventory_status",
+    "catalog_inventory_search",
+    "_source_radar_context",
+    "inventory_diff",
+    # Signals
+    "query_signals",
+    # Radar
+    "radar_summary",
+    "radar_history",
+    "radar_status_md",
+    "radar_delta",
+    # Registry
+    "registry_query",
+    # Find by URL
+    "find_by_url",
+    # Probe
+    "probe_url",
+    "_guess_format",
+    # CKAN
+    "_ckan_package_show",
+    "_ckan_get_json",
+    "_ckan_action_endpoint",
+    # SPARQL
+    "_sparql_query_raw",
+    # HTML
+    "_html_extract_links",
+    "_extract_links_from_html",
+    # SDMX
+    "discover_sdmx",
+    "_read_sdmx_inventory_rows",
+    "_score_dataflow",
+    # Topic
+    "infer_topic",
+    "_score_text_by_topics",
+    "_TOPIC_KEYWORDS",
+    # Recommend
+    "recommend_sources",
+]
 
 # ── Shared artifact infrastructure ──────────────────────────────────────────
 
-from _artifact import (
-    # Path constants (monkeypatched by tests)
+# ── External libs (monkeypatched by tests) ──────────────────────────────────
+import requests  # noqa: F401
+from _artifact import (  # noqa: F401
+    _CATALOG_INVENTORY_ARTIFACT,
+    _CATALOG_INVENTORY_REPORT_ARTIFACT,
     _CHECK_PARQUET,
-    _INVENTORY_PARQUET,
-    _INVENTORY_REPORT,
-    _SIGNALS_JSON,
-    _RADAR_JSON,
-    _RADAR_HISTORY_JSON,
-    _STATUS_MD,
-    _REGISTRY_YAML,
-    _REPO_ROOT,
     _COLLECTORS_BASE,
     _DEFAULT_CACHE_MAX_AGE_HOURS,
     _DEFAULT_GCS_PREFIXES,
-    _SOURCE_CHECK_ARTIFACT,
-    _CATALOG_INVENTORY_ARTIFACT,
-    _CATALOG_INVENTORY_REPORT_ARTIFACT,
     _FORMAT_BY_CONTENT_TYPE,
     _FORMAT_BY_SUFFIX,
-    # Env loading
-    _load_env_file_once,
-    _env,
+    _INVENTORY_PARQUET,
+    _INVENTORY_REPORT,
+    _RADAR_HISTORY_JSON,
+    _RADAR_JSON,
+    _REGISTRY_YAML,
+    _REPO_ROOT,
+    _SIGNALS_JSON,
+    _SOURCE_CHECK_ARTIFACT,
+    _STATUS_MD,
     _artifact_backend,
+    _artifact_cache_info,
+    _artifact_not_found,
     _cache_max_age_hours,
-    _gcs_prefix,
-    # Collector base lazy load
-    _get_observatory_get,
-    _collectors_base,
-    observatory_get,
-    # Artifact types
-    _ParquetArtifact,
-    _JsonArtifact,
-    # Factory functions
-    _source_check_parquet,
     _catalog_inventory_parquet,
     _catalog_inventory_report_artifact,
-    # Helpers
-    _artifact_not_found,
-    _display_path,
-    _table_columns,
-    _select_expr,
-    _artifact_cache_info,
-    _public_url,
-    _download_public_to_temp,
+    _collectors_base,
     _copy_gcs_to_temp,
-    _resolved_artifact,
-    _resolved_parquet,
-    _resolved_json,
-    _parquet_not_found,
-    _json_not_found,
-    _load_inventory_report,
+    _display_path,
+    _download_public_to_temp,
+    _env,
+    _gcs_prefix,
+    _get_observatory_get,
     _inventory_source_status,
-)
-
-# ── External libs (monkeypatched by tests) ──────────────────────────────────
-
-import requests  # noqa: E401 — exposed for test monkeypatching
-from lab_connectors.http import HttpClient  # noqa: E401 — exposed for test monkeypatching
-
-# ── Inventory queries ───────────────────────────────────────────────────────
-
-from _inventory import (
-    query_inventory,
-    inventory_status,
-    catalog_inventory_search,
-    _source_radar_context,
-    inventory_diff,
-)
-
-# ── Catalog signals ─────────────────────────────────────────────────────────
-
-from _signals import (
-    query_signals,
-)
-
-# ── Radar queries ───────────────────────────────────────────────────────────
-
-from _radar import (
-    radar_summary,
-    radar_history,
-    radar_status_md,
-    radar_delta,
-)
-
-# ── Registry queries ────────────────────────────────────────────────────────
-
-from _registry import (
-    registry_query,
-)
-
-# ── Find by URL ─────────────────────────────────────────────────────────────
-
-from _find_url import (
-    find_by_url,
-)
-
-# ── URL probing ─────────────────────────────────────────────────────────────
-
-from _probe import (
-    probe_url,
-    _guess_format,
+    _json_not_found,
+    _JsonArtifact,
+    _load_env_file_once,
+    _load_inventory_report,
+    _parquet_not_found,
+    _ParquetArtifact,
+    _public_url,
+    _resolved_artifact,
+    _resolved_json,
+    _resolved_parquet,
+    _select_expr,
+    _source_check_parquet,
+    _table_columns,
+    observatory_get,
 )
 
 # ── CKAN ────────────────────────────────────────────────────────────────────
-
-from _ckan import (
-    _ckan_package_show,
-    _ckan_get_json,
+from _ckan import (  # noqa: F401
     _ckan_action_endpoint,
+    _ckan_get_json,
+    _ckan_package_show,
 )
 
-# ── SPARQL ──────────────────────────────────────────────────────────────────
-
-from _sparql import (
-    _sparql_query_raw,
+# ── Find by URL ─────────────────────────────────────────────────────────────
+from _find_url import (  # noqa: F401
+    find_by_url,
 )
 
 # ── HTML ────────────────────────────────────────────────────────────────────
-
-from _html import (
-    _html_extract_links,
+from _html import (  # noqa: F401
     _extract_links_from_html,
+    _html_extract_links,
 )
 
-# ── SDMX discovery ──────────────────────────────────────────────────────────
-
-from _sdmx import (
-    discover_sdmx,
-    _read_sdmx_inventory_rows,
-    _score_dataflow,
+# ── Inventory queries ───────────────────────────────────────────────────────
+from _inventory import (  # noqa: F401
+    _source_radar_context,
+    catalog_inventory_search,
+    inventory_diff,
+    inventory_status,
+    query_inventory,
 )
 
-# ── Topic inference ─────────────────────────────────────────────────────────
+# ── URL probing ─────────────────────────────────────────────────────────────
+from _probe import (  # noqa: F401
+    _guess_format,
+    probe_url,
+)
 
-from _topic import (
-    infer_topic,
-    _score_text_by_topics,
-    _TOPIC_KEYWORDS,
+# ── Radar queries ───────────────────────────────────────────────────────────
+from _radar import (  # noqa: F401
+    radar_delta,
+    radar_history,
+    radar_status_md,
+    radar_summary,
 )
 
 # ── Source recommendation ───────────────────────────────────────────────────
-
-from _recommend import (
+from _recommend import (  # noqa: F401
     recommend_sources,
 )
+
+# ── Registry queries ────────────────────────────────────────────────────────
+from _registry import (  # noqa: F401
+    registry_query,
+)
+
+# ── SDMX discovery ──────────────────────────────────────────────────────────
+from _sdmx import (  # noqa: F401
+    _read_sdmx_inventory_rows,
+    _score_dataflow,
+    discover_sdmx,
+)
+
+# ── Catalog signals ─────────────────────────────────────────────────────────
+from _signals import (  # noqa: F401
+    query_signals,
+)
+
+# ── SPARQL ──────────────────────────────────────────────────────────────────
+from _sparql import (  # noqa: F401
+    _sparql_query_raw,
+)
+
+# ── Topic inference ─────────────────────────────────────────────────────────
+from _topic import (  # noqa: F401
+    _TOPIC_KEYWORDS,
+    _score_text_by_topics,
+    infer_topic,
+)
+from lab_connectors.http import HttpClient  # noqa: F401
