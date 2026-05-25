@@ -1,6 +1,6 @@
 {
-  "captured_at": "2026-05-22T12:27:45+00:00",
-  "sources_checked": 15,
+  "captured_at": "2026-05-25T08:00:44+00:00",
+  "sources_checked": 22,
   "signals": [
     {
       "source": "istat_sdmx",
@@ -9,6 +9,15 @@
       "result": "stabile",
       "metric_value": 4849,
       "detail": "4849 item (dataflow_count), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "anac",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 70,
+      "detail": "70 item (package_search), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -35,7 +44,7 @@
       "signal_type": "csv_magnet",
       "result": "scan_completed",
       "metric_value": 1116,
-      "detail": "1116 link data (CSV 372, JSON 372, XML 372), years 2015-2025 — top prefixes: INFANZIA=192, ALUCORSO=120, SCUANAGR=66, SCUANAAU=66, ALUITAST=60",
+      "detail": "1116 link data (CSV 372, JSON 372, XML 372), years 2015-2026 — top prefixes: INFANZIA=192, ALUCORSO=120, SCUANAGR=66, SCUANAAU=66, ALUITAST=60",
       "prefix_matrix": {
         "SCUANAGR": 66,
         "SCUANAAU": 66,
@@ -483,143 +492,143 @@
         },
         "ALTABRUZ": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTABRUZZO000020250910"
+          "sample": "ALTABRUZZO000020260525"
         },
         "ALTBASIL": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTBASILICATA000020250910"
+          "sample": "ALTBASILICATA000020260525"
         },
         "ALTCALAB": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTCALABRIA000020250910"
+          "sample": "ALTCALABRIA000020260525"
         },
         "ALTCAMPA": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTCAMPANIA000020250910"
+          "sample": "ALTCAMPANIA000020260525"
         },
         "ALTEMILI": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTEMILIAROMAGNA000020250910"
+          "sample": "ALTEMILIAROMAGNA000020260525"
         },
         "ALTFRIUL": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTFRIULIVENEZIAGIULIA000020250910"
+          "sample": "ALTFRIULIVENEZIAGIULIA000020260525"
         },
         "ALTLAZIO": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTLAZIO000020250910"
+          "sample": "ALTLAZIO000020260525"
         },
         "ALTLIGUR": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTLIGURIA000020250910"
+          "sample": "ALTLIGURIA000020260525"
         },
         "ALTLOMBA": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTLOMBARDIA000020250910"
+          "sample": "ALTLOMBARDIA000020260525"
         },
         "ALTMARCH": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTMARCHE000020250910"
+          "sample": "ALTMARCHE000020260525"
         },
         "ALTMOLIS": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTMOLISE000020250910"
+          "sample": "ALTMOLISE000020260525"
         },
         "ALTPIEMO": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTPIEMONTE000020250910"
+          "sample": "ALTPIEMONTE000020260525"
         },
         "ALTPUGLI": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTPUGLIA000020250910"
+          "sample": "ALTPUGLIA000020260525"
         },
         "ALTSARDE": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTSARDEGNA000020250910"
+          "sample": "ALTSARDEGNA000020260525"
         },
         "ALTSICIL": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTSICILIA000020250910"
+          "sample": "ALTSICILIA000020260525"
         },
         "ALTTOSCA": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTTOSCANA000020250910"
+          "sample": "ALTTOSCANA000020260525"
         },
         "ALTTRENT": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTTRENTINOALTOADIGE000020250910"
+          "sample": "ALTTRENTINOALTOADIGE000020260525"
         },
         "ALTUMBRI": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTUMBRIA000020250910"
+          "sample": "ALTUMBRIA000020260525"
         },
         "ALTVALLE": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTVALLEDAOSTA000020250910"
+          "sample": "ALTVALLEDAOSTA000020260525"
         },
         "ALTVENET": {
           "years": [
-            2025
+            2026
           ],
           "count": 3,
-          "sample": "ALTVENETO000020250910"
+          "sample": "ALTVENETO000020260525"
         }
       },
       "topics": {
@@ -627,7 +636,7 @@
       },
       "years_range": [
         2015,
-        2025
+        2026
       ],
       "suggested_action": "catalog-watch-ready"
     },
@@ -644,9 +653,8 @@
       "source": "dati_cultura",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 213,
-      "detail": "213 item (sparql_query), in linea con la baseline.",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {
@@ -665,6 +673,24 @@
       "result": "stabile",
       "metric_value": 16,
       "detail": "16 item (package_list), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "lavoro_opendata",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 83,
+      "detail": "83 item (package_search), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "mur_ustat",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 69,
+      "detail": "69 item (package_search), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -1333,7 +1359,7 @@
       "signal_type": "csv_magnet",
       "result": "scan_completed",
       "metric_value": 8,
-      "detail": "8 link data (XLSX 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1",
+      "detail": "8 link data (XLS 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1",
       "prefix_matrix": {
         "Civile": 1,
         "Indicatori": 2,
@@ -1401,6 +1427,42 @@
       "topics": {},
       "years_range": [],
       "suggested_action": "catalog-watch-ready"
+    },
+    {
+      "source": "ministero_interno",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 38,
+      "detail": "38 item (package_search), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "agid",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 40,
+      "detail": "40 item (package_search), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "mimit_rna",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 370,
+      "detail": "370 item (package_search), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "ministero_salute",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 51,
+      "detail": "51 item (package_search), in linea con la baseline.",
+      "suggested_action": "nessuna"
     }
   ]
 }

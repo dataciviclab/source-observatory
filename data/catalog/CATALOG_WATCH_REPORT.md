@@ -1,13 +1,13 @@
 # Catalog Watch Report
 
-_Generato: 2026-05-22T12:27:45+00:00 — 15 fonti controllate_
+_Generato: 2026-05-25T08:00:44+00:00 — 22 fonti controllate_
 
 ## Segnali attivi
 
 ### • `mim_opendata` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 1116 link data (CSV 372, JSON 372, XML 372), years 2015-2025 — top prefixes: INFANZIA=192, ALUCORSO=120, SCUANAGR=66, SCUANAAU=66, ALUITAST=60
+- **Dettaglio**: 1116 link data (CSV 372, JSON 372, XML 372), years 2015-2026 — top prefixes: INFANZIA=192, ALUCORSO=120, SCUANAGR=66, SCUANAAU=66, ALUITAST=60
 - **Item**: 1116
 - **Azione**: catalog-watch-ready
 
@@ -35,7 +35,7 @@ _Generato: 2026-05-22T12:27:45+00:00 — 15 fonti controllate_
 ### • `giustizia_statistiche` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 8 link data (XLSX 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1
+- **Dettaglio**: 8 link data (XLS 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1
 - **Item**: 8
 - **Azione**: low signal
 
@@ -48,6 +48,6 @@ _Generato: 2026-05-22T12:27:45+00:00 — 15 fonti controllate_
 
 ## Fonti stabili / skipped
 
-_9 fonti senza segnali inventariali in questo run._
+_16 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
