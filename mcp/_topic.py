@@ -6,7 +6,6 @@ import re
 import unicodedata
 from typing import Any
 
-
 # Keyword maps per topic. Word-boundary matches = 3pt, substring > 4 chars = 1pt.
 _TOPIC_KEYWORDS: dict[str, list[str]] = {
     "lavoro": ["lavoro", "occupazione", "disoccupazione", "forze_lavoro", "OECD", "LAU", "ISTAT", "disaoccupazione", "impiego"],
