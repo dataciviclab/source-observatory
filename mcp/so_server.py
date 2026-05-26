@@ -91,14 +91,6 @@ def so_catalog_inventory_search(
 
 
 @mcp.tool(
-    description="Probe leggero di un singolo URL: status, content-type, formato, size, reachability.",
-    structured_output=True,
-)
-def so_probe_url(url: str, timeout: int = 15) -> dict[str, Any]:
-    return guard_timed(so_server_core.probe_url, "so_probe_url", url, timeout)
-
-
-@mcp.tool(
     description="Discovery tematica ISTAT SDMX da artifact locali con relevance score.",
     structured_output=True,
 )
@@ -126,56 +118,6 @@ def so_registry_query(
     source_id: str | None = None,
 ) -> dict[str, Any]:
     return guard_timed(so_server_core.registry_query, "so_registry_query", protocol, source_kind, observation_mode, source_id)
-
-
-@mcp.tool(
-    description="Execute a SPARQL SELECT query against a public endpoint and return tabular results. "
-    "endpoint: SPARQL URL (http/https). query: SPARQL query string. "
-    "timeout: seconds (1-120, default 60). max_rows: maximum rows (1-500, default 500).",
-    structured_output=True,
-)
-def so_sparql_query(
-    endpoint: str,
-    query: str,
-    timeout: int = 60,
-    max_rows: int = 500,
-) -> dict[str, Any]:
-    return guard_timed(so_server_core._sparql_query_raw, "so_sparql_query", endpoint, query, timeout, max_rows)
-
-
-@mcp.tool(
-    description="Extract file download links (CSV, JSON, XLSX, ZIP, XML) from an HTML page. "
-    "url: page URL. timeout: request timeout in seconds (default 20). "
-    "Returns {url, links, total, formats, is_reachable, http_status}.",
-    structured_output=True,
-)
-def so_html_extract_links(url: str, timeout: int = 20) -> dict[str, Any]:
-    return guard_timed(so_server_core._html_extract_links, "so_html_extract_links", url, timeout)
-
-
-@mcp.tool(
-    description="Fetch a single CKAN dataset (package_show) and return enriched metadata. "
-    "endpoint: CKAN portal base URL (e.g. https://dati.gov.it). "
-    "package_id: dataset ID or name. "
-    "Returns item_id, name, title, notes_excerpt, organization, tags, format, "
-    "resource_count, datastore_active, landing_page, distribution_url, source_url. "
-    "On error returns {error, message}.",
-    structured_output=True,
-)
-def so_ckan_package_show(endpoint: str, package_id: str, timeout: int = 30) -> dict[str, Any]:
-    return guard_timed(so_server_core._ckan_package_show, "so_ckan_package_show", endpoint, package_id, timeout)
-
-
-@mcp.tool(
-    description="Infer thematic topics from any text string (item_name, title, tags, notes, etc.). "
-    "Uses a fixed taxonomy of 20 topics: lavoro, economia, sanita, istruzione, trasporti, "
-    "ambiente, agricoltura, turismo, giustizia, demografia, energia, commercio, "
-    "welfare, previdenza, casa, cultura, bilancio, innovazione, sicurezza. "
-    "Returns topics sorted by relevance score (desc), with top_match if dominant (score>=3).",
-    structured_output=True,
-)
-def so_infer_topic(text: str) -> dict[str, Any]:
-    return guard_timed(so_server_core.infer_topic, "so_infer_topic", text)
 
 
 @mcp.tool(

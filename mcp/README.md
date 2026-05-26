@@ -55,10 +55,10 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 | Tool | Uso |
 |---|---|
 | `so_find_by_url` | pre-check: gia catalogato? |
-| `so_probe_url` | reachability + content-type |
-| `so_html_extract_links` | rileva link CSV/JSON/XLSX su pagina HTML |
-| `so_ckan_package_show` | conferma CKAN e verifica enumerateabilita |
+| — | Probe HTTP, CKAN, HTML: usa i tool **`toolkit_*`** del toolkit MCP |
 | `so_registry_query` | pre-check: gia nel registry? |
+
+> **Nota**: `so_probe_url`, `so_html_extract_links`, `so_ckan_package_show` sono stati rimossi. Usa i corrispondenti tool del toolkit MCP: `toolkit_probe_url`, `toolkit_html_extract_links`, `toolkit_ckan_package_show`.
 
 ### SO_02 — inventory-triage
 
@@ -68,7 +68,9 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 | `so_inventory_diff` | baseline vs attuale (delta item) |
 | `so_catalog_inventory_search` | cerca item per keyword/testo |
 | `so_recommend_sources` | trova source_id per keyword tema |
-| `so_infer_topic` | filtra item per tema |
+| — | Topic inference: usa **`toolkit_infer_topic`** del toolkit MCP |
+
+> **Nota**: `so_infer_topic` è stato rimosso. Usa `toolkit_infer_topic` del toolkit MCP.
 
 ### SO_03 — source-check
 
@@ -77,9 +79,9 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 | `so_find_by_url` | pre-check: gia catalogato? |
 | `so_inventory_query` | score esistente per questa fonte |
 | `so_radar_summary` | stato radar (se gia nota) |
-| `so_probe_url` | reachability rapida |
-| `so_ckan_package_show` | fetch dettagli singolo dataset |
-| `so_infer_topic` | categorizza il dataset |
+| — | Probe, CKAN, Topic: usa i tool **`toolkit_*`** del toolkit MCP |
+
+> **Nota**: `so_probe_url`, `so_ckan_package_show`, `so_infer_topic` sono stati rimossi. Usa `toolkit_probe_url`, `toolkit_ckan_package_show`, `toolkit_infer_topic` del toolkit MCP.
 
 ### Extra (non legati a skill specifica)
 
@@ -89,7 +91,9 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 | `so_radar_status_md` | sommario leggibile radar |
 | `so_catalog_signals` | drift catalogo (weekly CI) |
 | `so_discover_sdmx` | discovery dataflow ISTAT |
-| `so_sparql_query` | query SPARQL arbitraria |
+| — | SPARQL: usa **`toolkit_sparql_query`** del toolkit MCP |
+
+> **Nota**: `so_sparql_query` è stato rimosso. Usa `toolkit_sparql_query` del toolkit MCP.
 
 ## Tool detail
 
@@ -129,25 +133,6 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 - `so_catalog_inventory_search`
   - legge `catalog_inventory_latest.parquet`
   - cerca item per testo/libro
-
-- `so_sparql_query`
-  - esegue SPARQL SELECT su endpoint pubblici
-  - usa observatory_get per User-Agent coerente
-
-- `so_html_extract_links`
-  - estrae link CSV/JSON/XLSX/ZIP/XML da pagina HTML
-  - usa observatory_get per User-Agent coerente
-
-- `so_ckan_package_show`
-  - fetch package_show su endpoint CKAN
-  - argomenti: `endpoint`, `package_id`
-  - ritorna: item_id, name, title, notes_excerpt, organization, tags, format, resource_count, datastore_active, landing_page, distribution_url
-  - errore: `{error, message}`
-
-- `so_infer_topic`
-  - inferisce tema da qualunque testo (item_name, title, tags, notes)
-  - tassonomia 20 temi: lavoro, economia, sanita, istruzione, trasporti, ambiente, agricoltura, turismo, giustizia, demografia, energia, commercio, welfare, previdenza, casa, cultura, bilancio, innovazione, sicurezza
-  - ritorna: topics (dict ordinato), top_match (se score>=3), matched_count
 
 - `so_recommend_sources`
   - cerca fonti nell'inventory per keyword

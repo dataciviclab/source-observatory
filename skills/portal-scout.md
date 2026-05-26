@@ -32,48 +32,48 @@ Prima di qualsiasi probe, verifica che il portale non sia già nel sistema:
 ### 1. Probe base
 
 ```
-3. so_probe_url(<URL>)       → status, content-type, reachability
+toolkit_probe_url(<URL>)       → status, content-type, reachability
 ```
 
 Se non raggiungibile → `no-go` (fonte down).
 
 ### 2. Rileva protocollo
 
-Usa `so_html_extract_links` per vedere se la pagina è HTML con link a dati:
+Usa `toolkit_html_extract_links` per vedere se la pagina è HTML con link a dati:
 
 ```
-4. so_html_extract_links(<URL>) → lista link, formati, total
+toolkit_html_extract_links(<URL>) → lista link, formati, total
 ```
 
 Poi testa i protocolli noti nell'ordine:
 
 **CKAN** — prova `/api/3/action/package_list`:
 ```
-5. so_probe_url(<base_url>/api/3/action/package_list?limit=1)
+toolkit_probe_url(<base_url>/api/3/action/package_list?limit=1)
    → se 200 + JSON: CKAN confermato
 ```
 
 **CKAN — verifica enumerateabilità** (solo se confermato CKAN):
 ```
-6. so_ckan_package_show(<base_url>, '<un_package_id_noto>')
+toolkit_ckan_package_show(<base_url>, '<un_package_id_noto>')
    → se success: catalog-watch confermato
 ```
 
 **SDMX** — prova l'endpoint REST:
 ```
-7. so_probe_url(<base_url>/rest/dataflow)
+toolkit_probe_url(<base_url>/rest/dataflow)
    → se 200 + XML/JSON: SDMX confermato
 ```
 
 **SPARQL** — verifica endpoint su path standard:
 ```
-8. so_probe_url(<base_url>/sparql?query=SELECT+1)
+toolkit_probe_url(<base_url>/sparql?query=SELECT+1)
    → se 200 + content-type application/sparql-results+json: sparql confermato
    → se 200 + text/html: prova <base_url>/query o <base_url>/sparql
    → se 400 + JSON: sparql presente (richiede query valida)
 ```
 
-**HTML generico** — se CKAN/SPARQL/SDMX falliti ma `so_html_extract_links` trova link CSV/JSON/XLSX:
+**HTML generico** — se CKAN/SPARQL/SDMX falliti ma `toolkit_html_extract_links` trova link CSV/JSON/XLSX:
 ```
 → HTML confermato, osservabile ma enumerateabilità limitata
 → observation_mode suggerito: radar-only

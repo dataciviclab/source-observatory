@@ -7,7 +7,7 @@ import pytest
 import so_server  # noqa: E402  # conftest aggiunge mcp/ a sys.path
 
 
-def test_mcp_server_registers_17_tools() -> None:
+def test_mcp_server_registers_12_tools() -> None:
     """Verify all 17 tools are registered on the mcp server object."""
     tools = asyncio.run(so_server.mcp.list_tools())
     tool_names = sorted(t.name for t in tools)
@@ -15,21 +15,16 @@ def test_mcp_server_registers_17_tools() -> None:
     expected = sorted([
         "so_catalog_inventory_search",
         "so_catalog_signals",
-        "so_ckan_package_show",
         "so_discover_sdmx",
         "so_find_by_url",
-        "so_html_extract_links",
-        "so_infer_topic",
         "so_inventory_diff",
         "so_inventory_query",
         "so_inventory_status",
-        "so_probe_url",
         "so_radar_history",
         "so_radar_status_md",
         "so_radar_summary",
         "so_recommend_sources",
         "so_registry_query",
-        "so_sparql_query",
     ])
 
     assert tool_names == expected, f"Expected {expected}, got {tool_names}"
