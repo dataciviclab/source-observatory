@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 
 import pytest
-
 from _constants import (
     STALE_REASON_TAGS,
     append_radar_probe,
