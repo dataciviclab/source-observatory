@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from scripts.source_check_analyze import (
+from source_check_analyze import (
     _fallback_infer,
     _finalize_scores,
     _intake_score,

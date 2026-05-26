@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from scripts._constants import (
+from _constants import (
     STALE_REASON_TAGS,
     append_radar_probe,
     load_radar_history,
