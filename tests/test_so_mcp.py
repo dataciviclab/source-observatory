@@ -8,6 +8,8 @@ import pandas as pd  # must be before so_server_core import
 import pytest
 import so_server_core as core  # noqa: E402  # conftest aggiunge mcp/ a sys.path
 
+pytestmark = pytest.mark.contract
+
 
 def _write_parquet(path, rows: list[dict]) -> None:
     con = duckdb.connect()
@@ -621,4 +623,242 @@ def test_find_by_url_returns_empty_when_no_match(tmp_path, monkeypatch) -> None:
 def test_find_by_url_rejects_empty_url() -> None:
     result = core.find_by_url("")
     assert result["error"] == "empty_url"
-pytestmark = pytest.mark.contract
+
+
+# ---------------------------------------------------------------------------
+# Radar edge cases: radar_history, radar_status_md, radar_delta
+# ---------------------------------------------------------------------------
+
+
+def test_radar_history_file_not_found(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", tmp_path / "radar_history.json")
+    result = core.radar_history(source_id="test", limit=5)
+    assert result["error"] == "artifact_not_found"
+
+
+def test_radar_history_probes_not_a_list(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "radar_history.json"
+    path.write_text(json.dumps({"probes": "not_a_list"}), encoding="utf-8")
+    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
+    result = core.radar_history()
+    assert result["returned"] == 0
+    assert result["probes_in_window"] == 0
+
+
+def test_radar_history_limit_clamping(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "radar_history.json"
+    probes = [{"probe_date": f"2024-01-{d:02d}", "sources": [{"id": "s1", "status": "GREEN"}]} for d in range(1, 31)]
+    path.write_text(json.dumps({"probes": probes}), encoding="utf-8")
+    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
+    # Over-limit: clamped to 20
+    result = core.radar_history(limit=100)
+    assert result["probes_in_window"] == 20
+    # Under-limit: negative → clamped to 1
+    result2 = core.radar_history(limit=-3)
+    assert result2["probes_in_window"] == 1
+
+
+def test_radar_history_filter_by_source(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "radar_history.json"
+    probes = [
+        {"probe_date": "2024-01-01", "sources": [{"id": "s1", "status": "GREEN"}, {"id": "s2", "status": "RED"}]},
+        {"probe_date": "2024-01-08", "sources": [{"id": "s1", "status": "RED"}, {"id": "s2", "status": "GREEN"}]},
+    ]
+    path.write_text(json.dumps({"probes": probes}), encoding="utf-8")
+    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
+    result = core.radar_history(source_id="s1", limit=10)
+    assert result["returned"] == 1
+    assert result["sources"][0]["source_id"] == "s1"
+    assert result["sources"][0]["recent_red_count"] == 1
+
+
+def test_radar_status_md_file_not_found(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(_artifact, "_STATUS_MD", tmp_path / "STATUS.md")
+    result = core.radar_status_md()
+    assert result["error"] == "artifact_not_found"
+
+
+def test_radar_status_md_reads_content(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "STATUS.md"
+    content = "# Radar State\nOK"
+    path.write_text(content, encoding="utf-8")
+    monkeypatch.setattr(_artifact, "_STATUS_MD", path)
+    result = core.radar_status_md()
+    assert result["content"] == content
+    assert "modified_at" in result
+    assert "age_hours" in result
+
+
+def test_radar_delta_file_not_found(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", tmp_path / "radar_history.json")
+    result = core.radar_delta()
+    assert result["error"] == "artifact_not_found"
+
+
+def test_radar_delta_not_enough_probes(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "radar_history.json"
+    path.write_text(json.dumps({"probes": [{"probe_date": "2024-01-01", "sources": []}]}), encoding="utf-8")
+    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
+    result = core.radar_delta()
+    assert "Not enough probes" in result["message"]
+    assert result["changes"] == []
+
+
+def test_radar_delta_changes_recoveries_persistent(tmp_path, monkeypatch) -> None:
+    """Tre probe: s1 passa RED->GREEN (recovery), s2 GREEN->RED (new_red),
+    s3 resta ROSSO per 3 probe (persistent_red >= 2)."""
+    path = tmp_path / "radar_history.json"
+    probes = [
+        {
+            "probe_date": "2024-01-01",
+            "sources": [
+                {"id": "s1", "status": "RED", "http_code": 500},
+                {"id": "s2", "status": "GREEN"},
+                {"id": "s3", "status": "RED"},
+            ],
+        },
+        {
+            "probe_date": "2024-01-08",
+            "sources": [
+                {"id": "s1", "status": "RED", "http_code": 503},
+                {"id": "s2", "status": "GREEN"},
+                {"id": "s3", "status": "RED"},
+            ],
+        },
+        {
+            "probe_date": "2024-01-15",
+            "sources": [
+                {"id": "s1", "status": "GREEN"},
+                {"id": "s2", "status": "RED", "http_code": 502},
+                {"id": "s3", "status": "RED", "http_code": 500},
+            ],
+        },
+    ]
+    path.write_text(json.dumps({"probes": probes}), encoding="utf-8")
+    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
+    result = core.radar_delta()
+    # s1: RED->GREEN (change + recovery), s2: GREEN->RED (change + new_red)
+    # s3: RED->RED (no change, ma streak >= 2 → persistent)
+    assert result["changed_count"] == 2
+    assert "s1" in result["recoveries"]
+    assert "s2" in result["new_red"]
+    assert "s3" in result["persistent_red"]
+
+
+# ---------------------------------------------------------------------------
+# Registry edge cases
+# ---------------------------------------------------------------------------
+
+
+def test_registry_query_file_not_found(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(_artifact, "_REGISTRY_YAML", tmp_path / "sources_registry.yaml")
+    result = core.registry_query()
+    assert result["error"] == "artifact_not_found"
+
+
+def test_registry_query_not_a_dict(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "sources_registry.yaml"
+    path.write_text("[not a dict]", encoding="utf-8")
+    monkeypatch.setattr(_artifact, "_REGISTRY_YAML", path)
+    result = core.registry_query()
+    assert result["error"] == "invalid_registry"
+
+
+def test_registry_query_filters(tmp_path, monkeypatch) -> None:
+    path = tmp_path / "sources_registry.yaml"
+    path.write_text(
+        "istat_sdmx:\n"
+        "  source_kind: sdmx\n"
+        "  protocol: sdmx\n"
+        "  observation_mode: full\n"
+        "  base_url: https://esploradati.istat.it/\n"
+        "  verdict: intake\n"
+        "dati_salute:\n"
+        "  source_kind: ckan\n"
+        "  protocol: ckan\n"
+        "  observation_mode: catalog-watch\n"
+        "  base_url: https://dati.salute.gov.it/\n"
+        "  verdict: admitted\n"
+        "  datasets_in_use: [salute-1]\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(_artifact, "_REGISTRY_YAML", path)
+
+    # No filters
+    all_res = core.registry_query()
+    assert all_res["returned"] == 2
+
+    # Filter by source_id
+    sdmx_res = core.registry_query(source_id="istat_sdmx")
+    assert sdmx_res["returned"] == 1
+    assert sdmx_res["results"][0]["source_id"] == "istat_sdmx"
+
+    # Filter by protocol
+    ckan_res = core.registry_query(protocol="ckan")
+    assert ckan_res["returned"] == 1
+    assert ckan_res["results"][0]["source_id"] == "dati_salute"
+
+    # Filter by source_kind
+    sdmx_kind = core.registry_query(source_kind="sdmx")
+    assert sdmx_kind["returned"] == 1
+
+    # Filter by observation_mode
+    catalog = core.registry_query(observation_mode="catalog-watch")
+    assert catalog["returned"] == 1
+
+    # No match
+    empty = core.registry_query(protocol="sparql")
+    assert empty["returned"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Inventory edge cases
+# ---------------------------------------------------------------------------
+
+
+def test_inventory_status_report_not_found(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", tmp_path / "nonexistent_report.json")
+    result = core.inventory_status(source_id="test")
+    assert "error" in result
+
+
+def test_inventory_status_sources_not_a_dict(tmp_path, monkeypatch) -> None:
+    report_path = tmp_path / "inventory_report.json"
+    report_path.write_text(json.dumps({"sources": "not_a_dict"}), encoding="utf-8")
+    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
+    result = core.inventory_status()
+    assert result["returned"] == 0
+
+
+def test_inventory_status_source_info_not_a_dict(tmp_path, monkeypatch) -> None:
+    """Un item in sources che non e' dict (es. lista) non rompe il loop."""
+    report_path = tmp_path / "inventory_report.json"
+    report_path.write_text(json.dumps({"sources": {"s1": "not_a_dict", "s2": {"status": "ok", "rows": 100}}}), encoding="utf-8")
+    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
+    result = core.inventory_status()
+    assert result["returned"] == 1
+    assert result["sources"][0]["source_id"] == "s2"
+
+
+def test_query_inventory_has_results_true(tmp_path, monkeypatch) -> None:
+    parquet_path = tmp_path / "source_check_results.parquet"
+    _write_parquet(parquet_path, [
+        {"source_id": "a", "item_id": "x1", "intake_score": 45},
+        {"source_id": "a", "item_id": "x2", "intake_score": None},
+    ])
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    result = core.query_inventory(source_id="a", has_results=True)
+    assert result["returned"] == 1
+    assert result["results"][0]["item_id"] == "x1"
+
+
+def test_query_inventory_has_results_false(tmp_path, monkeypatch) -> None:
+    parquet_path = tmp_path / "source_check_results.parquet"
+    _write_parquet(parquet_path, [
+        {"source_id": "a", "item_id": "x1", "intake_score": 45},
+        {"source_id": "a", "item_id": "x2", "intake_score": None},
+    ])
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    result = core.query_inventory(source_id="a", has_results=False)
+    assert result["returned"] == 1
+    assert result["results"][0]["item_id"] == "x2"
