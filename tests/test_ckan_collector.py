@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from collectors.ckan import (
     _ckan_api_base,
     _ckan_search_params,
@@ -14,7 +13,7 @@ from collectors.ckan import (
     extract_ckan_inventory_row,
 )
 
-pytestmark = pytest.mark.adapter
+pytestmark = pytest.mark.pure_unit
 
 
 class TestResourceHelpers:
@@ -353,4 +352,4 @@ class TestSearchWithFqPropagation:
         assert "fq" not in captured_params, (
             f"fq non dovrebbe essere presente, ma c'è: {captured_params}"
         )
-pytestmark = pytest.mark.adapter
+pytestmark = pytest.mark.pure_unit

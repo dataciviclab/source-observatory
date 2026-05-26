@@ -49,7 +49,7 @@ jobs:
 
 
       - name: Run tests
-        run: pytest -v --cov-fail-under=50
+        run: pytest -v --cov-fail-under=55
 
       - name: "Smoke test: bulk_source_check on mef_irpef"
         run: |
