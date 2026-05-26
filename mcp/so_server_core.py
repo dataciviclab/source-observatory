@@ -187,5 +187,4 @@ from _sdmx import (  # noqa: F401
 from _signals import (  # noqa: F401
     query_signals,
 )
-
 from lab_connectors.http import HttpClient  # noqa: F401
