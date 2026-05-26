@@ -84,26 +84,10 @@ __all__ = [
     "registry_query",
     # Find by URL
     "find_by_url",
-    # Probe
-    "probe_url",
-    "_guess_format",
-    # CKAN
-    "_ckan_package_show",
-    "_ckan_get_json",
-    "_ckan_action_endpoint",
-    # SPARQL
-    "_sparql_query_raw",
-    # HTML
-    "_html_extract_links",
-    "_extract_links_from_html",
     # SDMX
     "discover_sdmx",
     "_read_sdmx_inventory_rows",
     "_score_dataflow",
-    # Topic
-    "infer_topic",
-    "_score_text_by_topics",
-    "_TOPIC_KEYWORDS",
     # Recommend
     "recommend_sources",
 ]
@@ -160,22 +144,9 @@ from _artifact import (  # noqa: F401
     observatory_get,
 )
 
-# ── CKAN ────────────────────────────────────────────────────────────────────
-from _ckan import (  # noqa: F401
-    _ckan_action_endpoint,
-    _ckan_get_json,
-    _ckan_package_show,
-)
-
 # ── Find by URL ─────────────────────────────────────────────────────────────
 from _find_url import (  # noqa: F401
     find_by_url,
-)
-
-# ── HTML ────────────────────────────────────────────────────────────────────
-from _html import (  # noqa: F401
-    _extract_links_from_html,
-    _html_extract_links,
 )
 
 # ── Inventory queries ───────────────────────────────────────────────────────
@@ -185,12 +156,6 @@ from _inventory import (  # noqa: F401
     inventory_diff,
     inventory_status,
     query_inventory,
-)
-
-# ── URL probing ─────────────────────────────────────────────────────────────
-from _probe import (  # noqa: F401
-    _guess_format,
-    probe_url,
 )
 
 # ── Radar queries ───────────────────────────────────────────────────────────
@@ -223,15 +188,4 @@ from _signals import (  # noqa: F401
     query_signals,
 )
 
-# ── SPARQL ──────────────────────────────────────────────────────────────────
-from _sparql import (  # noqa: F401
-    _sparql_query_raw,
-)
-
-# ── Topic inference ─────────────────────────────────────────────────────────
-from _topic import (  # noqa: F401
-    _TOPIC_KEYWORDS,
-    _score_text_by_topics,
-    infer_topic,
-)
 from lab_connectors.http import HttpClient  # noqa: F401
