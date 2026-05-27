@@ -113,7 +113,7 @@ scripts/          codice runtime (radar, inventory, source-check, diff)
 scripts/collectors/  adapter per protocollo (CKAN, SDMX, SPARQL, HTML)
 data/             artifact versionati (radar, catalog, inventory)
 skills/           guide operative per agenti
-mcp/              layer MCP read-only sugli artifact
+so_mcp/           layer MCP read-only sugli artifact
 docs/             runbook, architettura, policy
 ```
 

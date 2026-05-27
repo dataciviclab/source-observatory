@@ -26,10 +26,10 @@ jobs:
         run: pip install -r requirements-dev.txt
 
       - name: Lint with ruff
-        run: ruff check scripts/ tests/ mcp/
+        run: ruff check scripts/ tests/ so_mcp/
 
       - name: Type check with mypy
-        run: mypy scripts/ mcp/
+        run: mypy scripts/ so_mcp/
 
       - name: Validate sources_registry.yaml
         run: |

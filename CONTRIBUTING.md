@@ -22,7 +22,7 @@ Qui stanno:
 - `sources_registry.yaml` — registro di tutte le fonti osservate
 - `scripts/` — radar check, inventory, source-check, catalog diff
 - `skills/` — guide operative per agenti (source-check, inventory-triage, portal-scout)
-- `mcp/` — layer MCP read-only sugli artifact
+- `so_mcp/` — layer MCP read-only sugli artifact
 - `data/` — artifact versionati: radar_summary, radar_history, catalog_signals
 - workflow CI: `radar.yml` (daily), `observatory.yml` (weekly)
 

@@ -2,12 +2,11 @@
 Shared artifact infrastructure for SO MCP modules.
 
 Path constants, artifact resolution (local/GCS), env loading, format maps,
-and helper utilities used by all other ``mcp/_*.py`` modules.
+and helper utilities used by all other ``so_mcp/_*.py`` modules.
 
-This module intentionally has no ``__init__.py`` in ``mcp/`` — sibling modules
-import via ``import _artifact``, relying on ``mcp/`` being in ``sys.path``
-(added automatically when running ``python mcp/so_server.py``, or via conftest
-for tests).
+Sibling modules import via ``import _artifact``, relying on ``so_mcp/`` being
+in ``sys.path`` (added automatically when running ``python so_mcp/so_server.py``
+or via conftest for tests).
 """
 
 from __future__ import annotations
@@ -41,7 +40,7 @@ _CONSTANTS_FILE = _REPO_ROOT / "scripts" / "_constants.py"
 
 # I path degli artifact sono definiti in scripts/_constants.py per avere un'unica
 # fonte canonica. Qui vengono caricati via importlib per evitare duplicazione
-# (mcp/ non ha scripts/ in sys.path a runtime).
+# (so_mcp/ non ha scripts/ in sys.path a runtime).
 
 _constants_mod = None
 

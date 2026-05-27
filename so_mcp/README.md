@@ -24,14 +24,14 @@ Il server MCP legge i dati nell'ordine: **GCS → cache locale**. I commit su gi
     "source-observatory": {
       "command": "<workspace>/.venv/bin/python",
       "args": [
-        "<workspace>/mcp/so_server.py"
+        "<workspace>/so_mcp/so_server.py"
       ]
     }
   }
 }
 ```
 
-Sostituisci `<workspace>` con il path assoluto del repo `source-observatory/`. L'avvio è via file path diretto (non `python -m`): la directory `mcp/` non contiene `__init__.py` (rimosso deliberatamente), quindi non è un package Python e non collide col pacchetto PyPI `mcp`.
+Sostituisci `<workspace>` con il path assoluto del repo `source-observatory/`. L'avvio è via file path diretto (non `python -m`).
 
 ## Config artifact
 
