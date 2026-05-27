@@ -35,23 +35,39 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 # ── Script paths ──────────────────────────────────────────────────────────────
 
 _COLLECTORS_BASE = _REPO_ROOT / "scripts" / "collectors" / "base.py"
+_CONSTANTS_FILE = _REPO_ROOT / "scripts" / "_constants.py"
 
-# ── Artifact paths ────────────────────────────────────────────────────────────
+# ── Artifact paths (canonical source: scripts/_constants.py) ──────────────────
 
-_CHECK_PARQUET = (
-    _REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
-)
-_INVENTORY_PARQUET = (
-    _REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_latest.parquet"
-)
-_INVENTORY_REPORT = (
-    _REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_report.json"
-)
-_SIGNALS_JSON = _REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
-_RADAR_JSON = _REPO_ROOT / "data" / "radar" / "radar_summary.json"
-_RADAR_HISTORY_JSON = _REPO_ROOT / "data" / "radar" / "radar_history.json"
-_STATUS_MD = _REPO_ROOT / "data" / "radar" / "STATUS.md"
-_REGISTRY_YAML = _REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
+# I path degli artifact sono definiti in scripts/_constants.py per avere un'unica
+# fonte canonica. Qui vengono caricati via importlib per evitare duplicazione
+# (mcp/ non ha scripts/ in sys.path a runtime).
+
+_constants_mod = None
+
+
+def _get_constants():
+    """Lazy-load scripts/_constants.py come modulo separato."""
+    global _constants_mod
+    if _constants_mod is None:
+        spec = importlib.util.spec_from_file_location("_so_constants", _CONSTANTS_FILE)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"Cannot load _constants from {_CONSTANTS_FILE}")
+        _constants_mod = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = _constants_mod
+        spec.loader.exec_module(_constants_mod)
+    return _constants_mod
+
+
+_c = _get_constants()
+_CHECK_PARQUET = _c.CHECK_PARQUET_PATH
+_INVENTORY_PARQUET = _c.INVENTORY_PARQUET_PATH
+_INVENTORY_REPORT = _c.CATALOG_INVENTORY_REPORT_PATH
+_SIGNALS_JSON = _c.CATALOG_SIGNALS_PATH
+_RADAR_JSON = _c.RADAR_SUMMARY_PATH
+_RADAR_HISTORY_JSON = _c.RADAR_HISTORY_PATH
+_STATUS_MD = _c.STATUS_MD_PATH
+_REGISTRY_YAML = _c.REGISTRY_PATH
 _DEFAULT_CACHE_MAX_AGE_HOURS = 24
 
 # ── GCS prefix defaults ──────────────────────────────────────────────────────

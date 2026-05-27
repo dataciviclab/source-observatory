@@ -16,17 +16,23 @@ from pathlib import Path
 
 import jsonschema
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-SCHEMA_DIR = REPO_ROOT / "schemas"
-DEFAULT_REPORT = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_report.json"
-DEFAULT_RADAR = REPO_ROOT / "data" / "radar" / "radar_summary.json"
-DEFAULT_OUT = REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
-DEFAULT_REPORT_OUT = REPO_ROOT / "data" / "catalog" / "CATALOG_WATCH_REPORT.md"
+from _constants import (
+    CATALOG_INVENTORY_REPORT_PATH,
+    CATALOG_SIGNALS_PATH,
+    CATALOG_WATCH_REPORT_PATH,
+    RADAR_SUMMARY_PATH,
+    SCHEMA_DIR_PATH,
+)
+
+DEFAULT_REPORT = CATALOG_INVENTORY_REPORT_PATH
+DEFAULT_RADAR = RADAR_SUMMARY_PATH
+DEFAULT_OUT = CATALOG_SIGNALS_PATH
+DEFAULT_REPORT_OUT = CATALOG_WATCH_REPORT_PATH
 
 
 def _validate_schema(instance: dict, schema_name: str) -> None:
     """Validate a dict against the JSON schema file in schemas/."""
-    schema_path = SCHEMA_DIR / schema_name
+    schema_path = SCHEMA_DIR_PATH / schema_name
     if not schema_path.exists():
         print(f"⚠️  Schema {schema_name} non trovato — skip validazione")
         return
