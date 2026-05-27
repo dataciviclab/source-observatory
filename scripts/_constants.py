@@ -15,8 +15,9 @@ RADAR_HISTORY_PATH = REPO_ROOT / "data" / "radar" / "radar_history.json"
 STATUS_MD_PATH = REPO_ROOT / "data" / "radar" / "STATUS.md"
 
 # ── Catalog inventory (scripts/build_catalog_inventory.py → mcp/_inventory.py) ─
-INVENTORY_PARQUET_PATH = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_latest.parquet"
-CATALOG_INVENTORY_REPORT_PATH = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_report.json"
+CATALOG_INVENTORY_DIR_PATH = REPO_ROOT / "data" / "catalog_inventory" / "generated"
+INVENTORY_PARQUET_PATH = CATALOG_INVENTORY_DIR_PATH / "catalog_inventory_latest.parquet"
+CATALOG_INVENTORY_REPORT_PATH = CATALOG_INVENTORY_DIR_PATH / "catalog_inventory_report.json"
 CATALOG_WATCH_REPORT_PATH = REPO_ROOT / "data" / "catalog" / "CATALOG_WATCH_REPORT.md"
 
 # ── Source check (scripts/bulk_source_check.py → mcp/_signals.py) ────────────

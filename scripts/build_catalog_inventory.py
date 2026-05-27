@@ -11,7 +11,13 @@ from pathlib import Path
 from typing import Any, cast
 
 import pandas as pd
-from _constants import REGISTRY_PATH, load_registry, stale_reason_from_exception
+from _constants import (
+    CATALOG_INVENTORY_DIR_PATH,
+    RADAR_SUMMARY_PATH,
+    REGISTRY_PATH,
+    load_registry,
+    stale_reason_from_exception,
+)
 from collectors import dispatch, supported_protocols
 from collectors.base import inventory_cfg, now_utc_iso
 from collectors.ckan import (
@@ -57,8 +63,7 @@ def collect_sdmx_inventory(source_id: str, source_cfg: dict[str, Any], captured_
     return res.rows, res.warning
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUT_DIR = REPO_ROOT / "data" / "catalog_inventory" / "generated"
+DEFAULT_OUT_DIR = CATALOG_INVENTORY_DIR_PATH
 DEFAULT_OUT_PARQUET = "catalog_inventory_latest.parquet"
 DEFAULT_OUT_REPORT = "catalog_inventory_report.json"
 
@@ -178,7 +183,7 @@ def main() -> None:
 
     # ── Skip RED sources da radar ─────────────────────────────────────────────
     if args.skip_red_sources:
-        radar_path = REPO_ROOT / "data" / "radar" / "radar_summary.json"
+        radar_path = RADAR_SUMMARY_PATH
         if radar_path.exists():
             try:
                 with radar_path.open() as fh:
