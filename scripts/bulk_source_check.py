@@ -37,6 +37,12 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from _constants import (
+    CHECK_PARQUET_PATH,
+    INVENTORY_PARQUET_PATH,
+    RADAR_SUMMARY_PATH,
+    REGISTRY_PATH,
+)
 from source_check_analyze import (
     _fallback_infer,
     _finalize_scores,
@@ -60,10 +66,8 @@ from source_check_fetch import (
 
 logger = logging.getLogger(__name__)
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_IN = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "catalog_inventory_latest.parquet"
-DEFAULT_OUT = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
-REGISTRY_PATH = REPO_ROOT / "data" / "radar" / "sources_registry.yaml"
+DEFAULT_IN = INVENTORY_PARQUET_PATH
+DEFAULT_OUT = CHECK_PARQUET_PATH
 
 MAX_WORKERS = 16
 _NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
@@ -734,7 +738,7 @@ def main() -> None:
     # Evita di campionare item da fonti che timeoutmano su Actions (IP cloud blocked)
     # e allungano il source-check senza produrre valore.
     if args.skip_red_sources:
-        radar_summary_path = REPO_ROOT / "data" / "radar" / "radar_summary.json"
+        radar_summary_path = RADAR_SUMMARY_PATH
         if radar_summary_path.exists():
             import json
             try:

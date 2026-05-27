@@ -6,7 +6,6 @@ from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
-from pathlib import Path
 from typing import Any, Literal
 
 import jsonschema
@@ -15,6 +14,8 @@ from _constants import (
     RADAR_HISTORY_PATH,
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
+    SCHEMA_DIR_PATH,
+    STATUS_MD_PATH,
     append_radar_probe,
     load_radar_history,
     load_registry,
@@ -23,12 +24,10 @@ from _constants import (
 )
 from lab_connectors.http import HttpClient, HttpFallbackError
 
-_SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
-
 
 def _validate_schema(instance: dict, schema_name: str) -> None:
     """Validate a dict against the JSON schema file in schemas/."""
-    schema_path = _SCHEMA_DIR / schema_name
+    schema_path = SCHEMA_DIR_PATH / schema_name
     if not schema_path.exists():
         print(f"⚠️  Schema {schema_name} non trovato — skip validazione")
         return
@@ -40,8 +39,6 @@ def _validate_schema(instance: dict, schema_name: str) -> None:
         raise
 
 
-WORKSPACE_ROOT = Path(__file__).resolve().parents[1]
-STATUS_PATH = WORKSPACE_ROOT / "data" / "radar" / "STATUS.md"
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 TIMEOUT_SECONDS = 10
 
@@ -474,15 +471,15 @@ def main() -> int:
 
     _validate_schema(summary, "radar_summary.schema.json")
 
-    STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    STATUS_PATH.write_text(report, encoding="utf-8")
+    STATUS_MD_PATH.parent.mkdir(parents=True, exist_ok=True)
+    STATUS_MD_PATH.write_text(report, encoding="utf-8")
     RADAR_SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     RADAR_SUMMARY_PATH.write_text(
         json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
     )
     save_radar_history(history)
     save_registry(REGISTRY_PATH, registry)
-    print(f"Wrote {STATUS_PATH}")
+    print(f"Wrote {STATUS_MD_PATH}")
     print(f"Wrote {RADAR_SUMMARY_PATH}")
     if summary.get("persistent_red"):
         print(f"⚠️  Persistent RED: {summary['persistent_red']} fonti ({', '.join(s['id'] for s in summary['sources'] if s.get('red_streak'))})")

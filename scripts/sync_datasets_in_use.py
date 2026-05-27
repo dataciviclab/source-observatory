@@ -9,14 +9,13 @@ import sys
 from pathlib import Path
 from urllib.request import urlopen
 
+from _constants import REGISTRY_PATH
 from ruamel.yaml import YAML
 
 DI_CATALOG_URL = (
     "https://raw.githubusercontent.com/dataciviclab/dataset-incubator/"
     "main/registry/clean_catalog.json"
 )
-ROOT = Path(__file__).resolve().parents[1]
-REGISTRY_PATH = ROOT / "data" / "radar" / "sources_registry.yaml"
 
 
 def fetch_di_catalog() -> list[dict]:
