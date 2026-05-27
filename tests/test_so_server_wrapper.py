@@ -1,4 +1,4 @@
-"""Smoke test: verify so_server.py registers 17 MCP tools via create_mcp_server."""
+"""Smoke test: verify so_server.py registers 12 MCP tools via create_mcp_server."""
 from __future__ import annotations
 
 import asyncio

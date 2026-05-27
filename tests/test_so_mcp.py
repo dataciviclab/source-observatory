@@ -4,9 +4,21 @@ import json
 
 import _artifact
 import duckdb  # noqa: E402
-import pandas as pd  # must be before so_server_core import
+import pandas as pd  # must be before duckdb
 import pytest
-import so_server_core as core  # noqa: E402  # conftest aggiunge mcp/ a sys.path
+from _find_url import find_by_url
+from _inventory import (
+    _source_radar_context,
+    catalog_inventory_search,
+    inventory_diff,
+    inventory_status,
+    query_inventory,
+)
+from _radar import radar_delta, radar_history, radar_status_md, radar_summary
+from _recommend import recommend_sources
+from _registry import registry_query
+from _sdmx import discover_sdmx
+from _signals import query_signals
 
 pytestmark = pytest.mark.contract
 
@@ -32,7 +44,7 @@ def test_query_inventory_filters_and_orders(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
 
-    result = core.query_inventory(source_id="a", min_score=40, limit=10)
+    result = query_inventory(source_id="a", min_score=40, limit=10)
 
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "high"
@@ -66,7 +78,7 @@ def test_query_inventory_reads_gcs_when_configured(tmp_path, monkeypatch) -> Non
     monkeypatch.setenv("CATALOG_INVENTORY_GCS_PREFIX", "gs://bucket")
     monkeypatch.setattr(_artifact.requests, "get", fake_get)
 
-    result = core.query_inventory(source_id="gcs_src", limit=10)
+    result = query_inventory(source_id="gcs_src", limit=10)
 
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "remote"
@@ -92,7 +104,7 @@ def test_query_signals_filters_and_limits(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_SIGNALS_JSON", signals_path)
 
-    result = core.query_signals(source_id="a", limit=1)
+    result = query_signals(source_id="a", limit=1)
 
     assert result["captured_at"] == "2026-04-30T00:00:00+00:00"
     assert result["returned"] == 1
@@ -118,7 +130,7 @@ def test_radar_summary_filters_source(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
 
-    result = core.radar_summary(source_id="b")
+    result = radar_summary(source_id="b")
 
     assert result["status_counts"] == {"GREEN": 1, "RED": 1}
     assert result["returned"] == 1
@@ -142,8 +154,8 @@ def test_inventory_status_summarizes_report(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
 
-    summary = core.inventory_status()
-    filtered = core.inventory_status(source_id="b")
+    summary = inventory_status()
+    filtered = inventory_status(source_id="b")
 
     assert summary["status_counts"] == {"ok": 1, "error": 1}
     assert summary["rows_total"] == 10
@@ -201,17 +213,10 @@ def test_catalog_inventory_search_filters_rows(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
-    result = core.catalog_inventory_search("dipendenti", source_id="openbdap")
+    result = catalog_inventory_search("dipendenti", source_id="openbdap")
 
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "a"
-
-
-def test_portal_candidates_removed_from_core() -> None:
-    """portal_candidates non e' piu esportato da so_server_core."""
-    assert not hasattr(core, "portal_candidates"), (
-        "portal_candidates rimosso dal core MCP: se lo riaggiungi, aggiorna questo test"
-    )
 
 
 def test_discover_sdmx_reads_inventory(tmp_path, monkeypatch) -> None:
@@ -241,7 +246,7 @@ def test_discover_sdmx_reads_inventory(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
-    result = core.discover_sdmx(["prezzi"], limit=5)
+    result = discover_sdmx(["prezzi"], limit=5)
 
     assert result["artifact"].endswith("catalog_inventory_latest.parquet")
     assert result["returned"] == 1
@@ -283,7 +288,7 @@ def test_discover_sdmx_reports_missing_source_from_inventory_report(tmp_path, mo
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
 
-    result = core.discover_sdmx(["prezzi"], limit=5)
+    result = discover_sdmx(["prezzi"], limit=5)
 
     assert result["error"] == "source_unavailable"
     assert result["source_status"]["error"] == "HTTP 500"
@@ -346,7 +351,7 @@ def test_recommend_sources(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
-    result = core.recommend_sources("INPS")
+    result = recommend_sources("INPS")
 
     assert result["returned"] == 1
     assert result["sources"][0]["source_id"] == "inps"
@@ -355,7 +360,7 @@ def test_recommend_sources(tmp_path, monkeypatch) -> None:
 
 
 def test_recommend_sources_empty_keyword() -> None:
-    result = core.recommend_sources("")
+    result = recommend_sources("")
 
     assert result["error"] == "empty_keyword"
 
@@ -409,7 +414,7 @@ def test_inventory_diff(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
-    result = core.inventory_diff("inps")
+    result = inventory_diff("inps")
 
     assert result["source_id"] == "inps"
     assert result["baseline_value"] == 2323
@@ -422,7 +427,7 @@ def test_inventory_diff_source_not_in_report(tmp_path, monkeypatch) -> None:
     report_path.write_text(json.dumps({"sources": {}}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
 
-    result = core.inventory_diff("unknown_source")
+    result = inventory_diff("unknown_source")
 
     assert result["error"] == "source_not_in_report"
 
@@ -445,7 +450,7 @@ def test_inventory_diff_parquet_not_found(tmp_path, monkeypatch) -> None:
         _artifact, "_INVENTORY_PARQUET", tmp_path / "nonexistent.parquet"
     )
 
-    result = core.inventory_diff("inps")
+    result = inventory_diff("inps")
 
     assert result["error"] == "artifact_not_found"
 
@@ -467,7 +472,7 @@ def test_source_radar_context_red(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
 
-    result = core._source_radar_context("dati_salute")
+    result = _source_radar_context("dati_salute")
     assert result is not None
     assert "RED" in result
     assert "14 giorni" in result
@@ -486,7 +491,7 @@ def test_source_radar_context_green(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
 
-    result = core._source_radar_context("istat_sdmx")
+    result = _source_radar_context("istat_sdmx")
     assert result == "status=GREEN"
 
 
@@ -496,14 +501,14 @@ def test_source_radar_context_unknown_source(tmp_path, monkeypatch) -> None:
     radar_path.write_text(json.dumps({"sources": []}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
 
-    result = core._source_radar_context("unknown_source")
+    result = _source_radar_context("unknown_source")
     assert result is None
 
 
 def test_source_radar_context_no_file(tmp_path, monkeypatch) -> None:
     """No radar file returns None."""
     monkeypatch.setattr(_artifact, "_RADAR_JSON", tmp_path / "nonexistent.json")
-    result = core._source_radar_context("dati_salute")
+    result = _source_radar_context("dati_salute")
     assert result is None
 
 
@@ -535,7 +540,7 @@ def test_find_by_url_finds_by_url_in_source_check(tmp_path, monkeypatch) -> None
     monkeypatch.setattr(_artifact, "_CHECK_PARQUET", check_path)
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inv_path)
 
-    result = core.find_by_url("PENSIONI-2024.csv")
+    result = find_by_url("PENSIONI-2024.csv")
 
     assert result["query_url"] == "PENSIONI-2024.csv"
     assert len(result["source_check_results"]) == 1
@@ -567,7 +572,7 @@ def test_find_by_url_finds_by_item_name_in_inventory(tmp_path, monkeypatch) -> N
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inv_path)
 
     # Search by item_name substring
-    result = core.find_by_url("Pensioni erogate")
+    result = find_by_url("Pensioni erogate")
 
     assert len(result["catalog_inventory"]) == 1
     assert result["catalog_inventory"][0]["item_id"] == "ID-5257"
@@ -597,7 +602,7 @@ def test_find_by_url_finds_by_item_id_in_inventory(tmp_path, monkeypatch) -> Non
     monkeypatch.setattr(_artifact, "_CHECK_PARQUET", check_path)
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inv_path)
 
-    result = core.find_by_url("ID-5257")
+    result = find_by_url("ID-5257")
 
     assert len(result["catalog_inventory"]) == 1
     assert result["catalog_inventory"][0]["item_name"] == "Pensioni"
@@ -612,7 +617,7 @@ def test_find_by_url_returns_empty_when_no_match(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(_artifact, "_CHECK_PARQUET", check_path)
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inv_path)
 
-    result = core.find_by_url("nonexistent-filename.csv")
+    result = find_by_url("nonexistent-filename.csv")
 
     assert result["source_check_results"] == []
     assert result["catalog_inventory"] == []
@@ -621,7 +626,7 @@ def test_find_by_url_returns_empty_when_no_match(tmp_path, monkeypatch) -> None:
 
 
 def test_find_by_url_rejects_empty_url() -> None:
-    result = core.find_by_url("")
+    result = find_by_url("")
     assert result["error"] == "empty_url"
 
 
@@ -632,7 +637,7 @@ def test_find_by_url_rejects_empty_url() -> None:
 
 def test_radar_history_file_not_found(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", tmp_path / "radar_history.json")
-    result = core.radar_history(source_id="test", limit=5)
+    result = radar_history(source_id="test", limit=5)
     assert result["error"] == "artifact_not_found"
 
 
@@ -640,7 +645,7 @@ def test_radar_history_probes_not_a_list(tmp_path, monkeypatch) -> None:
     path = tmp_path / "radar_history.json"
     path.write_text(json.dumps({"probes": "not_a_list"}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
-    result = core.radar_history()
+    result = radar_history()
     assert result["returned"] == 0
     assert result["probes_in_window"] == 0
 
@@ -651,10 +656,10 @@ def test_radar_history_limit_clamping(tmp_path, monkeypatch) -> None:
     path.write_text(json.dumps({"probes": probes}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
     # Over-limit: clamped to 20
-    result = core.radar_history(limit=100)
+    result = radar_history(limit=100)
     assert result["probes_in_window"] == 20
     # Under-limit: negative → clamped to 1
-    result2 = core.radar_history(limit=-3)
+    result2 = radar_history(limit=-3)
     assert result2["probes_in_window"] == 1
 
 
@@ -666,7 +671,7 @@ def test_radar_history_filter_by_source(tmp_path, monkeypatch) -> None:
     ]
     path.write_text(json.dumps({"probes": probes}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
-    result = core.radar_history(source_id="s1", limit=10)
+    result = radar_history(source_id="s1", limit=10)
     assert result["returned"] == 1
     assert result["sources"][0]["source_id"] == "s1"
     assert result["sources"][0]["recent_red_count"] == 1
@@ -674,7 +679,7 @@ def test_radar_history_filter_by_source(tmp_path, monkeypatch) -> None:
 
 def test_radar_status_md_file_not_found(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(_artifact, "_STATUS_MD", tmp_path / "STATUS.md")
-    result = core.radar_status_md()
+    result = radar_status_md()
     assert result["error"] == "artifact_not_found"
 
 
@@ -683,7 +688,7 @@ def test_radar_status_md_reads_content(tmp_path, monkeypatch) -> None:
     content = "# Radar State\nOK"
     path.write_text(content, encoding="utf-8")
     monkeypatch.setattr(_artifact, "_STATUS_MD", path)
-    result = core.radar_status_md()
+    result = radar_status_md()
     assert result["content"] == content
     assert "modified_at" in result
     assert "age_hours" in result
@@ -691,7 +696,7 @@ def test_radar_status_md_reads_content(tmp_path, monkeypatch) -> None:
 
 def test_radar_delta_file_not_found(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", tmp_path / "radar_history.json")
-    result = core.radar_delta()
+    result = radar_delta()
     assert result["error"] == "artifact_not_found"
 
 
@@ -699,7 +704,7 @@ def test_radar_delta_not_enough_probes(tmp_path, monkeypatch) -> None:
     path = tmp_path / "radar_history.json"
     path.write_text(json.dumps({"probes": [{"probe_date": "2024-01-01", "sources": []}]}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
-    result = core.radar_delta()
+    result = radar_delta()
     assert "Not enough probes" in result["message"]
     assert result["changes"] == []
 
@@ -736,7 +741,7 @@ def test_radar_delta_changes_recoveries_persistent(tmp_path, monkeypatch) -> Non
     ]
     path.write_text(json.dumps({"probes": probes}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
-    result = core.radar_delta()
+    result = radar_delta()
     # s1: RED->GREEN (change + recovery), s2: GREEN->RED (change + new_red)
     # s3: RED->RED (no change, ma streak >= 2 → persistent)
     assert result["changed_count"] == 2
@@ -752,7 +757,7 @@ def test_radar_delta_changes_recoveries_persistent(tmp_path, monkeypatch) -> Non
 
 def test_registry_query_file_not_found(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(_artifact, "_REGISTRY_YAML", tmp_path / "sources_registry.yaml")
-    result = core.registry_query()
+    result = registry_query()
     assert result["error"] == "artifact_not_found"
 
 
@@ -760,7 +765,7 @@ def test_registry_query_not_a_dict(tmp_path, monkeypatch) -> None:
     path = tmp_path / "sources_registry.yaml"
     path.write_text("[not a dict]", encoding="utf-8")
     monkeypatch.setattr(_artifact, "_REGISTRY_YAML", path)
-    result = core.registry_query()
+    result = registry_query()
     assert result["error"] == "invalid_registry"
 
 
@@ -785,29 +790,29 @@ def test_registry_query_filters(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(_artifact, "_REGISTRY_YAML", path)
 
     # No filters
-    all_res = core.registry_query()
+    all_res = registry_query()
     assert all_res["returned"] == 2
 
     # Filter by source_id
-    sdmx_res = core.registry_query(source_id="istat_sdmx")
+    sdmx_res = registry_query(source_id="istat_sdmx")
     assert sdmx_res["returned"] == 1
     assert sdmx_res["results"][0]["source_id"] == "istat_sdmx"
 
     # Filter by protocol
-    ckan_res = core.registry_query(protocol="ckan")
+    ckan_res = registry_query(protocol="ckan")
     assert ckan_res["returned"] == 1
     assert ckan_res["results"][0]["source_id"] == "dati_salute"
 
     # Filter by source_kind
-    sdmx_kind = core.registry_query(source_kind="sdmx")
+    sdmx_kind = registry_query(source_kind="sdmx")
     assert sdmx_kind["returned"] == 1
 
     # Filter by observation_mode
-    catalog = core.registry_query(observation_mode="catalog-watch")
+    catalog = registry_query(observation_mode="catalog-watch")
     assert catalog["returned"] == 1
 
     # No match
-    empty = core.registry_query(protocol="sparql")
+    empty = registry_query(protocol="sparql")
     assert empty["returned"] == 0
 
 
@@ -818,7 +823,7 @@ def test_registry_query_filters(tmp_path, monkeypatch) -> None:
 
 def test_inventory_status_report_not_found(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", tmp_path / "nonexistent_report.json")
-    result = core.inventory_status(source_id="test")
+    result = inventory_status(source_id="test")
     assert "error" in result
 
 
@@ -826,7 +831,7 @@ def test_inventory_status_sources_not_a_dict(tmp_path, monkeypatch) -> None:
     report_path = tmp_path / "inventory_report.json"
     report_path.write_text(json.dumps({"sources": "not_a_dict"}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
-    result = core.inventory_status()
+    result = inventory_status()
     assert result["returned"] == 0
 
 
@@ -835,7 +840,7 @@ def test_inventory_status_source_info_not_a_dict(tmp_path, monkeypatch) -> None:
     report_path = tmp_path / "inventory_report.json"
     report_path.write_text(json.dumps({"sources": {"s1": "not_a_dict", "s2": {"status": "ok", "rows": 100}}}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
-    result = core.inventory_status()
+    result = inventory_status()
     assert result["returned"] == 1
     assert result["sources"][0]["source_id"] == "s2"
 
@@ -847,7 +852,7 @@ def test_query_inventory_has_results_true(tmp_path, monkeypatch) -> None:
         {"source_id": "a", "item_id": "x2", "intake_score": None},
     ])
     monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
-    result = core.query_inventory(source_id="a", has_results=True)
+    result = query_inventory(source_id="a", has_results=True)
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "x1"
 
@@ -859,6 +864,6 @@ def test_query_inventory_has_results_false(tmp_path, monkeypatch) -> None:
         {"source_id": "a", "item_id": "x2", "intake_score": None},
     ])
     monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
-    result = core.query_inventory(source_id="a", has_results=False)
+    result = query_inventory(source_id="a", has_results=False)
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "x2"
