@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-05-26T06:55:38.276549+00:00",
-  "probe_date": "2026-05-26",
+  "generated_at": "2026-05-27T07:12:57.102590+00:00",
+  "probe_date": "2026-05-27",
   "sources_total": 27,
   "status_counts": {
-    "GREEN": 25,
+    "GREEN": 24,
     "YELLOW": 1,
-    "RED": 1
+    "RED": 2
   },
   "persistent_red": 1,
   "sources": [
@@ -61,9 +61,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null
     },
     {
@@ -105,8 +105,8 @@
       "id": "opencoesione",
       "status": "YELLOW",
       "protocol": "rest",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)"
+      "http_code": "403",
+      "note": null
     },
     {
       "id": "mef_irpef",
