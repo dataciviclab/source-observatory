@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-import so_server  # noqa: E402  # conftest aggiunge mcp/ a sys.path
+import so_server  # noqa: E402  # conftest aggiunge so_mcp/ a sys.path
 
 
 def test_mcp_server_registers_12_tools() -> None:

@@ -1,6 +1,6 @@
 """Conftest per source-observatory.
 
-Aggiunge ``scripts/`` e ``mcp/`` a ``sys.path`` in modo che i test
+Aggiunge ``scripts/`` e ``so_mcp/`` a ``sys.path`` in modo che i test
 possano importare i moduli senza boilerplate.
 
 Fornisce anche fixture condivise per mock HTTP e artifact locali.
@@ -15,7 +15,7 @@ import pytest
 
 # Aggiungi percorsi di import prima di qualsiasi test
 _SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
-_MCP_DIR = Path(__file__).resolve().parent.parent / "mcp"
+_MCP_DIR = Path(__file__).resolve().parent.parent / "so_mcp"
 
 for _p in (_SCRIPTS_DIR, _MCP_DIR):
     if str(_p) not in sys.path:

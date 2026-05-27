@@ -1,11 +1,11 @@
 """
 SO MCP Server: read-only layer for Source Observatory artifact inspection.
 
-Run with: python mcp/so_server.py
+Run with: python so_mcp/so_server.py
 
-Nota: mcp/ non ha __init__.py (rimosso deliberatamente) per evitare collisione
-col pacchetto PyPI `mcp`. so_server.py e i moduli _*.py sono importabili
-come moduli sibling senza creare un package `mcp` locale.
+I moduli _*.py in questa directory si importano come sibling
+(``import _artifact``, ``from _inventory import ...``) grazie alla directory
+stessa aggiunta a ``sys.path`` da ``conftest.py`` (test) o dal runner MCP.
 """
 from __future__ import annotations
 
