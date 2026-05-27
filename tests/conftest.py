@@ -15,9 +15,9 @@ import pytest
 
 # Aggiungi percorsi di import prima di qualsiasi test
 _SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
-_MCP_DIR = Path(__file__).resolve().parent.parent / "so_mcp"
+_SO_MCP_DIR = Path(__file__).resolve().parent.parent / "so_mcp"
 
-for _p in (_SCRIPTS_DIR, _MCP_DIR):
+for _p in (_SCRIPTS_DIR, _SO_MCP_DIR):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
