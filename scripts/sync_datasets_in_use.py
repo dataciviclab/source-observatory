@@ -9,9 +9,8 @@ import sys
 from pathlib import Path
 from urllib.request import urlopen
 
-from ruamel.yaml import YAML
-
 from _constants import REGISTRY_PATH
+from ruamel.yaml import YAML
 
 DI_CATALOG_URL = (
     "https://raw.githubusercontent.com/dataciviclab/dataset-incubator/"

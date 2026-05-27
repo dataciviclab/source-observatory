@@ -15,7 +15,6 @@ import json
 from pathlib import Path
 
 import jsonschema
-
 from _constants import (
     CATALOG_INVENTORY_REPORT_PATH,
     CATALOG_SIGNALS_PATH,

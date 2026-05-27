@@ -43,7 +43,6 @@ from _constants import (
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
 )
-
 from source_check_analyze import (
     _fallback_infer,
     _finalize_scores,
