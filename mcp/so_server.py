@@ -4,14 +4,25 @@ SO MCP Server: read-only layer for Source Observatory artifact inspection.
 Run with: python mcp/so_server.py
 
 Nota: mcp/ non ha __init__.py (rimosso deliberatamente) per evitare collisione
-col pacchetto PyPI `mcp`. so_server_core.py e so_server.py sono importabili
+col pacchetto PyPI `mcp`. so_server.py e i moduli _*.py sono importabili
 come moduli sibling senza creare un package `mcp` locale.
 """
 from __future__ import annotations
 
 from typing import Any
 
-import so_server_core
+from _find_url import find_by_url
+from _inventory import (
+    catalog_inventory_search,
+    inventory_diff,
+    inventory_status,
+    query_inventory,
+)
+from _radar import radar_history, radar_status_md, radar_summary
+from _recommend import recommend_sources
+from _registry import registry_query
+from _sdmx import discover_sdmx
+from _signals import query_signals
 from lab_connectors.mcp import create_mcp_server, guard_timed
 
 mcp = create_mcp_server(
@@ -34,7 +45,7 @@ def so_inventory_query(
     limit: int = 50,
     has_results: bool | None = None,
 ) -> dict[str, Any]:
-    return guard_timed(so_server_core.query_inventory, "so_inventory_query", source_id, min_score, limit, has_results)
+    return guard_timed(query_inventory, "so_inventory_query", source_id, min_score, limit, has_results)
 
 
 @mcp.tool(
@@ -42,7 +53,7 @@ def so_inventory_query(
     structured_output=True,
 )
 def so_catalog_signals(source_id: str | None = None, limit: int | None = None) -> dict[str, Any]:
-    return guard_timed(so_server_core.query_signals, "so_catalog_signals", source_id, limit)
+    return guard_timed(query_signals, "so_catalog_signals", source_id, limit)
 
 
 @mcp.tool(
@@ -50,7 +61,7 @@ def so_catalog_signals(source_id: str | None = None, limit: int | None = None) -
     structured_output=True,
 )
 def so_radar_summary(source_id: str | None = None) -> dict[str, Any]:
-    return guard_timed(so_server_core.radar_summary, "so_radar_summary", source_id)
+    return guard_timed(radar_summary, "so_radar_summary", source_id)
 
 
 @mcp.tool(
@@ -58,7 +69,7 @@ def so_radar_summary(source_id: str | None = None) -> dict[str, Any]:
     structured_output=True,
 )
 def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, Any]:
-    return guard_timed(so_server_core.radar_history, "so_radar_history", source_id, limit)
+    return guard_timed(radar_history, "so_radar_history", source_id, limit)
 
 
 @mcp.tool(
@@ -66,7 +77,7 @@ def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, 
     structured_output=True,
 )
 def so_radar_status_md() -> dict[str, Any]:
-    return guard_timed(so_server_core.radar_status_md, "so_radar_status_md")
+    return guard_timed(radar_status_md, "so_radar_status_md")
 
 
 @mcp.tool(
@@ -74,7 +85,7 @@ def so_radar_status_md() -> dict[str, Any]:
     structured_output=True,
 )
 def so_inventory_status(source_id: str | None = None) -> dict[str, Any]:
-    return guard_timed(so_server_core.inventory_status, "so_inventory_status", source_id)
+    return guard_timed(inventory_status, "so_inventory_status", source_id)
 
 
 @mcp.tool(
@@ -87,7 +98,7 @@ def so_catalog_inventory_search(
     protocol: str | None = None,
     limit: int = 25,
 ) -> dict[str, Any]:
-    return guard_timed(so_server_core.catalog_inventory_search, "so_catalog_inventory_search", query, source_id, protocol, limit)
+    return guard_timed(catalog_inventory_search, "so_catalog_inventory_search", query, source_id, protocol, limit)
 
 
 @mcp.tool(
@@ -95,7 +106,7 @@ def so_catalog_inventory_search(
     structured_output=True,
 )
 def so_discover_sdmx(keywords: list[str], limit: int = 30) -> dict[str, Any]:
-    return guard_timed(so_server_core.discover_sdmx, "so_discover_sdmx", keywords, limit)
+    return guard_timed(discover_sdmx, "so_discover_sdmx", keywords, limit)
 
 
 @mcp.tool(
@@ -104,7 +115,7 @@ def so_discover_sdmx(keywords: list[str], limit: int = 30) -> dict[str, Any]:
     structured_output=True,
 )
 def so_find_by_url(url: str) -> dict[str, Any]:
-    return guard_timed(so_server_core.find_by_url, "so_find_by_url", url)
+    return guard_timed(find_by_url, "so_find_by_url", url)
 
 
 @mcp.tool(
@@ -117,7 +128,7 @@ def so_registry_query(
     observation_mode: str | None = None,
     source_id: str | None = None,
 ) -> dict[str, Any]:
-    return guard_timed(so_server_core.registry_query, "so_registry_query", protocol, source_kind, observation_mode, source_id)
+    return guard_timed(registry_query, "so_registry_query", protocol, source_kind, observation_mode, source_id)
 
 
 @mcp.tool(
@@ -127,7 +138,7 @@ def so_registry_query(
     structured_output=True,
 )
 def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
-    return guard_timed(so_server_core.recommend_sources, "so_recommend_sources", keyword, limit)
+    return guard_timed(recommend_sources, "so_recommend_sources", keyword, limit)
 
 
 @mcp.tool(
@@ -137,7 +148,7 @@ def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
     structured_output=True,
 )
 def so_inventory_diff(source_id: str) -> dict[str, Any]:
-    return guard_timed(so_server_core.inventory_diff, "so_inventory_diff", source_id)
+    return guard_timed(inventory_diff, "so_inventory_diff", source_id)
 
 
 if __name__ == "__main__":

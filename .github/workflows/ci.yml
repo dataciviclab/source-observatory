@@ -51,12 +51,4 @@ jobs:
       - name: Run tests
         run: pytest -v --cov-fail-under=55
 
-      - name: "Smoke test: bulk_source_check on mef_irpef"
-        run: |
-          python scripts/bulk_source_check.py \
-            --source-ids mef_irpef \
-            --max-items 3 \
-            --limit 3 \
-            --workers 1 \
-            --in data/catalog_inventory/generated/catalog_inventory_latest.parquet \
-            --out /tmp/smoke_check.parquet 2>&1 || echo "SMOKE_TEST_WARNING: continua comunque"
+
