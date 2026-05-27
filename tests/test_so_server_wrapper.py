@@ -8,7 +8,7 @@ import so_server  # noqa: E402  # conftest aggiunge mcp/ a sys.path
 
 
 def test_mcp_server_registers_12_tools() -> None:
-    """Verify all 17 tools are registered on the mcp server object."""
+    """Verify all 12 tools are registered on the mcp server object."""
     tools = asyncio.run(so_server.mcp.list_tools())
     tool_names = sorted(t.name for t in tools)
 
