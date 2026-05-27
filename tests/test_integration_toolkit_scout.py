@@ -4,8 +4,11 @@ Verifica che le funzioni condivise da toolkit abbiano i contratti attesi da SO.
 Nessuna dipendenza di rete — solo funzioni pure.
 """
 
+import pytest
 from toolkit.scout.http import resolve_preview_kind
 from toolkit.scout.infer import infer_granularity, infer_years
+
+pytestmark = pytest.mark.contract
 
 
 def test_preview_kind_uppercase():

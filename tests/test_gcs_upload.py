@@ -4,6 +4,8 @@ from __future__ import annotations
 import pytest
 from gha.gcs_upload import _parse_gs_url
 
+pytestmark = pytest.mark.pure_unit
+
 
 class TestParseGsUrl:
     @pytest.mark.pure_unit
