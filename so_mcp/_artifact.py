@@ -11,7 +11,6 @@ or via conftest for tests).
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import os
 import subprocess
@@ -27,46 +26,36 @@ import duckdb
 import requests
 from lab_connectors.gcs.paths import CLEAN_BUCKET
 
-# ── Repo root ─────────────────────────────────────────────────────────────────
+# ── Repo root & path setup ────────────────────────────────────────────────────
+# Aggiunge scripts/ a sys.path per importare _constants e altri moduli scripts
+# senza ricorrere a importlib. Idempotente: se già in path, non fa nulla.
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
-
-# ── Script paths ──────────────────────────────────────────────────────────────
-
-_COLLECTORS_BASE = _REPO_ROOT / "scripts" / "collectors" / "base.py"
-_CONSTANTS_FILE = _REPO_ROOT / "scripts" / "_constants.py"
+_SCRIPTS_DIR = str(_REPO_ROOT / "scripts")
+if _SCRIPTS_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPTS_DIR)
 
 # ── Artifact paths (canonical source: scripts/_constants.py) ──────────────────
 
-# I path degli artifact sono definiti in scripts/_constants.py per avere un'unica
-# fonte canonica. Qui vengono caricati via importlib per evitare duplicazione
-# (so_mcp/ non ha scripts/ in sys.path a runtime).
+from _constants import (  # noqa: E402
+    CATALOG_INVENTORY_REPORT_PATH,
+    CATALOG_SIGNALS_PATH,
+    CHECK_PARQUET_PATH,
+    INVENTORY_PARQUET_PATH,
+    RADAR_HISTORY_PATH,
+    RADAR_SUMMARY_PATH,
+    REGISTRY_PATH,
+    STATUS_MD_PATH,
+)
 
-_constants_mod = None
-
-
-def _get_constants():
-    """Lazy-load scripts/_constants.py come modulo separato."""
-    global _constants_mod
-    if _constants_mod is None:
-        spec = importlib.util.spec_from_file_location("_so_constants", _CONSTANTS_FILE)
-        if spec is None or spec.loader is None:
-            raise ImportError(f"Cannot load _constants from {_CONSTANTS_FILE}")
-        _constants_mod = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = _constants_mod
-        spec.loader.exec_module(_constants_mod)
-    return _constants_mod
-
-
-_c = _get_constants()
-_CHECK_PARQUET = _c.CHECK_PARQUET_PATH
-_INVENTORY_PARQUET = _c.INVENTORY_PARQUET_PATH
-_INVENTORY_REPORT = _c.CATALOG_INVENTORY_REPORT_PATH
-_SIGNALS_JSON = _c.CATALOG_SIGNALS_PATH
-_RADAR_JSON = _c.RADAR_SUMMARY_PATH
-_RADAR_HISTORY_JSON = _c.RADAR_HISTORY_PATH
-_STATUS_MD = _c.STATUS_MD_PATH
-_REGISTRY_YAML = _c.REGISTRY_PATH
+_CHECK_PARQUET = CHECK_PARQUET_PATH
+_INVENTORY_PARQUET = INVENTORY_PARQUET_PATH
+_INVENTORY_REPORT = CATALOG_INVENTORY_REPORT_PATH
+_SIGNALS_JSON = CATALOG_SIGNALS_PATH
+_RADAR_JSON = RADAR_SUMMARY_PATH
+_RADAR_HISTORY_JSON = RADAR_HISTORY_PATH
+_STATUS_MD = STATUS_MD_PATH
+_REGISTRY_YAML = REGISTRY_PATH
 _DEFAULT_CACHE_MAX_AGE_HOURS = 24
 
 # ── GCS prefix defaults ──────────────────────────────────────────────────────
@@ -161,26 +150,6 @@ def _cache_max_age_hours() -> int:
 
 def _gcs_prefix(env_name: str) -> str | None:
     return _env(f"SO_{env_name}") or _env(env_name) or _DEFAULT_GCS_PREFIXES.get(env_name)
-
-
-# ── Observatory GET / collectors base (lazy load) ────────────────────────────
-
-_collectors_base = None
-observatory_get = None
-
-
-def _get_observatory_get() -> Any:
-    """Lazy-load observatory_get from collectors.base (used for POST cases like SPARQL)."""
-    global _collectors_base, observatory_get
-    if _collectors_base is None:
-        spec = importlib.util.spec_from_file_location("_so_collectors_base", _COLLECTORS_BASE)
-        if spec is None or spec.loader is None:
-            raise ImportError(f"Cannot load collectors base from {_COLLECTORS_BASE}")
-        _collectors_base = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = _collectors_base
-        spec.loader.exec_module(_collectors_base)
-        observatory_get = _collectors_base.observatory_get
-    return observatory_get
 
 
 # ── Artifact types ────────────────────────────────────────────────────────────
