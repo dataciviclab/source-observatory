@@ -1,10 +1,13 @@
 """Test delle funzioni pure di collectors.html (nessun HTTP)."""
 
+import pytest
 from collectors.html import (
     _extract_page_meta,
     _extract_prefix,
     _extract_years,
 )
+
+pytestmark = pytest.mark.pure_unit
 
 # ─── _extract_page_meta ───────────────────────────────────────────────────────
 
