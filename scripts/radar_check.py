@@ -22,6 +22,7 @@ from _constants import (
     validate_schema,
 )
 from lab_connectors.http import HttpClient, HttpFallbackError
+from toolkit.scout.http import is_sdmx_url
 
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 TIMEOUT_SECONDS = 10
@@ -70,12 +71,6 @@ def validate_ckan_action_response(
         return "YELLOW", "CKAN API payload missing expected keys"
 
     return status, None
-
-
-def _is_sdmx_url(url: str) -> bool:
-    """Detect SDMX endpoint by URL pattern."""
-    sdmx_markers = ("/rest/", "/SDMXWS/", "/sdmx/")
-    return any(marker in url for marker in sdmx_markers)
 
 
 def _make_error_result(
@@ -189,7 +184,7 @@ def _probe_once(base_url: str) -> ProbeResult:
 
 def probe_url(base_url: str) -> ProbeResult:
     """Probe URL with retry/backoff for SDMX endpoints known to be intermittent."""
-    if not _is_sdmx_url(base_url):
+    if not is_sdmx_url(base_url):
         result = _probe_once(base_url)
         # Retry once with shorter timeout on transient failures (timeout / connection error)
         if result.http_code == "-" and result.status == "YELLOW":
