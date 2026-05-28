@@ -4,6 +4,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import jsonschema
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # ── Registry ──────────────────────────────────────────────────────────────────
@@ -26,6 +28,20 @@ CATALOG_SIGNALS_PATH = REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
 
 # ── Schemas (scripts/build_catalog_signals.py) ────────────────────────────────
 SCHEMA_DIR_PATH = REPO_ROOT / "schemas"
+
+def validate_schema(instance: dict, schema_name: str) -> None:
+    """Validate a dict against the JSON schema file in schemas/."""
+    schema_path = SCHEMA_DIR_PATH / schema_name
+    if not schema_path.exists():
+        print(f"⚠️  Schema {schema_name} non trovato — skip validazione")
+        return
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    try:
+        jsonschema.validate(instance=instance, schema=schema)
+    except jsonschema.ValidationError as exc:
+        print(f"❌ Validazione fallita ({schema_name}): {exc.message}")
+        raise
+
 
 # Canonical stale_reason taxonomy for catalog-inventory error classification.
 # Used by build_catalog_inventory.py to tag stale rows.
@@ -56,10 +72,6 @@ def stale_reason_from_exception(exc: Exception) -> str:
     if "resolution error" in msg or "resolutionerror" in msg or "name or service not known" in msg or "getaddrinfo" in msg:
         return "dns_error"
     return "unknown"
-
-
-# Alias for backwards compatibility
-ERROR_TAGS = STALE_REASON_TAGS
 
 
 def load_radar_history(path: Path | None = None) -> dict:

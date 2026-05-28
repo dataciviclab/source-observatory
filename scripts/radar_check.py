@@ -8,36 +8,20 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from typing import Any, Literal
 
-import jsonschema
 import requests
 from _constants import (
     RADAR_HISTORY_PATH,
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
-    SCHEMA_DIR_PATH,
     STATUS_MD_PATH,
     append_radar_probe,
     load_radar_history,
     load_registry,
     save_radar_history,
     save_registry,
+    validate_schema,
 )
 from lab_connectors.http import HttpClient, HttpFallbackError
-
-
-def _validate_schema(instance: dict, schema_name: str) -> None:
-    """Validate a dict against the JSON schema file in schemas/."""
-    schema_path = SCHEMA_DIR_PATH / schema_name
-    if not schema_path.exists():
-        print(f"⚠️  Schema {schema_name} non trovato — skip validazione")
-        return
-    schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    try:
-        jsonschema.validate(instance=instance, schema=schema)
-    except jsonschema.ValidationError as exc:
-        print(f"❌ Validazione fallita ({schema_name}): {exc.message}")
-        raise
-
 
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 TIMEOUT_SECONDS = 10
@@ -469,7 +453,7 @@ def main() -> int:
     # Rebuild summary with updated history for final output
     summary, _ = build_radar_summary(registry, results, probe_date, history)
 
-    _validate_schema(summary, "radar_summary.schema.json")
+    validate_schema(summary, "radar_summary.schema.json")
 
     STATUS_MD_PATH.parent.mkdir(parents=True, exist_ok=True)
     STATUS_MD_PATH.write_text(report, encoding="utf-8")
