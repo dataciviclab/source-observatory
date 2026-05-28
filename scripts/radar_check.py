@@ -23,7 +23,6 @@ from _constants import (
 )
 from lab_connectors.http import HttpClient, HttpFallbackError
 
-
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 TIMEOUT_SECONDS = 10
 
