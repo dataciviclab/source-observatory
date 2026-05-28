@@ -26,6 +26,7 @@ from typing import Any
 from urllib.parse import urljoin
 
 from lab_connectors.http import HttpClient
+from toolkit.scout.http import probe_url_headers, resolve_preview_kind
 
 from .base import CollectorResult
 
@@ -34,41 +35,21 @@ DATA_EXTENSIONS = {".csv", ".json", ".xlsx", ".xls", ".ods", ".zip", ".xml", ".g
 # ─── HTML Parsing ──────────────────────────────────────────────────────────────
 
 
-_DATA_TITLE_RE = None  # lazycompiled
-
-
 def _extract_page_meta(html: str) -> dict[str, str]:
-    """Estrae metadata significativi da una pagina HTML (title, modified, description).
-
-    Supporta:
-    - <meta name="gatsby:title"> (Gatsby/Drupal pattern)
-    - <title> plain
-    - <meta name="description">
-    - data items con schema.org Dataset (per portali open data strutturati)
-    """
-    global _DATA_TITLE_RE
-    if _DATA_TITLE_RE is None:
-        _DATA_TITLE_RE = re.compile(r'<title[^>]*>([^<]+)</title>', re.IGNORECASE)
-
+    """Estrae title e description da HTML."""
     meta: dict[str, str] = {}
 
-    # Try gatsby:title (priority — it's the canonical page title for open data portals)
-    gatsby_title = re.search(r'<meta\s+(?:name|data-gatsby-head)=["\']gatsby:title["\']\s+content=["\']([^"\']+)["\']', html)
-    if gatsby_title:
-        meta["title"] = gatsby_title.group(1).strip()
+    m = re.search(r'<title[^>]*>([^<]+)</title>', html, re.IGNORECASE)
+    if m:
+        raw = m.group(1).strip()
+        if raw.startswith("Open Data - "):
+            raw = raw[12:]
+        meta["title"] = raw
 
-    # Fallback to <title>
-    if "title" not in meta:
-        m = _DATA_TITLE_RE.search(html)
-        if m:
-            raw = m.group(1).strip()
-            # Strip common prefix pattern "Open Data - "
-            if raw.startswith("Open Data - "):
-                raw = raw[12:]
-            meta["title"] = raw
-
-    # Description
-    desc = re.search(r'<meta\s+name=["\']description["\']\s+content=["\']([^"\']+)["\']', html, re.IGNORECASE)
+    desc = re.search(
+        r'<meta\s+name=["\']description["\']\s+content=["\']([^"\']+)["\']',
+        html, re.IGNORECASE,
+    )
     if desc:
         meta["description"] = desc.group(1).strip()[:200]
 
@@ -115,55 +96,7 @@ class _DataLinksParser:
         self.links = parser.links
 
 
-# ─── Content-Type probing (opt-in) ─────────────────────────────────────────
-
-_CT_TO_FORMAT: dict[str, str] = {
-    "text/csv": "CSV",
-    "text/tab-separated-values": "TSV",
-    "application/json": "JSON",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
-    "application/vnd.ms-excel": "XLS",
-    "application/pdf": "PDF",
-    "application/xml": "XML",
-    "text/xml": "XML",
-    "application/zip": "ZIP",
-    "application/gzip": "GZ",
-    "application/x-parquet": "PARQUET",
-    "application/octet-stream": "BIN",
-}
-
-
-def _content_type_to_format(content_type: str) -> str | None:
-    """Mappa un Content-Type HTTP in un formato standardizzato."""
-    ct = content_type.split(";")[0].strip().lower()
-    return _CT_TO_FORMAT.get(ct)
-
-
-def _probe_content_type(url: str, timeout: float = 5) -> str | None:
-    """HEAD leggero per ricavare Content-Type. Timeout breve, fallisce silenziosamente.
-
-    Usa requests.head diretto (no HttpClient) per evitare SSL fallback
-    warning log che inondano il log CI. Se SSL fallisce, ritorna None
-    (best-effort — probe ott-in).
-    """
-    try:
-        import requests
-
-        from .base import USER_AGENT
-
-        response = requests.head(
-            url,
-            timeout=timeout,
-            headers={"User-Agent": USER_AGENT},
-        )
-        if response.ok:
-            # dict() esplicito evita mypy error su CaseInsensitiveDict.get()
-            # (tipi Never negli stub di types-requests)
-            ct = dict(response.headers).get("content-type", "")
-            return _content_type_to_format(ct)
-    except Exception:
-        pass
-    return None
+# ─── Content-Type probing (opt-in via toolkit) ─────────────────────────────
 
 
 # ─── URL Analysis ─────────────────────────────────────────────────────────────
@@ -190,27 +123,8 @@ def _extract_years(filename: str) -> list[int]:
     return [int(y) for y in _YEAR_RE.findall(filename)]
 
 
-_TOPIC_SIGNALS: dict[str, list[str]] = {
-    "sanita": ["salute", "ospedal", "medic", "farmaci", "dispositivi", "serd", "dsm"],
-    "trasporti": ["trasport", "mobilita", "traffico", "aeroport", "porto"],
-    "ambiente": ["ambiente", "rischio", "dissesto", "acqua", "rifiuti", "energia"],
-    "economia": ["economia", "lavoro", "imprese", "commercio", "mercato"],
-    "istruzione": ["scuola", "universita", "istruzione", "alunni", "studenti", "personale"],
-    "cultura": ["cultura", "museo", "patrimonio", "turismo"],
-    "territorio": ["territorio", "urban", "comune", "regione", "provincia", "catasto"],
-    "agricoltura": ["agricoltura", "agri", "allevamento", "produzione"],
-    "finanza": ["bilancio", "finanza", "tesoro", "preconsuntivo"],
-}
-
-
 def _guess_topic(url: str, topic_hint: str | None) -> str:
-    if topic_hint:
-        return topic_hint
-    url_lower = url.lower()
-    for topic, signals in _TOPIC_SIGNALS.items():
-        if any(s in url_lower for s in signals):
-            return topic
-    return "unknown"
+    return topic_hint or "unknown"
 
 
 # ─── Sitemap Helper ───────────────────────────────────────────────────────────
@@ -620,7 +534,15 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     if probe_ct and not summary.get("error"):
         _probe_targets = [r for r in rows if r.get("url") and r.get("format") in ("?", "ZIP", "BIN")]
         for row in _probe_targets[:20]:  # max 20 probe per run
-            ct_fmt = _probe_content_type(row["url"])
+            try:
+                _info = probe_url_headers(row["url"], timeout=5)
+                ct_fmt = resolve_preview_kind(
+                    row["url"],
+                    content_type=_info.get("content_type"),
+                    content_disposition=_info.get("content_disposition"),
+                )
+            except Exception:
+                ct_fmt = None
             if ct_fmt:
                 row["format"] = ct_fmt
         # Ricalcola by_format dopo i probe (summary era stato calcolato pre-probe)
