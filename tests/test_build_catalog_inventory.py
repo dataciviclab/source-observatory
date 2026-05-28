@@ -685,15 +685,15 @@ class TestContentTypeProbe:
         )
         monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
-        # Monkeypatch _probe_content_type per simulare che data.zip sia in realtà CSV
-        original_probe = html_collector._probe_content_type
+        # Monkeypatch probe_url_headers per simulare che data.zip sia in realtà CSV
+        original_probe = html_collector.probe_url_headers
 
-        def fake_probe(url, timeout=5):
+        def fake_probe(url, *, timeout=5, **kw):
             if url == "https://example.test/data.zip":
-                return "CSV"
-            return original_probe(url, timeout=timeout)
+                return {"content_type": "text/csv", "content_disposition": None, "status_code": 200}
+            return original_probe(url, timeout=timeout, **kw)
 
-        monkeypatch.setattr(html_collector, "_probe_content_type", fake_probe)
+        monkeypatch.setattr(html_collector, "probe_url_headers", fake_probe)
 
         source_cfg = {
             "source_kind": "catalog",
