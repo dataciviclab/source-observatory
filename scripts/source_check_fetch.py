@@ -498,10 +498,10 @@ def _fetch_data_preview(
                                     break
 
             elif fmt in ("xlsx", "xls"):
-                from toolkit.profile.raw import _profile_excel
+                from toolkit.profile.raw import profile_excel
 
                 read_cfg_excel = {"header": True, "skip": skip_suggested}
-                excel_result = _profile_excel(tmp_path, read_cfg_excel)
+                excel_result = profile_excel(tmp_path, read_cfg_excel)
                 excel_cols = excel_result.get("columns_raw", [])
                 if excel_cols:
                     columns = excel_cols
