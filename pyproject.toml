@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "DataCivicLab Source Observatory: scouting, radar, inventory e source-check"
 readme = "README.md"
 requires-python = ">=3.12"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
   { name = "DataCivicLab" }
 ]
