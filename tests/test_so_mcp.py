@@ -14,7 +14,7 @@ from _inventory import (
     inventory_status,
     query_inventory,
 )
-from _radar import radar_delta, radar_history, radar_status_md, radar_summary
+from _radar import radar_history, radar_status_md, radar_summary
 from _recommend import recommend_sources
 from _registry import registry_query
 from _sdmx import discover_sdmx
@@ -631,7 +631,7 @@ def test_find_by_url_rejects_empty_url() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Radar edge cases: radar_history, radar_status_md, radar_delta
+# Radar edge cases: radar_history, radar_status_md
 # ---------------------------------------------------------------------------
 
 
@@ -693,61 +693,6 @@ def test_radar_status_md_reads_content(tmp_path, monkeypatch) -> None:
     assert "modified_at" in result
     assert "age_hours" in result
 
-
-def test_radar_delta_file_not_found(tmp_path, monkeypatch) -> None:
-    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", tmp_path / "radar_history.json")
-    result = radar_delta()
-    assert result["error"] == "artifact_not_found"
-
-
-def test_radar_delta_not_enough_probes(tmp_path, monkeypatch) -> None:
-    path = tmp_path / "radar_history.json"
-    path.write_text(json.dumps({"probes": [{"probe_date": "2024-01-01", "sources": []}]}), encoding="utf-8")
-    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
-    result = radar_delta()
-    assert "Not enough probes" in result["message"]
-    assert result["changes"] == []
-
-
-def test_radar_delta_changes_recoveries_persistent(tmp_path, monkeypatch) -> None:
-    """Tre probe: s1 passa RED->GREEN (recovery), s2 GREEN->RED (new_red),
-    s3 resta ROSSO per 3 probe (persistent_red >= 2)."""
-    path = tmp_path / "radar_history.json"
-    probes = [
-        {
-            "probe_date": "2024-01-01",
-            "sources": [
-                {"id": "s1", "status": "RED", "http_code": 500},
-                {"id": "s2", "status": "GREEN"},
-                {"id": "s3", "status": "RED"},
-            ],
-        },
-        {
-            "probe_date": "2024-01-08",
-            "sources": [
-                {"id": "s1", "status": "RED", "http_code": 503},
-                {"id": "s2", "status": "GREEN"},
-                {"id": "s3", "status": "RED"},
-            ],
-        },
-        {
-            "probe_date": "2024-01-15",
-            "sources": [
-                {"id": "s1", "status": "GREEN"},
-                {"id": "s2", "status": "RED", "http_code": 502},
-                {"id": "s3", "status": "RED", "http_code": 500},
-            ],
-        },
-    ]
-    path.write_text(json.dumps({"probes": probes}), encoding="utf-8")
-    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", path)
-    result = radar_delta()
-    # s1: RED->GREEN (change + recovery), s2: GREEN->RED (change + new_red)
-    # s3: RED->RED (no change, ma streak >= 2 → persistent)
-    assert result["changed_count"] == 2
-    assert "s1" in result["recoveries"]
-    assert "s2" in result["new_red"]
-    assert "s3" in result["persistent_red"]
 
 
 # ---------------------------------------------------------------------------
@@ -867,3 +812,46 @@ def test_query_inventory_has_results_false(tmp_path, monkeypatch) -> None:
     result = query_inventory(source_id="a", has_results=False)
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "x2"
+
+
+def test_query_inventory_grouped_when_dataset_group_missing(tmp_path, monkeypatch) -> None:
+    """grouped=True senza colonna dataset_group → warning."""
+    parquet_path = tmp_path / "source_check_results.parquet"
+    _write_parquet(parquet_path, [
+        {"source_id": "a", "item_id": "x1", "intake_score": 45},
+    ])
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    # Forza backend locale per evitare GCS
+    monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
+    result = query_inventory(grouped=True)
+    assert result["returned"] == 0
+    assert "warning" in result
+    assert "dataset_group" in result["warning"]
+
+
+def test_query_inventory_grouped_aggregates(tmp_path, monkeypatch) -> None:
+    """grouped=True con colonna dataset_group → aggregazione per gruppo."""
+    parquet_path = tmp_path / "source_check_results.parquet"
+    _write_parquet(parquet_path, [
+        {"source_id": "s1", "item_id": "a", "intake_score": 60,
+         "dataset_group": "s1/gruppo-a", "dataset_group_size": 2,
+         "dataset_group_year_min": 2020, "dataset_group_year_max": 2024},
+        {"source_id": "s1", "item_id": "b", "intake_score": 80,
+         "dataset_group": "s1/gruppo-a", "dataset_group_size": 2,
+         "dataset_group_year_min": 2020, "dataset_group_year_max": 2024},
+        {"source_id": "s1", "item_id": "c", "intake_score": 50,
+         "dataset_group": "s1/gruppo-b", "dataset_group_size": 1,
+         "dataset_group_year_min": 2022, "dataset_group_year_max": 2022},
+    ])
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
+    result = query_inventory(source_id="s1", grouped=True)
+    assert result["returned"] == 2  # 2 gruppi
+    assert result["grouped"] is True
+    results = sorted(result["results"], key=lambda r: r["dataset_group"])
+    assert results[0]["dataset_group"] == "s1/gruppo-a"
+    assert results[0]["item_count"] == 2
+    assert results[0]["best_score"] == 80
+    assert results[1]["dataset_group"] == "s1/gruppo-b"
+    assert results[1]["item_count"] == 1
+    assert results[1]["best_score"] == 50

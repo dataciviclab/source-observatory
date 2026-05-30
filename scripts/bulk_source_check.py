@@ -50,6 +50,7 @@ from source_check_analyze import (
     _infer_years,
     _normalize_format,
     _parse_ckan_package,
+    add_dataset_group_columns,
 )
 from source_check_fetch import (
     _EMPTY_ENRICH,
@@ -134,114 +135,30 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 # (importato da source_check_fetch)
 
 
-# ── dispatcher per protocollo ─────────────────────────────────────────────────
-
-def _enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
-    source_id = row.get("source_id") or ""
-    source_cfg = registry.get(source_id, {})
-    protocol = source_cfg.get("protocol") or row.get("protocol") or ""
-    base_url = source_cfg.get("base_url") or row.get("source_url") or ""
-    _raw_name = row.get("item_name") or row.get("item_id")
-    item_name = "" if pd.isna(_raw_name) else str(_raw_name)
-    # preferisci item_slug (nome testuale CKAN) per package_show
-    _slug = row.get("item_slug")
-    if isinstance(_slug, str) and _slug.strip():
-        item_name = _slug.strip()
-
-    has_valid_slug = False  # default; set True inside CKAN block if slug is usable
-    if protocol == "ckan" and base_url and item_name:
-        # _slug già letto sopra (linea 395) — non riletto
-        has_valid_slug = bool(isinstance(_slug, str) and _slug.strip() and _slug.strip() != "dataset")
-        if has_valid_slug:
-            # usa api_base_url pre-calcolata dal layer 1 (gestisce endpoint non-standard come INPS /odapi/)
-            api_base_url = row.get("api_base_url")
-            base_api = api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http") else base_url
-            pkg = _fetch_ckan_package(base_api, item_name)
-            if pkg:
-                return _parse_ckan_package(pkg)
-        # CKAN senza slug valido → skip package_show, passa a HTML fallback sotto
-
-    if protocol == "sdmx" and base_url and item_name:
-        # base_url dal registry ha il path completo (es. .../dataflow/IT1).
-        # Non usare api_base_url — più corto, _fetch_sdmx_dataflow() fallisce.
-        xml_root = _fetch_sdmx_dataflow(base_url, item_name)
-        if xml_root is not None:
-            return _parse_sdmx_annotations(xml_root, base_url, item_name)
-
-    # HTML protocol: direct data URL (CSV/JSON/XLS) — fetch content preview
-    if protocol == "html":
-        data_url = row.get("url")
-        if isinstance(data_url, str):
-            parsed = urllib.parse.urlparse(data_url)
-            path = parsed.path or ""
-            fmt = path.rsplit(".", 1)[-1].lower() if "." in path else ""
-            if fmt in ("csv", "json", "xlsx", "xls"):
-                return _fetch_data_preview(data_url)
-
-    # HTML fallback: per tutti i source con landing_page raggiungibile
-    # dati_camera ha scraping_blocked=true → salta HTML se CKAN package_show già provato
-    # CKAN senza slug valido = package_show già saltato → proviamo comunque l'HTML
-    landing = row.get("landing_page")
-    if isinstance(landing, str) and landing.startswith("http"):
-        # skip scraping_blocked sources only if CKAN package_show already attempted
-        ckan_skipped_package_show = protocol == "ckan" and not has_valid_slug
-        if source_cfg.get("scraping_blocked") and not ckan_skipped_package_show:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "scraping_blocked"
-            return result
-        return _fetch_html_metadata(landing)
-
-    return _EMPTY_ENRICH.copy()
+# ── dispatch enrich per protocollo ────────────────────────────────────────────
 
 
-# ── fallback euristica su campi catalogo ──────────────────────────────────────
-
-# (importato da source_check_analyze)
-
-
-# ── inventory-aware enrich ───────────────────────────────────────────────────
-
-def _enrich_with_inventory(
-    row: pd.Series,
-    registry: dict[str, Any],
-) -> dict:
-    """
-    Enrich item using inventory as primary source.
-
-    Rules:
-    - title/format/tags from inventory → use directly (no re-fetch)
-    - Re-enrich via API only if: inventory.format is null AND item looks promising
-    - For CKAN: re-fetch package_show only when inventory has no format AND no title
-    - For SDMX: always use dataflow annotations (inventory has them)
-    - For HTML: use inventory.url + content-type detection
-    """
-    source_id = row.get("source_id") or ""
+def _extract_base_enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
+    """Estrae i campi comuni dell'inventory + registry per tutti gli handler."""
+    source_id = str(row.get("source_id", ""))
     source_cfg = registry.get(source_id, {})
     protocol = source_cfg.get("protocol") or row.get("protocol") or ""
     base_url = source_cfg.get("base_url") or row.get("source_url") or ""
 
-    # Inventory has these → use directly
     inv_title = row.get("title")
     inv_format = row.get("format")
     inv_tags = row.get("tags")
     inv_notes = row.get("notes_excerpt")
-    inv_granularity = row.get("granularity")  # may be None
+    inv_granularity = row.get("granularity")
 
-    # Fallback per fonti HTML: inventory non ha org/tags/notes perché il
-    # csv_magnet scan cattura solo URL e titolo, non i metadati del portale.
-    # Deriviamo dai campi noti del registry (source_id, topic_hint, note).
+    # Organizzazione: inventory > registry
     inv_org = row.get("organization")
-    if not inv_org:
-        # source_id come organizzazione implicita (es. "aifa"→"AIFA")
+    if not inv_org or pd.isna(inv_org):
         inv_org = source_id.upper() if source_id else None
-    # NaN safeguard: pandas NaN è truthy in Python, ma `not x` su NaN è False.
-    # Usiamo pd.isna() per rilevare valori NaN/non popolati.
-    if pd.isna(inv_org) or pd.isna(inv_tags) or pd.isna(inv_notes):
+    if pd.isna(inv_tags) or pd.isna(inv_notes):
         hp = source_cfg.get("html_portal") or {}
         topic_hint = hp.get("topic_hint") if isinstance(hp, dict) else None
         src_note = source_cfg.get("note", "") or ""
-        if pd.isna(inv_org):
-            inv_org = source_id.upper() if source_id else None
         if pd.isna(inv_tags) and topic_hint:
             inv_tags = topic_hint
         if pd.isna(inv_notes) and src_note:
@@ -253,123 +170,209 @@ def _enrich_with_inventory(
     if isinstance(_slug, str) and _slug.strip():
         item_name = _slug.strip()
 
-    # CKAN: only re-fetch package_show if format AND title are missing in inventory
-    # inv_format="csv,xml,json" is a dirty concatenated string from package_search → check if any token is valid
     _VALID_FORMATS_FOR_SKIP = {"CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"}
     inv_format_has_valid = (
         isinstance(inv_format, str)
         and any(t.strip().upper() in _VALID_FORMATS_FOR_SKIP for t in inv_format.split(","))
     )
     has_valid_slug = bool(isinstance(_slug, str) and _slug.strip() and _slug.strip() != "dataset")
-    needs_ckan_refetch = (
-        protocol == "ckan"
-        and base_url
-        and item_name
-        and has_valid_slug
-        and not inv_format_has_valid
-        and not inv_title
+
+    return {
+        "source_id": source_id,
+        "source_cfg": source_cfg,
+        "protocol": protocol,
+        "base_url": base_url,
+        "item_name": item_name,
+        "inv_title": inv_title,
+        "inv_format": inv_format,
+        "inv_format_has_valid": inv_format_has_valid,
+        "inv_tags": inv_tags,
+        "inv_notes": inv_notes,
+        "inv_granularity": inv_granularity,
+        "inv_org": inv_org,
+        "has_valid_slug": has_valid_slug,
+    }
+
+
+def _apply_encoding_to_enrich(r: dict, row: pd.Series, base: dict) -> dict:
+    """Aggiunge encoding + org/tags/notes dal registry a un result dict."""
+    r["encoding_suggested"] = _safe_str(row.get("encoding_suggested"))
+    r["delim_suggested"] = _safe_str(row.get("delim_suggested"))
+    r["decimal_suggested"] = _safe_str(row.get("decimal_suggested"))
+    _skip = row.get("skip_suggested")
+    r["skip_suggested"] = 0 if pd.isna(_skip) else int(_skip)
+    r["enriched_org"] = base["inv_org"]
+    r["enriched_tags"] = base["inv_tags"]
+    r["enriched_notes"] = base["inv_notes"]
+    return r
+
+
+# ── Handler CKAN ──────────────────────────────────────────────────────────────
+
+
+def _enrich_ckan(row: pd.Series, base: dict) -> dict | None:
+    """Re-fetch package_show se inventory non ha format E title."""
+    if base["protocol"] != "ckan" or not base["base_url"] or not base["item_name"]:
+        return None
+    if not base["has_valid_slug"]:
+        return None
+    if base["inv_format_has_valid"] and base["inv_title"]:
+        return None  # inventory già ricco — skip re-fetch
+
+    api_base_url = row.get("api_base_url")
+    base_api = (
+        api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http")
+        else base["base_url"]
     )
+    pkg = _fetch_ckan_package(base_api, base["item_name"])
+    if pkg:
+        return _parse_ckan_package(pkg)
+    return None
 
-    if needs_ckan_refetch:
-        api_base_url = row.get("api_base_url")
-        base_api = api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http") else base_url
-        pkg = _fetch_ckan_package(base_api, item_name)
-        if pkg:
-            return _parse_ckan_package(pkg)
 
-    # SDMX: always use dataflow annotations (structured, not in inventory format)
-    if protocol == "sdmx" and base_url and item_name:
-        # base_url dal registry ha il path completo (es. .../dataflow/IT1).
-        # api_base_url dall'inventory è più corto (.../rest) — non usarlo
-        # perché _fetch_sdmx_dataflow() si aspetta il path con /dataflow/IT1.
-        xml_root = _fetch_sdmx_dataflow(base_url, item_name)
-        if xml_root is not None:
-            return _parse_sdmx_annotations(xml_root, base_url, item_name)
+# ── Handler SDMX ──────────────────────────────────────────────────────────────
 
-    def _enc(r: dict) -> dict:
-        """Aggiunge encoding dall'inventory row a qualsiasi result dict,
-        più organization derivata dal registry per fonti senza metadati."""
-        r["encoding_suggested"] = _safe_str(row.get("encoding_suggested"))
-        r["delim_suggested"] = _safe_str(row.get("delim_suggested"))
-        r["decimal_suggested"] = _safe_str(row.get("decimal_suggested"))
-        _skip = row.get("skip_suggested")
-        r["skip_suggested"] = 0 if pd.isna(_skip) else int(_skip)
-        # Fallback per fonti HTML: inventory non ha organization/tags/notes
-        # (csv_magnet scan cattura solo URL e titolo).
-        # Assegnamento diretto (non setdefault): _EMPTY_ENRICH ha già queste
-        # chiavi a None, setdefault non sovrascriverebbe.
-        r["enriched_org"] = inv_org
-        r["enriched_tags"] = inv_tags
-        r["enriched_notes"] = inv_notes
-        return r
 
-    # HTML: use inventory url + content-type format detection
-    if protocol == "html":
-        data_url = row.get("url")
-        if isinstance(data_url, str):
-            fmt = _content_type_format(data_url)
-            if fmt:
-                return _enc({
-                    "enriched_title": inv_title,
-                    "enriched_tags": inv_tags,
-                    "enriched_notes": inv_notes,
-                    "resource_url": data_url,
-                    "resource_format": fmt,
-                    "granularity": inv_granularity,
-                    "year_min": row.get("year_signal"),
-                    "year_max": row.get("year_signal"),
-                    "enrich_method": "content_type",
-                })
+def _enrich_sdmx(row: pd.Series, base: dict) -> dict | None:
+    """Legge annotations SDMX dal dataflow XML."""
+    if base["protocol"] != "sdmx" or not base["base_url"] or not base["item_name"]:
+        return None
+    xml_root = _fetch_sdmx_dataflow(base["base_url"], base["item_name"])
+    if xml_root is not None:
+        return _parse_sdmx_annotations(xml_root, base["base_url"], base["item_name"])
+    return None
 
-    # HTML fallback via direct fetch for CSV/JSON/XLS
-    if protocol == "html":
-        data_url = row.get("url")
-        if isinstance(data_url, str):
-            parsed = urllib.parse.urlparse(data_url)
-            path = parsed.path or ""
-            fmt_ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
-            if fmt_ext in ("csv", "json", "xlsx", "xls"):
-                preview = _fetch_data_preview(data_url)
-                # Merge con _enc per arricchire org/tags/notes dal registry
-                if preview:
-                    # Unisce i campi del registry (enriched_org, encoding, etc.)
-                    _enc(preview)
-                return preview
 
-    # HTML fallback: landing_page reachable
+# ── Handler HTML ──────────────────────────────────────────────────────────────
+
+
+def _enrich_html(row: pd.Series, base: dict) -> dict | None:
+    """Arricchimento HTML: content-type → preview download → landing page."""
+    if base["protocol"] != "html":
+        return None
+
+    def _e(r: dict) -> dict:
+        return _apply_encoding_to_enrich(r, row, base)
+
+    # 1. content-type su data_url
+    data_url = row.get("url")
+    if isinstance(data_url, str):
+        fmt = _content_type_format(data_url)
+        if fmt:
+            return _e({
+                "enriched_title": base["inv_title"],
+                "enriched_tags": base["inv_tags"],
+                "enriched_notes": base["inv_notes"],
+                "resource_url": data_url,
+                "resource_format": fmt,
+                "granularity": base["inv_granularity"],
+                "year_min": row.get("year_signal"),
+                "year_max": row.get("year_signal"),
+                "enrich_method": "content_type",
+            })
+
+    # 2. download preview per CSV/JSON/XLS
+    if isinstance(data_url, str):
+        parsed = urllib.parse.urlparse(data_url)
+        path = parsed.path or ""
+        fmt_ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
+        if fmt_ext in ("csv", "json", "xlsx", "xls"):
+            preview = _fetch_data_preview(data_url)
+            if preview:
+                _e(preview)
+            return preview
+
+    # 3. landing page
     landing = row.get("landing_page")
     if isinstance(landing, str) and landing.startswith("http"):
-        if source_cfg.get("scraping_blocked") and not (protocol == "ckan" and not has_valid_slug):
+        # scraping_blocked: ritorna sentinel
+        if base["source_cfg"].get("scraping_blocked"):
             result = _EMPTY_ENRICH.copy()
             result["enrich_method"] = "scraping_blocked"
             return result
-        # use content-type format from landing page
-        fmt = _content_type_format(landing)
-        if fmt:
-            return _enc({
-                "enriched_title": inv_title,
-                "enriched_tags": inv_tags,
-                "enriched_notes": inv_notes,
-                "resource_url": landing,
-                "resource_format": fmt,
-                "granularity": inv_granularity,
-                "year_min": row.get("year_signal"),
-                "year_max": row.get("year_signal"),
-                "enrich_method": "content_type_landing",
-            })
+        return _fetch_html_metadata(landing)
 
-    # No re-enrich possible — use inventory as-is
-    return _enc({
-        "enriched_title": inv_title,
-        "enriched_tags": inv_tags,
-        "enriched_notes": inv_notes,
+    return None
+
+
+# ── Handler SPARQL ────────────────────────────────────────────────────────────
+
+
+def _enrich_sparql(row: pd.Series, base: dict) -> dict | None:
+    """Arricchimento SPARQL: HEAD probe sull'endpoint + format."""
+    if base["protocol"] != "sparql":
+        return None
+
+    # NaN/None-safe fallback: pd.NA/np.nan sono truthy in Python!
+    landing = _safe_str(row.get("landing_page")) or _safe_str(row.get("url")) or _safe_str(row.get("source_url"))
+    if not landing or not landing.startswith("http"):
+        return None
+
+    # HEAD probe leggero
+    http_status_raw, reachable, note, content_type = _http_head_with_retry(landing)
+    if content_type:
+        fmt = _normalize_format(content_type)
+    else:
+        fmt = "SPARQL"
+
+    return _apply_encoding_to_enrich({
+        "enriched_title": base["inv_title"],
+        "enriched_tags": base["inv_tags"],
+        "enriched_notes": base["inv_notes"],
+        "resource_url": landing,
+        "resource_format": fmt,
+        "granularity": base.get("inv_granularity") or "non_determinato",
+        "year_min": row.get("year_signal"),
+        "year_max": row.get("year_signal"),
+        "enrich_method": "sparql_probe",
+    }, row, base)
+
+
+# ── Inventory-only fallback ───────────────────────────────────────────────────
+
+
+def _enrich_fallback(row: pd.Series, base: dict) -> dict:
+    """Usa i dati inventory così come sono."""
+    return _apply_encoding_to_enrich({
+        "enriched_title": base["inv_title"],
+        "enriched_tags": base["inv_tags"],
+        "enriched_notes": base["inv_notes"],
         "resource_url": row.get("url") or row.get("landing_page"),
-        "resource_format": inv_format,
-        "granularity": inv_granularity,
+        "resource_format": base["inv_format"],
+        "granularity": base["inv_granularity"],
         "year_min": row.get("year_signal"),
         "year_max": row.get("year_signal"),
         "enrich_method": "inventory_only",
-    })
+    }, row, base)
+
+
+# ── Dispatch registry ─────────────────────────────────────────────────────────
+
+_ENRICH_HANDLERS: dict[str, Any] = {
+    "ckan": _enrich_ckan,
+    "sdmx": _enrich_sdmx,
+    "html": _enrich_html,
+    "sparql": _enrich_sparql,
+}
+
+# ── Orchestrator ──────────────────────────────────────────────────────────────
+
+
+def _enrich_with_inventory(row: pd.Series, registry: dict[str, Any]) -> dict:
+    """Enrich item usando inventory + dispatch per protocollo.
+
+    Ogni handler puo' ritornare un dict di arricchimento (successo) o None
+    (fall through). Se nessun handler riesce, usa inventory cosi' com'e'.
+    """
+    base = _extract_base_enrich(row, registry)
+
+    handler = _ENRICH_HANDLERS.get(base["protocol"])
+    if handler:
+        result = handler(row, base)
+        if result is not None:
+            return result
+
+    return _enrich_fallback(row, base)
 
 
 def _safe_str(v: Any) -> str | None:
@@ -586,6 +589,8 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "sdmx_flow": enrich.get("sdmx_flow"),
         "sdmx_version": enrich.get("sdmx_version"),
         "sdmx_agency": enrich.get("sdmx_agency"),
+        # Protocol — propagato dal catalogo per il grouping SDMX
+        "protocol": row.get("protocol"),
     }
 
 
@@ -624,15 +629,22 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
             except Exception as exc:
                 logger.warning("Row check failed for index %d: %s", pos, exc)
                 # Mantieni item_id e source_id anche in caso di fallimento,
-                # altrimenti il merge upsert (riga 743) crasha su results["item_id"]
+                # altrimenti il merge upsert crasha su results["item_id"]
                 # quando TUTTI i check falliscono (es. fonte temporaneamente down).
+                # Usa _finalize_scores per avere TUTTE le colonne attese dal logging.
                 fallback_row = dict(df.iloc[pos]) if pos < len(df) else {}
-                results.append({
+                base = {
                     "item_id": str(fallback_row.get("item_id", "")),
                     "source_id": str(fallback_row.get("source_id", "")),
                     "check_notes": f"check failed: {exc}",
                     "enrich_method": "error",
-                })
+                    "granularity": None,
+                    "year_min": None,
+                    "year_max": None,
+                    "reachable": False,
+                    "needs_review": True,
+                }
+                results.append(_finalize_scores(base))
                 source_error_count[sid] = source_error_count.get(sid, 0) + 1
             source_last_done[sid] = time.time()
             done += 1
@@ -912,6 +924,14 @@ def main() -> None:
         results["check_timestamp"] = pd.to_datetime(results["check_timestamp"], utc=True)
         results = results.sort_values("check_timestamp", ascending=False).drop_duplicates(subset=["source_id", "item_id"], keep="first").reset_index(drop=True)
         logger.info("  Unified %d results (new + previous not re-checked)", len(results))
+
+    # ── Dataset group columns ───────────────────────────────────────────────────
+    # Raggruppa item multi-anno / multi-versione dello stesso dataset concettuale.
+    # Aggiunge dataset_group, dataset_group_size, dataset_group_year_min/max.
+    results = add_dataset_group_columns(results)
+    ngroups = results["dataset_group"].nunique()
+    logger.info("  Dataset groups: %d unique groups (%.1f items/group average)",
+                ngroups, len(results) / max(ngroups, 1))
 
     enrich_counts = results["enrich_method"].value_counts()
     reachable_n = results["reachable"].sum() if "reachable" in results.columns else 0

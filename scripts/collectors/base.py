@@ -42,23 +42,6 @@ def observatory_get(
     raise result.err if result.err else RuntimeError(f"GET failed for {url}")
 
 
-def observatory_head(
-    url: str,
-    *,
-    timeout: int | float | tuple[float, float] = DEFAULT_TIMEOUT_SECONDS,
-    headers: dict[str, str] | None = None,
-    **kwargs: Any,
-) -> requests.Response:
-    """HEAD request with SSL fallback: tries verify=True first, falls back to verify=False on SSLError."""
-    from lab_connectors.http import HttpClient
-
-    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
-    result = client.head(url, headers=headers or {}, **kwargs)
-    if result.is_ok:
-        return result.response
-    # Should not happen — observatory_head was used when we expected success
-    raise result.err if result.err else RuntimeError(f"HEAD failed for {url}")
-
 
 def strip_query(url: str) -> str:
     parts = urlsplit(url)

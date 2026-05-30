@@ -17,8 +17,15 @@ def query_inventory(
     min_score: int | None = None,
     limit: int = 50,
     has_results: bool | None = None,
+    grouped: bool = False,
 ) -> dict[str, Any]:
-    """Query source_check_results.parquet with optional source and score filters."""
+    """Query source_check_results.parquet with optional source and score filters.
+
+    When ``grouped=True``, results are aggregated by ``dataset_group`` — one row
+    per conceptual dataset instead of one per item.  Multi-year / multi-version
+    items that share a ``dataset_group`` are collapsed into a single entry with
+    aggregated year range and best intake score.
+    """
     safe_limit = max(1, min(int(limit or 50), 200))
     artifact = _artifact._source_check_parquet()
     try:
@@ -26,38 +33,113 @@ def query_inventory(
             parquet_path = str(resolved_path)
             with safe_connect() as con:
                 cols = _artifact._table_columns(con, parquet_path)
-                query = f'SELECT * FROM "{parquet_path}"'
-                filters: list[str] = []
-                params: list[Any] = []
+                col_set = set(cols)
+                has_group_col = "dataset_group" in col_set
 
-                if source_id:
-                    filters.append("source_id = ?")
-                    params.append(source_id)
-                if min_score is not None:
-                    filters.append("intake_score >= ?")
-                    params.append(min_score)
-                if has_results is not None:
-                    if has_results:
-                        filters.append("intake_score IS NOT NULL AND intake_score > 0")
-                    else:
-                        filters.append("(intake_score IS NULL OR intake_score = 0)")
-                if filters:
-                    query += " WHERE " + " AND ".join(filters)
-                query += f" ORDER BY intake_score DESC NULLS LAST LIMIT {safe_limit}"
+                if grouped and has_group_col:
+                    # ── grouped mode: aggregate by dataset_group ──────────────
+                    # Selected columns (use MAX for best values per group)
+                    select_parts = [
+                        "dataset_group",
+                        "MIN(dataset_group_year_min) AS year_min",
+                        "MAX(dataset_group_year_max) AS year_max",
+                        "COUNT(*) AS item_count",
+                        "MAX(intake_score) AS best_score",
+                        # Source + best title from the group
+                        "source_id",
+                    ]
+                    filters: list[str] = []
+                    params: list[Any] = []
 
-                rows = con.execute(query, params).fetchall()
+                    if source_id:
+                        filters.append("source_id = ?")
+                        params.append(source_id)
+                    if min_score is not None:
+                        filters.append("intake_score >= ?")
+                        params.append(min_score)
+                    if has_results is not None:
+                        if has_results:
+                            filters.append("intake_score IS NOT NULL AND intake_score > 0")
+                        else:
+                            filters.append("(intake_score IS NULL OR intake_score = 0)")
+                    if not filters:
+                        filters.append("1=1")
+
+                    where = " AND ".join(filters)
+                    query = (
+                        f"SELECT {', '.join(select_parts)} "
+                        f'FROM "{parquet_path}" '
+                        f"WHERE {where} "
+                        f"GROUP BY dataset_group, source_id "
+                        f"ORDER BY best_score DESC NULLS LAST "
+                        f"LIMIT {safe_limit}"
+                    )
+                    rows = con.execute(query, params).fetchall()
+                    result_cols = [desc[0] for desc in con.description]
+                elif grouped and not has_group_col:
+                    return {
+                        "artifact": _artifact._display_path(_artifact._CHECK_PARQUET),
+                        "cache": cache,
+                        "gcs_uri": artifact.gcs_uri(),
+                        "filters": {
+                            "source_id": source_id,
+                            "min_score": min_score,
+                            "limit": safe_limit,
+                            "has_results": has_results,
+                            "grouped": True,
+                        },
+                        "warning": "dataset_group columns not available — run a fresh bulk_source_check to populate them",
+                        "results": [],
+                        "returned": 0,
+                        "has_more": False,
+                    }
+                else:
+                    # ── flat mode (original behavior) ─────────────────────────
+                    query_parts = []
+                    params = []
+
+                    if source_id:
+                        query_parts.append("source_id = ?")
+                        params.append(source_id)
+                    if min_score is not None:
+                        query_parts.append("intake_score >= ?")
+                        params.append(min_score)
+                    if has_results is not None:
+                        if has_results:
+                            query_parts.append("intake_score IS NOT NULL AND intake_score > 0")
+                        else:
+                            query_parts.append("(intake_score IS NULL OR intake_score = 0)")
+
+                    query = f'SELECT * FROM "{parquet_path}"'
+                    if query_parts:
+                        query += " WHERE " + " AND ".join(query_parts)
+                    query += f" ORDER BY intake_score DESC NULLS LAST LIMIT {safe_limit}"
+
+                    rows = con.execute(query, params).fetchall()
+                    result_cols = cols
+
     except FileNotFoundError:
         return _artifact._parquet_not_found(artifact)
 
-    return {
+    result: dict[str, Any] = {
         "artifact": _artifact._display_path(_artifact._CHECK_PARQUET),
         "cache": cache,
         "gcs_uri": artifact.gcs_uri(),
-        "filters": {"source_id": source_id, "min_score": min_score, "limit": safe_limit, "has_results": has_results},
-        "results": [dict(zip(cols, row)) for row in rows],
+        "filters": {
+            "source_id": source_id,
+            "min_score": min_score,
+            "limit": safe_limit,
+            "has_results": has_results,
+            "grouped": bool(grouped),
+        },
+        "results": [dict(zip(result_cols, row)) for row in rows],
         "returned": len(rows),
         "has_more": len(rows) == safe_limit,
     }
+    if grouped and has_group_col:
+        result["grouped"] = True
+        result["note"] = "Results are grouped by dataset_group — one row per conceptual dataset"
+    return result
 
 
 def inventory_status(source_id: str | None = None) -> dict[str, Any]:

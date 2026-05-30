@@ -11,11 +11,15 @@ Uso:
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _constants import RADAR_SUMMARY_PATH
 
 
 def main() -> None:
-    summary = json.loads(Path("data/radar/radar_summary.json").read_text(encoding="utf-8"))
+    summary = json.loads(RADAR_SUMMARY_PATH.read_text(encoding="utf-8"))
     counts = summary.get("status_counts", {})
 
     lines = ["## Radar status", ""]

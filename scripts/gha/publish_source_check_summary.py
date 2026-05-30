@@ -11,14 +11,17 @@ Uso:
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pandas as pd
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _constants import CHECK_PARQUET_PATH
+
 
 def main() -> None:
-    path = Path("data/catalog_inventory/generated/source_check_results.parquet")
-    df = pd.read_parquet(path)
+    df = pd.read_parquet(CHECK_PARQUET_PATH)
     candidates = int(df["intake_candidate"].sum()) if "intake_candidate" in df.columns else 0
     reachable = int(df["reachable"].sum()) if "reachable" in df.columns else 0
     total = len(df)

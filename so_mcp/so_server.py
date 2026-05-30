@@ -36,7 +36,8 @@ mcp = create_mcp_server(
 
 
 @mcp.tool(
-    description="Query source_check_results.parquet: top candidate filtrati per fonte e score.",
+    description="Query source_check_results.parquet: top candidate filtrati per fonte e score. "
+    "Con grouped=True, aggrega per dataset_group (stesso dataset multi-anno/versione).",
     structured_output=True,
 )
 def so_inventory_query(
@@ -44,8 +45,9 @@ def so_inventory_query(
     min_score: int | None = None,
     limit: int = 50,
     has_results: bool | None = None,
+    grouped: bool = False,
 ) -> dict[str, Any]:
-    return guard_timed(query_inventory, "so_inventory_query", source_id, min_score, limit, has_results)
+    return guard_timed(query_inventory, "so_inventory_query", source_id, min_score, limit, has_results, grouped)
 
 
 @mcp.tool(
