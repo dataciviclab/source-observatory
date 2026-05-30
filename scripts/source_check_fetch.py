@@ -643,7 +643,8 @@ def _fetch_data_preview(
             sniff: dict[str, Any] = {"true_header_line": None, "warnings": []}
         else:
             sniff = sniff_source_file(tmp_path)
-            encoding_suggested = sniff.get("encoding_suggested")
+            if sniff.get("encoding_suggested") is not None:
+                encoding_suggested = str(sniff.get("encoding_suggested"))
             delim_suggested = sniff.get("delim_suggested")
             decimal_suggested = sniff.get("decimal_suggested")
             skip_suggested = sniff.get("skip_suggested", 0)

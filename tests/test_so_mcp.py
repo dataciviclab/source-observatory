@@ -812,3 +812,46 @@ def test_query_inventory_has_results_false(tmp_path, monkeypatch) -> None:
     result = query_inventory(source_id="a", has_results=False)
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "x2"
+
+
+def test_query_inventory_grouped_when_dataset_group_missing(tmp_path, monkeypatch) -> None:
+    """grouped=True senza colonna dataset_group → warning."""
+    parquet_path = tmp_path / "source_check_results.parquet"
+    _write_parquet(parquet_path, [
+        {"source_id": "a", "item_id": "x1", "intake_score": 45},
+    ])
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    # Forza backend locale per evitare GCS
+    monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
+    result = query_inventory(grouped=True)
+    assert result["returned"] == 0
+    assert "warning" in result
+    assert "dataset_group" in result["warning"]
+
+
+def test_query_inventory_grouped_aggregates(tmp_path, monkeypatch) -> None:
+    """grouped=True con colonna dataset_group → aggregazione per gruppo."""
+    parquet_path = tmp_path / "source_check_results.parquet"
+    _write_parquet(parquet_path, [
+        {"source_id": "s1", "item_id": "a", "intake_score": 60,
+         "dataset_group": "s1/gruppo-a", "dataset_group_size": 2,
+         "dataset_group_year_min": 2020, "dataset_group_year_max": 2024},
+        {"source_id": "s1", "item_id": "b", "intake_score": 80,
+         "dataset_group": "s1/gruppo-a", "dataset_group_size": 2,
+         "dataset_group_year_min": 2020, "dataset_group_year_max": 2024},
+        {"source_id": "s1", "item_id": "c", "intake_score": 50,
+         "dataset_group": "s1/gruppo-b", "dataset_group_size": 1,
+         "dataset_group_year_min": 2022, "dataset_group_year_max": 2022},
+    ])
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
+    result = query_inventory(source_id="s1", grouped=True)
+    assert result["returned"] == 2  # 2 gruppi
+    assert result["grouped"] is True
+    results = sorted(result["results"], key=lambda r: r["dataset_group"])
+    assert results[0]["dataset_group"] == "s1/gruppo-a"
+    assert results[0]["item_count"] == 2
+    assert results[0]["best_score"] == 80
+    assert results[1]["dataset_group"] == "s1/gruppo-b"
+    assert results[1]["item_count"] == 1
+    assert results[1]["best_score"] == 50
