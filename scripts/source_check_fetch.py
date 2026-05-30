@@ -8,11 +8,13 @@ Strati:
 from __future__ import annotations
 
 import logging
+import math
 import re
 import threading
 import time
 import urllib.parse
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from typing import Any, Optional
 
 from lab_connectors.http import HttpClient, HttpResult
@@ -353,6 +355,239 @@ def _resolve_preview_kind(url: str) -> tuple[str | None, bool]:
         return None, False
 
 
+# ── Download phase ──────────────────────────────────────────────────────────
+
+
+def _download_preview_content(url: str, fmt: str) -> tuple[bytes, int] | None:
+    """Download a preview chunk of a data file.
+
+    Returns ``(content: bytes, file_size: int)`` or ``None`` on any failure
+    (HTTP error, connection error, oversized non-CSV file).  Caller should
+    check ``enrich_method`` in the final result dict.
+    """
+
+    range_limit = 1 * 1024 * 1024 if fmt in ("csv", "tsv", "json") else 5 * 1024 * 1024
+    sample_size = 100 * 1024 if fmt in ("csv", "tsv", "json") else None
+
+    fetch_result = _tracked_http_get(url, headers={"Range": f"bytes=0-{range_limit - 1}"})
+    if fetch_result is None:
+        return None
+    if not fetch_result.is_ok or fetch_result.response is None:
+        return None
+
+    resp = fetch_result.response
+    if resp.status_code >= 400:
+        return None
+    content = resp.content
+    if sample_size is not None:
+        content = content[:sample_size]
+    elif len(content) > range_limit:
+        return None  # csv_preview_skipped_too_large
+
+    try:
+        file_size = int(resp.headers.get("Content-Length", "0"))
+    except (ValueError, TypeError):
+        file_size = 0
+    if file_size <= 0:
+        file_size = len(resp.content)
+    return content, file_size
+
+
+# ── Profiling phase ─────────────────────────────────────────────────────────
+
+
+def _extract_year_values_from_sample(
+    sample: list[dict],
+    columns: list[str],
+) -> list[int]:
+    """Extract year values from sample rows.
+
+    First tries numeric columns where at least 2 values are in 1900-2100
+    (likely years), then falls back to columns whose name is a known
+    year hint (``_YEAR_COLUMN_HINTS``).  Filters out NaN values that would
+    crash ``int()``.
+    """
+    def _safe_ints(vals: list) -> list[int]:
+        return [int(v) for v in vals if not (isinstance(v, float) and math.isnan(v))]
+
+    year_values: list[int] = []
+    if not sample:
+        return year_values
+    for col in columns:
+        vals = [
+            r.get(col) for r in sample
+            if isinstance(r.get(col), (int, float))
+        ]
+        if vals:
+            y_vals = [v for v in _safe_ints(vals) if 1900 <= v <= 2100]
+            if len(y_vals) >= 2:
+                return y_vals  # best signal: multiple years found
+    if not year_values:
+        for col in columns:
+            if col.lower() in _YEAR_COLUMN_HINTS:
+                vals = [
+                    r.get(col) for r in sample
+                    if isinstance(r.get(col), (int, float))
+                ]
+                if vals:
+                    return _safe_ints(vals)
+    return []
+
+
+def _infer_granularity_from_columns(columns: list[str]) -> str:
+    """Infer territorial granularity from column names."""
+    if not columns:
+        return "non_determinato"
+    cols_lower = [c.lower() for c in columns]
+    combined = " ".join(cols_lower)
+    if any(c in combined for c in COMUNE_COLUMNS):
+        return "comune"
+    if any(c in combined for c in REGION_COLUMNS):
+        return "regione"
+    return "non_determinato"
+
+
+def _profile_downloaded_csv(
+    tmp_path: Path,
+    sniff: dict[str, Any],
+    fmt: str,
+    encoding_suggested: str | None,
+    delim_suggested: str | None,
+    decimal_suggested: str | None,
+    skip_suggested: int,
+) -> dict:
+    """Profile a CSV/TSV file via toolkit profiler.
+
+    Returns a dict with keys: ``columns``, ``col_types``, ``preview_row_count``,
+    ``mapping_suggestions``, ``robust_read_suggested``, ``year_values``.
+    """
+    from toolkit.profile.raw import profile_with_read_cfg
+
+    effective_read_cfg: dict[str, Any] = {
+        "encoding": encoding_suggested,
+        "delim": delim_suggested,
+        "decimal": decimal_suggested,
+        "skip": skip_suggested,
+        "header": True,
+    }
+    if fmt == "tsv":
+        effective_read_cfg["delim"] = "\t"
+
+    profile = profile_with_read_cfg(tmp_path, sniff, effective_read_cfg)
+    columns = profile.get("columns_raw", [])
+    types_map = profile.get("duckdb_types", [])
+    col_types: dict[str, str] = {}
+    if columns and types_map and len(columns) == len(types_map):
+        col_types = dict(zip(columns, types_map))
+    sample = profile.get("sample_rows", [])
+    year_values = _extract_year_values_from_sample(sample, columns) if sample else []
+    return {
+        "columns": columns,
+        "col_types": col_types,
+        "preview_row_count": len(sample) if sample else None,
+        "mapping_suggestions": profile.get("mapping_suggestions"),
+        "robust_read_suggested": profile.get("robust_read_suggested", False),
+        "year_values": year_values,
+    }
+
+
+def _profile_downloaded_excel(
+    tmp_path: Path,
+    sniff: dict[str, Any],
+    encoding_suggested: str | None,
+    delim_suggested: str | None,
+    decimal_suggested: str | None,
+    skip_suggested: int,
+) -> dict:
+    """Profile an XLSX/XLS file (or fallback to CSV for mislabeled files).
+
+    Returns the same dict shape as ``_profile_downloaded_csv``.
+    """
+    from toolkit.profile.raw import profile_excel
+
+    read_cfg_excel = {"header": True, "skip": skip_suggested}
+    excel_result = profile_excel(tmp_path, read_cfg_excel)
+    excel_cols = excel_result.get("columns_raw", [])
+    if excel_cols:
+        sample = excel_result.get("sample_rows", [])
+        year_values = _extract_year_values_from_sample(sample, excel_cols) if sample else []
+        return {
+            "columns": excel_cols,
+            "col_types": {},
+            "preview_row_count": len(sample) if sample else None,
+            "mapping_suggestions": None,
+            "robust_read_suggested": excel_result.get("robust_read_suggested", False),
+            "year_values": year_values,
+        }
+
+    # Fallback: XLS falso (es. TSV mascherato da .xls) → prova come CSV
+    from toolkit.profile.raw import profile_with_read_cfg
+
+    effective_read_cfg = {
+        "encoding": encoding_suggested or "utf-8",
+        "delim": delim_suggested or "\t",
+        "decimal": decimal_suggested or ".",
+        "skip": skip_suggested,
+        "header": True,
+    }
+    try:
+        profile = profile_with_read_cfg(tmp_path, sniff, effective_read_cfg)
+        columns = profile.get("columns_raw", [])
+        types_map = profile.get("duckdb_types", [])
+        col_types: dict[str, str] = {}
+        if columns and types_map and len(columns) == len(types_map):
+            col_types = dict(zip(columns, types_map))
+        sample = profile.get("sample_rows", [])
+        year_values = _extract_year_values_from_sample(sample, columns) if sample else []
+        return {
+            "columns": columns,
+            "col_types": col_types,
+            "preview_row_count": len(sample) if sample else None,
+            "mapping_suggestions": None,
+            "robust_read_suggested": profile.get("robust_read_suggested", False),
+            "year_values": year_values,
+        }
+    except Exception:
+        return {
+            "columns": [], "col_types": {},
+            "preview_row_count": None,
+            "mapping_suggestions": None,
+            "robust_read_suggested": False,
+            "year_values": [],
+        }
+
+
+def _profile_downloaded_json(content: bytes) -> dict:
+    """Parse JSON content and extract structural metadata."""
+    import json as _json
+
+    text = content.decode("utf-8", errors="replace")
+    columns: list[str] = []
+    col_types: dict[str, str] = {}
+    preview_row_count: int | None = None
+    try:
+        data = _json.loads(text)
+        if isinstance(data, list) and data and isinstance(data[0], dict):
+            columns = list(data[0].keys())
+            col_types = {str(k): type(v).__name__ for k, v in data[0].items()}
+            preview_row_count = len(data)
+        elif isinstance(data, dict):
+            columns = list(data.keys())
+    except Exception:
+        pass
+    return {
+        "columns": columns,
+        "col_types": col_types,
+        "preview_row_count": preview_row_count,
+        "mapping_suggestions": None,
+        "robust_read_suggested": False,
+        "year_values": [],
+    }
+
+
+# ── Orchestrator ────────────────────────────────────────────────────────────
+
+
 def _fetch_data_preview(
     url: str,
     *,
@@ -363,10 +598,14 @@ def _fetch_data_preview(
 ) -> dict:
     """Fetch e parse content preview usando toolkit profiler + SO enrichment.
 
-    Invariato rispetto a prima — la logica di profiling è già in toolkit.profile.raw.
-    Le uniche differenze: usa _resolve_preview_kind piu' snello e _tracked_http_get
-    per il download (con circuit breaker).
+    Orchestrator: delegates to ``_download_preview_content`` and then to the
+    appropriate ``_profile_downloaded_*`` function based on format type.
     """
+    import json as _json
+    import tempfile
+
+    from toolkit.profile.raw import sniff_source_file
+
     if not isinstance(url, str) or not url.startswith("http"):
         result = _EMPTY_ENRICH.copy()
         result["enrich_method"] = "csv_preview_failed"
@@ -377,235 +616,90 @@ def _fetch_data_preview(
         result = _EMPTY_ENRICH.copy()
         result["enrich_method"] = "csv_preview_skipped"
         return result
-
     fmt = kind.lower()
     resource_kind = kind
 
+    # ── Download ──────────────────────────────────────────────────────────
+    downloaded = _download_preview_content(url, fmt)
+    if downloaded is None:
+        result = _EMPTY_ENRICH.copy()
+        result["enrich_method"] = "csv_preview_fetch_failed"
+        return result
+
+    content, file_size = downloaded
+
+    # ── Temp file + sniff ────────────────────────────────────────────────
+    tmp_suffix = ".csv" if fmt == "tsv" else f".{fmt}"
+    with tempfile.NamedTemporaryFile(suffix=tmp_suffix, delete=False) as tmp:
+        tmp.write(content)
+        tmp_path = Path(tmp.name)
+
     try:
-        if fmt in ("csv", "tsv", "json"):
-            range_limit = 1 * 1024 * 1024
-            sample_size = 100 * 1024
+        if known_encoding:
+            encoding_suggested = known_encoding
+            delim_suggested = known_delim
+            decimal_suggested = known_decimal
+            skip_suggested = known_skip or 0
+            sniff: dict[str, Any] = {"true_header_line": None, "warnings": []}
         else:
-            range_limit = 5 * 1024 * 1024
-            sample_size = None
+            sniff = sniff_source_file(tmp_path)
+            encoding_suggested = sniff.get("encoding_suggested")
+            delim_suggested = sniff.get("delim_suggested")
+            decimal_suggested = sniff.get("decimal_suggested")
+            skip_suggested = sniff.get("skip_suggested", 0)
 
-        fetch_result = _tracked_http_get(url, headers={"Range": f"bytes=0-{range_limit - 1}"})
-        if fetch_result is None:
-            return _EMPTY_ENRICH.copy()
-        if not fetch_result.is_ok or fetch_result.response is None:
-            err = _EMPTY_ENRICH.copy()
-            err["enrich_method"] = "csv_preview_fetch_failed"
-            return err
-
-        resp = fetch_result.response
-        if resp.status_code >= 400:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "csv_preview_http_error"
-            return result
-
-        content = resp.content
-        if sample_size is not None:
-            content = content[:sample_size]
-        elif len(content) > range_limit:
-            result = _EMPTY_ENRICH.copy()
-            result["enrich_method"] = "csv_preview_skipped_too_large"
-            return result
-        try:
-            file_size = int(resp.headers.get("Content-Length", "0"))
-        except (ValueError, TypeError):
-            file_size = 0
-        if file_size <= 0:
-            file_size = len(resp.content)
-
-        import json as _json
-        import tempfile
-        from pathlib import Path
-
-        from toolkit.profile.raw import profile_with_read_cfg, sniff_source_file
-
-        columns: list[str] = []
-        col_types: dict[str, str] = {}
-        preview_row_count: int | None = None
-        year_min: Optional[int] = None
-        year_max: Optional[int] = None
-        granularity = "non_determinato"
-        year_values: list[int] = []
-        encoding_suggested: str | None = None
-        delim_suggested: str | None = None
-        decimal_suggested: str | None = None
-        skip_suggested: int = 0
-        mapping_suggestions: dict | None = None
-        robust_read_suggested: bool = False
-
-        if fmt == "tsv":
-            tmp_suffix = ".csv"
+        # ── Profile ─────────────────────────────────────────────────────
+        if fmt in ("csv", "tsv"):
+            p = _profile_downloaded_csv(
+                tmp_path, sniff, fmt,
+                encoding_suggested, delim_suggested, decimal_suggested, skip_suggested,
+            )
+        elif fmt in ("xlsx", "xls"):
+            p = _profile_downloaded_excel(
+                tmp_path, sniff,
+                encoding_suggested, delim_suggested, decimal_suggested, skip_suggested,
+            )
         elif fmt == "json":
-            tmp_suffix = ".json"
+            p = _profile_downloaded_json(content)
         else:
-            tmp_suffix = f".{fmt}"
-        with tempfile.NamedTemporaryFile(suffix=tmp_suffix, delete=False) as tmp:
-            tmp.write(content)
-            tmp_path = Path(tmp.name)
+            p = {"columns": [], "col_types": {}, "preview_row_count": None,
+                 "mapping_suggestions": None, "robust_read_suggested": False, "year_values": []}
 
-        try:
-            if known_encoding:
-                encoding_suggested = known_encoding
-                delim_suggested = known_delim
-                decimal_suggested = known_decimal
-                skip_suggested = known_skip or 0
-                sniff: dict[str, Any] = {"true_header_line": None, "warnings": []}
-            else:
-                sniff = sniff_source_file(tmp_path)
-                encoding_suggested = sniff.get("encoding_suggested")
-                delim_suggested = sniff.get("delim_suggested")
-                decimal_suggested = sniff.get("decimal_suggested")
-                skip_suggested = sniff.get("skip_suggested", 0)
+        columns = p["columns"]
+        col_types = p["col_types"]
+        preview_row_count = p["preview_row_count"]
+        mapping_suggestions = p["mapping_suggestions"]
+        robust_read_suggested = p["robust_read_suggested"]
+        year_values = p["year_values"]
 
-            if fmt in ("csv", "tsv"):
-                effective_read_cfg: dict[str, Any] = {
-                    "encoding": encoding_suggested,
-                    "delim": delim_suggested,
-                    "decimal": decimal_suggested,
-                    "skip": skip_suggested,
-                    "header": True,
-                }
-                if fmt == "tsv":
-                    effective_read_cfg["delim"] = "\t"
+        # ── Infer metadata ─────────────────────────────────────────────│
+        granularity = _infer_granularity_from_columns(columns)
+        year_min = min(year_values) if year_values else None
+        year_max = max(year_values) if year_values else None
 
-                profile = profile_with_read_cfg(tmp_path, sniff, effective_read_cfg)
-                columns = profile.get("columns_raw", [])
-                types_map = profile.get("duckdb_types", [])
-                if columns and types_map and len(columns) == len(types_map):
-                    col_types = dict(zip(columns, types_map))
-                sample = profile.get("sample_rows", [])
-                preview_row_count = len(sample) if sample else None
-                mapping_suggestions = profile.get("mapping_suggestions")
-                robust_read_suggested = profile.get("robust_read_suggested", False)
-                if sample:
-                    for col in columns:
-                        vals = [r.get(col) for r in sample if isinstance(r.get(col), (int, float))]
-                        if vals:
-                            y_vals = [int(v) for v in vals if 1900 <= int(v) <= 2100]
-                            if len(y_vals) >= 2:
-                                year_values = y_vals
-                                break
-                    if not year_values:
-                        for col in columns:
-                            if col.lower() in _YEAR_COLUMN_HINTS:
-                                vals = [r.get(col) for r in sample if isinstance(r.get(col), (int, float))]
-                                if vals:
-                                    year_values = [int(v) for v in vals]
-                                    break
+    finally:
+        tmp_path.unlink(missing_ok=True)
 
-            elif fmt in ("xlsx", "xls"):
-                from toolkit.profile.raw import profile_excel
-
-                read_cfg_excel = {"header": True, "skip": skip_suggested}
-                excel_result = profile_excel(tmp_path, read_cfg_excel)
-                excel_cols = excel_result.get("columns_raw", [])
-                if excel_cols:
-                    columns = excel_cols
-                    preview_row_count = len(excel_result.get("sample_rows", []))
-                    robust_read_suggested = excel_result.get("robust_read_suggested", False)
-                    sample = excel_result.get("sample_rows", [])
-                    if sample:
-                        for col in columns:
-                            vals = [r.get(col) for r in sample if isinstance(r.get(col), (int, float))]
-                            if vals:
-                                y_vals = [int(v) for v in vals if 1900 <= int(v) <= 2100]
-                                if len(y_vals) >= 2:
-                                    year_values = y_vals
-                                    break
-                else:
-                    # Fallback: XLS falso (es. TSV mascherato da .xls) → prova come CSV
-                    effective_read_cfg = {
-                        "encoding": encoding_suggested or "utf-8",
-                        "delim": delim_suggested or "\t",
-                        "decimal": decimal_suggested or ".",
-                        "skip": skip_suggested,
-                        "header": True,
-                    }
-                    try:
-                        profile = profile_with_read_cfg(tmp_path, sniff, effective_read_cfg)
-                        columns = profile.get("columns_raw", [])
-                        types_map = profile.get("duckdb_types", [])
-                        if columns and types_map and len(columns) == len(types_map):
-                            col_types = dict(zip(columns, types_map))
-                        sample = profile.get("sample_rows", [])
-                        preview_row_count = len(sample) if sample else None
-                        robust_read_suggested = profile.get("robust_read_suggested", False)
-                        if sample and columns:
-                            for col in columns:
-                                vals = [r.get(col) for r in sample if isinstance(r.get(col), (int, float))]
-                                if vals:
-                                    y_vals = [int(v) for v in vals if 1900 <= int(v) <= 2100]
-                                    if len(y_vals) >= 2:
-                                        year_values = y_vals
-                                        break
-                    except Exception:
-                        pass
-
-            elif fmt == "json":
-                text = content.decode("utf-8", errors="replace")
-                try:
-                    data = _json.loads(text)
-                    if isinstance(data, list) and data and isinstance(data[0], dict):
-                        columns = list(data[0].keys())
-                        col_types = {str(k): type(v).__name__ for k, v in data[0].items()}
-                        preview_row_count = len(data)
-                    elif isinstance(data, dict):
-                        columns = list(data.keys())
-                except Exception:
-                    pass
-
-            if columns:
-                cols_lower = [c.lower() for c in columns]
-                if any(c in " ".join(cols_lower) for c in COMUNE_COLUMNS):
-                    granularity = "comune"
-                elif any(c in " ".join(cols_lower) for c in REGION_COLUMNS):
-                    granularity = "regione"
-            if year_values:
-                year_min = min(year_values)
-                year_max = max(year_values)
-        finally:
-            tmp_path.unlink(missing_ok=True)
-
-        result = _EMPTY_ENRICH.copy()
-        result.update({
-            "columns": _json.dumps(columns) if columns else None,
-            "col_types": _json.dumps(col_types) if col_types else None,
-            "file_size": file_size,
-            "preview_row_count": preview_row_count,
-            "year_min": year_min,
-            "year_max": year_max,
-            "granularity": granularity,
-            "resource_format": resource_kind.upper(),
-            "enrich_method": "csv_preview",
-            "encoding_suggested": encoding_suggested,
-            "delim_suggested": delim_suggested,
-            "decimal_suggested": decimal_suggested,
-            "skip_suggested": skip_suggested,
-            "robust_read_suggested": robust_read_suggested,
-            "mapping_suggestions": _json.dumps(mapping_suggestions) if isinstance(mapping_suggestions, dict) else "{}",
-        })
-        return result
-    except Exception:
-        result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = "csv_preview_failed"
-        return result
+    # ── Build result ────────────────────────────────────────────────────
+    result = _EMPTY_ENRICH.copy()
+    result.update({
+        "columns": _json.dumps(columns) if columns else None,
+        "col_types": _json.dumps(col_types) if col_types else None,
+        "file_size": file_size,
+        "preview_row_count": preview_row_count,
+        "year_min": year_min,
+        "year_max": year_max,
+        "granularity": granularity,
+        "resource_format": resource_kind.upper(),
+        "enrich_method": "csv_preview",
+        "encoding_suggested": encoding_suggested,
+        "delim_suggested": delim_suggested,
+        "decimal_suggested": decimal_suggested,
+        "skip_suggested": skip_suggested,
+        "robust_read_suggested": robust_read_suggested,
+        "mapping_suggestions": _json.dumps(mapping_suggestions) if isinstance(mapping_suggestions, dict) else "{}",
+    })
+    return result
 
 
 # ── Helpers interni ──────────────────────────────────────────────────────────
-
-
-def _normalize_base_url(url: str) -> str:
-    return url.rstrip("/")
-
-
-def _safe_int(value: Any) -> Optional[int]:
-    if value is None:
-        return None
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return None

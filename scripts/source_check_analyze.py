@@ -6,11 +6,169 @@ Le inferenze pure (anni, granularità) ora vengono da toolkit.scout.infer.
 """
 from __future__ import annotations
 
+import re
 from typing import Optional
 
 import pandas as pd
 from toolkit.scout.infer import infer_granularity as _infer_granularity
 from toolkit.scout.infer import infer_years as _infer_years
+
+# ── dataset grouping ──────────────────────────────────────────────────────────
+
+
+def _normalize_title_for_grouping(title: str) -> str:
+    """Normalize a title to extract the conceptual dataset core.
+
+    Strips trailing/leading years, date patterns, version suffixes, and
+    format indicators so that items differing only by temporal slice get
+    the same normalized key.
+
+    Examples::
+
+        "Population - 2022"                       -> "population"
+        "Population - Years 2020-2025"            -> "population"
+        "Redditi fisco 2023"                      -> "redditi fisco"
+        "2023 Redditi fisco"                      -> "redditi fisco"
+        "Accordi_pa_privati_dal_2010_al_2025"     -> "accordi_pa_privati"
+        "provvedimenti_qualita_AIFA-2021_24.02.2022" -> "provvedimenti_qualita_aifa"
+    """
+    if not title or not isinstance(title, str):
+        return ""
+    t = title.lower().strip()
+
+    # 0. Normalize underscore before 4-digit year sequences (so that regexes
+    #    expecting \s* before years also match "_2022" or "_2010_al_2025").
+    t = re.sub(r'_(\d{4})', r' \1', t)
+    t = re.sub(r'(\d{4})_', r'\1 ', t)
+
+    # 1. Parenthetical years: "(2022)", "(anni 2020-2025)"
+    t = re.sub(r'\s*\(\s*(?:anni?\s*)?\d{4}\s*[-–]?\s*\d{0,4}\s*\)\s*$', '', t)
+
+    # 2. Date-like patterns at end: "24.02.2022", "_24.02.2022", "30-10-2025" (FULL dates, before year stripping)
+    t = re.sub(r'[\s_]*\d{1,2}[-./]\d{1,2}[-./]\d{4}\s*$', '', t)
+
+    # 3. Years with descriptive text: "Years 2020-2025", "dal 2010 al 2025", "anni 2020-2025"
+    #    Must be before bare year ranges to catch text prefix.
+    #    Underscore before the prefix (e.g. "_dal_2010_al_2025") is also a separator.
+    t = re.sub(
+        r'[\s_][-–,;]?\s*(?:years|year|anni|anno|periodo|serie\s*storica|dal)\s+'
+        r'[-–]?\s*\d{4}\s*[-–toal]*\s*\d{0,4}\s*$',
+        '', t,
+    )
+
+    # 4. Trailing year range with comma or dash: "2011, 2015", "2022-2023", "2024-2050"
+    t = re.sub(r'\s*[-–,;]?\s*\d{4}\s*[-–,;\s]\s*\d{4}\s*$', '', t)
+
+    # 5. Trailing _YYYY suffix (common in INPS/MEF items): "cla_2017", "redditi_2023"
+    t = re.sub(r'_\d{4}\s*$', '', t)
+
+    # 6. Standalone trailing year: "2022"
+    t = re.sub(r'\s*[-–,;]?\s*\d{4}\s*$', '', t)
+
+    # 7. Leading year patterns: "2023 Redditi fisco", "2009 trasparenza"
+    t = re.sub(r'^\d{4}\s*[-–]?\s*\d{0,4}[\s,;]+\s*', '', t)
+
+    # 7b. Clean trailing hyphens, underscores, or space-digit leftovers
+    #     (e.g. "-2021" after "_24.02.2022" was stripped)
+    t = re.sub(r'[-–_]+\s*\d*\s*$', '', t)
+
+    # 8. Trailing format indicators: " - csv", "_rdf", ".xml"
+    t = re.sub(r'\s*[-–_]\s*(?:csv|xls|xlsx|json|zip|parquet|rdf|xml)\s*$', '', t, flags=re.IGNORECASE)
+    t = re.sub(r'\.(?:csv|xls|xlsx|json|zip|parquet|rdf|xml)\s*$', '', t, flags=re.IGNORECASE)
+
+    # Collapse whitespace
+    t = re.sub(r'\s+', ' ', t).strip()
+    # Strip trailing punctuation and separators
+    t = t.rstrip('.,;:-–_ ')
+    return t
+
+
+def _to_slug(text: str, max_len: int = 80) -> str:
+    """Convert free text to a filesystem-safe slug."""
+    if not text:
+        return "unknown"
+    s = text.lower().strip()
+    s = re.sub(r'[^a-z0-9\s-]', '', s)
+    s = re.sub(r'\s+', '-', s)
+    s = re.sub(r'-+', '-', s)
+    return s.strip('-')[:max_len]
+
+
+def compute_dataset_group(
+    source_id: str,
+    title: str | None,
+    item_id: str | None,
+    protocol: str | None = None,
+) -> str:
+    """Compute a ``dataset_group`` slug that groups multi-year / multi-version
+    items representing the same conceptual dataset.
+
+    Strategy (first match wins):
+
+    1.  **Normalized title** — if a meaningful title exists, strip years
+        and slugify.  This is the most reliable signal.
+    2.  **SDMX prefix** — for SDMX items, strip the trailing ``_\\d+``
+        version suffix from the item_id to get the conceptual dataflow.
+    3.  **item_id fallback** — use the item_id itself.
+    4.  **unknown** — ``{source_id}/unknown``.
+    """
+    # Strategy 1: normalized title
+    if title and isinstance(title, str) and len(title.strip()) > 5:
+        norm = _normalize_title_for_grouping(title)
+        if norm and len(norm) > 3:
+            slug = _to_slug(norm)
+            return f"{source_id}/{slug}"[:120]
+
+    # Strategy 2: SDXM — strip trailing version suffix
+    if item_id:
+        iid = str(item_id)
+        if protocol == "sdmx":
+            core = re.sub(r'_\d+$', '', iid)
+            if len(core) > 5:
+                return f"{source_id}/sdmx/{_to_slug(core)}"[:120]
+        # Strategy 3: plain item_id
+        if len(iid) > 3:
+            return f"{source_id}/{_to_slug(iid)}"[:120]
+
+    return f"{source_id}/unknown"
+
+
+def add_dataset_group_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Add ``dataset_group``, ``dataset_group_size``, ``dataset_group_year_min``,
+    and ``dataset_group_year_max`` columns to a source-check results DataFrame.
+
+    This is called right before writing the parquet (after the upsert merge)
+    so the parquet carries grouping metadata permanently.
+    """
+    df = df.copy()
+
+    # Ensure year_min/year_max exist (may be missing in error fallback rows)
+    for col in ("year_min", "year_max"):
+        if col not in df.columns:
+            df[col] = None
+
+    # Compute group for each row
+    df["dataset_group"] = df.apply(
+        lambda r: compute_dataset_group(
+            source_id=str(r.get("source_id", "")),
+            title=r.get("title"),
+            item_id=str(r.get("item_id", "")),
+            protocol=str(r.get("protocol", "")) if "protocol" in r.index else None,
+        ),
+        axis=1,
+    )
+
+    # Group-wise aggregations
+    group_agg = df.groupby("dataset_group").agg(
+        dataset_group_size=("item_id", "count"),
+        dataset_group_year_min=("year_min", "min"),
+        dataset_group_year_max=("year_max", "max"),
+    ).reset_index()
+
+    # Merge back
+    df = df.merge(group_agg, on="dataset_group", how="left")
+    return df
+
 
 # ── CKAN analysis ─────────────────────────────────────────────────────────────
 

@@ -13,8 +13,12 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _constants import CATALOG_INVENTORY_REPORT_PATH
 
 
 def build_issue(gcs_prefix: str) -> None:
@@ -25,9 +29,7 @@ def build_issue(gcs_prefix: str) -> None:
         print("Nessuna variazione o nessun baseline — skipping issue creation.")
         return
 
-    new_report = json.loads(
-        Path("data/catalog_inventory/generated/catalog_inventory_report.json").read_text(encoding="utf-8")
-    )
+    new_report = json.loads(CATALOG_INVENTORY_REPORT_PATH.read_text(encoding="utf-8"))
 
     sections = re.split(r"^#### ", raw, flags=re.M)
     regressions = recoveries = new_sources = removed = 0

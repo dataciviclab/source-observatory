@@ -438,6 +438,107 @@ def test_http_circuit_breaker_blocks_host_after_failures(monkeypatch) -> None:
         configure_source_check_http(circuit_fail_threshold=0, http_timeout=(5.0, 10.0), http_max_retries=2)
 
 
+# ── _extract_year_values_from_sample ──────────────────────────────────────────
+
+
+class TestExtractYearValuesFromSample:
+    """Unit test per _extract_year_values_from_sample."""
+
+    def test_multiple_years_in_column(self) -> None:
+        from source_check_fetch import _extract_year_values_from_sample
+        sample = [
+            {"Anno": 2020, "Regione": "Lombardia", "Valore": 100},
+            {"Anno": 2021, "Regione": "Lombardia", "Valore": 110},
+            {"Anno": 2022, "Regione": "Lombardia", "Valore": 120},
+        ]
+        columns = ["Anno", "Regione", "Valore"]
+        result = _extract_year_values_from_sample(sample, columns)
+        assert result == [2020, 2021, 2022]
+
+    def test_single_year_without_hint_column(self) -> None:
+        """Un solo valore anno senza colonna hint non basta — servono almeno 2 numeri."""
+        from source_check_fetch import _extract_year_values_from_sample
+        sample = [{"codice": 2020, "valore": 100}]
+        columns = ["codice", "valore"]
+        result = _extract_year_values_from_sample(sample, columns)
+        assert result == []
+
+    def test_falls_back_to_year_hint_column(self) -> None:
+        from source_check_fetch import _extract_year_values_from_sample
+        sample = [
+            {"periodo": "2020-2021", "anno": 2020, "valore": 100},
+            {"periodo": "2020-2021", "anno": 2021, "valore": 110},
+        ]
+        columns = ["periodo", "anno", "valore"]
+        result = _extract_year_values_from_sample(sample, columns)
+        # "anno" è in _YEAR_COLUMN_HINTS → matcha anche con 1 valore
+        assert result == [2020, 2021]
+
+    def test_empty_sample(self) -> None:
+        from source_check_fetch import _extract_year_values_from_sample
+        assert _extract_year_values_from_sample([], ["A", "B"]) == []
+
+    def test_no_year_values_at_all(self) -> None:
+        from source_check_fetch import _extract_year_values_from_sample
+        sample = [{"nome": "Mario", "eta": 30}, {"nome": "Luigi", "eta": 25}]
+        result = _extract_year_values_from_sample(sample, ["nome", "eta"])
+        assert result == []
+
+    def test_out_of_range_ignored(self) -> None:
+        """Valori fuori 1900-2100 non sono anni."""
+        from source_check_fetch import _extract_year_values_from_sample
+        sample = [
+            {"codice": 1, "valore": 100},
+            {"codice": 2, "valore": 200},
+        ]
+        result = _extract_year_values_from_sample(sample, ["codice", "valore"])
+        assert result == []
+
+    def test_nan_values_in_sample(self) -> None:
+        """NaN nei sample non deve crashare int(). Bug reale da fonte mef_irpef."""
+        from source_check_fetch import _extract_year_values_from_sample
+        sample = [
+            {"Anno": float("nan"), "Regione": "Lombardia", "Valore": 100},
+            {"Anno": 2021.0, "Regione": "Lombardia", "Valore": 110},
+        ]
+        result = _extract_year_values_from_sample(sample, ["Anno", "Regione", "Valore"])
+        # NaN filtrato, 2021 sopravvive (anno singolo da hint column)
+        assert result == [2021]
+
+
+# ── _infer_granularity_from_columns ───────────────────────────────────────────
+
+
+class TestInferGranularityFromColumns:
+    """Unit test per _infer_granularity_from_columns."""
+
+    def test_comune(self) -> None:
+        from source_check_fetch import _infer_granularity_from_columns
+        assert _infer_granularity_from_columns(["Comune", "Popolazione"]) == "comune"
+
+    def test_regione(self) -> None:
+        from source_check_fetch import _infer_granularity_from_columns
+        assert _infer_granularity_from_columns(["Regione", "Anno", "Valore"]) == "regione"
+
+    def test_comune_wins_over_regione(self) -> None:
+        """Comune ha precedenza quando entrambi i pattern matchano."""
+        from source_check_fetch import _infer_granularity_from_columns
+        assert _infer_granularity_from_columns(["Comune", "Regione"]) == "comune"
+
+    def test_no_territorial_columns(self) -> None:
+        from source_check_fetch import _infer_granularity_from_columns
+        assert _infer_granularity_from_columns(["Anno", "Valore", "Categoria"]) == "non_determinato"
+
+    def test_empty_columns_list(self) -> None:
+        from source_check_fetch import _infer_granularity_from_columns
+        assert _infer_granularity_from_columns([]) == "non_determinato"
+
+    def test_comune_in_substring(self) -> None:
+        """'comune' dentro una parola composta matcha lo stesso."""
+        from source_check_fetch import _infer_granularity_from_columns
+        assert _infer_granularity_from_columns(["Denominazione_comune", "CAP"]) == "comune"
+
+
 def test_normalize_preview_columns_for_parquet_handles_existing_nested_rows(tmp_path: Path) -> None:
     """Final parquet write must handle old incremental rows with nested cells."""
     import json
@@ -765,4 +866,140 @@ class TestSdmxCheckRowPassthrough:
         assert result["sdmx_version"] == "1.0"
         assert result["sdmx_agency"] == "IT1"
         assert result["enrich_method"] == "sdmx_dataflow_annotations"
+
+
+# ── dataset_group: _normalize_title_for_grouping ──────────────────────────────
+
+
+class TestNormalizeTitleForGrouping:
+    """Unit test per _normalize_title_for_grouping: 20 edge case noti."""
+
+    # (input, expected_norm)
+    CASES = [
+        # Basic year stripping
+        ("Population - 2022", "population"),
+        ("Population - Years 2020-2025", "population"),
+        ("Redditi fisco 2023", "redditi fisco"),
+        ("2023 Redditi fisco", "redditi fisco"),
+        # Multi-year comma/dash
+        ("Local units - municipal level 2011, 2015", "local units - municipal level"),
+        ("Serie storica anni 2010-2016", "serie storica"),
+        # Italian date patterns (underscore-separated)
+        ("Accordi_pa_privati_dal_2010_al_2025", "accordi_pa_privati"),
+        ("provvedimenti_qualita_AIFA-2021_24.02.2022", "provvedimenti_qualita_aifa"),
+        ("Classe_A_per_principio_attivo_30-10-2025", "classe_a_per_principio_attivo"),
+        # _YYYY suffix
+        ("REG_bonus_irpef_2024", "reg_bonus_irpef"),
+        ("sesso_bonus_irpef_2019", "sesso_bonus_irpef"),
+        # Leading year
+        ("2009 trasparenza", "trasparenza"),
+        ("2016 trasparenza", "trasparenza"),
+        # No change needed
+        ("Bank services - municipalities data", "bank services - municipalities data"),
+        ("Municipal waste - production", "municipal waste - production"),
+        # Edge: short title
+        ("", ""),
+        ("a", "a"),
+        # Edge: format suffix
+        ("FC40A_UNIONI_1_csv", "fc40a_unioni_1"),
+        ("Ind_FC20TOT_3_csv", "ind_fc20tot_3"),
+        # Corte Costituzionale
+        ("CC_OpenMassime_1956_1980", "cc_openmassime"),
+    ]
+
+    @pytest.mark.parametrize("title,expected", CASES)
+    def test_normalize(self, title, expected):
+        from source_check_analyze import _normalize_title_for_grouping
+        assert _normalize_title_for_grouping(title) == expected
+
+
+class TestToSlug:
+    def test_basic(self):
+        from source_check_analyze import _to_slug
+        assert _to_slug("hello world") == "hello-world"
+
+    def test_special_chars_stripped(self):
+        from source_check_analyze import _to_slug
+        assert _to_slug("Economic activities (Nace 2 digit)!") == "economic-activities-nace-2-digit"
+
+    def test_max_len(self):
+        from source_check_analyze import _to_slug
+        long = "a" * 200
+        assert len(_to_slug(long)) == 80
+
+    def test_empty(self):
+        from source_check_analyze import _to_slug
+        assert _to_slug("") == "unknown"
+
+    def test_whitespace_collapsed(self):
+        from source_check_analyze import _to_slug
+        assert _to_slug("  many   spaces  ") == "many-spaces"
+
+
+class TestComputeDatasetGroup:
+    """Unit test per compute_dataset_group: verifica tutte le strategie."""
+
+    def test_via_title(self):
+        from source_check_analyze import compute_dataset_group
+        g = compute_dataset_group("inps", "Numero pensionati 2022", "item_123")
+        assert g == "inps/numero-pensionati"
+
+    def test_via_sdmx_prefix(self):
+        from source_check_analyze import compute_dataset_group
+        g = compute_dataset_group("istat_sdmx", None, "183_1163_DF_DICA_ASIAULP_2", protocol="sdmx")
+        # trailing _2 stripped, underscores removed by slugify
+        assert "/sdmx/" in g
+        assert "183" in g
+        assert "asiaulp" in g
+        assert g.startswith("istat_sdmx/")
+
+    def test_via_item_id_fallback(self):
+        from source_check_analyze import compute_dataset_group
+        g = compute_dataset_group("anac", None, "da10182d-75ba-4894")
+        assert "anac/" in g
+        assert "da10182d" in g
+
+    def test_unknown(self):
+        from source_check_analyze import compute_dataset_group
+        g = compute_dataset_group("x", None, None)
+        assert g == "x/unknown"
+
+
+class TestAddDatasetGroupColumns:
+    """Test che add_dataset_group_columns aggiunga le colonne giuste."""
+
+    def test_adds_columns(self):
+        import pandas as pd
+        from source_check_analyze import add_dataset_group_columns
+
+        df = pd.DataFrame([
+            {"source_id": "s1", "item_id": "a", "title": "Population 2022", "year_min": 2022, "year_max": 2022},
+            {"source_id": "s1", "item_id": "b", "title": "Population 2023", "year_min": 2023, "year_max": 2023},
+        ])
+        result = add_dataset_group_columns(df)
+        assert "dataset_group" in result.columns
+        assert "dataset_group_size" in result.columns
+        assert "dataset_group_year_min" in result.columns
+        assert "dataset_group_year_max" in result.columns
+        # Same normalized title → same group
+        assert result["dataset_group"].iloc[0] == result["dataset_group"].iloc[1]
+        assert result["dataset_group_size"].iloc[0] == 2
+        assert result["dataset_group_year_min"].iloc[0] == 2022
+        assert result["dataset_group_year_max"].iloc[0] == 2023
+
+    def test_sparse_row_without_year_columns(self):
+        import pandas as pd
+        from source_check_analyze import add_dataset_group_columns
+
+        # Row without year_min/year_max (e.g. enrichment failed)
+        df = pd.DataFrame([{
+            "source_id": "s1", "item_id": "z", "title": None,
+            "year_min": None, "year_max": None,
+        }])
+        result = add_dataset_group_columns(df)
+        assert "dataset_group" in result.columns
+        assert result["dataset_group"].iloc[0] is not None
+        assert result["dataset_group_size"].iloc[0] == 1
+
+
 pytestmark = pytest.mark.contract
