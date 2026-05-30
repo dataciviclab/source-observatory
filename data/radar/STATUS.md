@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-05-29
+Ultimo run: 2026-05-30
 
 ## Sommario
 
 - Fonti controllate: 27
-- GREEN: 25
-- YELLOW: 1
+- GREEN: 24
+- YELLOW: 2
 - RED: 1
 
 ## Tipi sorgente
@@ -31,7 +31,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, popolazione_istat_comunale_2019_2025 |
+| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_entrate_stato, bdap_lea, dipendenti_pubblici |
@@ -46,7 +46,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | mur_ustat | catalog | ckan | catalog-watch | GREEN | 200 | mur_contribuzione_universitaria |
 | opencoesione | catalog | rest | radar-only | YELLOW | 403 | - |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
-| opencivitas | catalog | html | catalog-watch | GREEN | 200 | - |
+| opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso |
 | aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
 | dait | catalog | html | radar-only | GREEN | 200 | - |
 | mit_opendata | catalog | ckan | catalog-watch | GREEN | 200 | mit_incidentalita_mensile, mit_opere_incompiute_2020 |
@@ -61,6 +61,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
+- `istat_sdmx`: Timeout (ReadTimeout)
 - `dati_salute`: SSL verify failed; fallback connection error (SSLError)
 - `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/api/ | Portale disabilitato/ritirato. CKAN API non piu' raggiungibile (redirect a /it/ con 404 "Pagina non trovata"). Mantenuto in radar-only per eventuale monitoraggio futuro.
 
