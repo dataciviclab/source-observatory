@@ -222,6 +222,7 @@ def _collect_named_graphs(
     enrich_schema = sparql_cfg.get("enrich_schema", False)
     schema_predicate_limit = int(sparql_cfg.get("schema_predicate_limit", 20))
     enrich_workers = int(sparql_cfg.get("enrich_workers", 4))
+    max_workers = 0
 
     t0 = time.monotonic()
 
