@@ -109,10 +109,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--workers",
         type=int,
-        default=1,
+        default=4,
         choices=range(1, 17),
         metavar="N (1-16)",
-        help="Thread per la raccolta parallela (default: 1 = seriale).",
+        help="Thread per la raccolta parallela (default: 4).",
     )
     parser.add_argument(
         "--source-ids",
