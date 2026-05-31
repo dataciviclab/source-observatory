@@ -654,6 +654,42 @@ agid:
     PEC, domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione
     elettronica, cloud. Codice_IPA chiave di join con ANAC.'
   datasets_in_use: []
+noipa_sparql:
+  source_kind: catalog
+  protocol: sparql
+  observation_mode: catalog-watch
+  base_url: https://sparql-noipa.mef.gov.it/sparql
+  inventory:
+    timeout: 600
+  last_probed: '2026-05-31'
+  catalog_baseline:
+    captured_at: '2026-05-31'
+    metric: named_graph_count
+    value: 170
+    method: named_graphs
+    query_name: named_graphs
+    reliability: medium
+    note: Baseline via enumerazione named graphs. ~170 grafi: entries-{YYYYMM}
+      personale PA (2019-2026, ~88) + entriesPensioni-{YYYYMM} pensioni PA
+      (2017-oggi, ~80+) + metadata/ontology/tipologiche.
+      Secondo endpoint sparql-pensioni.mef.gov.it (stesso dataset).
+  sparql:
+    endpoint_url: https://sparql-noipa.mef.gov.it/sparql
+    inventory_mode: named_graphs
+    enrich_schema: false
+    timeout_seconds: 300
+    graph_uri_prefix: "https://sparql-noipa.mef.gov.it/"
+    graph_uri_blacklist:
+      - localhost
+      - virtrdf
+      - owl#
+      - "8890"
+  verdict: go
+  note: NoiPA SPARQL — MEF/RGS. Dati mensili personale PA (entries-{YYYYMM},
+    2019-2026) + pensioni PA (entriesPensioni-{YYYYMM}, 2017-oggi).
+    ~490k soggetti/mese. Stesso stack Virtuoso di dati_camera/senato.
+    CC BY (da verificare). Altissimo valore civico.
+  datasets_in_use: []
 mimit_rna:
   source_kind: catalog
   protocol: ckan
