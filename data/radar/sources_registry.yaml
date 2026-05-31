@@ -668,10 +668,10 @@ noipa_sparql:
     method: named_graphs
     query_name: named_graphs
     reliability: medium
-    note: Baseline via enumerazione named graphs. ~170 grafi: entries-{YYYYMM}
+    note: "Baseline via enumerazione named graphs. ~170 grafi: entries-{YYYYMM}
       personale PA (2019-2026, ~88) + entriesPensioni-{YYYYMM} pensioni PA
       (2017-oggi, ~80+) + metadata/ontology/tipologiche.
-      Secondo endpoint sparql-pensioni.mef.gov.it (stesso dataset).
+      Secondo endpoint sparql-pensioni.mef.gov.it (stesso dataset)."
   sparql:
     endpoint_url: https://sparql-noipa.mef.gov.it/sparql
     inventory_mode: named_graphs
