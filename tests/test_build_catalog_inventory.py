@@ -369,14 +369,12 @@ def test_collect_sparql_inventory_groups_distribution_bindings(monkeypatch) -> N
         }
     }
 
-    def fake_get(url, **kwargs):
-        assert url == "https://example.test/sparql"
-        assert kwargs["headers"]["Accept"] == "application/sparql-results+json"
-        assert kwargs["params"]["format"] == "application/sparql-results+json"
-        assert "LIMIT 10" in kwargs["params"]["query"]
-        return fake_response(200, json_data=payload, headers={"content-type": "application/sparql-results+json"})
+    def fake_execute(endpoint, query, timeout=60):
+        assert endpoint == "https://example.test/sparql"
+        assert "LIMIT 10" in query
+        return payload["results"]["bindings"]
 
-    monkeypatch.setattr(collectors.sparql, "observatory_get", fake_get)
+    monkeypatch.setattr(collectors.sparql, "execute_sparql", fake_execute)
 
     rows, warning = build_catalog_inventory.collect_sparql_inventory(
         "demo_sparql", source_cfg, "2026-04-11T12:00:00+00:00"
