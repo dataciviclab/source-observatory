@@ -215,7 +215,8 @@ dati_senato:
   observation_mode: catalog-watch
   base_url: https://dati.senato.it/sparql
   inventory:
-    timeout: 600
+    timeout: 600  # 99 query (1 discovery + 98 enrich) × ~5s × 1.2x = ~600s 
+    timeout_reason: "99 query SPARQL (1 discover + 98 schema enrich × 15 pred). stimate 5s/query su Virtuoso. 99 × 5 × 1.2 = 594s"
   last_probed: '2026-05-31'
   catalog_baseline:
     captured_at: '2026-05-31'
@@ -659,8 +660,6 @@ noipa_sparql:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://sparql-noipa.mef.gov.it/sparql
-  inventory:
-    timeout: 600
   last_probed: '2026-05-31'
   catalog_baseline:
     captured_at: '2026-05-31'
