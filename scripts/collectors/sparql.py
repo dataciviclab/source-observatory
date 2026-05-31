@@ -12,7 +12,6 @@ from .base import (
     CollectorResult,
     append_unique,
     compact_uri_name,
-    observatory_get,
     parse_int,
     sparql_binding_value,
 )
