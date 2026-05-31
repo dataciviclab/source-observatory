@@ -134,12 +134,18 @@ def _build_probe_result(
 
 
 def _probe_once(base_url: str) -> ProbeResult:
-    """Single probe attempt (no retry). Uses lab_connectors HttpClient with SSL fallback."""
+    """Single probe attempt (no retry). Uses lab_connectors HttpClient with SSL fallback.
+
+    Uses HEAD instead of GET per root-cause analysis: the radar only needs
+    status_code + headers (content-type, final_url). HEAD avoids downloading
+    the full body (es. 652KB homepage di dati.salute.gov.it) and reduces the
+    chance of SSLError/ConnectionError in CI environments where the server CA
+    (TI Trust Technologies) is not in the truststore.
+    """
     client = HttpClient(timeout=TIMEOUT_SECONDS, user_agent=USER_AGENT)
-    result = client.get(
+    result = client.head(
         base_url,
         allow_redirects=True,
-        stream=True,
     )
     # ssl_fallback_used=True → primary SSL failed, fallback succeeded → GREEN
     # ssl_fallback_used=False → both failed
