@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from lab_connectors.http.sparql import (
@@ -219,6 +221,10 @@ def _collect_named_graphs(
     ])]
     enrich_schema = sparql_cfg.get("enrich_schema", False)
     schema_predicate_limit = int(sparql_cfg.get("schema_predicate_limit", 20))
+    enrich_workers = int(sparql_cfg.get("enrich_workers", 4))
+    max_workers = 0
+
+    t0 = time.monotonic()
 
     # Discover named graphs via lab-connectors
     graph_uris = discover_named_graphs(
@@ -227,36 +233,15 @@ def _collect_named_graphs(
         prefix=graph_uri_prefix,
         blacklist=graph_uri_blacklist,
     )
+    t1 = time.monotonic()
 
     rows: list[dict[str, Any]] = []
+    # Costruisci righe base (senza schema) subito
     for idx, graph_uri in enumerate(graph_uris, start=1):
         uri_path = graph_uri.replace(graph_uri_prefix, "").rstrip("/")
         title = uri_path.replace("_", " ").replace("/", " \u2014 Legislatura ")
         if title:
             title = title[0].upper() + title[1:]
-
-        tags = None
-        notes_excerpt = f"Named graph: {uri_path}"
-        if enrich_schema:
-            try:
-                schema = infer_graph_schema(
-                    endpoint=endpoint,
-                    graph_uri=graph_uri,
-                    timeout=timeout,
-                    limit=schema_predicate_limit,
-                )
-                if schema:
-                    pred_strings = [
-                        f"{p['compact_name']}({p['count']})" for p in schema
-                    ]
-                    tags = ", ".join(pred_strings)
-                    notes_excerpt = (
-                        f"Named graph: {uri_path} | "
-                        f"Predicati ({len(schema)}): {tags}"
-                    )
-            except Exception:
-                pass
-
         rows.append({
             "captured_at": captured_at,
             "source_id": source_id,
@@ -268,8 +253,8 @@ def _collect_named_graphs(
             "item_name": compact_uri_name(graph_uri),
             "title": title,
             "organization": None,
-            "tags": tags,
-            "notes_excerpt": notes_excerpt,
+            "tags": None,
+            "notes_excerpt": f"Named graph: {uri_path}",
             "source_url": endpoint,
             "ordinal": idx,
             "issued": None,
@@ -280,6 +265,40 @@ def _collect_named_graphs(
             "format": None,
             "theme": None,
         })
+
+    # Schema enrichment parallelo
+    enrich_count = 0
+    enrich_errors = 0
+    t_enrich_start = time.monotonic()
+    if enrich_schema and rows:
+        max_workers = min(enrich_workers, len(rows))
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            fut_to_row = {}
+            for row in rows:
+                g = row["item_id"]
+                fut = pool.submit(
+                    infer_graph_schema, endpoint, g,
+                    timeout=timeout, limit=schema_predicate_limit,
+                )
+                fut_to_row[fut] = row
+
+            for fut in as_completed(fut_to_row):
+                row = fut_to_row[fut]
+                try:
+                    schema = fut.result()
+                    if schema:
+                        pred_strings = [
+                            f"{p['compact_name']}({p['count']})" for p in schema
+                        ]
+                        row["tags"] = ", ".join(pred_strings)
+                        row["notes_excerpt"] = (
+                            f"{row['notes_excerpt']} | "
+                            f"Predicati ({len(schema)}): {row['tags']}"
+                        )
+                        enrich_count += 1
+                except Exception:
+                    enrich_errors += 1
+    t_enrich_end = time.monotonic()
 
     if not rows:
         raise ValueError(
@@ -292,6 +311,14 @@ def _collect_named_graphs(
             "type": "named_graphs",
             "message": "Inventory via enumerazione named graphs SPARQL.",
             "graphs": len(rows),
+            "timing": {
+                "discover_s": round(t1 - t0, 1),
+                "enrich_s": round(t_enrich_end - t_enrich_start, 1),
+                "total_s": round(t_enrich_end - t0, 1),
+                "enrich_ok": enrich_count,
+                "enrich_errors": enrich_errors,
+                "enrich_workers": max_workers,
+            },
         },
     )
 
