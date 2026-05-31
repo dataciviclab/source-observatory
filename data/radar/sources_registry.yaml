@@ -209,6 +209,48 @@ dati_camera:
   datasets_in_use:
     - camera_deputati_legislature
     - camera_votazioni_sparql
+dati_senato:
+  source_kind: catalog
+  protocol: sparql
+  observation_mode: catalog-watch
+  base_url: https://dati.senato.it/sparql
+  inventory:
+    timeout: 600
+  last_probed: '2026-05-31'
+  catalog_baseline:
+    captured_at: '2026-05-31'
+    metric: named_graph_count
+    value: 98
+    method: named_graphs
+    query_name: named_graphs
+    reliability: medium
+    note: Baseline via enumerazione named graphs SPARQL. ~98 grafi organizzati 
+      per categoria (composizione, ddl, votazioni, emendamenti, ecc.) e 
+      legislatura (01-19). Fonte non ha DCAT catalog.
+  sparql:
+    endpoint_url: https://dati.senato.it/sparql
+    inventory_mode: named_graphs
+    enrich_schema: true
+    schema_predicate_limit: 15
+    timeout_seconds: 300
+    graph_uri_prefix: "http://dati.senato.it/"
+    graph_uri_blacklist:
+      - localhost
+      - virtrdf
+      - owl#
+      - rules.skos
+      - virtrdf-label
+      - "8890"
+      - b3sifp
+      - b3sonto
+      - facets
+      - teseo
+  verdict: go
+  note: Portale Open Data Senato. SPARQL endpoint Virtuoso (GET). Inventory via 
+    enumerazione named graphs (~98 grafi categoria/legislatura). Download CSV/JSON 
+    via POST form autenticato (non crawlabile). CC BY 3.0. Speculare a 
+    dati_camera ma senza DCAT catalog.
+  datasets_in_use: []
 dati_cultura:
   source_kind: catalog
   protocol: sparql
