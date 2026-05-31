@@ -4,7 +4,11 @@ from typing import Any
 
 from lab_connectors.http.sparql import (
     discover_graphs as discover_named_graphs,
+)
+from lab_connectors.http.sparql import (
     execute_sparql,
+)
+from lab_connectors.http.sparql import (
     infer_schema as infer_graph_schema,
 )
 
