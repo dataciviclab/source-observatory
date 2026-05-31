@@ -2,11 +2,20 @@ from __future__ import annotations
 
 from typing import Any
 
+from lab_connectors.http.sparql import (
+    discover_graphs as discover_named_graphs,
+)
+from lab_connectors.http.sparql import (
+    execute_sparql,
+)
+from lab_connectors.http.sparql import (
+    infer_schema as infer_graph_schema,
+)
+
 from .base import (
     CollectorResult,
     append_unique,
     compact_uri_name,
-    observatory_get,
     parse_int,
     sparql_binding_value,
 )
@@ -181,24 +190,119 @@ def _query_supports_offset(source_cfg: dict[str, Any], query_name: str) -> bool:
 def _execute_sparql_query(
     endpoint: str, query_text: str, timeout: int,
 ) -> list[dict[str, Any]]:
-    """Execute a single SPARQL query and return bindings."""
-    response = observatory_get(
-        endpoint,
-        params={"query": query_text, "format": "application/sparql-results+json"},
-        headers={"Accept": "application/sparql-results+json"},
+    """Execute a single SPARQL query and return bindings.
+
+    Delega a lab_connectors.http.sparql.execute_sparql
+    (POST + GET fallback).
+    """
+    try:
+        return execute_sparql(endpoint, query_text, timeout=timeout)
+    except RuntimeError as e:
+        raise ValueError(str(e)) from e
+
+
+def _collect_named_graphs(
+    source_id: str, source_cfg: dict[str, Any], captured_at: str,
+) -> CollectorResult:
+    """Enumerate all named graphs as proxy inventory items.
+
+    Use when the endpoint has no DCAT catalog but organizes data in named graphs
+    (e.g., Senato: composizione/13, ddl/19, votazioni/17, ...).
+    Activated via sparql.inventory_mode: named_graphs in sources_registry.yaml.
+    """
+    sparql_cfg = source_cfg.get("sparql") or {}
+    endpoint = sparql_cfg.get("endpoint_url") or source_cfg["base_url"]
+    timeout = int(sparql_cfg.get("timeout_seconds", 60))
+    graph_uri_prefix = sparql_cfg.get("graph_uri_prefix", "")
+    graph_uri_blacklist = [str(b) for b in sparql_cfg.get("graph_uri_blacklist", [
+        "localhost", "virtrdf", "owl#", "rules.skos", "virtrdf-label",
+    ])]
+    enrich_schema = sparql_cfg.get("enrich_schema", False)
+    schema_predicate_limit = int(sparql_cfg.get("schema_predicate_limit", 20))
+
+    # Discover named graphs via lab-connectors
+    graph_uris = discover_named_graphs(
+        endpoint=endpoint,
         timeout=timeout,
+        prefix=graph_uri_prefix,
+        blacklist=graph_uri_blacklist,
     )
-    response.raise_for_status()
-    payload = response.json()
-    bindings = ((payload.get("results") or {}).get("bindings")) or []
-    if not isinstance(bindings, list):
-        raise ValueError("Unexpected SPARQL payload: bindings is not a list")
-    return bindings
+
+    rows: list[dict[str, Any]] = []
+    for idx, graph_uri in enumerate(graph_uris, start=1):
+        uri_path = graph_uri.replace(graph_uri_prefix, "").rstrip("/")
+        title = uri_path.replace("_", " ").replace("/", " \u2014 Legislatura ")
+        if title:
+            title = title[0].upper() + title[1:]
+
+        tags = None
+        notes_excerpt = f"Named graph: {uri_path}"
+        if enrich_schema:
+            try:
+                schema = infer_graph_schema(
+                    endpoint=endpoint,
+                    graph_uri=graph_uri,
+                    timeout=timeout,
+                    limit=schema_predicate_limit,
+                )
+                if schema:
+                    pred_strings = [
+                        f"{p['compact_name']}({p['count']})" for p in schema
+                    ]
+                    tags = ", ".join(pred_strings)
+                    notes_excerpt = (
+                        f"Named graph: {uri_path} | "
+                        f"Predicati ({len(schema)}): {tags}"
+                    )
+            except Exception:
+                pass
+
+        rows.append({
+            "captured_at": captured_at,
+            "source_id": source_id,
+            "source_kind": source_cfg.get("source_kind"),
+            "protocol": "sparql",
+            "inventory_method": "named_graphs",
+            "item_kind": "dataset",
+            "item_id": graph_uri,
+            "item_name": compact_uri_name(graph_uri),
+            "title": title,
+            "organization": None,
+            "tags": tags,
+            "notes_excerpt": notes_excerpt,
+            "source_url": endpoint,
+            "ordinal": idx,
+            "issued": None,
+            "modified": None,
+            "landing_page": None,
+            "distribution_url": None,
+            "distribution_count": None,
+            "format": None,
+            "theme": None,
+        })
+
+    if not rows:
+        raise ValueError(
+            f"Named graph enumeration returned no rows for {source_id}"
+        )
+
+    return CollectorResult(
+        rows=rows,
+        summary={
+            "type": "named_graphs",
+            "message": "Inventory via enumerazione named graphs SPARQL.",
+            "graphs": len(rows),
+        },
+    )
 
 
 def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> CollectorResult:
     sparql_cfg = source_cfg.get("sparql") or {}
     endpoint = sparql_cfg.get("endpoint_url") or source_cfg["base_url"]
+    inventory_mode = sparql_cfg.get("inventory_mode", "dcat")
+
+    if inventory_mode == "named_graphs":
+        return _collect_named_graphs(source_id, source_cfg, captured_at)
     limit = int(sparql_cfg.get("limit", 5000))
     max_pages = int(sparql_cfg.get("max_pages", 50))
     timeout = int(sparql_cfg.get("timeout_seconds", 60))

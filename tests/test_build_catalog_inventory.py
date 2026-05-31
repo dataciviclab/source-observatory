@@ -369,14 +369,12 @@ def test_collect_sparql_inventory_groups_distribution_bindings(monkeypatch) -> N
         }
     }
 
-    def fake_get(url, **kwargs):
-        assert url == "https://example.test/sparql"
-        assert kwargs["headers"]["Accept"] == "application/sparql-results+json"
-        assert kwargs["params"]["format"] == "application/sparql-results+json"
-        assert "LIMIT 10" in kwargs["params"]["query"]
-        return fake_response(200, json_data=payload, headers={"content-type": "application/sparql-results+json"})
+    def fake_execute(endpoint, query, timeout=60):
+        assert endpoint == "https://example.test/sparql"
+        assert "LIMIT 10" in query
+        return payload["results"]["bindings"]
 
-    monkeypatch.setattr(collectors.sparql, "observatory_get", fake_get)
+    monkeypatch.setattr(collectors.sparql, "execute_sparql", fake_execute)
 
     rows, warning = build_catalog_inventory.collect_sparql_inventory(
         "demo_sparql", source_cfg, "2026-04-11T12:00:00+00:00"
@@ -715,3 +713,55 @@ class TestContentTypeProbe:
         bf = result.summary.get("by_format", {})
         assert "CSV" in bf, f"by_format non contiene CSV dopo probe: {bf}"
         assert "ZIP" not in bf, f"by_format contiene ancora ZIP pre-probe: {bf}"
+
+
+def test_collect_named_graphs_inventory(monkeypatch):
+    """_collect_named_graphs con discover/infer mockati."""
+    source_cfg = {
+        "source_kind": "catalog",
+        "protocol": "sparql",
+        "base_url": "https://example.test/sparql",
+        "sparql": {
+            "endpoint_url": "https://example.test/sparql",
+            "inventory_mode": "named_graphs",
+            "graph_uri_prefix": "http://dati.test.it/",
+            "graph_uri_blacklist": ["localhost"],
+            "enrich_schema": True,
+            "schema_predicate_limit": 5,
+            "timeout_seconds": 30,
+        },
+    }
+
+    fake_graphs = [
+        "http://dati.test.it/composizione/19",
+        "http://dati.test.it/ddl/19",
+        "http://localhost/internal",
+    ]
+    fake_schema = [
+        {"pred": "http://ex.org/name", "compact_name": "name", "count": 100},
+        {"pred": "http://ex.org/age", "compact_name": "age", "count": 50},
+    ]
+
+    def mock_discover(endpoint, **kw):
+        assert endpoint == "https://example.test/sparql"
+        return [g for g in fake_graphs if "localhost" not in g]
+
+    def mock_infer(endpoint, graph_uri, **kw):
+        assert endpoint == "https://example.test/sparql"
+        return fake_schema
+
+    monkeypatch.setattr(collectors.sparql, "discover_named_graphs", mock_discover)
+    monkeypatch.setattr(collectors.sparql, "infer_graph_schema", mock_infer)
+
+    result = collectors.sparql._collect_named_graphs(
+        "dati_test", source_cfg, "2026-05-31T12:00:00+00:00",
+    )
+
+    assert len(result.rows) == 2
+    assert result.rows[0]["item_id"] == "http://dati.test.it/composizione/19"
+    assert result.rows[0]["title"] == "Composizione \u2014 Legislatura 19"
+    assert result.rows[1]["item_id"] == "http://dati.test.it/ddl/19"
+    assert result.rows[1]["title"] == "Ddl \u2014 Legislatura 19"
+    assert result.rows[0]["tags"] is not None
+    assert "name(100)" in result.rows[0]["tags"]
+    assert result.summary["graphs"] == 2
