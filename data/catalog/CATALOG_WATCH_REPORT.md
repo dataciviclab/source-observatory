@@ -1,8 +1,15 @@
 # Catalog Watch Report
 
-_Generato: 2026-05-25T08:00:44+00:00 — 22 fonti controllate_
+_Generato: 2026-06-01T08:48:05+00:00 — 23 fonti controllate_
 
 ## Segnali attivi
+
+### 📦 `openbdap` — inventory change
+
+- **Protocollo**: ckan
+- **Dettaglio**: 3809 item (package_list), delta +28 rispetto al run precedente (3781).
+- **Item**: 3809
+- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
 
 ### • `mim_opendata` — csv_magnet
 
@@ -35,7 +42,7 @@ _Generato: 2026-05-25T08:00:44+00:00 — 22 fonti controllate_
 ### • `giustizia_statistiche` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 8 link data (XLS 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1
+- **Dettaglio**: 8 link data (XLSX 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1
 - **Item**: 8
 - **Azione**: low signal
 
