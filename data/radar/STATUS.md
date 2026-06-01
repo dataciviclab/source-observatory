@@ -1,19 +1,19 @@
 # Stato Radar
 
-Ultimo run: 2026-05-31
+Ultimo run: 2026-06-01
 
 ## Sommario
 
-- Fonti controllate: 27
-- GREEN: 24
+- Fonti controllate: 29
+- GREEN: 27
 - YELLOW: 1
-- RED: 2
+- RED: 1
 
 ## Tipi sorgente
 
 | Tipo | Conteggio |
 | --- | --- |
-| catalog | 26 |
+| catalog | 28 |
 | portal | 1 |
 | source | 0 |
 
@@ -21,8 +21,8 @@ Ultimo run: 2026-05-31
 
 | Modalita' | Conteggio | Significato |
 | --- | --- | --- |
-| radar-only | 4 | Salute della fonte senza segnali di inventario |
-| catalog-watch | 23 | Inventario e drift strutturale del catalogo |
+| radar-only | 5 | Salute della fonte senza segnali di inventario |
+| catalog-watch | 24 | Inventario e drift strutturale del catalogo |
 | monitor-active | 0 | Caso ristretto con monitoraggio piu' vicino alla risorsa |
 
 Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornamento del dataset.
@@ -38,7 +38,8 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | dati_salute | catalog | html | catalog-watch | RED | - | - |
 | inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali |
-| dati_camera | catalog | sparql | catalog-watch | RED | 503 | - |
+| dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | camera_deputati_legislature, camera_votazioni_sparql |
+| dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | dati_cultura | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
@@ -56,13 +57,13 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | terna_opendata | catalog | rest | radar-only | GREEN | 200 | terna_electricity_by_source |
 | ministero_interno | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | agid | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| noipa_sparql | catalog | sparql | radar-only | GREEN | 200 | - |
 | mimit_rna | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | ministero_salute | catalog | ckan | catalog-watch | GREEN | 200 | - |
 
 ## Note
 
 - `dati_salute`: SSL verify failed; fallback connection error (SSLError)
-- `dati_camera`: HTTP 503 | content-type: text/html; charset=UTF-8 | url finale: https://dati.camera.it/sparql | Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.
 - `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/api/ | Portale disabilitato/ritirato. CKAN API non piu' raggiungibile (redirect a /it/ con 404 "Pagina non trovata"). Mantenuto in radar-only per eventuale monitoraggio futuro.
 
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)

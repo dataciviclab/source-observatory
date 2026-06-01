@@ -5,7 +5,7 @@ istat_sdmx:
   base_url: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1
   inventory:
     timeout: 300
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: dataflow_count
@@ -35,7 +35,7 @@ anac:
     skip_current_list_reason: package_search con fq=organization:anac 
       restituisce tutti i 70 dataset ANAC con metadata completi. current_list 
       non necessario.
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -62,7 +62,7 @@ inps:
       alti (2300+ timeout 30s) — package_show_sample +16 workers è più veloce.\n"
     package_show_sample: true
     sample_size: 10000
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -91,7 +91,7 @@ openbdap:
     skip_current_list: true
     package_show_sample: true
     sample_size: 2000
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -112,7 +112,7 @@ dati_salute:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.dati.salute.gov.it/
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-04-07'
     metric: csv_magnet_total_links
@@ -136,7 +136,7 @@ inail_opendata:
   protocol: aem
   observation_mode: radar-only
   base_url: https://dati.inail.it/
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   verdict: go
   note: Portale AEM con Open API documentate. Superficie operativa reale = 
     catalogo AEM + Open API, non CKAN standard (logo nel footer fuorviante). 
@@ -148,7 +148,7 @@ mim_opendata:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-04-27'
     metric: csv_magnet_total_links
@@ -181,7 +181,7 @@ dati_camera:
   base_url: https://dati.camera.it/sparql
   scraping_blocked: true
   scraping_blocked_reason: reCAPTCHA / WAF blocca richieste HTTP non-browser
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -215,9 +215,10 @@ dati_senato:
   observation_mode: catalog-watch
   base_url: https://dati.senato.it/sparql
   inventory:
-    timeout: 600  # 99 query (1 discovery + 98 enrich) × ~5s × 1.2x = ~600s 
-    timeout_reason: "99 query SPARQL (1 discover + 98 schema enrich × 15 pred). stimate 5s/query su Virtuoso. 99 × 5 × 1.2 = 594s"
-  last_probed: '2026-05-31'
+    timeout: 600
+    timeout_reason: 99 query SPARQL (1 discover + 98 schema enrich × 15 pred). 
+      stimate 5s/query su Virtuoso. 99 × 5 × 1.2 = 594s
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-05-31'
     metric: named_graph_count
@@ -234,22 +235,22 @@ dati_senato:
     enrich_schema: true
     schema_predicate_limit: 15
     timeout_seconds: 300
-    graph_uri_prefix: "http://dati.senato.it/"
+    graph_uri_prefix: http://dati.senato.it/
     graph_uri_blacklist:
       - localhost
       - virtrdf
       - owl#
       - rules.skos
       - virtrdf-label
-      - "8890"
+      - '8890'
       - b3sifp
       - b3sonto
       - facets
       - teseo
   verdict: go
   note: Portale Open Data Senato. SPARQL endpoint Virtuoso (GET). Inventory via 
-    enumerazione named graphs (~98 grafi categoria/legislatura). Download CSV/JSON 
-    via POST form autenticato (non crawlabile). CC BY 3.0. Speculare a 
+    enumerazione named graphs (~98 grafi categoria/legislatura). Download 
+    CSV/JSON via POST form autenticato (non crawlabile). CC BY 3.0. Speculare a 
     dati_camera ma senza DCAT catalog.
   datasets_in_use: []
 dati_cultura:
@@ -257,7 +258,7 @@ dati_cultura:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.cultura.gov.it/sparql
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -282,7 +283,7 @@ ispra_linked_data:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.isprambiente.it/sparql
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -309,7 +310,7 @@ consip_open_data:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.consip.it/api/3/action/package_list?limit=1
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: package_count
@@ -336,7 +337,7 @@ lavoro_opendata:
     skip_current_list_reason: package_search con 
       fq=organization:ministero-del-lavoro restituisce 83 dataset con metadata 
       completi. current_list non necessario.
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -363,7 +364,7 @@ mur_ustat:
     skip_current_list_reason: package_search con 
       fq=organization:ministero-universita-e-ricerca restituisce 69 dataset con 
       metadata completi. current_list non necessario.
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -384,7 +385,7 @@ opencoesione:
   protocol: rest
   observation_mode: radar-only
   base_url: https://opencoesione.gov.it/it/api/
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   verdict: hold
   note: "Portale disabilitato/ritirato. CKAN API non piu' raggiungibile (redirect
     a /it/ con 404 \"Pagina non trovata\"). Mantenuto in radar-only per eventuale
@@ -403,7 +404,7 @@ mef_irpef:
   observation_mode: catalog-watch
   base_url: 
     https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-05-03'
     metric: csv_magnet_homepage_links
@@ -431,7 +432,7 @@ opencivitas:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.opencivitas.it/it/open-data
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-05-07'
     metric: csv_magnet_total_links
@@ -476,13 +477,13 @@ aifa:
     probe_content_type: true
   datasets_in_use:
     - aifa_spesa_consumo
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
 dait:
   source_kind: catalog
   protocol: html
   observation_mode: radar-only
   base_url: https://dait.interno.gov.it/contenuti/tipo/open_data
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   verdict: go
   note: "DAIT — Anagrafe Amministratori locali. CSV snapshot annuali 1991-2026 + \
     \ corrente. 41 su 42 entry sono snapshot dello stesso dataset. radar-only iniziale
@@ -493,7 +494,7 @@ mit_opendata:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.mit.gov.it/catalog/api/3/action/package_list?limit=1
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   verdict: go
   note: "Portale CKAN MIT — 67 dataset su trasporti, infrastrutture, incidentalità,
     veicoli, opere pubbliche. Include dataset già in uso dal Lab (mit_incidentalita_mensile,
@@ -507,7 +508,7 @@ openga:
   observation_mode: catalog-watch
   base_url: 
     https://openga.giustizia-amministrativa.it/api/3/action/package_list?limit=1
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   verdict: go
   note: "Portale CKAN Giustizia Amministrativa — ~270 dataset su ricorsi TAR+CDS,
     sentenze, ordinanze, pareri. CC-BY 4.0. Aggiornamento mensile. Si incastra con
@@ -519,7 +520,7 @@ giustizia_statistiche:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://datiestatistiche.giustizia.it/
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   verdict: go
   note: "Portale statistico Ministero Giustizia — XLSX scaricabili su flussi civili/penali,
     clearance rate, disposition time, sorveglianza, intercettazioni, monitoraggio
@@ -544,7 +545,7 @@ cortecostituzionale:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   verdict: go
   note: "Portale Open Data Corte Costituzionale — Pronunce (1956-oggi), Massime, Anagrafica
     Giudici, Atti di promovimento. CSV/XML/JSON in ZIP. Agg. giornaliero. Endpoint
@@ -560,7 +561,7 @@ terna_opendata:
   protocol: rest
   observation_mode: radar-only
   base_url: https://dati.terna.it/
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   verdict: go
   note: "Portale Dati Terna — API Sitecore REST. 31+ dataset su energia (fabbisogno,
     generazione, trasmissione, mercato, adeguatezza). API pubblica ritorna XLSX. Già
@@ -612,7 +613,7 @@ ministero_interno:
     skip_current_list_reason: package_search con 
       fq=organization:ministero-dell-interno restituisce 38 dataset con metadata
       completi.
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -640,7 +641,7 @@ agid:
     skip_current_list_reason: package_search con 
       fq=organization:agenzia-per-l-italia-digitale restituisce 40 dataset con 
       metadata completi.
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -660,14 +661,14 @@ noipa_sparql:
   protocol: sparql
   observation_mode: radar-only
   base_url: https://sparql-noipa.mef.gov.it/sparql
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   verdict: hold
-  note: NoiPA SPARQL — MEF/RGS. Dati mensili personale PA (entries-{YYYYMM},
-    2019-2026) + pensioni PA (entriesPensioni-{YYYYMM}, 2017-oggi).
-    ~490k soggetti/mese. L'endpoint risponde solo in XML
-    (application/sparql-results+xml). Inventory non funzionante finché
-    execute_sparql() in lab-connectors non supporta XML.
-    Radar-only in attesa di parser XML o di endpoint JSON.
+  note: NoiPA SPARQL — MEF/RGS. Dati mensili personale PA (entries-{YYYYMM}, 
+    2019-2026) + pensioni PA (entriesPensioni-{YYYYMM}, 2017-oggi). ~490k 
+    soggetti/mese. L'endpoint risponde solo in XML 
+    (application/sparql-results+xml). Inventory non funzionante finché 
+    execute_sparql() in lab-connectors non supporta XML. Radar-only in attesa di
+    parser XML o di endpoint JSON.
   datasets_in_use: []
 mimit_rna:
   source_kind: catalog
@@ -681,7 +682,7 @@ mimit_rna:
     skip_current_list_reason: package_search con 
       fq=organization:ministero-delle-imprese-e-del-made-in-italy restituisce 
       370 dataset (RNA Aiuti + RNA Misure) con metadata.
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -710,7 +711,7 @@ ministero_salute:
     skip_current_list_reason: package_search con 
       fq=organization:ministero-della-salute restituisce 51 dataset con 
       metadata.
-  last_probed: '2026-05-31'
+  last_probed: '2026-06-01'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
