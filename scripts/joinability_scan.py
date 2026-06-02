@@ -7,7 +7,7 @@ di ogni item e identifica pattern di chiavi di join note (codici ISTAT, anno, pr
 codice ente, ecc.). Cross-referenzia col catalogo esistente (clean_catalog.json) per
 mostrare quali dataset del Lab diventerebbero joinabili.
 
-Output: _local/generated/joinability_report.md
+Output: observatory-results/joinability_report.md (gitignorato)
 Nessuna modifica a workflow, CI o artifact SO.
 """
 
@@ -45,8 +45,7 @@ OUTPUT_PATH = os.path.join(
 
 
 # ── Pattern di chiavi di join ─────────────────────────────────────────────────
-# Ogni entry: (chiave_semantica, regex, descrizione, dataset_lab_esistenti_che_hanno_questa_chiave)
-# I dataset vengono verificati dinamicamente, questo è solo un hint descrittivo.
+# Ogni entry: (chiave_semantica, regex, descrizione)
 
 # ── Bridge table ──────────────────────────────────────────────────────────────
 # Il dataset nel catalogo che funge da bridge table per join indiretti.
@@ -511,7 +510,7 @@ def main() -> None:
 
     items.sort(key=item_sort_key)
 
-    # 3. Statistiche
+    # Statistiche
     print(f"     {total_with_columns} item con colonne sniffate")
     print(f"     {total_with_keys} item con almeno una chiave di join riconosciuta")
     print(f"     {len(items)} item in report")
