@@ -35,10 +35,11 @@ CATALOG_URL = (
     "dataset-incubator/main/registry/clean_catalog.json"
 )
 
+OUTPUT_REL_DIR = "observatory-results"  # gitignorato in SO
+
 OUTPUT_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "_local",
-    "generated",
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    OUTPUT_REL_DIR,
     "joinability_report.md",
 )
 
