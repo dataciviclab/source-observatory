@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-06-01T08:44:06.885613+00:00",
-  "probe_date": "2026-06-01",
+  "generated_at": "2026-06-02T08:04:33.108808+00:00",
+  "probe_date": "2026-06-02",
   "sources_total": 29,
   "status_counts": {
-    "GREEN": 27,
+    "GREEN": 26,
     "YELLOW": 1,
-    "RED": 1
+    "RED": 2
   },
   "persistent_red": 1,
   "sources": [
@@ -61,9 +61,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null
     },
     {
