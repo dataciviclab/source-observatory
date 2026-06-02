@@ -47,21 +47,11 @@ OUTPUT_PATH = os.path.join(
 # Ogni entry: (chiave_semantica, regex, descrizione, dataset_lab_esistenti_che_hanno_questa_chiave)
 # I dataset vengono verificati dinamicamente, questo è solo un hint descrittivo.
 
-# ── Bridge table: bdap_anagrafe_enti ─────────────────────────────────────────
-# Chiavi semantiche che la bridge table copre (corrispondono ai nomi
-# in KEY_PATTERNS). Se un candidate matcha UNA di queste chiavi semantiche,
-# è potenzialmente joinabile con TUTTI i dataset che ne hanno UN'ALTRA,
-# passando per la bridge.
-# Es: candidate ha "codice_catastale" → via bridge → raggiunge dataset
-# con "istat_comune" (anche se candidate non ha quella colonna).
-BRIDGE_SEMANTIC_KEYS: set[str] = {
-    "istat_comune",
-    "istat_regione",
-    "provincia",
-    "codice_catastale",
-    "codice_ente",
-    "codice_scuola",
-}
+# ── Bridge table ──────────────────────────────────────────────────────────────
+# Il dataset nel catalogo che funge da bridge table per join indiretti.
+# Le sue colonne vengono lette dinamicamente dal clean_catalog.json e
+# processate con KEY_PATTERNS per derivare le chiavi semantiche coperte.
+BRIDGE_SLUG: str = "bdap_anagrafe_enti"
 
 KEY_PATTERNS: list[tuple[str, str, str]] = [
     ("istat_comune",
@@ -181,20 +171,42 @@ def build_catalog_index(catalog: list[dict]) -> dict[str, dict]:
     return index
 
 
+def derive_bridge_keys(catalog_index: dict[str, dict]) -> set[str]:
+    """Deriva le chiavi semantiche coperte dalla bridge table dal catalogo.
+
+    Cerca il dataset con slug BRIDGE_SLUG e processa le sue colonne
+    con KEY_PATTERNS per ottenere le chiavi semantiche.
+    """
+    bridge = catalog_index.get(BRIDGE_SLUG)
+    if not bridge:
+        return set()
+    bridge_keys: set[str] = set()
+    for col in bridge["col_set"]:
+        for key_name, pattern, _ in KEY_PATTERNS:
+            if re.search(pattern, col):
+                bridge_keys.add(key_name)
+    return bridge_keys
+
+
 def cross_reference(
     found_keys: dict[str, list[str]],
     catalog_index: dict[str, dict],
+    bridge_semantic_keys: set[str] | None = None,
     our_cols_lower: set[str] | None = None,
 ) -> list[dict]:
     """Trova dataset nel catalogo che condividono almeno una chiave.
 
-    Include match indiretti via bridge table (bdap_anagrafe_enti):
+    Include match indiretti via bridge table:
     se candidate ha chiave semantica A coperta dalla bridge, e dataset Y ha
     chiave semantica B coperta dalla bridge, sono considerati joinabili
-    (anche se A != B).
+    (anche se A != B). bridge_semantic_keys viene derivato dinamicamente
+    dal catalogo se non fornito.
 
     Restituisce lista di {slug, name, matched_keys} ordinata per match.
     """
+    if bridge_semantic_keys is None:
+        bridge_semantic_keys = derive_bridge_keys(catalog_index)
+
     matches: list[dict] = []
     if our_cols_lower is None:
         our_cols_lower = set()
@@ -206,7 +218,7 @@ def cross_reference(
     semantic_keys = set(found_keys.keys())
 
     # Bridge: candidate ha almeno una chiave semantica coperta dalla bridge
-    bridge_hit = semantic_keys & BRIDGE_SEMANTIC_KEYS
+    bridge_hit = semantic_keys & bridge_semantic_keys
 
     for slug, info in catalog_index.items():
         # Match diretto: stessa colonna
@@ -216,14 +228,13 @@ def cross_reference(
         # dalla bridge, dataset ha chiave semantica B sempre coperta dalla bridge
         # (A può essere diversa da B — la bridge fa da ponte)
         # Le chiavi semantiche del dataset sono derivate da quelle catalogate
-        # nel clean_catalog.json; per ora usiamo un'euristica: se una colonna
-        # del dataset matcha un KEY_PATTERNS, la consideriamo coperta.
+        # nel clean_catalog.json con la stessa logica.
         ds_semantic: set[str] = set()
         for col in info["col_set"]:
             for key_name, pattern, _ in KEY_PATTERNS:
                 if re.search(pattern, col):
                     ds_semantic.add(key_name)
-        via_bridge = bool(bridge_hit and (ds_semantic & BRIDGE_SEMANTIC_KEYS) and not direct)
+        via_bridge = bool(bridge_hit and (ds_semantic & bridge_semantic_keys) and not direct)
 
         common = direct | (ds_semantic if via_bridge else set())
         if common:
@@ -295,6 +306,7 @@ def item_sort_key(item: dict) -> tuple:
 def build_report(
     items: list[dict],
     catalog_index: dict[str, dict],
+    bridge_semantic_keys: set[str],
     stats: dict,
 ) -> str:
     """Genera il report markdown."""
@@ -390,11 +402,10 @@ def build_report(
     # ── Effetto bridge ──
     bridge_before = sum(1 for item in items if item["catalog_matches"])
     # Item con almeno una chiave semantica coperta dalla bridge
-    bridge_cols_lower = BRIDGE_SEMANTIC_KEYS  # sono già in lowercase
     bridge_items = 0
     for item in items:
         semantic_keys = set(item["found_keys"].keys())  # es. {"istat_comune", "provincia"}
-        if semantic_keys & bridge_cols_lower:
+        if semantic_keys & bridge_semantic_keys:
             bridge_items += 1
 
     # Item che ottengono match aggiuntivi VIA bridge (oltre ai diretti)
@@ -403,10 +414,13 @@ def build_report(
         if any("bridge" in m.get("match_tags", "") for m in item["catalog_matches"])
     )
 
-    lines.append("## Effetto bridge (bdap_anagrafe_enti)")
+    bridge_name = catalog_index.get(BRIDGE_SLUG, {}).get("name", BRIDGE_SLUG)
+
+    lines.append(f"## Effetto bridge (`{BRIDGE_SLUG}`)")
     lines.append("")
-    lines.append(f"La bridge table `bdap_anagrafe_enti` copre **{len(BRIDGE_SEMANTIC_KEYS)} chiavi "
-                 f"semantiche**: `{'`, `'.join(sorted(BRIDGE_SEMANTIC_KEYS))}`")
+    lines.append(f"La bridge table **{bridge_name}** (`{BRIDGE_SLUG}`) copre "
+                 f"**{len(bridge_semantic_keys)} chiavi semantiche**: "
+                 f"`{'`, `'.join(sorted(bridge_semantic_keys))}`")
     lines.append("")
     lines.append(f"- **{bridge_items}** item candidate hanno almeno una chiave coperta dalla bridge "
                  f"→ potenzialmente joinabili con tutto il catalogo via bridge")
@@ -442,15 +456,26 @@ def main() -> None:
     print()
 
     # 1. Carica dati
-    print("[1/4] Caricamento dati...")
+    print("[1/5] Caricamento dati...")
     print()
     src_records = load_source_check()
     catalog = load_clean_catalog()
     catalog_index = build_catalog_index(catalog)
 
-    # 2. Filtra item con colonne sniffate
+    # 2. Deriva chiavi bridge dal catalogo (dinamico, non hardcoded)
     print()
-    print(f"[2/4] Analisi chiavi su {len(src_records)} item...")
+    print(f"[2/5] Deriva bridge keys dal catalogo...")
+    bridge_semantic_keys = derive_bridge_keys(catalog_index)
+    if bridge_semantic_keys:
+        print(f"     Bridge `{BRIDGE_SLUG}` → {len(bridge_semantic_keys)} chiavi: "
+              f"{sorted(bridge_semantic_keys)}")
+    else:
+        print(f"     Bridge `{BRIDGE_SLUG}` non trovato nel catalogo — "
+              f"solo match diretti")
+    print()
+
+    # 3. Analisi chiavi su tutti gli item
+    print(f"[3/5] Analisi chiavi su {len(src_records)} item...")
 
     items: list[dict] = []
     total_with_columns = 0
@@ -467,7 +492,7 @@ def main() -> None:
         if found_keys:
             total_with_keys += 1
 
-        catalog_matches = cross_reference(found_keys, catalog_index)
+        catalog_matches = cross_reference(found_keys, catalog_index, bridge_semantic_keys)
         joinability_score = compute_joinability_score(found_keys, catalog_matches)
 
         items.append({
@@ -498,12 +523,12 @@ def main() -> None:
 
     # 4. Genera report
     print()
-    print(f"[3/4] Generazione report...")
-    report = build_report(items, catalog_index, stats)
+    print(f"[4/5] Generazione report...")
+    report = build_report(items, catalog_index, bridge_semantic_keys, stats)
 
     # 5. Scrivi output
     print()
-    print(f"[4/4] Scrittura output...")
+    print(f"[5/5] Scrittura output...")
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         f.write(report)
