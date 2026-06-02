@@ -16,7 +16,6 @@ from __future__ import annotations
 import json
 import os
 import re
-from collections import defaultdict
 from datetime import date
 from typing import Any
 
@@ -39,7 +38,7 @@ OUTPUT_REL_DIR = "observatory-results"  # gitignorato in SO
 OUTPUT_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
     OUTPUT_REL_DIR,
-    "joinability_report.md",
+    "joinability_report.json",
 )
 
 
@@ -303,150 +302,86 @@ def item_sort_key(item: dict) -> tuple:
     return (-item["joinability_score"], -len(item["found_keys"]), item["source_id"], item["item_name"])
 
 
-def build_report(
+def build_json_output(
     items: list[dict],
     catalog_index: dict[str, dict],
     bridge_semantic_keys: set[str],
     stats: dict,
-) -> str:
-    """Genera il report markdown."""
-    lines: list[str] = []
-    lines.append(f"# Joinability Report — {date.today().isoformat()}")
-    lines.append("")
-    lines.append(f"Scansione di {stats['total']} item in `source_check_results.parquet` "
-                 f"con colonne sniffate. {stats['total_with_keys']} item hanno "
-                 f"almeno una chiave di join riconosciuta.")
-    lines.append("")
-    lines.append(f"**Catalogo di riferimento**: {stats['catalog_size']} dataset "
-                 f"in `clean_catalog.json`")
-    lines.append("")
-
-    # ── Tabella riepilogativa ──
-    lines.append("## Top 30 item per joinability")
-    lines.append("")
-    lines.append("| # | Fonte | Item | Score | Chiavi trovate | Joinabile con (n) |")
-    lines.append("|---|---|---|---|---|---|")
-
-    for i, item in enumerate(items[:30], 1):
-        source_id = item["source_id"]
-        item_name = item["item_name"][:50]
-        score = item["joinability_score"]
-        keys = ", ".join(sorted(item["found_keys"].keys()))
-        n_join = len(item["catalog_matches"])
-        lines.append(f"| {i} | {source_id} | {item_name} | {score:.0f} | {keys} | {n_join} |")
-
-    lines.append("")
-    lines.append(f"_{len(items)} item totali con colonne sniffate_")
-    lines.append("")
-
-    # ── Per fonte ──
-    lines.append("## Dettaglio per fonte")
-    lines.append("")
-
-    by_source: dict[str, list] = defaultdict(list)
+) -> dict:
+    """Genera output JSON strutturato con i risultati dello scan."""
+    # ― Item con chiavi trovate, ordinati per score
+    scored_items: list[dict] = []
     for item in items:
-        by_source[item["source_id"]].append(item)
+        scored_items.append({
+            "source_id": item["source_id"],
+            "item_name": item["item_name"],
+            "intake_score": item["intake_score"],
+            "joinability_score": item["joinability_score"],
+            "col_count": item["col_count"],
+            "keys_found": item["found_keys"],
+            "matches": [
+                {
+                    "slug": m["slug"],
+                    "name": m["name"],
+                    "matched_keys": m["matched_keys"],
+                    "match_type": "direct" if "diretto" in m.get("match_tags", "") else "via_bridge",
+                }
+                for m in item["catalog_matches"]
+            ],
+            "joined_datasets": [m["slug"] for m in item["catalog_matches"]],
+        })
+    scored_items.sort(key=lambda x: (-x["joinability_score"], -len(x["keys_found"]), x["source_id"], x["item_name"]))
 
-    for source_id in sorted(by_source):
-        source_items = sorted(by_source[source_id], key=item_sort_key)
-        total = len(source_items)
-        top_keys: set = set()
-        for si in source_items:
-            top_keys.update(si["found_keys"].keys())
-
-        lines.append(f"### {source_id} ({total} item)")
-        lines.append("")
-        lines.append(f"Chiavi trovate in questa fonte: `{'`, `'.join(sorted(top_keys))}`")
-        lines.append("")
-
-        for item in source_items[:10]:
-            score = item["joinability_score"]
-            keys_detail = "; ".join(
-                f"{k}: {', '.join(v)}" for k, v in item["found_keys"].items()
-            )
-            matches = item["catalog_matches"]
-            if matches:
-                top3 = ", ".join(
-                    f"{m['slug']} ({m.get('match_tags','diretto')})"
-                    for m in matches[:3]
-                )
-                join_note = f"→ {top3} (+{len(matches)-3})" if len(matches) > 3 else f"→ {top3}"
-            else:
-                join_note = "—"
-
-            lines.append(f"- **{item['item_name'][:55]}** (score={score:.0f})")
-            lines.append(f"  - chiavi: {keys_detail}")
-            lines.append(f"  - {join_note}")
-
-        if len(source_items) > 10:
-            lines.append(f"  - ... e altri {len(source_items) - 10} item")
-
-        lines.append("")
-
-    # ── Item senza chiavi utili ──
-    no_key_items = [
-        item for item in items
-        if not item["found_keys"] and item["intake_score"] and item["intake_score"] >= 50
-    ]
-    if no_key_items:
-        lines.append("## Item ad alto intake score ma senza chiavi di join riconosciute")
-        lines.append("")
-        lines.append("Possono comunque essere utili ma non si uniscono automaticamente "
-                     "col catalogo esistente.")
-        lines.append("")
-        for item in sorted(no_key_items, key=lambda x: -x["intake_score"])[:10]:
-            lines.append(f"- {item['source_id']}/{item['item_name'][:50]} "
-                         f"(intake_score={item['intake_score']:.0f})")
-        lines.append("")
-
-    # ── Effetto bridge ──
-    bridge_before = sum(1 for item in items if item["catalog_matches"])
-    # Item con almeno una chiave semantica coperta dalla bridge
-    bridge_items = 0
+    # ― Statistiche chiavi aggregate
+    key_counts: dict[str, int] = {}
     for item in items:
-        semantic_keys = set(item["found_keys"].keys())  # es. {"istat_comune", "provincia"}
-        if semantic_keys & bridge_semantic_keys:
-            bridge_items += 1
+        for k in item["found_keys"]:
+            key_counts[k] = key_counts.get(k, 0) + 1
 
-    # Item che ottengono match aggiuntivi VIA bridge (oltre ai diretti)
+    # ― Effetto bridge
+    bridge_items = sum(
+        1 for item in items
+        if set(item["found_keys"].keys()) & bridge_semantic_keys
+    )
     bridge_extended = sum(
         1 for item in items
         if any("bridge" in m.get("match_tags", "") for m in item["catalog_matches"])
     )
 
-    bridge_name = catalog_index.get(BRIDGE_SLUG, {}).get("name", BRIDGE_SLUG)
+    # ― Item ad alto intake score senza chiavi di join
+    no_key_high_score = [
+        {"source_id": item["source_id"], "item_name": item["item_name"], "intake_score": item["intake_score"]}
+        for item in items
+        if not item["found_keys"] and item["intake_score"] and item["intake_score"] >= 50
+    ]
+    no_key_high_score.sort(key=lambda x: -x["intake_score"])
 
-    lines.append(f"## Effetto bridge (`{BRIDGE_SLUG}`)")
-    lines.append("")
-    lines.append(f"La bridge table **{bridge_name}** (`{BRIDGE_SLUG}`) copre "
-                 f"**{len(bridge_semantic_keys)} chiavi semantiche**: "
-                 f"`{'`, `'.join(sorted(bridge_semantic_keys))}`")
-    lines.append("")
-    lines.append(f"- **{bridge_items}** item candidate hanno almeno una chiave coperta dalla bridge "
-                 f"→ potenzialmente joinabili con tutto il catalogo via bridge")
-    lines.append(f"- **{bridge_extended}** item hanno guadagnato match aggiuntivi "
-                 f"grazie alla bridge (match indiretti)")
-    lines.append(f"- **{bridge_before}** item avevano già match diretto con dataset esistenti")
-    lines.append("- Match via bridge scoprono connessioni tra codici diversi "
-                 "(es. `codice_catastale` ↔ `codice_istat_comune`)")
-    lines.append("")
-
-    # ── Statistiche chiavi ──
-    lines.append("## Statistiche chiavi di join")
-    lines.append("")
-    key_counts: dict[str, int] = defaultdict(int)
-    for item in items:
-        for k in item["found_keys"]:
-            key_counts[k] += 1
-
-    for key_name in sorted(key_counts, key=lambda k: -key_counts[k]):
-        lines.append(f"- **{key_name}**: presente in {key_counts[key_name]} item")
-
-    lines.append("")
-    lines.append("---")
-    lines.append(f"Generato da `scripts/joinability_scan.py` il {date.today().isoformat()}")
-
-    return "\n".join(lines)
+    return {
+        "generated_at": date.today().isoformat(),
+        "source": "scripts/joinability_scan.py",
+        "summary": {
+            "total_scanned": stats["total"],
+            "with_columns": stats["total"],
+            "with_join_keys": stats["total_with_keys"],
+            "catalog_size": stats["catalog_size"],
+        },
+        "bridge": {
+            "slug": BRIDGE_SLUG,
+            "name": catalog_index.get(BRIDGE_SLUG, {}).get("name", BRIDGE_SLUG),
+            "semantic_keys": sorted(bridge_semantic_keys),
+            "candidates_covered": bridge_items,
+            "candidates_with_indirect": bridge_extended,
+        },
+        "key_statistics": {
+            "total_key_types": len(key_counts),
+            "keys": sorted(
+                ({"key": k, "count": c} for k, c in key_counts.items()),
+                key=lambda x: -x["count"],
+            ),
+        },
+        "high_score_no_keys": no_key_high_score[:10],
+        "top_items": scored_items[:50],
+    }
 
 
 def main() -> None:
@@ -521,18 +456,18 @@ def main() -> None:
         "catalog_size": len(catalog),
     }
 
-    # 4. Genera report
+    # 4. Genera output JSON
     print()
-    print("[4/5] Generazione report...")
-    report = build_report(items, catalog_index, bridge_semantic_keys, stats)
+    print("[4/5] Generazione output JSON...")
+    output = build_json_output(items, catalog_index, bridge_semantic_keys, stats)
 
     # 5. Scrivi output
     print()
     print("[5/5] Scrittura output...")
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
-        f.write(report)
-    print(f"     Report scritto in: {OUTPUT_PATH}")
+        json.dump(output, f, indent=2, ensure_ascii=False)
+    print(f"     Output scritto in: {OUTPUT_PATH}")
     print()
 
     # Riepilogo
