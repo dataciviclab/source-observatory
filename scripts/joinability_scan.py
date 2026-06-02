@@ -16,7 +16,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import sys
 from collections import defaultdict
 from datetime import date
 from typing import Any
@@ -92,10 +91,11 @@ KEY_PATTERNS: list[tuple[str, str, str]] = [
 
 def load_source_check() -> list[dict[str, Any]]:
     """Scarica e carica source_check_results.parquet come lista di dict."""
-    import pyarrow.parquet as pq
     import io
 
-    print(f"  Download source_check_results.parquet...", end=" ", flush=True)
+    import pyarrow.parquet as pq
+
+    print("  Download source_check_results.parquet...", end=" ", flush=True)
     resp = requests.get(SOURCE_CHECK_URL, timeout=60)
     resp.raise_for_status()
     data = io.BytesIO(resp.content)
@@ -107,7 +107,7 @@ def load_source_check() -> list[dict[str, Any]]:
 
 def load_clean_catalog() -> list[dict[str, Any]]:
     """Scarica e carica clean_catalog.json come lista di dataset."""
-    print(f"  Download clean_catalog.json...", end=" ", flush=True)
+    print("  Download clean_catalog.json...", end=" ", flush=True)
     resp = requests.get(CATALOG_URL, timeout=30)
     resp.raise_for_status()
     raw = resp.json()
@@ -427,8 +427,8 @@ def build_report(
     lines.append(f"- **{bridge_extended}** item hanno guadagnato match aggiuntivi "
                  f"grazie alla bridge (match indiretti)")
     lines.append(f"- **{bridge_before}** item avevano già match diretto con dataset esistenti")
-    lines.append(f"- Match via bridge scoprono connessioni tra codici diversi "
-                 f"(es. `codice_catastale` ↔ `codice_istat_comune`)")
+    lines.append("- Match via bridge scoprono connessioni tra codici diversi "
+                 "(es. `codice_catastale` ↔ `codice_istat_comune`)")
     lines.append("")
 
     # ── Statistiche chiavi ──
@@ -464,7 +464,7 @@ def main() -> None:
 
     # 2. Deriva chiavi bridge dal catalogo (dinamico, non hardcoded)
     print()
-    print(f"[2/5] Deriva bridge keys dal catalogo...")
+    print("[2/5] Deriva bridge keys dal catalogo...")
     bridge_semantic_keys = derive_bridge_keys(catalog_index)
     if bridge_semantic_keys:
         print(f"     Bridge `{BRIDGE_SLUG}` → {len(bridge_semantic_keys)} chiavi: "
@@ -523,12 +523,12 @@ def main() -> None:
 
     # 4. Genera report
     print()
-    print(f"[4/5] Generazione report...")
+    print("[4/5] Generazione report...")
     report = build_report(items, catalog_index, bridge_semantic_keys, stats)
 
     # 5. Scrivi output
     print()
-    print(f"[5/5] Scrittura output...")
+    print("[5/5] Scrittura output...")
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
     with open(OUTPUT_PATH, "w") as f:
         f.write(report)
