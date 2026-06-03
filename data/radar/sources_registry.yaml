@@ -383,21 +383,32 @@ mur_ustat:
     - mur_contribuzione_universitaria
 opencoesione:
   source_kind: catalog
-  protocol: rest
-  observation_mode: radar-only
-  base_url: https://opencoesione.gov.it/it/api/
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:pcm-opencoesione
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: "package_search con fq=organization:pcm-opencoesione
+      restituisce 561 dataset (3 core: progetti, soggetti, pagamenti).
+      current_list non necessario."
   last_probed: '2026-06-03'
-  verdict: hold
-  note: "Portale disabilitato/ritirato. CKAN API non piu' raggiungibile (redirect
-    a /it/ con 404 \"Pagina non trovata\"). Mantenuto in radar-only per eventuale
-    monitoraggio futuro.\n"
+  verdict: go
+  note: "Fonte via dati.gov.it (harvesting PCM-OpenCoesione). Sostituisce accesso
+    diretto a opencoesione.gov.it (API REST instabile: 403/timeout). 561 dataset
+    totali su dati.gov.it; i 3 core sono progetti, soggetti, pagamenti (CSV +
+    Parquet). Licenza CC BY 4.0. File raw su opencoesione.gov.it. Ultimo
+    aggiornamento contenuti: 2026-02-28.\n"
   catalog_baseline:
-    captured_at: '2026-04-09'
-    metric: data_aggiornamento
-    value: '2025-10-31'
-    method: api_root
-    reliability: unknown
-    note: Baseline non piu' verificabile — portale ritirato.
+    captured_at: '2026-06-03'
+    metric: package_count
+    value: 561
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con fq=organization:pcm-opencoesione su
+      dati.gov.it. 561 dataset harvestati da OpenCoesione (3 core + 558
+      granulari per tema/ciclo/ambito).
   datasets_in_use: []
 mef_irpef:
   source_kind: catalog
