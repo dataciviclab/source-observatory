@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-06-02T08:04:33.108808+00:00",
-  "probe_date": "2026-06-02",
+  "generated_at": "2026-06-03T08:27:30.346421+00:00",
+  "probe_date": "2026-06-03",
   "sources_total": 29,
   "status_counts": {
-    "GREEN": 26,
-    "YELLOW": 1,
-    "RED": 2
+    "GREEN": 24,
+    "YELLOW": 2,
+    "RED": 3
   },
-  "persistent_red": 1,
+  "persistent_red": 2,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)"
     },
     {
       "id": "anac",
@@ -64,13 +64,14 @@
       "status": "RED",
       "protocol": "sparql",
       "http_code": "503",
-      "note": null
+      "note": null,
+      "red_streak": 2
     },
     {
       "id": "dati_senato",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null
     },
     {
