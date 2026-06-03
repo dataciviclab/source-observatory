@@ -6,6 +6,7 @@ import _artifact
 import duckdb  # noqa: E402
 import pandas as pd  # must be before duckdb
 import pytest
+from _discovery import list_source_items
 from _find_url import find_by_url
 from _inventory import (
     _source_radar_context,
@@ -855,3 +856,244 @@ def test_query_inventory_grouped_aggregates(tmp_path, monkeypatch) -> None:
     assert results[1]["dataset_group"] == "s1/gruppo-b"
     assert results[1]["item_count"] == 1
     assert results[1]["best_score"] == 50
+
+
+# ─── Discovery: list_source_items ───────────────────────────────────────────────
+
+
+def test_list_source_items_filters_by_source(tmp_path, monkeypatch) -> None:
+    """list_source_items con source_id restituisce solo gli item di quella fonte."""
+    inventory_path = tmp_path / "catalog_inventory_latest.parquet"
+    _write_parquet(
+        inventory_path,
+        [
+            {
+                "source_id": "inps",
+                "protocol": "ckan",
+                "item_id": "544",
+                "item_name": "pensioni",
+                "title": "Pensioni INPS",
+                "organization": "INPS",
+                "tags": "pensioni",
+                "landing_page": "",
+                "distribution_url": "",
+                "format": "csv",
+                "source_status": "",
+                "inventory_method": "package_list",
+                "item_kind": "dataset",
+                "api_base_url": "https://example.test/api",
+                "captured_at": "2026-04-30",
+            },
+            {
+                "source_id": "openbdap",
+                "protocol": "ckan",
+                "item_id": "b",
+                "item_name": "conti",
+                "title": "Conto economico",
+                "organization": "MEF",
+                "tags": "",
+                "landing_page": "",
+                "distribution_url": "",
+                "format": "csv",
+                "source_status": "",
+                "inventory_method": "package_search",
+                "item_kind": "dataset",
+                "api_base_url": "https://example.test/api",
+                "captured_at": "2026-04-30",
+            },
+            {
+                "source_id": "inps",
+                "protocol": "ckan",
+                "item_id": "999",
+                "item_name": "contributi",
+                "title": "Contributi INPS",
+                "organization": "INPS",
+                "tags": "contributi",
+                "landing_page": "",
+                "distribution_url": "",
+                "format": "csv",
+                "source_status": "",
+                "inventory_method": "package_list",
+                "item_kind": "dataset",
+                "api_base_url": "https://example.test/api",
+                "captured_at": "2026-04-30",
+            },
+        ],
+    )
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
+
+    result = list_source_items("inps")
+
+    assert result["source_id"] == "inps"
+    assert result["returned"] == 2
+    assert result["total_count"] == 2
+    assert result["has_more"] is False
+    assert result["filters"]["limit"] == 50
+    assert result["filters"]["offset"] == 0
+    assert all(r["source_id"] == "inps" for r in result["results"])
+    item_ids = {r["item_id"] for r in result["results"]}
+    assert item_ids == {"544", "999"}
+
+
+def test_list_source_items_respects_limit_and_offset(tmp_path, monkeypatch) -> None:
+    """limit e offset controllano la paginazione."""
+    inventory_path = tmp_path / "catalog_inventory_latest.parquet"
+    rows = [
+        {
+            "source_id": "inps",
+            "protocol": "ckan",
+            "item_id": f"item_{i}",
+            "item_name": f"item_{i}",
+            "title": f"Item {i:03d}",
+            "organization": "INPS",
+            "tags": "",
+            "landing_page": "",
+            "distribution_url": "",
+            "format": "csv",
+            "source_status": "",
+            "inventory_method": "package_list",
+            "item_kind": "dataset",
+            "api_base_url": "https://example.test/api",
+            "captured_at": "2026-04-30",
+        }
+        for i in range(10)
+    ]
+    _write_parquet(inventory_path, rows)
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
+
+    # Prima pagina: 3 item
+    page1 = list_source_items("inps", limit=3, offset=0)
+    assert page1["returned"] == 3
+    assert page1["has_more"] is True
+    assert page1["total_count"] == 10
+
+    # Seconda pagina: altri 3
+    page2 = list_source_items("inps", limit=3, offset=3)
+    assert page2["returned"] == 3
+    assert page2["has_more"] is True
+    assert page2["results"][0]["item_id"] != page1["results"][0]["item_id"]
+
+    # Ultima pagina: 4 item rimasti
+    page3 = list_source_items("inps", limit=5, offset=6)
+    assert page3["returned"] == 4
+    assert page3["has_more"] is False
+
+
+def test_list_source_items_text_query_filter(tmp_path, monkeypatch) -> None:
+    """query testuale filtra per item_id, item_name, title, tags, organization."""
+    inventory_path = tmp_path / "catalog_inventory_latest.parquet"
+    _write_parquet(
+        inventory_path,
+        [
+            {
+                "source_id": "inps",
+                "protocol": "ckan",
+                "item_id": "pens-2024",
+                "item_name": "pensioni-2024",
+                "title": "Pensioni erogate nel 2024",
+                "organization": "INPS",
+                "tags": "pensioni,previdenza",
+                "landing_page": "",
+                "distribution_url": "",
+                "format": "csv",
+                "source_status": "",
+                "inventory_method": "package_list",
+                "item_kind": "dataset",
+                "api_base_url": "https://example.test/api",
+                "captured_at": "2026-04-30",
+            },
+            {
+                "source_id": "inps",
+                "protocol": "ckan",
+                "item_id": "contr-2024",
+                "item_name": "contributi-2024",
+                "title": "Contributi versati",
+                "organization": "INPS",
+                "tags": "contributi",
+                "landing_page": "",
+                "distribution_url": "",
+                "format": "csv",
+                "source_status": "",
+                "inventory_method": "package_list",
+                "item_kind": "dataset",
+                "api_base_url": "https://example.test/api",
+                "captured_at": "2026-04-30",
+            },
+        ],
+    )
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
+
+    # Match su title
+    result = list_source_items("inps", query="pensioni")
+    assert result["returned"] == 1
+    assert result["results"][0]["item_id"] == "pens-2024"
+
+    # Match su tags
+    result2 = list_source_items("inps", query="contributi")
+    assert result2["returned"] == 1
+    assert result2["results"][0]["item_id"] == "contr-2024"
+
+    # Match su item_name
+    result3 = list_source_items("inps", query="pensioni-2024")
+    assert result3["returned"] == 1
+
+    # Nessun match
+    result4 = list_source_items("inps", query="inesistente")
+    assert result4["returned"] == 0
+    assert result4["total_count"] == 0
+
+
+def test_list_source_items_empty_source_id() -> None:
+    """source_id vuoto restituisce errore."""
+    result = list_source_items("")
+    assert result["error"] == "invalid_params"
+
+
+def test_list_source_items_unknown_source(tmp_path, monkeypatch) -> None:
+    """source_id non presente nell'inventory restituisce 0 risultati."""
+    inventory_path = tmp_path / "catalog_inventory_latest.parquet"
+    _write_parquet(
+        inventory_path,
+        [
+            {
+                "source_id": "inps",
+                "protocol": "ckan",
+                "item_id": "1",
+                "item_name": "test",
+                "title": "Test",
+                "organization": "",
+                "tags": "",
+                "landing_page": "",
+                "distribution_url": "",
+                "format": "csv",
+                "source_status": "",
+                "inventory_method": "package_list",
+                "item_kind": "dataset",
+                "api_base_url": "https://example.test/api",
+                "captured_at": "2026-04-30",
+            },
+        ],
+    )
+    # Write a report so source_status works
+    report_path = tmp_path / "catalog_inventory_report.json"
+    report_path.write_text(
+        json.dumps({"sources": {"unknown_source": {"status": "error", "error": "HTTP 500"}}}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
+    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
+
+    result = list_source_items("unknown_source")
+    assert result["returned"] == 0
+    assert result["total_count"] == 0
+    assert result["source_status"] is not None
+    assert "note" in result
+
+
+def test_list_source_items_parquet_not_found(tmp_path, monkeypatch) -> None:
+    """Parquet non trovato restituisce artifact_not_found."""
+    monkeypatch.setattr(
+        _artifact, "_INVENTORY_PARQUET", tmp_path / "nonexistent.parquet"
+    )
+    result = list_source_items("inps")
+    assert result["error"] == "artifact_not_found"

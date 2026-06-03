@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from _discovery import list_source_items
 from _find_url import find_by_url
 from _inventory import (
     catalog_inventory_search,
@@ -151,6 +152,22 @@ def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
 )
 def so_inventory_diff(source_id: str) -> dict[str, Any]:
     return guard_timed(inventory_diff, "so_inventory_diff", source_id)
+
+
+@mcp.tool(
+    description="Elenca gli item (dataset, dataflow, risorsa) di una fonte "
+    "dal catalog_inventory_latest.parquet. "
+    "Accetta source_id (richiesto), limit, offset e query testuale opzionale "
+    "su item_id, item_name, title, tags e organization.",
+    structured_output=True,
+)
+def so_list_source_items(
+    source_id: str,
+    limit: int = 50,
+    offset: int = 0,
+    query: str | None = None,
+) -> dict[str, Any]:
+    return guard_timed(list_source_items, "so_list_source_items", source_id, limit, offset, query)
 
 
 if __name__ == "__main__":
