@@ -108,30 +108,6 @@ openbdap:
     - bdap_entrate_stato
     - bdap_lea
     - dipendenti_pubblici
-dati_salute:
-  source_kind: catalog
-  protocol: html
-  observation_mode: catalog-watch
-  base_url: https://www.dati.salute.gov.it/
-  last_probed: '2026-06-04'
-  catalog_baseline:
-    captured_at: '2026-04-07'
-    metric: csv_magnet_total_links
-    value: 382
-    method: csv_magnet_sitemap_scan
-    reliability: medium
-    note: 'Sondaggio CSV magnet via sitemap-0.xml. 191 pagine dataset, 4 formati (CSV/XML/JSON/ZIP).
-      Prefix matrix: FRM=45, DISPO=38. Anni: 2023-2026.'
-  verdict: go
-  note: Portale Ministero Salute — csv_magnet scan integrato nel pipeline 
-    catalog-watch.
-  html_portal:
-    topic_hint: sanita
-    sitemap_url: https://www.dati.salute.gov.it/sitemap-0.xml
-    delay_seconds: 0.3
-    sample_pages: 30
-    probe_content_type: true
-  datasets_in_use: []
 inail_opendata:
   source_kind: portal
   protocol: aem
