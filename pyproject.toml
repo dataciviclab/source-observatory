@@ -34,7 +34,7 @@ dependencies = [
   "fastmcp>=3.3.1",
   "ddgs>=9.14.4",
   "lab-connectors[duckdb,gcs] @ git+https://github.com/dataciviclab/lab-connectors.git@v0.11.0",
-  "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@v1.20.0",
+  "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@v1.23.0",
 ]
 
 [project.optional-dependencies]
