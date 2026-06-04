@@ -108,3 +108,611 @@ openbdap:
     - bdap_entrate_stato
     - bdap_lea
     - dipendenti_pubblici
+inail_opendata:
+  source_kind: portal
+  protocol: aem
+  observation_mode: radar-only
+  base_url: https://dati.inail.it/
+  last_probed: '2026-06-04'
+  verdict: go
+  note: Portale AEM con Open API documentate. Superficie operativa reale = 
+    catalogo AEM + Open API, non CKAN standard (logo nel footer fuorviante). 
+    Baseline inventariale non ancora difendibile; tenere in radar-only finche' 
+    non definito un metodo stabile.
+  datasets_in_use: []
+mim_opendata:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-04-27'
+    metric: csv_magnet_total_links
+    value: 1116
+    method: csv_magnet_homepage_area_pages
+    reliability: medium
+    note: 'Sondaggio CSV magnet via area pages. 6 aree tematiche (Scuole, Studenti,
+      Personale, Valutazione, Edilizia, Adozioni). 1116 link CSV/XLS. Prefix: ALU=300,
+      EDI=282, SCU=132. Nessuna sitemap disponibile.'
+  verdict: go
+  note: Portale Ministero Istruzione — csv_magnet scan via area_pages (no 
+    sitemap).
+  html_portal:
+    topic_hint: istruzione
+    area_pages:
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Scuole
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Studenti
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Personale%20Scuola
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Sistema%20Nazionale%20di%20Valutazione
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Edilizia%20Scolastica
+      - https://dati.istruzione.it/opendata/opendata/catalogo/elements1/?area=Adozioni%20libri%20di%20testo
+    delay_seconds: 0.3
+  datasets_in_use:
+    - mim_alunni_corso_eta
+    - mim_anagrafica_scuole_statali
+dati_camera:
+  source_kind: catalog
+  protocol: sparql
+  observation_mode: catalog-watch
+  base_url: https://dati.camera.it/sparql
+  scraping_blocked: true
+  scraping_blocked_reason: reCAPTCHA / WAF blocca richieste HTTP non-browser
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-04-11'
+    metric: dataset_count
+    value: 104
+    method: sparql_query
+    query_name: camera_dcat
+    reliability: medium
+    note: Baseline fissata con query custom Camera perché il catalogo usa 
+      proprietà DC 1.1 Elements per titolo e descrizione.
+  sparql:
+    endpoint_url: https://dati.camera.it/sparql
+    query_name: camera_dcat
+    limit: 5000
+    timeout_seconds: 60
+    query: "PREFIX dcat: <http://www.w3.org/ns/dcat#>\nPREFIX dc: <http://purl.org/dc/elements/1.1/>\n\
+      PREFIX dct: <http://purl.org/dc/terms/>\nSELECT DISTINCT ?dataset ?title ?description
+      ?modified ?landingPage\nWHERE {\n  ?dataset a dcat:Dataset .\n  OPTIONAL { ?dataset
+      dc:title ?title . }\n  OPTIONAL { ?dataset dc:description ?description . }\n\
+      \  OPTIONAL { ?dataset dct:modified ?modified . }\n  OPTIONAL { ?dataset dcat:landingPage
+      ?landingPage . }\n}\nORDER BY ?dataset\nLIMIT 5000\n"
+  verdict: go
+  note: Catalogo linked-data Camera inventariabile via query SPARQL custom. Il 
+    template DCAT generico non valorizza titolo e descrizione perché l'endpoint 
+    usa dc:title e dc:description.
+  datasets_in_use:
+    - camera_deputati_legislature
+    - camera_votazioni_sparql
+dati_senato:
+  source_kind: catalog
+  protocol: sparql
+  observation_mode: catalog-watch
+  base_url: https://dati.senato.it/sparql
+  inventory:
+    timeout: 600
+    timeout_reason: 99 query SPARQL (1 discover + 98 schema enrich × 15 pred). 
+      stimate 5s/query su Virtuoso. 99 × 5 × 1.2 = 594s
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-05-31'
+    metric: named_graph_count
+    value: 98
+    method: named_graphs
+    query_name: named_graphs
+    reliability: medium
+    note: Baseline via enumerazione named graphs SPARQL. ~98 grafi organizzati 
+      per categoria (composizione, ddl, votazioni, emendamenti, ecc.) e 
+      legislatura (01-19). Fonte non ha DCAT catalog.
+  sparql:
+    endpoint_url: https://dati.senato.it/sparql
+    inventory_mode: named_graphs
+    enrich_schema: true
+    schema_predicate_limit: 15
+    timeout_seconds: 300
+    graph_uri_prefix: http://dati.senato.it/
+    graph_uri_blacklist:
+      - localhost
+      - virtrdf
+      - owl#
+      - rules.skos
+      - virtrdf-label
+      - '8890'
+      - b3sifp
+      - b3sonto
+      - facets
+      - teseo
+  verdict: go
+  note: Portale Open Data Senato. SPARQL endpoint Virtuoso (GET). Inventory via 
+    enumerazione named graphs (~98 grafi categoria/legislatura). Download 
+    CSV/JSON via POST form autenticato (non crawlabile). CC BY 3.0. Speculare a 
+    dati_camera ma senza DCAT catalog.
+  datasets_in_use: []
+dati_cultura:
+  source_kind: catalog
+  protocol: sparql
+  observation_mode: catalog-watch
+  base_url: https://dati.cultura.gov.it/sparql
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-04-11'
+    metric: dataset_count
+    value: 150
+    method: sparql_query
+    query_name: dcat_datasets
+    reliability: medium
+    note: Catalogo linked-data MiC (ArCo) con metadati DCAT interrogabili via 
+      SPARQL. ~150 dataset/thesaurus nel catalogo. Pilot per inventory SPARQL 
+      oltre ISPRA.
+  sparql:
+    endpoint_url: https://dati.cultura.gov.it/sparql
+    query_name: dcat_datasets
+    limit: 5000
+    timeout_seconds: 90
+  verdict: go
+  note: Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check 
+    completato con verdict catalog-watch.
+  datasets_in_use: []
+ispra_linked_data:
+  source_kind: catalog
+  protocol: sparql
+  observation_mode: catalog-watch
+  base_url: https://dati.isprambiente.it/sparql
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-04-11'
+    metric: dataset_count
+    value: 66
+    method: sparql_query
+    query_name: dcat_datasets
+    reliability: medium
+    note: Baseline fissata con query DCAT dichiarata su dataset distinti.
+  sparql:
+    endpoint_url: https://dati.isprambiente.it/sparql
+    query_name: dcat_datasets
+    limit: 5000
+  verdict: go
+  note: Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. 
+    Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già 
+    usate per pipeline tabellari.
+  datasets_in_use:
+    - ispra_consumo_suolo
+    - ispra_ru_base
+    - ispra_ru_costi_kg
+    - ispra_ru_costi_procapite
+consip_open_data:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.consip.it/api/3/action/package_list?limit=1
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-04-10'
+    metric: package_count
+    value: 17
+    method: package_list
+    reliability: medium
+    note: Baseline iniziale su CKAN package_list. I source-check del 2026-04-10 
+      hanno confermato almeno due dataset primari difendibili (bandi-e-gare, 
+      consumi-convenzioni) e un support dataset chiaro (operatori-economici).
+  verdict: go
+  note: Catalogo CKAN piccolo ma difendibile per catalog-watch. I source-check 
+    dataset-specifici hanno confermato che il catalogo contiene almeno due 
+    target primari e un support dataset utile per il filone Consip acquisti PA.
+  datasets_in_use: []
+lavoro_opendata:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:ministero-del-lavoro
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: package_search con 
+      fq=organization:ministero-del-lavoro restituisce 83 dataset con metadata 
+      completi. current_list non necessario.
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-05-24'
+    metric: package_count
+    value: 83
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con fq=organization:ministero-del-lavoro 
+      su dati.gov.it. 83 dataset harvestati dal portale Ministero del Lavoro.
+  verdict: go
+  note: Fonte via dati.gov.it (harvesting Ministero del Lavoro). Sostituisce 
+    fonte diretta dati.lavoro.gov.it che aveva WAF. 83 dataset su lavoro 
+    (rapporti attivati/cessati, missioni, qualifiche professionali, genere, 
+    settore ATECO, ripartizione geografica).
+  datasets_in_use: []
+mur_ustat:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:ministero-universita-e-ricerca
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: package_search con 
+      fq=organization:ministero-universita-e-ricerca restituisce 69 dataset con 
+      metadata completi. current_list non necessario.
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-05-24'
+    metric: package_count
+    value: 69
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con 
+      fq=organization:ministero-universita-e-ricerca su dati.gov.it. 69 dataset 
+      harvestati dal portale MUR.
+  verdict: go
+  note: Fonte via dati.gov.it (harvesting MUR). Sostituisce fonte diretta 
+    dati-ustat.mur.gov.it che aveva ConnectTimeout. 69 dataset su istruzione 
+    universitaria (contribuzione atenei, DSU regionale, collegi, AFAM).
+  datasets_in_use:
+    - mur_contribuzione_universitaria
+opencoesione:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:pcm-opencoesione
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: 'package_search con fq=organization:pcm-opencoesione
+      restituisce 561 dataset (3 core: progetti, soggetti, pagamenti). current_list
+      non necessario.'
+  last_probed: '2026-06-04'
+  verdict: go
+  note: "Fonte via dati.gov.it (harvesting PCM-OpenCoesione). Sostituisce accesso
+    diretto a opencoesione.gov.it (API REST instabile: 403/timeout). 561 dataset totali
+    su dati.gov.it; i 3 core sono progetti, soggetti, pagamenti (CSV + Parquet). Licenza
+    CC BY 4.0. File raw su opencoesione.gov.it. Ultimo aggiornamento contenuti: 2026-02-28.\n"
+  catalog_baseline:
+    captured_at: '2026-06-03'
+    metric: package_count
+    value: 561
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con fq=organization:pcm-opencoesione su 
+      dati.gov.it. 561 dataset harvestati da OpenCoesione (3 core + 558 
+      granulari per tema/ciclo/ambito).
+  datasets_in_use: []
+mef_irpef:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: 
+    https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-05-03'
+    metric: csv_magnet_homepage_links
+    value: 147
+    method: csv_magnet_homepage_direct
+    reliability: medium
+    note: 'Sondaggio CSV magnet via homepage. 81 CSV + 66 ZIP (metadati) = 147 link
+      totali su singola pagina statica. Nessuna sitemap ne sottopagine. Prefix: REG,
+      cla, sesso, Redditi. Serie 2010-2025.'
+  verdict: go
+  note: Portale MEF Dipartimento Finanze — Open Data IRPEF comunale. Dati 
+    fiscali regionali per tipo reddito, classi, sesso. Alta rilevanza civica per
+    analisi disuguaglianza e gettito regionale.
+  html_portal:
+    topic_hint: fisco
+    homepage: 
+      https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
+    delay_seconds: 0.2
+    probe_content_type: true
+  datasets_in_use:
+    - irpef_comunale
+    - mef_irpef_regionale
+opencivitas:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://www.opencivitas.it/it/open-data
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-05-07'
+    metric: csv_magnet_total_links
+    value: 1084
+    method: csv_magnet_area_pages_paginated
+    reliability: medium
+    note: Sondaggio CSV magnet via page_url_template (page=0..54). SSL fallback 
+      necessario per cert invalido.
+  verdict: go
+  note: Portale OpenCivitas — csv_magnet scan via page_url_template. SSL 
+    fallback attivo. ZIP con CSV/XLSX dentro.
+  html_portal:
+    topic_hint: trasparenza
+    page_url_template: https://www.opencivitas.it/it/open-data?page={page}
+    page_start: 0
+    page_max: 100
+    page_stop_on_empty: true
+    delay_seconds: 0.3
+    probe_content_type: true
+  datasets_in_use:
+    - opencivitas_fsc_2025_rso
+aifa:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://www.aifa.gov.it/dati-aifa
+  verdict: go
+  note: "Portale Open Data AIFA — CSV scaricabili senza autenticazione. Licenza CC-BY
+    4.0. Inventory via area_pages (sito principale ha protezioni anti-bot). Dataset:
+    liste farmaci, provvedimenti, sperimentazioni cliniche, farmacovigilanza, incarichi,
+    bandi.\n"
+  html_portal:
+    topic_hint: sanita
+    area_pages:
+      - https://www.aifa.gov.it/web/guest/liste-dei-farmaci
+      - https://www.aifa.gov.it/web/guest/provvedimenti-aifa
+      - https://www.aifa.gov.it/web/guest/sperimentazioni-cliniche
+      - https://www.aifa.gov.it/web/guest/farmacovigilanza-open-data
+      - https://www.aifa.gov.it/web/guest/incarichi-e-consulenze
+      - https://www.aifa.gov.it/web/guest/bandi-di-gara-e-contratti-
+    delay_seconds: 0.5
+    probe_content_type: true
+  datasets_in_use:
+    - aifa_spesa_consumo
+  last_probed: '2026-06-04'
+dait:
+  source_kind: catalog
+  protocol: html
+  observation_mode: radar-only
+  base_url: https://dait.interno.gov.it/contenuti/tipo/open_data
+  last_probed: '2026-06-04'
+  verdict: go
+  note: "DAIT — Anagrafe Amministratori locali. CSV snapshot annuali 1991-2026 + \
+    \ corrente. 41 su 42 entry sono snapshot dello stesso dataset. radar-only iniziale
+    per evitare rumore catalog inventory sui 41 snapshot.\n"
+  datasets_in_use: []
+mit_opendata:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.mit.gov.it/catalog/api/3/action/package_list?limit=1
+  last_probed: '2026-06-04'
+  verdict: go
+  note: "Portale CKAN MIT — 67 dataset su trasporti, infrastrutture, incidentalità,
+    veicoli, opere pubbliche. Include dataset già in uso dal Lab (mit_incidentalita_mensile,
+    mit_opere_incompiute).\n"
+  datasets_in_use:
+    - mit_incidentalita_mensile
+    - mit_opere_incompiute_2020
+openga:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: 
+    https://openga.giustizia-amministrativa.it/api/3/action/package_list?limit=1
+  last_probed: '2026-06-04'
+  verdict: go
+  note: "Portale CKAN Giustizia Amministrativa — ~270 dataset su ricorsi TAR+CDS,
+    sentenze, ordinanze, pareri. CC-BY 4.0. Aggiornamento mensile. Si incastra con
+    civile_flussi (giustizia ordinaria).\n"
+  datasets_in_use:
+    - openga_ricorsi_cds
+giustizia_statistiche:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://datiestatistiche.giustizia.it/
+  last_probed: '2026-06-04'
+  verdict: go
+  note: "Portale statistico Ministero Giustizia — XLSX scaricabili su flussi civili/penali,
+    clearance rate, disposition time, sorveglianza, intercettazioni, monitoraggio
+    tribunali, durata procedimenti. Include dataset già in uso dal Lab.\n"
+  html_portal:
+    topic_hint: giustizia
+    area_pages:
+      - https://datiestatistiche.giustizia.it/page/it/flussi-tribunali-ordinari-e-corti-di-appello
+      - https://datiestatistiche.giustizia.it/page/it/clearance-rate-e-disposition-time-civile
+      - https://datiestatistiche.giustizia.it/page/it/clearance-rate-e-disposition-time-penale
+      - https://datiestatistiche.giustizia.it/it/sorveglianza.page
+      - https://datiestatistiche.giustizia.it/it/intercettazioni.page
+      - https://datiestatistiche.giustizia.it/page/it/durata-dei-procedimenti-civili
+      - https://datiestatistiche.giustizia.it/page/it/monitoraggio-mensile-dei-tribunal
+    delay_seconds: 0.3
+    probe_content_type: true
+  datasets_in_use:
+    - civile_flussi
+    - giustizia_penale_indicatori
+cortecostituzionale:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
+  last_probed: '2026-06-04'
+  verdict: go
+  note: "Portale Open Data Corte Costituzionale — Pronunce (1956-oggi), Massime, Anagrafica
+    Giudici, Atti di promovimento. CSV/XML/JSON in ZIP. Agg. giornaliero. Endpoint
+    SPARQL disponibile.\n"
+  html_portal:
+    topic_hint: giustizia
+    homepage: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
+    delay_seconds: 0.3
+    probe_content_type: true
+  datasets_in_use: []
+terna_opendata:
+  source_kind: catalog
+  protocol: rest
+  observation_mode: radar-only
+  base_url: https://dati.terna.it/
+  last_probed: '2026-06-04'
+  verdict: go
+  note: "Portale Dati Terna — API Sitecore REST. 31+ dataset su energia (fabbisogno,
+    generazione, trasmissione, mercato, adeguatezza). API pubblica ritorna XLSX. Già
+    in uso da pipeline Lab. Catalog-watch richiederebbe connector custom.\n"
+  api_discovery:
+    endpoint: https://dati.terna.it/api/sitecore/dati/downloadcenter/records
+    known_datasets:
+      - TotalLoad
+      - MarketLoad
+      - PeakValleyLoad
+      - DailyDataIndexes
+      - InternationalComparisons
+      - IMCEI
+      - IMSER
+      - ElectricalEnergy
+      - Market
+      - IndustrialSector
+      - ServiceSector
+      - Total
+      - ConsumptionBySource
+      - ElectricityItaly
+      - ElectricityByType
+      - ActualGeneration
+      - RenewableGeneration
+      - EnergyBalance
+      - RenewableSources
+      - NonRenewableSources
+      - Storage
+      - ElectricityBySource
+      - ProductionRenewableSources
+      - HydroPower
+      - GrossVsCO2Emissions
+      - ProductionThermal
+      - ThermalHeat
+      - CapacityRenewableSources
+      - CapacityThermal
+      - GenerationPlants
+  datasets_in_use:
+    - terna_electricity_by_source
+ministero_interno:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:ministero-dell-interno
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: package_search con 
+      fq=organization:ministero-dell-interno restituisce 38 dataset con metadata
+      completi.
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-05-24'
+    metric: package_count
+    value: 38
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con 
+      fq=organization:ministero-dell-interno su dati.gov.it. 38 dataset su 
+      elezioni (per comune) e ANPR (popolazione).
+  verdict: go
+  note: Fonte via dati.gov.it. Dati elezioni (Politiche 2022, Comunali 2024, 
+    Europee 2024, Regionali) per comune + ANPR (popolazione residente, cambi 
+    residenza, certificati, AIRE). Alto valore civico per analisi territoriale 
+    del voto.
+  datasets_in_use: []
+agid:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:agenzia-per-l-italia-digitale
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: package_search con 
+      fq=organization:agenzia-per-l-italia-digitale restituisce 40 dataset con 
+      metadata completi.
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-05-24'
+    metric: package_count
+    value: 40
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con 
+      fq=organization:agenzia-per-l-italia-digitale su dati.gov.it. 40 dataset 
+      IPA (enti, PEC, domicili digitali, servizi, RTD).
+  verdict: go
+  note: 'Fonte via dati.gov.it. IPA — Indice delle PA: enti, unita organizzative,
+    PEC, domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione
+    elettronica, cloud. Codice_IPA chiave di join con ANAC.'
+  datasets_in_use: []
+noipa_sparql:
+  source_kind: catalog
+  protocol: sparql
+  observation_mode: radar-only
+  base_url: https://sparql-noipa.mef.gov.it/sparql
+  last_probed: '2026-06-04'
+  verdict: hold
+  note: NoiPA SPARQL — MEF/RGS. Dati mensili personale PA (entries-{YYYYMM}, 
+    2019-2026) + pensioni PA (entriesPensioni-{YYYYMM}, 2017-oggi). ~490k 
+    soggetti/mese. L'endpoint risponde solo in XML 
+    (application/sparql-results+xml). Inventory non funzionante finché 
+    execute_sparql() in lab-connectors non supporta XML. Radar-only in attesa di
+    parser XML o di endpoint JSON.
+  datasets_in_use: []
+mimit_rna:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:ministero-delle-imprese-e-del-made-in-italy
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: package_search con 
+      fq=organization:ministero-delle-imprese-e-del-made-in-italy restituisce 
+      370 dataset (RNA Aiuti + RNA Misure) con metadata.
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-05-24'
+    metric: package_count
+    value: 370
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con 
+      fq=organization:ministero-delle-imprese-e-del-made-in-italy su 
+      dati.gov.it. 370 dataset (133 RNA Aiuti + 237 RNA Misure).
+  verdict: go
+  note: 'Fonte via dati.gov.it. RNA — Registro Nazionale Aiuti di Stato. 133 dataset
+    mensili Aiuti (2017-2026, XML, ~14.500 record/mese) + 237 dataset Misure (1994-2023).
+    File su www.rna.gov.it scaricabili (200 MB/mese, XML strutturato). Altissimo valore
+    civico: tracciamento aiuti pubblici alle imprese con beneficiario, CF, importo,
+    regione, CUP.'
+  datasets_in_use: []
+ministero_salute:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:ministero-della-salute
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: package_search con 
+      fq=organization:ministero-della-salute restituisce 51 dataset con 
+      metadata.
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-05-24'
+    metric: package_count
+    value: 51
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con 
+      fq=organization:ministero-della-salute su dati.gov.it. 51 dataset 
+      (farmacie, posti letto, personale SSN, dispositivi, ASL, fitosanitari). 
+      URL raw su dati.salute.gov.it (portale in migrazione).
+  verdict: go
+  note: 'Fonte via dati.gov.it. Anagrafiche sanitarie nazionali: farmacie, parafarmacie,
+    posti letto, personale SSN, ASL, dispositivi medici, fitosanitari. I file raw
+    puntano a dati.salute.gov.it (portale in migrazione a Gatsby, alcuni URL aggiornati).
+    Complementare a dati_salute (csv_magnet) per il catalogo completo del portale
+    diretto.'
+  datasets_in_use: []
