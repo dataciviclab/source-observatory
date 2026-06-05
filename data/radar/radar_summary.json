@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-06-04T07:59:54.311846+00:00",
-  "probe_date": "2026-06-04",
-  "sources_total": 29,
+  "generated_at": "2026-06-05T07:16:58.310449+00:00",
+  "probe_date": "2026-06-05",
+  "sources_total": 28,
   "status_counts": {
-    "GREEN": 26,
-    "YELLOW": 1,
-    "RED": 2
+    "GREEN": 25,
+    "YELLOW": 2,
+    "RED": 1
   },
-  "persistent_red": 2,
+  "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
@@ -38,14 +38,6 @@
       "note": null
     },
     {
-      "id": "dati_salute",
-      "status": "RED",
-      "protocol": "html",
-      "http_code": "-",
-      "note": "SSL verify failed; fallback connection error (SSLError)",
-      "red_streak": 14
-    },
-    {
       "id": "inail_opendata",
       "status": "GREEN",
       "protocol": "aem",
@@ -61,9 +53,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "404",
       "note": null
     },
     {
@@ -72,7 +64,7 @@
       "protocol": "sparql",
       "http_code": "503",
       "note": null,
-      "red_streak": 2
+      "red_streak": 3
     },
     {
       "id": "dati_cultura",
