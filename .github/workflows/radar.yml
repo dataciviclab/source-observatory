@@ -21,6 +21,8 @@ jobs:
         shell: bash
 
     steps:
+      - uses: actions/checkout@v6
+
       - name: Python setup
         uses: dataciviclab/.github/actions/python-setup@main
 
