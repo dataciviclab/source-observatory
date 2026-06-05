@@ -717,6 +717,7 @@ ministero_salute:
     Complementare a dati_salute (csv_magnet) per il catalogo completo del portale
     diretto.'
   datasets_in_use: []
+
 agcm:
   source_kind: catalog
   protocol: ckan
