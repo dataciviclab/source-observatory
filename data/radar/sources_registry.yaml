@@ -744,3 +744,35 @@ agcm:
     rating di legalita' (elenchi settimanali imprese con rating),
     operazioni di concentrazione 2021-2025.\n"
   datasets_in_use: []
+
+unioncamere:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:unione-italiana-delle-camere-di-commercio-industria-artigianato-e-agricoltura
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: "package_search con
+      fq=organization:unione-italiana-delle-camere-di-commercio-industria-artigianato-e-agricoltura
+      restituisce 352 dataset (imprese per provincia).
+      current_list non necessario."
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-06-04'
+    metric: package_count
+    value: 352
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con
+      fq=organization:unione-italiana-delle-camere-di-commercio-industria-artigianato-e-agricoltura
+      su dati.gov.it. 352 dataset provincia per provincia su demografia d'impresa
+      (natimortalità, femminili, giovanili, straniere, artigiane, ATECO).
+      ~340 provincia-specific, ~12 nazionali aggregati.
+  verdict: go
+  note: "Fonte via dati.gov.it (Unioncamere). 352 dataset su demografia d'impresa
+    per provincia: femminili, giovanili, straniere, artigiane, ATECO, forma
+    giuridica. Dataset prevalentemente provincia-specifici (~340).
+    ~12 dataset nazionali aggregati (es. 'Italia - Imprese femminili...').\n"
+  datasets_in_use: []
