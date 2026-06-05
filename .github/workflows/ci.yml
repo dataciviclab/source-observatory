@@ -13,17 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Python setup
+        uses: dataciviclab/.github/actions/python-setup@main
         with:
-          python-version: "3.12"
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install -r requirements-dev.txt
+          extra-requirements: requirements-dev.txt
 
       - name: Lint with ruff
         run: ruff check scripts/ tests/ so_mcp/
