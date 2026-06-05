@@ -5,6 +5,7 @@ on:
     paths:
       - "tests/**/test_*.py"
       - "scripts/collectors/test_*.py"
+      - ".github/workflows/test-audit.yml"
 
 jobs:
   audit-markers:
@@ -14,9 +15,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
+      - uses: dataciviclab/.github/actions/python-setup@main
+
+      - name: Verify audit-test-markers CLI
+        run: audit-test-markers --help
 
       - name: Audit test markers in tests/
         run: |
@@ -26,7 +28,7 @@ jobs:
             exit 0
           fi
           files=$(echo "$changed" | xargs -n1 basename | tr '\n' ' ')
-          python .github/scripts/audit_test_markers.py tests/ --diff --files $files
+          audit-test-markers tests/ --diff --files $files
 
       - name: Audit test markers in scripts/collectors/
         run: |
@@ -36,4 +38,4 @@ jobs:
             exit 0
           fi
           files=$(echo "$changed" | xargs -n1 basename | tr '\n' ' ')
-          python .github/scripts/audit_test_markers.py scripts/collectors/ --diff --files $files
+          audit-test-markers scripts/collectors/ --diff --files $files
