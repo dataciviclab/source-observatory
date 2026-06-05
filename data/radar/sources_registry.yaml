@@ -717,3 +717,30 @@ ministero_salute:
     Complementare a dati_salute (csv_magnet) per il catalogo completo del portale
     diretto.'
   datasets_in_use: []
+
+agcm:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:agcm
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: "package_search con fq=organization:agcm
+      restituisce 53 dataset (rating legalita', concentrazioni).
+      current_list non necessario."
+  last_probed: '2026-06-04'
+  catalog_baseline:
+    captured_at: '2026-06-04'
+    metric: package_count
+    value: 53
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con fq=organization:agcm su dati.gov.it.
+      53 dataset (rating di legalità, operazioni di concentrazione).
+  verdict: go
+  note: "Fonte via dati.gov.it (AGCM). 53 dataset su concorrenza e mercato:
+    rating di legalita' (elenchi settimanali imprese con rating),
+    operazioni di concentrazione 2021-2025.\n"
+  datasets_in_use: []
