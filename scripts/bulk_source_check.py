@@ -74,9 +74,8 @@ MAX_WORKERS = 16
 _NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
 
 
-
-
 # ── registry ─────────────────────────────────────────────────────────────────
+
 
 def _load_registry() -> dict[str, Any]:
     if not REGISTRY_PATH.exists():
@@ -86,6 +85,7 @@ def _load_registry() -> dict[str, Any]:
 
 
 # ── SDMX enrichment ───────────────────────────────────────────────────────────
+
 
 def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -> dict:
     annotations: dict[str, str] = {}
@@ -97,7 +97,9 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 
     keywords_raw = annotations.get("LAYOUT_DATAFLOW_KEYWORDS", "")
     # formato: "keyword1+keyword2+...+keyword3+..."
-    keywords = [k.strip().lower() for part in keywords_raw.split("+") for k in part.split(",") if k.strip()]
+    keywords = [
+        k.strip().lower() for part in keywords_raw.split("+") for k in part.split(",") if k.strip()
+    ]
 
     combined = " ".join(keywords)
     granularity = _infer_granularity(combined)
@@ -171,9 +173,8 @@ def _extract_base_enrich(row: pd.Series, registry: dict[str, Any]) -> dict:
         item_name = _slug.strip()
 
     _VALID_FORMATS_FOR_SKIP = {"CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"}
-    inv_format_has_valid = (
-        isinstance(inv_format, str)
-        and any(t.strip().upper() in _VALID_FORMATS_FOR_SKIP for t in inv_format.split(","))
+    inv_format_has_valid = isinstance(inv_format, str) and any(
+        t.strip().upper() in _VALID_FORMATS_FOR_SKIP for t in inv_format.split(",")
     )
     has_valid_slug = bool(isinstance(_slug, str) and _slug.strip() and _slug.strip() != "dataset")
 
@@ -221,7 +222,8 @@ def _enrich_ckan(row: pd.Series, base: dict) -> dict | None:
 
     api_base_url = row.get("api_base_url")
     base_api = (
-        api_base_url if isinstance(api_base_url, str) and api_base_url.startswith("http")
+        api_base_url
+        if isinstance(api_base_url, str) and api_base_url.startswith("http")
         else base["base_url"]
     )
     pkg = _fetch_ckan_package(base_api, base["item_name"])
@@ -259,17 +261,19 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
     if isinstance(data_url, str):
         fmt = _content_type_format(data_url)
         if fmt:
-            return _e({
-                "enriched_title": base["inv_title"],
-                "enriched_tags": base["inv_tags"],
-                "enriched_notes": base["inv_notes"],
-                "resource_url": data_url,
-                "resource_format": fmt,
-                "granularity": base["inv_granularity"],
-                "year_min": row.get("year_signal"),
-                "year_max": row.get("year_signal"),
-                "enrich_method": "content_type",
-            })
+            return _e(
+                {
+                    "enriched_title": base["inv_title"],
+                    "enriched_tags": base["inv_tags"],
+                    "enriched_notes": base["inv_notes"],
+                    "resource_url": data_url,
+                    "resource_format": fmt,
+                    "granularity": base["inv_granularity"],
+                    "year_min": row.get("year_signal"),
+                    "year_max": row.get("year_signal"),
+                    "enrich_method": "content_type",
+                }
+            )
 
     # 2. download preview per CSV/JSON/XLS
     if isinstance(data_url, str):
@@ -304,7 +308,11 @@ def _enrich_sparql(row: pd.Series, base: dict) -> dict | None:
         return None
 
     # NaN/None-safe fallback: pd.NA/np.nan sono truthy in Python!
-    landing = _safe_str(row.get("landing_page")) or _safe_str(row.get("url")) or _safe_str(row.get("source_url"))
+    landing = (
+        _safe_str(row.get("landing_page"))
+        or _safe_str(row.get("url"))
+        or _safe_str(row.get("source_url"))
+    )
     if not landing or not landing.startswith("http"):
         return None
 
@@ -315,17 +323,21 @@ def _enrich_sparql(row: pd.Series, base: dict) -> dict | None:
     else:
         fmt = "SPARQL"
 
-    return _apply_encoding_to_enrich({
-        "enriched_title": base["inv_title"],
-        "enriched_tags": base["inv_tags"],
-        "enriched_notes": base["inv_notes"],
-        "resource_url": landing,
-        "resource_format": fmt,
-        "granularity": base.get("inv_granularity") or "non_determinato",
-        "year_min": row.get("year_signal"),
-        "year_max": row.get("year_signal"),
-        "enrich_method": "sparql_probe",
-    }, row, base)
+    return _apply_encoding_to_enrich(
+        {
+            "enriched_title": base["inv_title"],
+            "enriched_tags": base["inv_tags"],
+            "enriched_notes": base["inv_notes"],
+            "resource_url": landing,
+            "resource_format": fmt,
+            "granularity": base.get("inv_granularity") or "non_determinato",
+            "year_min": row.get("year_signal"),
+            "year_max": row.get("year_signal"),
+            "enrich_method": "sparql_probe",
+        },
+        row,
+        base,
+    )
 
 
 # ── Inventory-only fallback ───────────────────────────────────────────────────
@@ -333,17 +345,21 @@ def _enrich_sparql(row: pd.Series, base: dict) -> dict | None:
 
 def _enrich_fallback(row: pd.Series, base: dict) -> dict:
     """Usa i dati inventory così come sono."""
-    return _apply_encoding_to_enrich({
-        "enriched_title": base["inv_title"],
-        "enriched_tags": base["inv_tags"],
-        "enriched_notes": base["inv_notes"],
-        "resource_url": row.get("url") or row.get("landing_page"),
-        "resource_format": base["inv_format"],
-        "granularity": base["inv_granularity"],
-        "year_min": row.get("year_signal"),
-        "year_max": row.get("year_signal"),
-        "enrich_method": "inventory_only",
-    }, row, base)
+    return _apply_encoding_to_enrich(
+        {
+            "enriched_title": base["inv_title"],
+            "enriched_tags": base["inv_tags"],
+            "enriched_notes": base["inv_notes"],
+            "resource_url": row.get("url") or row.get("landing_page"),
+            "resource_format": base["inv_format"],
+            "granularity": base["inv_granularity"],
+            "year_min": row.get("year_signal"),
+            "year_max": row.get("year_signal"),
+            "enrich_method": "inventory_only",
+        },
+        row,
+        base,
+    )
 
 
 # ── Dispatch registry ─────────────────────────────────────────────────────────
@@ -557,7 +573,9 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "item_id": row.get("item_id"),
         "item_name": row.get("item_name"),
         "title": enrich["enriched_title"] or row.get("title"),
-        "organization": row.get("organization") if pd.notna(row.get("organization")) else enrich.get("enriched_org") or str(row.get("source_id", "")).upper(),
+        "organization": row.get("organization")
+        if pd.notna(row.get("organization"))
+        else enrich.get("enriched_org") or str(row.get("source_id", "")).upper(),
         "tags": enrich["enriched_tags"] or row.get("tags"),
         "notes": enrich["enriched_notes"],
         "url_checked": url_to_check,
@@ -567,7 +585,9 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "granularity": granularity,
         "year_min": year_min,
         "year_max": year_max,
-        "resource_format": fmt_from_content or _normalize_format(enrich["resource_format"] or "") or _normalize_format(row.get("format") or ""),
+        "resource_format": fmt_from_content
+        or _normalize_format(enrich["resource_format"] or "")
+        or _normalize_format(row.get("format") or ""),
         "enrich_method": enrich["enrich_method"],
         "file_size": preview_meta.get("file_size"),
         "preview_row_count": preview_meta.get("preview_row_count"),
@@ -575,9 +595,11 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "columns": preview_meta.get("columns"),
         # Campi dal toolkit profiler: preview_meta se presente (da csv_preview),
         # altrimenti dall'enrich (da inventory sniff per content_type/landing/inventory_only)
-        "encoding_suggested": preview_meta.get("encoding_suggested") or enrich.get("encoding_suggested"),
+        "encoding_suggested": preview_meta.get("encoding_suggested")
+        or enrich.get("encoding_suggested"),
         "delim_suggested": preview_meta.get("delim_suggested") or enrich.get("delim_suggested"),
-        "decimal_suggested": preview_meta.get("decimal_suggested") or enrich.get("decimal_suggested"),
+        "decimal_suggested": preview_meta.get("decimal_suggested")
+        or enrich.get("decimal_suggested"),
         "skip_suggested": preview_meta.get("skip_suggested") or enrich.get("skip_suggested"),
         "robust_read_suggested": preview_meta.get("robust_read_suggested"),
         "mapping_suggestions": preview_meta.get("mapping_suggestions"),
@@ -651,8 +673,12 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
             if done % 50 == 0 or done == total:
                 logger.info("  %d/%d completed", done, total)
     except TimeoutError:
-        logger.warning("Source-check timeout after %ds (%d/%d items processed)",
-                       _BULK_CHECK_TIMEOUT, done, total)
+        logger.warning(
+            "Source-check timeout after %ds (%d/%d items processed)",
+            _BULK_CHECK_TIMEOUT,
+            done,
+            total,
+        )
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
 
@@ -683,27 +709,60 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     p.add_argument("--in", dest="input", type=Path, default=DEFAULT_IN)
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
     p.add_argument("--source-ids", nargs="+", metavar="ID")
     p.add_argument("--limit", type=int, default=None)
-    p.add_argument("--limit-per-source", type=int, default=None, metavar="N",
-                   help="Massimo N item per source_id (applicato prima del check)")
+    p.add_argument(
+        "--limit-per-source",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Massimo N item per source_id (applicato prima del check)",
+    )
     p.add_argument("--workers", type=int, default=MAX_WORKERS)
-    p.add_argument("--max-age-days", type=int, default=None,
-                   help="Non ri-controllare item con check_timestamp più recente di N giorni. Default: None (nessun skip — tutti gli item vengono controllati)")
-    p.add_argument("--max-items", type=int, default=500,
-                   help="Target massimo di item da processare per run. Prioritize: items senza format + sample random. Default: 500")
-    p.add_argument("--include-no-url", dest="only_with_url", action="store_false", default=True,
-                   help="Includi anche item senza URL nel catalogo (verranno comunque arricchiti via API)")
-    p.add_argument("--only-with-title", action="store_true", default=False,
-                   help="Salta item senza title nel catalogo (tipicamente righe non-sample senza metadati)")
-    p.add_argument("--skip-red-sources", action="store_true", default=False,
-                   help="Skip item da fonti con status RED in radar_summary.json (evita timeout su fonti down)")
-    p.add_argument("--no-sdmx-years", action="store_true", default=False,
-                   help="Skip SDMX year fetch (riduce timeout risk su CI)")
+    p.add_argument(
+        "--max-age-days",
+        type=int,
+        default=None,
+        help="Non ri-controllare item con check_timestamp più recente di N giorni. Default: None (nessun skip — tutti gli item vengono controllati)",
+    )
+    p.add_argument(
+        "--max-items",
+        type=int,
+        default=500,
+        help="Target massimo di item da processare per run. Prioritize: items senza format + sample random. Default: 500",
+    )
+    p.add_argument(
+        "--include-no-url",
+        dest="only_with_url",
+        action="store_false",
+        default=True,
+        help="Includi anche item senza URL nel catalogo (verranno comunque arricchiti via API)",
+    )
+    p.add_argument(
+        "--only-with-title",
+        action="store_true",
+        default=False,
+        help="Salta item senza title nel catalogo (tipicamente righe non-sample senza metadati)",
+    )
+    p.add_argument(
+        "--skip-red-sources",
+        action="store_true",
+        default=False,
+        help="Skip item da fonti con status RED in radar_summary.json (evita timeout su fonti down)",
+    )
+    p.add_argument(
+        "--no-sdmx-years",
+        action="store_true",
+        default=False,
+        help="Skip SDMX year fetch (riduce timeout risk su CI)",
+    )
     p.add_argument(
         "--circuit-fail-threshold",
         type=int,
@@ -738,7 +797,9 @@ def main() -> None:
     if args.only_with_url:
         # SDMX items non hanno landing_page/distribution_url (accedono via API REST),
         # ma hanno api_base_url + item_name per l'enrichment.
-        has_url = df["landing_page"].notna() | df["distribution_url"].notna() | (df["protocol"] == "sdmx")
+        has_url = (
+            df["landing_page"].notna() | df["distribution_url"].notna() | (df["protocol"] == "sdmx")
+        )
         df = df[has_url]
         logger.info("  URL present in catalog filter: %d items", len(df))
 
@@ -753,18 +814,25 @@ def main() -> None:
         radar_summary_path = RADAR_SUMMARY_PATH
         if radar_summary_path.exists():
             import json
+
             try:
                 with radar_summary_path.open() as f:
                     radar = json.load(f)
-                red_source_ids = [s["id"] for s in radar.get("sources", []) if s.get("status") == "RED"]
+                red_source_ids = [
+                    s["id"] for s in radar.get("sources", []) if s.get("status") == "RED"
+                ]
                 if red_source_ids:
                     skipped = df["source_id"].isin(red_source_ids).sum()
                     df = df[~df["source_id"].isin(red_source_ids)]
-                    logger.info("  skip RED sources (radar): %s — %d items rimossi", red_source_ids, skipped)
+                    logger.info(
+                        "  skip RED sources (radar): %s — %d items rimossi", red_source_ids, skipped
+                    )
             except Exception as exc:
                 logger.warning("  skip-red-sources: could not read radar_summary: %s", exc)
         else:
-            logger.warning("  skip-red-sources: radar_summary.json not found at %s", radar_summary_path)
+            logger.warning(
+                "  skip-red-sources: radar_summary.json not found at %s", radar_summary_path
+            )
 
     if args.limit:
         df = df.head(args.limit)
@@ -779,7 +847,9 @@ def main() -> None:
     # l'intera fonte senza processarla. Meglio un warning che un skip silenzioso
     # per fonti che potrebbero essere temporaneamente down ma ancora utili.
     if "source_status" in df.columns and not df.empty:
-        stale_sources = df.groupby("source_id")["source_status"].apply(lambda s: all(v == "stale" for v in s))
+        stale_sources = df.groupby("source_id")["source_status"].apply(
+            lambda s: all(v == "stale" for v in s)
+        )
         stale_source_ids = stale_sources[stale_sources].index.tolist()
         if stale_source_ids:
             # logga ma non saltare — skip completo è troppo aggressivo per fonti
@@ -803,7 +873,9 @@ def main() -> None:
         df = df.copy()
         df["_fmt_pref"] = df["format"].map(lambda f: FORMAT_PREF.get(str(f).strip().upper(), 99))
         df = df.sort_values(["source_id", "_fmt_pref"])
-        df = df.drop_duplicates(subset=["source_id", "item_id"], keep="first").drop(columns=["_fmt_pref"])
+        df = df.drop_duplicates(subset=["source_id", "item_id"], keep="first").drop(
+            columns=["_fmt_pref"]
+        )
         logger.info("  dedup (source_id, item_id): %d items", len(df))
 
     if df.empty:
@@ -834,8 +906,12 @@ def main() -> None:
             has_format_sample = has_format
 
         df = pd.concat([no_format_sample, has_format_sample]).reset_index(drop=True)
-        logger.info("  smart sampling to %d items (no_format=%d, has_format=%d)",
-                    len(df), len(no_format_sample), len(has_format_sample))
+        logger.info(
+            "  smart sampling to %d items (no_format=%d, has_format=%d)",
+            len(df),
+            len(no_format_sample),
+            len(has_format_sample),
+        )
 
     # ── Logica incrementale ──────────────────────────────────────────────────────
     existing = None
@@ -869,18 +945,17 @@ def main() -> None:
                 existing_for_merge["item_id"] = existing_for_merge["item_id"].astype(str)
 
                 # Merge su item_id
-                merge_df = pd.merge(
-                    df_modified,
-                    existing_for_merge,
-                    on="item_id",
-                    how="inner"
-                )
+                merge_df = pd.merge(df_modified, existing_for_merge, on="item_id", how="inner")
 
                 # Parsa modified come datetime
-                merge_df["modified"] = pd.to_datetime(merge_df["modified"], utc=True, errors="coerce")
+                merge_df["modified"] = pd.to_datetime(
+                    merge_df["modified"], utc=True, errors="coerce"
+                )
 
                 # Filtra item dove modified > check_timestamp (e modified non è null)
-                updated_mask = (merge_df["modified"].notna()) & (merge_df["modified"] > merge_df["check_timestamp"])
+                updated_mask = (merge_df["modified"].notna()) & (
+                    merge_df["modified"] > merge_df["check_timestamp"]
+                )
                 updated_ids = set(merge_df[updated_mask]["item_id"].unique())
 
                 # Rimuovi questi item da recent_ids (vanno ri-controllati)
@@ -894,7 +969,9 @@ def main() -> None:
             skipped = len(df) - len(df_to_check)
 
             if skipped > 0:
-                logger.info("  Skipped %d items checked in last %d days", skipped, args.max_age_days)
+                logger.info(
+                    "  Skipped %d items checked in last %d days", skipped, args.max_age_days
+                )
             logger.info("  %d items to check", len(df_to_check))
             df = df_to_check
         elif "item_id" not in existing.columns:
@@ -915,14 +992,20 @@ def main() -> None:
     # ── Upsert ───────────────────────────────────────────────────────────────────
     if existing is not None and not existing.empty and "item_id" in existing.columns:
         # Tieni solo i risultati da existing che non sono stati ri-controllati
-        existing_to_keep = existing[~existing["item_id"].astype(str).isin(results["item_id"].astype(str))]
+        existing_to_keep = existing[
+            ~existing["item_id"].astype(str).isin(results["item_id"].astype(str))
+        ]
 
         # Concatena nuovi risultati con quelli vecchi (non ri-controllati)
         results = pd.concat([results, existing_to_keep], ignore_index=True)
 
         # Deduplica su item_id tenendo la riga con check_timestamp più recente
         results["check_timestamp"] = pd.to_datetime(results["check_timestamp"], utc=True)
-        results = results.sort_values("check_timestamp", ascending=False).drop_duplicates(subset=["source_id", "item_id"], keep="first").reset_index(drop=True)
+        results = (
+            results.sort_values("check_timestamp", ascending=False)
+            .drop_duplicates(subset=["source_id", "item_id"], keep="first")
+            .reset_index(drop=True)
+        )
         logger.info("  Unified %d results (new + previous not re-checked)", len(results))
 
     # ── Dataset group columns ───────────────────────────────────────────────────
@@ -930,8 +1013,11 @@ def main() -> None:
     # Aggiunge dataset_group, dataset_group_size, dataset_group_year_min/max.
     results = add_dataset_group_columns(results)
     ngroups = results["dataset_group"].nunique()
-    logger.info("  Dataset groups: %d unique groups (%.1f items/group average)",
-                ngroups, len(results) / max(ngroups, 1))
+    logger.info(
+        "  Dataset groups: %d unique groups (%.1f items/group average)",
+        ngroups,
+        len(results) / max(ngroups, 1),
+    )
 
     enrich_counts = results["enrich_method"].value_counts()
     reachable_n = results["reachable"].sum() if "reachable" in results.columns else 0
@@ -943,8 +1029,12 @@ def main() -> None:
     if "intake_score" in results.columns:
         candidates = results["intake_candidate"].sum()
         avg_score = results["intake_score"].mean()
-        logger.info("Intake candidates: %d/%d (avg score: %.0f)", candidates, len(results), avg_score)
-        top = results[results["intake_candidate"].fillna(False)].nlargest(5, "intake_score")[["title","granularity","year_min","year_max","intake_score"]]
+        logger.info(
+            "Intake candidates: %d/%d (avg score: %.0f)", candidates, len(results), avg_score
+        )
+        top = results[results["intake_candidate"].fillna(False)].nlargest(5, "intake_score")[
+            ["title", "granularity", "year_min", "year_max", "intake_score"]
+        ]
         if not top.empty:
             logger.info("Top candidates:\n%s", top.to_string(index=False))
 

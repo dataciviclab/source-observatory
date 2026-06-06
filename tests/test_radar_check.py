@@ -1,4 +1,5 @@
 """Test per radar_check.py."""
+
 from __future__ import annotations
 
 import json
@@ -39,8 +40,11 @@ class TestClassify:
 
 class TestValidateCkan:
     def test_validate_ckan_action_response_ok(self) -> None:
-        response = fake_response(200, json_data={"success": True, "result": []},
-                                 headers={"content-type": "application/json"})
+        response = fake_response(
+            200,
+            json_data={"success": True, "result": []},
+            headers={"content-type": "application/json"},
+        )
         status, note = radar_check.validate_ckan_action_response(
             "https://example.test/api/3/action/package_list", response
         )
@@ -48,8 +52,9 @@ class TestValidateCkan:
         assert note is None
 
     def test_validate_ckan_action_response_missing_success(self) -> None:
-        response = fake_response(200, json_data={"result": []},
-                                 headers={"content-type": "application/json"})
+        response = fake_response(
+            200, json_data={"result": []}, headers={"content-type": "application/json"}
+        )
         status, note = radar_check.validate_ckan_action_response(
             "https://example.test/api/3/action/package_list", response
         )
@@ -74,8 +79,11 @@ class TestProbe:
         """Primary request succeeds — ssl_fallback_used=None."""
         fake = FakeHttpClient()
         fake.responses["https://demo.test/api/3/action/package_list"] = HttpResult(
-            response=fake_response(200, json_data={"success": True, "result": []},
-                                   headers={"content-type": "application/json"}),
+            response=fake_response(
+                200,
+                json_data={"success": True, "result": []},
+                headers={"content-type": "application/json"},
+            ),
             err=None,
             ssl_fallback_used=None,
         )
@@ -119,8 +127,9 @@ class TestProbe:
         """SSL error first, fallback succeeds — ssl_fallback_used=True."""
         fake = FakeHttpClient()
         fake.responses["https://ssl-broken.test/api/3/action"] = HttpResult(
-            response=fake_response(200, json_data={"success": True},
-                                   headers={"content-type": "application/json"}),
+            response=fake_response(
+                200, json_data={"success": True}, headers={"content-type": "application/json"}
+            ),
             err=None,
             ssl_fallback_used=True,
         )
@@ -137,9 +146,7 @@ class TestProbe:
         import requests as real_requests
 
         ssl_exc = real_requests.exceptions.SSLError("SSL cert verify failed")
-        fallback_exc = real_requests.exceptions.ConnectionError(
-            "Connection refused after fallback"
-        )
+        fallback_exc = real_requests.exceptions.ConnectionError("Connection refused after fallback")
         fake = FakeHttpClient()
         fake.responses["https://ssl-broken.test/api/3/action"] = HttpResult(
             response=None,
@@ -210,9 +217,7 @@ class TestBuildReport:
             "demo_ckan": radar_check.ProbeResult(
                 status="GREEN", http_code="200", content_type="application/json"
             ),
-            "istat_sdmx": radar_check.ProbeResult(
-                status="YELLOW", http_code="-", note="Timeout"
-            ),
+            "istat_sdmx": radar_check.ProbeResult(status="YELLOW", http_code="-", note="Timeout"),
         }
         summary, sources_list = radar_check.build_radar_summary(registry, results, "2026-04-18")
         schema = _load_schema("radar_summary.schema.json")

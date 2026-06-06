@@ -39,7 +39,7 @@ def _extract_page_meta(html: str) -> dict[str, str]:
     """Estrae title e description da HTML."""
     meta: dict[str, str] = {}
 
-    m = re.search(r'<title[^>]*>([^<]+)</title>', html, re.IGNORECASE)
+    m = re.search(r"<title[^>]*>([^<]+)</title>", html, re.IGNORECASE)
     if m:
         raw = m.group(1).strip()
         if raw.startswith("Open Data - "):
@@ -48,7 +48,8 @@ def _extract_page_meta(html: str) -> dict[str, str]:
 
     desc = re.search(
         r'<meta\s+name=["\']description["\']\s+content=["\']([^"\']+)["\']',
-        html, re.IGNORECASE,
+        html,
+        re.IGNORECASE,
     )
     if desc:
         meta["description"] = desc.group(1).strip()[:200]
@@ -251,7 +252,11 @@ def _compute_summary(
             series[prefix]["years"].add(y)
 
     series_serializable = {
-        prefix: {"years": sorted(list(info["years"])), "count": info["count"], "sample": info["sample"]}
+        prefix: {
+            "years": sorted(list(info["years"])),
+            "count": info["count"],
+            "sample": info["sample"],
+        }
         for prefix, info in series.items()
     }
 
@@ -306,11 +311,15 @@ def _scan_sitemap(
     if sitemap_err or sitemap_urls is None:
         return {"error": f"sitemap failed: {sitemap_err}"}, []
 
-    dataset_signals = ("/it/dataset/", "/dataset/", "/dati/", "/open-data/", "/opendata/", "/catalogo/")
-    dataset_page_urls = [
-        u for u in sitemap_urls
-        if any(s in u.lower() for s in dataset_signals)
-    ]
+    dataset_signals = (
+        "/it/dataset/",
+        "/dataset/",
+        "/dati/",
+        "/open-data/",
+        "/opendata/",
+        "/catalogo/",
+    )
+    dataset_page_urls = [u for u in sitemap_urls if any(s in u.lower() for s in dataset_signals)]
 
     if not dataset_page_urls:
         return {"error": "no dataset pages found in sitemap"}, []
@@ -357,10 +366,21 @@ def _scan_sitemap(
             deduped_links.append(link)
     all_data_links = deduped_links
 
-    rows = [_build_row(link, source_id, base_url, topic_hint, page_meta=page_meta, data_page_url=link.get("_page_url")) for link in all_data_links]
+    rows = [
+        _build_row(
+            link,
+            source_id,
+            base_url,
+            topic_hint,
+            page_meta=page_meta,
+            data_page_url=link.get("_page_url"),
+        )
+        for link in all_data_links
+    ]
 
     summary = _compute_summary(
-        all_data_links, topic_hint,
+        all_data_links,
+        topic_hint,
         method="csv_magnet_sitemap_sample",
         total_pages=total_pages,
         pages_probed=pages_probed,
@@ -448,9 +468,12 @@ def _scan_area_pages(
 
     rows = [_build_row(link, source_id, base_url, topic_hint) for link in all_data_links]
 
-    method = "csv_magnet_area_pages_paginated" if page_url_template else "csv_magnet_area_pages_direct"
+    method = (
+        "csv_magnet_area_pages_paginated" if page_url_template else "csv_magnet_area_pages_direct"
+    )
     summary = _compute_summary(
-        all_data_links, topic_hint,
+        all_data_links,
+        topic_hint,
         method=method,
         area_pages_scanned=area_pages_scanned,
     )
@@ -532,7 +555,9 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
 
     # Content-Type probe (opt-in): arricchisce formato per URL ambigui
     if probe_ct and not summary.get("error"):
-        _probe_targets = [r for r in rows if r.get("url") and r.get("format") in ("?", "ZIP", "BIN")]
+        _probe_targets = [
+            r for r in rows if r.get("url") and r.get("format") in ("?", "ZIP", "BIN")
+        ]
         for row in _probe_targets[:20]:  # max 20 probe per run
             try:
                 _info = probe_url_headers(row["url"], timeout=5)
@@ -547,17 +572,24 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 row["format"] = ct_fmt
         # Ricalcola by_format dopo i probe (summary era stato calcolato pre-probe)
         from collections import Counter
+
         summary["by_format"] = dict(Counter(r.get("format", "?") for r in rows))
 
     if "error" in summary:
         return CollectorResult(
             rows=[],
-            summary={"type": "csv_magnet_error", "message": summary["error"], "source_id": source_id},
+            summary={
+                "type": "csv_magnet_error",
+                "message": summary["error"],
+                "source_id": source_id,
+            },
         )
 
     summary["type"] = "csv_magnet"
     summary["source_id"] = source_id
     if probe_ct:
-        summary["content_type_probes"] = min(len([r for r in rows if r.get("format") not in ("?", )]), 20)
+        summary["content_type_probes"] = min(
+            len([r for r in rows if r.get("format") not in ("?",)]), 20
+        )
 
     return CollectorResult(rows=rows, summary=summary)

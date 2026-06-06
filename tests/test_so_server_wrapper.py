@@ -1,4 +1,5 @@
 """Smoke test: verify so_server.py registers 13 MCP tools via create_mcp_server."""
+
 from __future__ import annotations
 
 import asyncio
@@ -12,21 +13,23 @@ def test_mcp_server_registers_13_tools() -> None:
     tools = asyncio.run(so_server.mcp.list_tools())
     tool_names = sorted(t.name for t in tools)
 
-    expected = sorted([
-        "so_catalog_inventory_search",
-        "so_catalog_signals",
-        "so_discover_sdmx",
-        "so_find_by_url",
-        "so_inventory_diff",
-        "so_inventory_query",
-        "so_inventory_status",
-        "so_list_source_items",
-        "so_radar_history",
-        "so_radar_status_md",
-        "so_radar_summary",
-        "so_recommend_sources",
-        "so_registry_query",
-    ])
+    expected = sorted(
+        [
+            "so_catalog_inventory_search",
+            "so_catalog_signals",
+            "so_discover_sdmx",
+            "so_find_by_url",
+            "so_inventory_diff",
+            "so_inventory_query",
+            "so_inventory_status",
+            "so_list_source_items",
+            "so_radar_history",
+            "so_radar_status_md",
+            "so_radar_summary",
+            "so_recommend_sources",
+            "so_registry_query",
+        ]
+    )
 
     assert tool_names == expected, f"Expected {expected}, got {tool_names}"
 
@@ -68,4 +71,6 @@ def test_guard_timed_returns_dict_result() -> None:
 
     result = guard_timed(working, "working_tool", logger_name="test-server")
     assert result == {"result_key": 42, "nested": {"a": 1}}
+
+
 pytestmark = pytest.mark.smoke

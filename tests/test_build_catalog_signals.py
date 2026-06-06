@@ -1,4 +1,5 @@
 """Tests for build_catalog_signals.py."""
+
 import json
 from pathlib import Path
 
@@ -34,6 +35,7 @@ def _non_inv(protocol: str = "ckan") -> dict:
 
 # --- stabile ---
 
+
 def test_stable_no_previous():
     sig = _classify("src", _ok(), None)
     assert sig["signal_type"] == "no signal"
@@ -47,6 +49,7 @@ def test_stable_same_rows():
 
 
 # --- inventory change ---
+
 
 def test_inventory_change_detected():
     sig = _classify("src", _ok(rows=150), _ok(rows=100))
@@ -62,6 +65,7 @@ def test_inventory_change_negative_delta():
 
 
 # --- method mismatch → missing_data ---
+
 
 def test_method_mismatch_emits_missing_data():
     current = _ok(rows=200, method="package_list")
@@ -89,6 +93,7 @@ def test_no_mismatch_when_prev_method_missing():
 
 # --- health delegated to radar ---
 
+
 def test_error_delegated_to_radar_summary():
     sig = _classify("src", _error("connection refused"), _ok())
     assert sig["signal_type"] == "no signal"
@@ -112,6 +117,7 @@ def test_recovery_is_not_reported_as_catalog_signal():
 
 # --- non_inventariabile ---
 
+
 def test_non_inventariabile_stable_if_never_ok():
     sig = _classify("src", _non_inv(), None)
     assert sig["result"] == "stabile"
@@ -125,6 +131,7 @@ def test_non_inventariabile_regression_if_was_ok():
 
 
 # --- html / csv_magnet ---
+
 
 def _html_csv_magnet(total: int) -> dict:
     return {
@@ -182,6 +189,7 @@ def test_html_no_summary_skipped():
 
 # --- build_signals integration ---
 
+
 def test_build_signals_structure():
     report = _report(("istat", _ok(rows=4212, method="dataflow_count", protocol="sdmx")))
     out = build_signals(report, None)
@@ -207,10 +215,22 @@ def test_build_signals_suppresses_health_regressions():
 
 # --- build_watch_report ---
 
+
 def test_watch_report_no_signals():
-    signals = {"captured_at": "2026-04-20", "sources_checked": 3, "signals": [
-        {"source": "istat", "protocol": "sdmx", "signal_type": "no signal", "result": "stabile", "detail": "ok", "suggested_action": "nessuna"},
-    ]}
+    signals = {
+        "captured_at": "2026-04-20",
+        "sources_checked": 3,
+        "signals": [
+            {
+                "source": "istat",
+                "protocol": "sdmx",
+                "signal_type": "no signal",
+                "result": "stabile",
+                "detail": "ok",
+                "suggested_action": "nessuna",
+            },
+        ],
+    }
     report = build_watch_report(signals)
     assert "Catalog Watch Report" in report
     assert "Nessun segnale" in report
@@ -218,11 +238,29 @@ def test_watch_report_no_signals():
 
 
 def test_watch_report_with_inventory_change():
-    signals = {"captured_at": "2026-04-20", "sources_checked": 2, "signals": [
-        {"source": "inps", "protocol": "ckan", "signal_type": "inventory change", "result": "inventory change",
-         "detail": "delta +12", "suggested_action": "verificare", "metric_value": 2335},
-        {"source": "istat", "protocol": "sdmx", "signal_type": "no signal", "result": "stabile", "detail": "ok", "suggested_action": "nessuna"},
-    ]}
+    signals = {
+        "captured_at": "2026-04-20",
+        "sources_checked": 2,
+        "signals": [
+            {
+                "source": "inps",
+                "protocol": "ckan",
+                "signal_type": "inventory change",
+                "result": "inventory change",
+                "detail": "delta +12",
+                "suggested_action": "verificare",
+                "metric_value": 2335,
+            },
+            {
+                "source": "istat",
+                "protocol": "sdmx",
+                "signal_type": "no signal",
+                "result": "stabile",
+                "detail": "ok",
+                "suggested_action": "nessuna",
+            },
+        ],
+    }
     report = build_watch_report(signals)
     assert "inps" in report
     assert "inventory change" in report
@@ -260,4 +298,6 @@ def test_csv_magnet_signal_schema() -> None:
     }
     schema = _load_schema("catalog_signals.schema.json")
     jsonschema.validate(instance=payload, schema=schema)
+
+
 pytestmark = pytest.mark.contract

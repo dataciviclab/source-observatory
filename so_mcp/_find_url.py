@@ -26,13 +26,16 @@ def find_by_url(url: str) -> dict[str, Any]:
             parquet_path = str(resolved_path)
             with safe_connect() as con:
                 cols = _artifact._table_columns(con, parquet_path)
-                url_cols = [c for c in cols if c in ("url", "url_checked", "distribution_url", "landing_page", "source_url")]
+                url_cols = [
+                    c
+                    for c in cols
+                    if c in ("url", "url_checked", "distribution_url", "landing_page", "source_url")
+                ]
                 if not url_cols:
                     results["source_check_error"] = "No URL columns found in parquet"
                 else:
                     where = " OR ".join(
-                        f"lower(coalesce(cast({c} as varchar), '')) LIKE ?"
-                        for c in url_cols
+                        f"lower(coalesce(cast({c} as varchar), '')) LIKE ?" for c in url_cols
                     )
                     like = f"%{clean_url.lower()}%"
                     sql = f'SELECT * FROM "{parquet_path}" WHERE {where} LIMIT 10'
@@ -49,16 +52,26 @@ def find_by_url(url: str) -> dict[str, Any]:
             with safe_connect() as con:
                 cols = _artifact._table_columns(con, parquet_path)
                 search_cols = [
-                    c for c in cols
-                    if c in ("url", "url_checked", "distribution_url", "landing_page",
-                             "source_url", "item_name", "item_id", "title", "notes_excerpt")
+                    c
+                    for c in cols
+                    if c
+                    in (
+                        "url",
+                        "url_checked",
+                        "distribution_url",
+                        "landing_page",
+                        "source_url",
+                        "item_name",
+                        "item_id",
+                        "title",
+                        "notes_excerpt",
+                    )
                 ]
                 if not search_cols:
                     results["catalog_inventory_error"] = "No searchable columns found in parquet"
                 else:
                     where = " OR ".join(
-                        f"lower(coalesce(cast({c} as varchar), '')) LIKE ?"
-                        for c in search_cols
+                        f"lower(coalesce(cast({c} as varchar), '')) LIKE ?" for c in search_cols
                     )
                     like = f"%{clean_url.lower()}%"
                     sql = f'SELECT * FROM "{parquet_path}" WHERE {where} LIMIT 10'

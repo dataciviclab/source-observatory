@@ -76,7 +76,9 @@ _SOURCE_STARTED: dict[str, float] = {}
 
 def _collect_source(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
-) -> tuple[str, list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]:
+) -> tuple[
+    str, list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None
+]:
     """Worker per ThreadPoolExecutor: raccoglie una fonte e cattura eccezioni.
 
     NON usa threading.Thread annidato — dispatch() ha già timeout HTTP
@@ -95,6 +97,7 @@ def _collect_source(
         return source_id, res.rows, res.warning, res.summary, None
     except Exception as exc:
         return source_id, [], None, None, exc
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -194,13 +197,19 @@ def main() -> None:
                     inventoriable = [(sid, cfg) for sid, cfg in inventoriable if sid not in red_ids]
                     skipped = before - len(inventoriable)
                     if skipped:
-                        print(f"  skip RED sources (radar): {red_ids} — {skipped} fonti saltate", file=sys.stderr)
+                        print(
+                            f"  skip RED sources (radar): {red_ids} — {skipped} fonti saltate",
+                            file=sys.stderr,
+                        )
             except Exception as exc:
                 print(f"  skip-red-sources: cannot read radar_summary: {exc}", file=sys.stderr)
         else:
             print("  skip-red-sources: radar_summary.json not found", file=sys.stderr)
 
-    collected: dict[str, tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None]] = {}
+    collected: dict[
+        str,
+        tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None],
+    ] = {}
     source_timing: dict[str, float] = {}
 
     # Timeout per-fonte: leggibile dal blocco inventory.timeout nel registry,
@@ -219,12 +228,14 @@ def main() -> None:
             f = executor.submit(_collect_source, source_id, source_cfg, captured_at)
             future_to_id[f] = source_id
             submit_times[source_id] = time.time()
+
             # Timing per-fonte: registra quando il future completa,
             # non quando wait() ritorna (che e' il tempo del piu' lento).
             # NOTA: chiudere _sid nel default del lambda per evitare
             # il bug classico di chiusura su variabile di loop.
             def _record_timing(_f: object, _sid: str = source_id) -> None:
                 source_timing.setdefault(_sid, time.time() - submit_times[_sid])
+
             f.add_done_callback(_record_timing)
 
         # wait() con heartbeat ogni 30s. Il timeout per-fonte è imposto
@@ -240,9 +251,7 @@ def main() -> None:
             if remaining <= 0:
                 break
 
-            batch_done, pending = wait(
-                pending, timeout=min(_HEARTBEAT_INTERVAL, remaining)
-            )
+            batch_done, pending = wait(pending, timeout=min(_HEARTBEAT_INTERVAL, remaining))
 
             # Process completed futures from this batch
             now = time.time()
@@ -272,12 +281,17 @@ def main() -> None:
                     f.cancel()
                     if sid not in source_timing:
                         source_timing[sid] = now - submit_times[sid]
-                    collected[sid] = ([], None, None,
-                        TimeoutError(f"Source {sid} timed out after {to}s"))
+                    collected[sid] = (
+                        [],
+                        None,
+                        None,
+                        TimeoutError(f"Source {sid} timed out after {to}s"),
+                    )
                     print(
                         f"  [timeout] {sid} — {(now - submit_times[sid]):.0f}s"
                         f" exceeded {to}s limit",
-                        file=sys.stderr, flush=True,
+                        file=sys.stderr,
+                        flush=True,
                     )
 
             # Heartbeat
@@ -287,7 +301,8 @@ def main() -> None:
                     f"  [heartbeat] {len(collected)}/{len(inventoriable)} sources done"
                     f" in {elapsed:.0f}s — still waiting:"
                     f" {[f'{future_to_id[f]}({now - submit_times[future_to_id[f]]:.0f}s)' for f in pending]}",
-                    file=sys.stderr, flush=True,
+                    file=sys.stderr,
+                    flush=True,
                 )
 
         # Batch timeout: sources that still haven't completed
@@ -300,9 +315,15 @@ def main() -> None:
             if sid not in collected:
                 logger.warning(
                     "Source %s non completato entro %ds (batch timeout), treat as failed",
-                    sid, _BATCH_TIMEOUT,
+                    sid,
+                    _BATCH_TIMEOUT,
                 )
-                collected[sid] = ([], None, None, TimeoutError(f"Batch timeout after {_BATCH_TIMEOUT}s"))
+                collected[sid] = (
+                    [],
+                    None,
+                    None,
+                    TimeoutError(f"Batch timeout after {_BATCH_TIMEOUT}s"),
+                )
     finally:
         # shutdown(wait=False) non aspetta task bloccati — il timeout HTTP
         # (5s) li terminerà prima o poi, ma non blocca il workflow.
@@ -342,7 +363,9 @@ def main() -> None:
                 if not stale_rows.empty:
                     stale_rows["source_status"] = "stale"
                     stale_rows["stale_reason"] = stale_reason_from_exception(err)
-                    all_rows.extend(cast(list[dict[str, Any]], stale_rows.to_dict(orient="records")))
+                    all_rows.extend(
+                        cast(list[dict[str, Any]], stale_rows.to_dict(orient="records"))
+                    )
             continue
 
         # Source succeeded: add rows with active status
@@ -389,13 +412,17 @@ def main() -> None:
         _status_order = {"active": 0, "stale": 1, "unknown": 2}
         df["_status_ord"] = df["source_status"].map(lambda s: _status_order.get(str(s), 2))
         df = df.sort_values(["_status_ord", "last_successful_fetch"], ascending=[True, False])
-        df = df.drop_duplicates(subset=["source_id", "item_id"], keep="first").drop(columns=["_status_ord"])
+        df = df.drop_duplicates(subset=["source_id", "item_id"], keep="first").drop(
+            columns=["_status_ord"]
+        )
         df = df.reset_index(drop=True)
         logger.info("  dedup (source_id, item_id): %d items", len(df))
 
     # After merge, if still no rows → nothing worked
     if df.empty:
-        raise RuntimeError("No catalog inventory rows collected (no sources succeeded and no preserved rows).")
+        raise RuntimeError(
+            "No catalog inventory rows collected (no sources succeeded and no preserved rows)."
+        )
 
     # merge report: mantieni le entry precedenti per le fonti non ri-buildate in questo run
     # (le rows sono già preservate nel DataFrame; il report JSON tiene traccia storica)

@@ -4,6 +4,7 @@ Analyze fase per bulk source-check.
 Funzioni di analisi pura (nessuna dipendenza HTTP o I/O).
 Le inferenze pure (anni, granularità) ora vengono da toolkit.scout.infer.
 """
+
 from __future__ import annotations
 
 import re
@@ -38,48 +39,51 @@ def _normalize_title_for_grouping(title: str) -> str:
 
     # 0. Normalize underscore before 4-digit year sequences (so that regexes
     #    expecting \s* before years also match "_2022" or "_2010_al_2025").
-    t = re.sub(r'_(\d{4})', r' \1', t)
-    t = re.sub(r'(\d{4})_', r'\1 ', t)
+    t = re.sub(r"_(\d{4})", r" \1", t)
+    t = re.sub(r"(\d{4})_", r"\1 ", t)
 
     # 1. Parenthetical years: "(2022)", "(anni 2020-2025)"
-    t = re.sub(r'\s*\(\s*(?:anni?\s*)?\d{4}\s*[-–]?\s*\d{0,4}\s*\)\s*$', '', t)
+    t = re.sub(r"\s*\(\s*(?:anni?\s*)?\d{4}\s*[-–]?\s*\d{0,4}\s*\)\s*$", "", t)
 
     # 2. Date-like patterns at end: "24.02.2022", "_24.02.2022", "30-10-2025" (FULL dates, before year stripping)
-    t = re.sub(r'[\s_]*\d{1,2}[-./]\d{1,2}[-./]\d{4}\s*$', '', t)
+    t = re.sub(r"[\s_]*\d{1,2}[-./]\d{1,2}[-./]\d{4}\s*$", "", t)
 
     # 3. Years with descriptive text: "Years 2020-2025", "dal 2010 al 2025", "anni 2020-2025"
     #    Must be before bare year ranges to catch text prefix.
     #    Underscore before the prefix (e.g. "_dal_2010_al_2025") is also a separator.
     t = re.sub(
-        r'[\s_][-–,;]?\s*(?:years|year|anni|anno|periodo|serie\s*storica|dal)\s+'
-        r'[-–]?\s*\d{4}\s*[-–toal]*\s*\d{0,4}\s*$',
-        '', t,
+        r"[\s_][-–,;]?\s*(?:years|year|anni|anno|periodo|serie\s*storica|dal)\s+"
+        r"[-–]?\s*\d{4}\s*[-–toal]*\s*\d{0,4}\s*$",
+        "",
+        t,
     )
 
     # 4. Trailing year range with comma or dash: "2011, 2015", "2022-2023", "2024-2050"
-    t = re.sub(r'\s*[-–,;]?\s*\d{4}\s*[-–,;\s]\s*\d{4}\s*$', '', t)
+    t = re.sub(r"\s*[-–,;]?\s*\d{4}\s*[-–,;\s]\s*\d{4}\s*$", "", t)
 
     # 5. Trailing _YYYY suffix (common in INPS/MEF items): "cla_2017", "redditi_2023"
-    t = re.sub(r'_\d{4}\s*$', '', t)
+    t = re.sub(r"_\d{4}\s*$", "", t)
 
     # 6. Standalone trailing year: "2022"
-    t = re.sub(r'\s*[-–,;]?\s*\d{4}\s*$', '', t)
+    t = re.sub(r"\s*[-–,;]?\s*\d{4}\s*$", "", t)
 
     # 7. Leading year patterns: "2023 Redditi fisco", "2009 trasparenza"
-    t = re.sub(r'^\d{4}\s*[-–]?\s*\d{0,4}[\s,;]+\s*', '', t)
+    t = re.sub(r"^\d{4}\s*[-–]?\s*\d{0,4}[\s,;]+\s*", "", t)
 
     # 7b. Clean trailing hyphens, underscores, or space-digit leftovers
     #     (e.g. "-2021" after "_24.02.2022" was stripped)
-    t = re.sub(r'[-–_]+\s*\d*\s*$', '', t)
+    t = re.sub(r"[-–_]+\s*\d*\s*$", "", t)
 
     # 8. Trailing format indicators: " - csv", "_rdf", ".xml"
-    t = re.sub(r'\s*[-–_]\s*(?:csv|xls|xlsx|json|zip|parquet|rdf|xml)\s*$', '', t, flags=re.IGNORECASE)
-    t = re.sub(r'\.(?:csv|xls|xlsx|json|zip|parquet|rdf|xml)\s*$', '', t, flags=re.IGNORECASE)
+    t = re.sub(
+        r"\s*[-–_]\s*(?:csv|xls|xlsx|json|zip|parquet|rdf|xml)\s*$", "", t, flags=re.IGNORECASE
+    )
+    t = re.sub(r"\.(?:csv|xls|xlsx|json|zip|parquet|rdf|xml)\s*$", "", t, flags=re.IGNORECASE)
 
     # Collapse whitespace
-    t = re.sub(r'\s+', ' ', t).strip()
+    t = re.sub(r"\s+", " ", t).strip()
     # Strip trailing punctuation and separators
-    t = t.rstrip('.,;:-–_ ')
+    t = t.rstrip(".,;:-–_ ")
     return t
 
 
@@ -88,10 +92,10 @@ def _to_slug(text: str, max_len: int = 80) -> str:
     if not text:
         return "unknown"
     s = text.lower().strip()
-    s = re.sub(r'[^a-z0-9\s-]', '', s)
-    s = re.sub(r'\s+', '-', s)
-    s = re.sub(r'-+', '-', s)
-    return s.strip('-')[:max_len]
+    s = re.sub(r"[^a-z0-9\s-]", "", s)
+    s = re.sub(r"\s+", "-", s)
+    s = re.sub(r"-+", "-", s)
+    return s.strip("-")[:max_len]
 
 
 def compute_dataset_group(
@@ -123,7 +127,7 @@ def compute_dataset_group(
     if item_id:
         iid = str(item_id)
         if protocol == "sdmx":
-            core = re.sub(r'_\d+$', '', iid)
+            core = re.sub(r"_\d+$", "", iid)
             if len(core) > 5:
                 return f"{source_id}/sdmx/{_to_slug(core)}"[:120]
         # Strategy 3: plain item_id
@@ -159,11 +163,15 @@ def add_dataset_group_columns(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     # Group-wise aggregations
-    group_agg = df.groupby("dataset_group").agg(
-        dataset_group_size=("item_id", "count"),
-        dataset_group_year_min=("year_min", "min"),
-        dataset_group_year_max=("year_max", "max"),
-    ).reset_index()
+    group_agg = (
+        df.groupby("dataset_group")
+        .agg(
+            dataset_group_size=("item_id", "count"),
+            dataset_group_year_min=("year_min", "min"),
+            dataset_group_year_max=("year_max", "max"),
+        )
+        .reset_index()
+    )
 
     # Merge back
     df = df.merge(group_agg, on="dataset_group", how="left")
@@ -269,7 +277,14 @@ def _fallback_infer(row: pd.Series) -> tuple[str, Optional[int], Optional[int]]:
 # ── intake scoring ────────────────────────────────────────────────────────────
 
 
-_GRAN_SCORE = {"comune": 40, "provincia": 30, "regione": 20, "nazionale": 10, "europeo": 5, "non_determinato": 0}
+_GRAN_SCORE = {
+    "comune": 40,
+    "provincia": 30,
+    "regione": 20,
+    "nazionale": 10,
+    "europeo": 5,
+    "non_determinato": 0,
+}
 _FORMAT_SCORE = {"CSV": 20, "JSON": 20, "XLSX": 12, "XLS": 10, "XML": 8, "SDMX": 8, "PDF": 2}
 _YEAR_SPAN_MAX = 20
 
@@ -348,8 +363,13 @@ def _intake_score(
     # mapping_suggestions: JSON con colonne → dati ben strutturati
     if mapping_suggestions:
         import json as _json
+
         try:
-            ms = _json.loads(mapping_suggestions) if isinstance(mapping_suggestions, str) else mapping_suggestions
+            ms = (
+                _json.loads(mapping_suggestions)
+                if isinstance(mapping_suggestions, str)
+                else mapping_suggestions
+            )
             if isinstance(ms, dict) and len(ms) >= 2:
                 score += 5  # almeno 2 colonne con tipo inferito
             elif isinstance(ms, dict) and len(ms) >= 1:

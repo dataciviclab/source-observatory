@@ -5,6 +5,7 @@ possano importare i moduli senza boilerplate.
 
 Fornisce anche fixture condivise per mock HTTP e artifact locali.
 """
+
 from __future__ import annotations
 
 import sys

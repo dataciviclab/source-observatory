@@ -64,13 +64,21 @@ class TestResourceHelpers:
 
 class TestCkanApiHelpers:
     def test_ckan_api_base_standard(self):
-        assert _ckan_api_base("https://ckan.example.org/api/3/action/package_list") == "https://ckan.example.org/api/3/action"
+        assert (
+            _ckan_api_base("https://ckan.example.org/api/3/action/package_list")
+            == "https://ckan.example.org/api/3/action"
+        )
 
     def test_ckan_api_base_non_standard(self):
-        assert _ckan_api_base("https://ckan.example.org/odapi/package_list") == "https://ckan.example.org/odapi"
+        assert (
+            _ckan_api_base("https://ckan.example.org/odapi/package_list")
+            == "https://ckan.example.org/odapi"
+        )
 
     def test_ckan_action_endpoint_standard(self):
-        url = ckan_action_endpoint("https://ckan.example.org/api/3/action/package_list", "package_show")
+        url = ckan_action_endpoint(
+            "https://ckan.example.org/api/3/action/package_list", "package_show"
+        )
         assert url == "https://ckan.example.org/api/3/action/package_show"
 
     def test_ckan_action_endpoint_non_standard(self):
@@ -159,12 +167,11 @@ class TestExtractInventoryRow:
 
 class TestPackageShowSample:
     def _make_rows(self, n):
-        return [
-            {"item_id": f"pkg-{i}", "ordinal": i + 1} for i in range(n)
-        ]
+        return [{"item_id": f"pkg-{i}", "ordinal": i + 1} for i in range(n)]
 
     def test_package_show_sample_enriches_rows(self, monkeypatch):
         from collectors import ckan as ckan_module
+
         original = ckan_module.ckan_get_json
 
         def fake_ckan_get_json(url, **kw):
@@ -203,6 +210,7 @@ class TestPackageShowSample:
 
     def test_package_show_sample_partial_warning(self, monkeypatch):
         from collectors import ckan as ckan_module
+
         original = ckan_module.ckan_get_json
 
         def fake_ckan_get_json(url, **kw):
@@ -247,10 +255,13 @@ class TestPackageShowSample:
 
     def test_package_show_sample_empty_list(self, monkeypatch):
         from collectors import ckan as ckan_module
+
         original = ckan_module.ckan_get_json
 
         try:
-            monkeypatch.setattr(ckan_module, "ckan_get_json", lambda *a, **k: {"success": True, "result": {}})
+            monkeypatch.setattr(
+                ckan_module, "ckan_get_json", lambda *a, **k: {"success": True, "result": {}}
+            )
             enriched, warning = collect_ckan_inventory_via_package_show_sample(
                 source_id="test",
                 source_cfg={"source_kind": "ckan", "protocol": "CKAN", "base_url": "http://api"},
@@ -274,7 +285,8 @@ class TestCkanSearchParams:
     def test_with_fq(self):
         params = _ckan_search_params(
             {"inventory": {"fq": "organization:anac"}},
-            page_size=100, start=0,
+            page_size=100,
+            start=0,
         )
         assert params == {"rows": 100, "start": 0, "fq": "organization:anac"}
 
@@ -293,7 +305,8 @@ class TestCkanSearchParams:
         fq_val = 'organization:"ministero-delle-imprese-e-del-made-in-italy"'
         params = _ckan_search_params(
             {"inventory": {"fq": fq_val}},
-            page_size=100, start=0,
+            page_size=100,
+            start=0,
         )
         assert params["fq"] == fq_val
 
@@ -352,4 +365,6 @@ class TestSearchWithFqPropagation:
         assert "fq" not in captured_params, (
             f"fq non dovrebbe essere presente, ma c'è: {captured_params}"
         )
+
+
 pytestmark = pytest.mark.pure_unit

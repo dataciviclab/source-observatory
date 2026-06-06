@@ -59,23 +59,27 @@ def radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, Any
                 continue
             if sid not in sources_map:
                 sources_map[sid] = []
-            sources_map[sid].append({
-                "probe_date": probe.get("probe_date"),
-                "status": src.get("status"),
-                "http_code": src.get("http_code"),
-                "note": src.get("note"),
-            })
+            sources_map[sid].append(
+                {
+                    "probe_date": probe.get("probe_date"),
+                    "status": src.get("status"),
+                    "http_code": src.get("http_code"),
+                    "note": src.get("note"),
+                }
+            )
 
     results = []
     for sid, entries in sorted(sources_map.items()):
         entries.sort(key=lambda e: e.get("probe_date") or "", reverse=True)
         red_count = sum(1 for e in entries if e.get("status") == "RED")
-        results.append({
-            "source_id": sid,
-            "probes": entries,
-            "recent_red_count": red_count,
-            "current_status": entries[0].get("status") if entries else None,
-        })
+        results.append(
+            {
+                "source_id": sid,
+                "probes": entries,
+                "recent_red_count": red_count,
+                "current_status": entries[0].get("status") if entries else None,
+            }
+        )
 
     return {
         "artifact": _artifact._display_path(_artifact._RADAR_HISTORY_JSON),
@@ -103,6 +107,3 @@ def radar_status_md() -> dict[str, Any]:
         "age_hours": round(age_hours, 2),
         "content": content,
     }
-
-
-

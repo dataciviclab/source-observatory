@@ -112,35 +112,51 @@ class TestNormalizeFormat:
 class TestIntakeScore:
     def test_baseline(self):
         score, candidate = _intake_score(
-            granularity="regione", year_min=2010, year_max=2020,
-            reachable=True, resource_format="CSV",
-            enrich_method="ckan_package_show", needs_review=False,
+            granularity="regione",
+            year_min=2010,
+            year_max=2020,
+            reachable=True,
+            resource_format="CSV",
+            enrich_method="ckan_package_show",
+            needs_review=False,
         )
         assert score >= 50
         assert candidate is True
 
     def test_not_reachable(self):
         score, candidate = _intake_score(
-            granularity="non_determinato", year_min=None, year_max=None,
-            reachable=False, resource_format=None,
-            enrich_method="none", needs_review=True,
+            granularity="non_determinato",
+            year_min=None,
+            year_max=None,
+            reachable=False,
+            resource_format=None,
+            enrich_method="none",
+            needs_review=True,
         )
         assert score == 0
         assert candidate is False
 
     def test_single_year(self):
         score, candidate = _intake_score(
-            granularity="comune", year_min=2020, year_max=None,
-            reachable=True, resource_format="CSV",
-            enrich_method="none", needs_review=False,
+            granularity="comune",
+            year_min=2020,
+            year_max=None,
+            reachable=True,
+            resource_format="CSV",
+            enrich_method="none",
+            needs_review=False,
         )
         assert score > 0
 
     def test_stale_source(self):
         score, candidate = _intake_score(
-            granularity="regione", year_min=2010, year_max=2020,
-            reachable=True, resource_format="CSV",
-            enrich_method="ckan_package_show", needs_review=False,
+            granularity="regione",
+            year_min=2010,
+            year_max=2020,
+            reachable=True,
+            resource_format="CSV",
+            enrich_method="ckan_package_show",
+            needs_review=False,
             source_status="stale",
         )
         # stale sottrae 10 e forza needs_review=True → candidate=False
@@ -148,18 +164,26 @@ class TestIntakeScore:
 
     def test_robust_read(self):
         score, candidate = _intake_score(
-            granularity="regione", year_min=2010, year_max=2020,
-            reachable=True, resource_format="CSV",
-            enrich_method="ckan_package_show", needs_review=False,
+            granularity="regione",
+            year_min=2010,
+            year_max=2020,
+            reachable=True,
+            resource_format="CSV",
+            enrich_method="ckan_package_show",
+            needs_review=False,
             robust_read_suggested=True,
         )
         assert candidate is False  # needs_review forced
 
     def test_format_from_extension(self):
         score, candidate = _intake_score(
-            granularity="regione", year_min=2010, year_max=2020,
-            reachable=True, resource_format=".csv",
-            enrich_method="none", needs_review=False,
+            granularity="regione",
+            year_min=2010,
+            year_max=2020,
+            reachable=True,
+            resource_format=".csv",
+            enrich_method="none",
+            needs_review=False,
         )
         assert score > 0
 
@@ -170,54 +194,79 @@ class TestIntakeScore:
         """Formato come 'application/vnd.ms-excel.sheet.binary' entra nel branch
         di estrazione estensione (dot + len > 6) ma .binary non e' in valid list."""
         score, candidate = _intake_score(
-            granularity="regione", year_min=2010, year_max=2020,
-            reachable=True, resource_format="application/vnd.ms-excel.sheet.binary",
-            enrich_method="none", needs_review=False,
+            granularity="regione",
+            year_min=2010,
+            year_max=2020,
+            reachable=True,
+            resource_format="application/vnd.ms-excel.sheet.binary",
+            enrich_method="none",
+            needs_review=False,
         )
         assert score > 0  # format non riconosciuto ma score arriva da altri fattori
 
     def test_intake_score_single_mapping_col(self):
         score, candidate = _intake_score(
-            granularity="regione", year_min=2010, year_max=2020,
-            reachable=True, resource_format=None,
-            enrich_method="none", needs_review=False,
+            granularity="regione",
+            year_min=2010,
+            year_max=2020,
+            reachable=True,
+            resource_format=None,
+            enrich_method="none",
+            needs_review=False,
             mapping_suggestions='{"a": "int"}',
         )
         assert score > 0
 
     def test_intake_score_invalid_mapping_json(self):
         score, candidate = _intake_score(
-            granularity="regione", year_min=2010, year_max=2020,
-            reachable=True, resource_format=None,
-            enrich_method="none", needs_review=False,
+            granularity="regione",
+            year_min=2010,
+            year_max=2020,
+            reachable=True,
+            resource_format=None,
+            enrich_method="none",
+            needs_review=False,
             mapping_suggestions="not valid json",
         )
         assert score > 0  # gracefully ignored
 
     def test_encoding_signal(self):
         score, candidate = _intake_score(
-            granularity="regione", year_min=2010, year_max=2020,
-            reachable=True, resource_format="CSV",
-            enrich_method="none", needs_review=False,
+            granularity="regione",
+            year_min=2010,
+            year_max=2020,
+            reachable=True,
+            resource_format="CSV",
+            enrich_method="none",
+            needs_review=False,
             encoding_suggested="utf-8",
         )
         assert score > 0
 
     def test_score_capped_at_100(self):
         score, candidate = _intake_score(
-            granularity="comune", year_min=2000, year_max=2024,
-            reachable=True, resource_format="CSV",
-            enrich_method="ckan_package_show", needs_review=False,
-            encoding_suggested="utf-8", delim_suggested=",",
+            granularity="comune",
+            year_min=2000,
+            year_max=2024,
+            reachable=True,
+            resource_format="CSV",
+            enrich_method="ckan_package_show",
+            needs_review=False,
+            encoding_suggested="utf-8",
+            delim_suggested=",",
             mapping_suggestions='{"col1": "int", "col2": "str"}',
         )
         assert score <= 100
 
     def test_mapping_suggestions_gives_bonus(self):
         score, candidate = _intake_score(
-            granularity="regione", year_min=2010, year_max=2020,
-            reachable=True, resource_format=None,
-            enrich_method="none", needs_review=False,
+            granularity="regione",
+            year_min=2010,
+            year_max=2020,
+            reachable=True,
+            resource_format=None,
+            enrich_method="none",
+            needs_review=False,
             mapping_suggestions='{"a": "int", "b": "str"}',
         )
         assert score > 0
@@ -225,7 +274,9 @@ class TestIntakeScore:
 
 class TestFinalizeScores:
     def test_finalize_adds_score(self):
-        result = _finalize_scores({"granularity": "regione", "reachable": True, "needs_review": False})
+        result = _finalize_scores(
+            {"granularity": "regione", "reachable": True, "needs_review": False}
+        )
         assert "intake_score" in result
         assert "intake_candidate" in result
         assert isinstance(result["intake_score"], int)

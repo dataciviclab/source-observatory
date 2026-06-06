@@ -82,7 +82,9 @@ def _classify(
         if summary.get("type") == "csv_magnet":
             total = summary.get("total_links_estimate") or summary.get("total_links_exact") or 0
             by_fmt = summary.get("by_format", {})
-            fmt_str = ", ".join(f"{k} {v}" for k, v in sorted(by_fmt.items())) if by_fmt else "no format"
+            fmt_str = (
+                ", ".join(f"{k} {v}" for k, v in sorted(by_fmt.items())) if by_fmt else "no format"
+            )
             years_range = summary.get("years_range", [])
             years_str = f", years {years_range[0]}-{years_range[1]}" if years_range else ""
             prefixes = summary.get("prefix_matrix", {})
@@ -102,7 +104,9 @@ def _classify(
                 "series": summary.get("series", {}),
                 "topics": summary.get("topics", {}),
                 "years_range": years_range,
-                "suggested_action": "catalog-watch-ready" if total > _HTML_MIN_LINKS_FOR_WATCH else "low signal",
+                "suggested_action": "catalog-watch-ready"
+                if total > _HTML_MIN_LINKS_FOR_WATCH
+                else "low signal",
             }
         # html senza summary — non era nel run, skipped
         return {
@@ -207,7 +211,9 @@ def _classify(
     }
 
 
-def build_signals(report: dict, prev_report: dict | None, radar_summary: dict | None = None) -> dict:
+def build_signals(
+    report: dict, prev_report: dict | None, radar_summary: dict | None = None
+) -> dict:
     sources = report.get("sources", {})
     prev_sources = (prev_report or {}).get("sources", {})
     radar_sources = {s["id"]: s["status"] for s in (radar_summary or {}).get("sources", [])}
@@ -251,7 +257,9 @@ def build_watch_report(signals: dict) -> str:
     # endpoint unstable is actionable (radar RED but inventory OK — data may be stale)
     unstable = [s for s in signal_list if s.get("signal_type") == "endpoint unstable"]
     if unstable:
-        actionable = [s for s in actionable if s.get("signal_type") != "endpoint unstable"] + unstable
+        actionable = [
+            s for s in actionable if s.get("signal_type") != "endpoint unstable"
+        ] + unstable
 
     lines = [
         "# Catalog Watch Report",
