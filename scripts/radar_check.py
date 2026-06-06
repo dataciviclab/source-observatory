@@ -160,8 +160,8 @@ def _probe_once(base_url: str) -> ProbeResult:
             http_code="-",
             note="Unexpected: response=None without exception from HttpClient.get",
         )
-    ssl_failure_err: requests.exceptions.SSLError | None = None
-    error_exc: requests.exceptions.RequestException
+    ssl_failure_err: Exception | None = None
+    error_exc: Exception | None = None
     if isinstance(result.err, HttpFallbackError):
         ssl_failure_err = result.err.primary_error
         error_exc = result.err.fallback_error

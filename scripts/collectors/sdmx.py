@@ -35,6 +35,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         ) from result.err
 
     response = result.response
+    assert response is not None  # is_ok ensures response is set
     if response.status_code >= 400:
         raise RuntimeError(
             f"SDMX endpoint returned HTTP {response.status_code} for {source_id}: "

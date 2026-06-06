@@ -28,7 +28,7 @@ def now_utc_iso() -> str:
 def observatory_get(
     url: str,
     *,
-    timeout: int | float | tuple[float, float] = DEFAULT_TIMEOUT_SECONDS,
+    timeout: int | float | tuple[int | float, int | float] = DEFAULT_TIMEOUT_SECONDS,
     headers: dict[str, str] | None = None,
     **kwargs: Any,
 ) -> requests.Response:

@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 # ── Config HTTP (sovrascrivibile da configure_source_check_http) ──────────────
 
 HTTP_TIMEOUT: tuple[float, float] = (5, 10)
-_http_timeout: tuple[float, float] = (5.0, 10.0)
+_http_timeout: int | float | tuple[int | float, int | float] = (5.0, 10.0)
 _http_max_retries = 2
 
 # ── Circuit breaker per host (bulk-specific) ─────────────────────────────────
