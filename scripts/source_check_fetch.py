@@ -139,7 +139,7 @@ def _circuit_after_result(url: str, result: HttpResult) -> None:
 
 def _get_circuit_client() -> HttpClient:
     """Crea HttpClient con timeout/retry configurati (senza circuit breaker built-in)."""
-    return HttpClient(timeout=_http_timeout, max_retries=_http_max_retries)
+    return HttpClient(timeout=_http_timeout, max_retries=_http_max_retries)  # type: ignore[arg-type]
 
 
 def _tracked_http_head(url: str) -> HttpResult | None:

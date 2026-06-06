@@ -35,7 +35,7 @@ def observatory_get(
     """GET request with SSL fallback via HttpClient."""
     from lab_connectors.http import HttpClient
 
-    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
+    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)  # type: ignore[arg-type]
     result = client.get(url, headers=headers or {}, **kwargs)
     if result.is_ok and result.response is not None:
         return result.response
