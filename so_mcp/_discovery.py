@@ -44,7 +44,7 @@ def list_source_items(
     try:
         with _artifact._resolved_parquet(artifact) as (resolved_path, cache):
             parquet_path = str(resolved_path)
-            with safe_connect() as con:
+            with safe_connect(extensions=["httpfs"]) as con:
                 columns = set(_artifact._table_columns(con, parquet_path))
 
                 # Colonne da selezionare (sottoinsieme informativo)

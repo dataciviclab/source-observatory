@@ -290,6 +290,43 @@ def _public_url(uri: str) -> str:
     return uri
 
 
+def _gs_to_s3(uri: str) -> str:
+    """Convert gs://bucket/key to s3://bucket/key for DuckDB httpfs.
+
+    DuckDB's httpfs extension reads GCS public buckets via the S3 API,
+    using ``s3://`` URIs with ``s3_endpoint = storage.googleapis.com``.
+    """
+    return "s3://" + uri.removeprefix("gs://")
+
+
+def _direct_cache_info(uri: str) -> dict[str, Any]:
+    """Cache info per artifact letto direttamente da GCS via S3 (nessun file locale)."""
+    return {
+        "source": "gcs_direct",
+        "uri": uri,
+        "note": "Lettura diretta da GCS via S3 — nessuna cache locale.",
+    }
+
+
+def _probe_s3_parquet(s3_uri: str) -> bool:
+    """Prova a leggere una riga da un parquet su S3 via DuckDB httpfs.
+
+    Restituisce True se l'URI è raggiungibile, False altrimenti.
+    Usata da ``auto`` backend per decidere se usare il path remoto o
+    cascare sulla cache locale.
+    """
+    from lab_connectors.duckdb import safe_connect as _safe_connect
+
+    try:
+        with _safe_connect(extensions=["httpfs"]) as con:
+            row = con.execute(
+                f'SELECT 1 FROM read_parquet(\'{s3_uri}\') LIMIT 1'
+            ).fetchone()
+            return row is not None
+    except Exception:
+        return False
+
+
 def _download_public_to_temp(uri: str, tmp_path: Path) -> None:
     response = requests.get(_public_url(uri), timeout=120, stream=True)
     response.raise_for_status()
@@ -333,19 +370,29 @@ def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
     fallback_warning = None
 
     if backend in {"auto", "gcs"} and uri:
-        tmp_path: Path | None = None
-        try:
-            tmp_path = _copy_gcs_to_temp(uri, artifact.name)
-        except Exception as exc:
-            if backend == "gcs":
-                raise RuntimeError(f"Cannot read {artifact.name} from GCS {uri}: {exc}") from exc
-            fallback_warning = f"Cannot read GCS artifact {uri}; using local cache if available."
-        else:
-            try:
-                yield tmp_path, _artifact_cache_info(tmp_path, source="gcs", uri=uri)
+        # Parquet → lettura diretta via DuckDB S3 (nessun download)
+        if isinstance(artifact, _ParquetArtifact):
+            s3_uri = _gs_to_s3(uri)
+            if backend == "gcs" or _probe_s3_parquet(s3_uri):
+                yield s3_uri, _direct_cache_info(s3_uri)
                 return
-            finally:
-                tmp_path.unlink(missing_ok=True)
+            # auto + S3 non raggiungibile → fall through to local cache
+            fallback_warning = f"S3 URI {s3_uri} non raggiungibile; uso cache locale se disponibile."
+        else:
+            # JSON → download su temp file
+            tmp_path: Path | None = None
+            try:
+                tmp_path = _copy_gcs_to_temp(uri, artifact.name)
+            except Exception as exc:
+                if backend == "gcs":
+                    raise RuntimeError(f"Cannot read {artifact.name} from GCS {uri}: {exc}") from exc
+                fallback_warning = f"Cannot read GCS artifact {uri}; using local cache if available."
+            else:
+                try:
+                    yield tmp_path, _artifact_cache_info(tmp_path, source="gcs", uri=uri)
+                    return
+                finally:
+                    tmp_path.unlink(missing_ok=True)
 
     if artifact.local_path.exists():
         yield (

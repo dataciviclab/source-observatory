@@ -22,7 +22,7 @@ def _score_dataflow(text: str, keywords: list[str]) -> int:
 
 
 def _read_sdmx_inventory_rows(parquet_path: Any) -> list[dict[str, Any]]:
-    with safe_connect() as con:
+    with safe_connect(extensions=["httpfs"]) as con:
         rows = con.execute(
             f"""
             SELECT source_id, item_id, item_name, title, tags, api_base_url, source_url
