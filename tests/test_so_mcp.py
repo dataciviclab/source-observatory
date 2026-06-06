@@ -107,6 +107,20 @@ def test_resolved_parquet_gcs_direct_no_download(monkeypatch) -> None:
         assert "S3" in cache["note"]
 
 
+def test_gs_to_s3_conversion() -> None:
+    """_gs_to_s3 converte correttamente URI."""
+    assert _artifact._gs_to_s3("gs://bucket/key.parquet") == "s3://bucket/key.parquet"
+    assert _artifact._gs_to_s3("gs://dataciviclab-clean/source-check/check.parquet") == "s3://dataciviclab-clean/source-check/check.parquet"
+
+
+def test_direct_cache_info() -> None:
+    """_direct_cache_info restituisce source gcs_direct con URI."""
+    info = _artifact._direct_cache_info("s3://bucket/test.parquet")
+    assert info["source"] == "gcs_direct"
+    assert info["uri"] == "s3://bucket/test.parquet"
+    assert "S3" in info["note"]
+
+
 def test_query_signals_filters_and_limits(tmp_path, monkeypatch) -> None:
     signals_path = tmp_path / "catalog_signals.json"
     signals_path.write_text(
