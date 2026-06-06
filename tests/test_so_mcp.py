@@ -71,24 +71,7 @@ def test_query_inventory_falls_back_to_local_when_remote_unreachable(tmp_path, m
     # Simula S3 non raggiungibile
     monkeypatch.setattr(_artifact, "_probe_s3_parquet", lambda _: False)
 
-<<<<<<< HEAD
-        def iter_content(self, chunk_size):
-            yield parquet_path.read_bytes()
-
-    def fake_get(url, **kwargs):
-        assert (
-            url == "https://storage.googleapis.com/bucket/source-check/source_check_results.parquet"
-        )
-        return FakeResponse()
-
-    monkeypatch.setenv("SO_ARTIFACT_BACKEND", "gcs")
-    monkeypatch.setenv("CATALOG_INVENTORY_GCS_PREFIX", "gs://bucket")
-    monkeypatch.setattr(_artifact.requests, "get", fake_get)
-
-    result = query_inventory(source_id="gcs_src", limit=10)
-=======
     result = query_inventory(source_id="local_src", limit=10)
->>>>>>> ea40010 (feat: parquet artifacts letti via DuckDB S3 diretto, niente download GCS)
 
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "cached"
