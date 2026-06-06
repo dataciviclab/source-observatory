@@ -93,7 +93,10 @@ def test_resolved_parquet_gcs_direct_no_download(monkeypatch) -> None:
 def test_gs_to_s3_conversion() -> None:
     """_gs_to_s3 converte correttamente URI."""
     assert _artifact._gs_to_s3("gs://bucket/key.parquet") == "s3://bucket/key.parquet"
-    assert _artifact._gs_to_s3("gs://dataciviclab-clean/source-check/check.parquet") == "s3://dataciviclab-clean/source-check/check.parquet"
+    assert (
+        _artifact._gs_to_s3("gs://dataciviclab-clean/source-check/check.parquet")
+        == "s3://dataciviclab-clean/source-check/check.parquet"
+    )
 
 
 def test_direct_cache_info() -> None:

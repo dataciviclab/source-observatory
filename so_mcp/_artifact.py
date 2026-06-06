@@ -319,9 +319,7 @@ def _probe_s3_parquet(s3_uri: str) -> bool:
 
     try:
         with gcs_connect(s3_uri) as con:
-            row = con.execute(
-                f'SELECT 1 FROM read_parquet(\'{s3_uri}\') LIMIT 1'
-            ).fetchone()
+            row = con.execute(f"SELECT 1 FROM read_parquet('{s3_uri}') LIMIT 1").fetchone()
             return row is not None
     except Exception:
         return False
@@ -377,7 +375,9 @@ def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
                 yield s3_uri, _direct_cache_info(s3_uri)
                 return
             # auto + S3 non raggiungibile → fall through to local cache
-            fallback_warning = f"S3 URI {s3_uri} non raggiungibile; uso cache locale se disponibile."
+            fallback_warning = (
+                f"S3 URI {s3_uri} non raggiungibile; uso cache locale se disponibile."
+            )
         else:
             # JSON → download su temp file
             tmp_path: Path | None = None
@@ -385,8 +385,12 @@ def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
                 tmp_path = _copy_gcs_to_temp(uri, artifact.name)
             except Exception as exc:
                 if backend == "gcs":
-                    raise RuntimeError(f"Cannot read {artifact.name} from GCS {uri}: {exc}") from exc
-                fallback_warning = f"Cannot read GCS artifact {uri}; using local cache if available."
+                    raise RuntimeError(
+                        f"Cannot read {artifact.name} from GCS {uri}: {exc}"
+                    ) from exc
+                fallback_warning = (
+                    f"Cannot read GCS artifact {uri}; using local cache if available."
+                )
             else:
                 try:
                     yield tmp_path, _artifact_cache_info(tmp_path, source="gcs", uri=uri)
