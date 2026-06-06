@@ -315,10 +315,10 @@ def _probe_s3_parquet(s3_uri: str) -> bool:
     Usata da ``auto`` backend per decidere se usare il path remoto o
     cascare sulla cache locale.
     """
-    from lab_connectors.duckdb import safe_connect as _safe_connect
+    from lab_connectors.duckdb import gcs_connect
 
     try:
-        with _safe_connect(extensions=["httpfs"]) as con:
+        with gcs_connect(s3_uri) as con:
             row = con.execute(
                 f'SELECT 1 FROM read_parquet(\'{s3_uri}\') LIMIT 1'
             ).fetchone()
