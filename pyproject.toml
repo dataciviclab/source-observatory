@@ -33,7 +33,7 @@ dependencies = [
   "mcp>=1.27.1",
   "fastmcp>=3.3.1",
   "ddgs>=9.14.4",
-  "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@v1.27.0",
+  "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@v1.27.1",
 ]
 
 [project.optional-dependencies]
