@@ -6,7 +6,7 @@ import re
 from typing import Any
 
 import _artifact
-from lab_connectors.duckdb import safe_connect
+from lab_connectors.duckdb import gcs_connect
 
 
 def _score_dataflow(text: str, keywords: list[str]) -> int:
@@ -22,7 +22,7 @@ def _score_dataflow(text: str, keywords: list[str]) -> int:
 
 
 def _read_sdmx_inventory_rows(parquet_path: Any) -> list[dict[str, Any]]:
-    with safe_connect() as con:
+    with gcs_connect(parquet_path) as con:
         rows = con.execute(
             f"""
             SELECT source_id, item_id, item_name, title, tags, api_base_url, source_url

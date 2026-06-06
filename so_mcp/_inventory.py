@@ -9,7 +9,7 @@ import json
 from typing import Any
 
 import _artifact
-from lab_connectors.duckdb import safe_connect
+from lab_connectors.duckdb import gcs_connect
 
 
 def query_inventory(
@@ -31,7 +31,7 @@ def query_inventory(
     try:
         with _artifact._resolved_parquet(artifact) as (resolved_path, cache):
             parquet_path = str(resolved_path)
-            with safe_connect() as con:
+            with gcs_connect(resolved_path) as con:
                 cols = _artifact._table_columns(con, parquet_path)
                 col_set = set(cols)
                 has_group_col = "dataset_group" in col_set
@@ -218,7 +218,7 @@ def catalog_inventory_search(
     try:
         with _artifact._resolved_parquet(artifact) as (resolved_path, cache):
             parquet_path = str(resolved_path)
-            with safe_connect() as con:
+            with gcs_connect(resolved_path) as con:
                 columns = set(_artifact._table_columns(con, parquet_path))
                 search_columns = [
                     column
@@ -381,7 +381,7 @@ def inventory_diff(source_id: str) -> dict[str, Any]:
     try:
         artifact = _artifact._catalog_inventory_parquet()
         with _artifact._resolved_parquet(artifact) as (resolved_path, cache):
-            with safe_connect() as con:
+            with gcs_connect(resolved_path) as con:
                 row = con.execute(
                     f'SELECT COUNT(*) FROM "{resolved_path}" WHERE source_id = ?',
                     [source_id],

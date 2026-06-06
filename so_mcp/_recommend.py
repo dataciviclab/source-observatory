@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import _artifact
-from lab_connectors.duckdb import safe_connect
+from lab_connectors.duckdb import gcs_connect
 
 
 def recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
@@ -23,8 +23,10 @@ def recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
     try:
         artifact = _artifact._catalog_inventory_parquet()
         with _artifact._resolved_parquet(artifact) as (resolved_path, cache):
-            with safe_connect() as con:
-                total_row = con.execute(f'SELECT COUNT(*) FROM "{resolved_path}"').fetchone()
+            with gcs_connect(resolved_path) as con:
+                total_row = con.execute(
+                    f'SELECT COUNT(*) FROM "{resolved_path}"'
+                ).fetchone()
                 total_items = total_row[0] if total_row else 0
 
                 rows = con.execute(

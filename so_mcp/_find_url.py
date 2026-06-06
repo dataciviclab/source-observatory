@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 import _artifact
-from lab_connectors.duckdb import safe_connect
+from lab_connectors.duckdb import gcs_connect
 
 
 def find_by_url(url: str) -> dict[str, Any]:
@@ -24,7 +24,7 @@ def find_by_url(url: str) -> dict[str, Any]:
     try:
         with _artifact._resolved_parquet(source_check_artifact) as (resolved_path, cache):
             parquet_path = str(resolved_path)
-            with safe_connect() as con:
+            with gcs_connect(resolved_path) as con:
                 cols = _artifact._table_columns(con, parquet_path)
                 url_cols = [
                     c
@@ -49,7 +49,7 @@ def find_by_url(url: str) -> dict[str, Any]:
     try:
         with _artifact._resolved_parquet(catalog_artifact) as (resolved_path, cache):
             parquet_path = str(resolved_path)
-            with safe_connect() as con:
+            with gcs_connect(resolved_path) as con:
                 cols = _artifact._table_columns(con, parquet_path)
                 search_cols = [
                     c

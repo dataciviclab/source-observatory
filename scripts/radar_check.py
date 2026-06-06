@@ -163,8 +163,15 @@ def _probe_once(base_url: str) -> ProbeResult:
     ssl_failure_err: requests.exceptions.SSLError | None = None
     error_exc: requests.exceptions.RequestException
     if isinstance(result.err, HttpFallbackError):
-        ssl_failure_err = result.err.primary_error
-        error_exc = result.err.fallback_error
+        ssl_failure_err = (
+            result.err.primary_error
+            if isinstance(result.err.primary_error, requests.exceptions.SSLError)
+            else None
+        )
+        if isinstance(result.err.fallback_error, requests.exceptions.RequestException):
+            error_exc = result.err.fallback_error
+        else:
+            error_exc = result.err.fallback_error  # type: ignore[assignment]
     elif isinstance(result.err, requests.exceptions.SSLError):
         ssl_failure_err = result.err
         error_exc = result.err

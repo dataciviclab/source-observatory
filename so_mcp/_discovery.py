@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 import _artifact
-from lab_connectors.duckdb import safe_connect
+from lab_connectors.duckdb import gcs_connect
 
 
 def list_source_items(
@@ -44,7 +44,7 @@ def list_source_items(
     try:
         with _artifact._resolved_parquet(artifact) as (resolved_path, cache):
             parquet_path = str(resolved_path)
-            with safe_connect() as con:
+            with gcs_connect(resolved_path) as con:
                 columns = set(_artifact._table_columns(con, parquet_path))
 
                 # Colonne da selezionare (sottoinsieme informativo)

@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 # ── Config HTTP (sovrascrivibile da configure_source_check_http) ──────────────
 
 HTTP_TIMEOUT: tuple[float, float] = (5, 10)
-_http_timeout: tuple[float, float] = (5.0, 10.0)
+_http_timeout: int | float | tuple[int | float, int | float] = (5.0, 10.0)
 _http_max_retries = 2
 
 # ── Circuit breaker per host (bulk-specific) ─────────────────────────────────
@@ -139,7 +139,7 @@ def _circuit_after_result(url: str, result: HttpResult) -> None:
 
 def _get_circuit_client() -> HttpClient:
     """Crea HttpClient con timeout/retry configurati (senza circuit breaker built-in)."""
-    return HttpClient(timeout=_http_timeout, max_retries=_http_max_retries)
+    return HttpClient(timeout=_http_timeout, max_retries=_http_max_retries)  # type: ignore[arg-type]
 
 
 def _tracked_http_head(url: str) -> HttpResult | None:

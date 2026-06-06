@@ -57,37 +57,51 @@ def test_query_inventory_filters_and_orders(tmp_path, monkeypatch) -> None:
     assert result["cache"]["stale"] is False
 
 
-def test_query_inventory_reads_gcs_when_configured(tmp_path, monkeypatch) -> None:
-    parquet_path = tmp_path / "source_check_results.parquet"
+def test_query_inventory_falls_back_to_local_when_remote_unreachable(tmp_path, monkeypatch) -> None:
+    """Parquet con auto backend, S3 non raggiungibile → fallback a locale."""
+    parquet_path = _artifact._CHECK_PARQUET
+    parquet_path.parent.mkdir(parents=True, exist_ok=True)
     _write_parquet(
         parquet_path,
-        [{"source_id": "gcs_src", "item_id": "remote", "intake_score": 80}],
+        [{"source_id": "local_src", "item_id": "cached", "intake_score": 80}],
     )
 
-    class FakeResponse:
-        def raise_for_status(self) -> None:
-            return None
+    monkeypatch.setenv("SO_ARTIFACT_BACKEND", "auto")
+    monkeypatch.setenv("CATALOG_INVENTORY_GCS_PREFIX", "gs://any-bucket")
+    # Simula S3 non raggiungibile
+    monkeypatch.setattr(_artifact, "_probe_s3_parquet", lambda _: False)
 
-        def iter_content(self, chunk_size):
-            yield parquet_path.read_bytes()
-
-    def fake_get(url, **kwargs):
-        assert (
-            url == "https://storage.googleapis.com/bucket/source-check/source_check_results.parquet"
-        )
-        return FakeResponse()
-
-    monkeypatch.setenv("SO_ARTIFACT_BACKEND", "gcs")
-    monkeypatch.setenv("CATALOG_INVENTORY_GCS_PREFIX", "gs://bucket")
-    monkeypatch.setattr(_artifact.requests, "get", fake_get)
-
-    result = query_inventory(source_id="gcs_src", limit=10)
+    result = query_inventory(source_id="local_src", limit=10)
 
     assert result["returned"] == 1
-    assert result["results"][0]["item_id"] == "remote"
-    assert result["cache"]["source"] == "gcs"
-    assert result["cache"]["uri"] == "gs://bucket/source-check/source_check_results.parquet"
-    assert result["cache"]["stale"] is False
+    assert result["results"][0]["item_id"] == "cached"
+    assert result["cache"]["source"] == "local_cache"
+
+
+def test_resolved_parquet_gcs_direct_no_download(monkeypatch) -> None:
+    """Parquet artifact con GCS backend → S3 URI diretto, nessun download."""
+    monkeypatch.setenv("SO_ARTIFACT_BACKEND", "gcs")
+    monkeypatch.setenv("CATALOG_INVENTORY_GCS_PREFIX", "gs://test-bucket")
+
+    artifact = _artifact._source_check_parquet()
+    with _artifact._resolved_parquet(artifact) as (path, cache):
+        assert cache["source"] == "gcs_direct"
+        assert str(path) == "s3://test-bucket/source-check/source_check_results.parquet"
+        assert "S3" in cache["note"]
+
+
+def test_gs_to_s3_conversion() -> None:
+    """_gs_to_s3 converte correttamente URI."""
+    assert _artifact._gs_to_s3("gs://bucket/key.parquet") == "s3://bucket/key.parquet"
+    assert _artifact._gs_to_s3("gs://dataciviclab-clean/source-check/check.parquet") == "s3://dataciviclab-clean/source-check/check.parquet"
+
+
+def test_direct_cache_info() -> None:
+    """_direct_cache_info restituisce source gcs_direct con URI."""
+    info = _artifact._direct_cache_info("s3://bucket/test.parquet")
+    assert info["source"] == "gcs_direct"
+    assert info["uri"] == "s3://bucket/test.parquet"
+    assert "S3" in info["note"]
 
 
 def test_query_signals_filters_and_limits(tmp_path, monkeypatch) -> None:

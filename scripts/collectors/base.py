@@ -28,14 +28,14 @@ def now_utc_iso() -> str:
 def observatory_get(
     url: str,
     *,
-    timeout: int | float | tuple[float, float] = DEFAULT_TIMEOUT_SECONDS,
+    timeout: int | float | tuple[int | float, int | float] = DEFAULT_TIMEOUT_SECONDS,
     headers: dict[str, str] | None = None,
     **kwargs: Any,
 ) -> requests.Response:
     """GET request with SSL fallback via HttpClient."""
     from lab_connectors.http import HttpClient
 
-    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
+    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)  # type: ignore[arg-type]
     result = client.get(url, headers=headers or {}, **kwargs)
     if result.is_ok and result.response is not None:
         return result.response
