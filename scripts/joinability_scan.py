@@ -19,13 +19,15 @@ import re
 from datetime import date
 from typing import Any
 
-import requests
+from lab_connectors.duckdb import gcs_connect
+from lab_connectors.http import HttpClient
 
 # ── Percorsi ──────────────────────────────────────────────────────────────────
+# I path artifact GCS seguono il path contract canonico (lab-connectors/paths.json).
+# Il parquet viene letto via DuckDB S3 (httpfs) — niente download HTTP.
 
 SOURCE_CHECK_URL = (
-    "https://storage.googleapis.com/dataciviclab-clean/"
-    "catalog_inventory/source-check/source_check_results.parquet"
+    "s3://dataciviclab-clean/catalog_inventory/source-check/source_check_results.parquet"
 )
 
 CATALOG_URL = (
@@ -107,30 +109,28 @@ KEY_PATTERNS: list[tuple[str, str, str]] = [
 
 
 def load_source_check() -> list[dict[str, Any]]:
-    """Scarica e carica source_check_results.parquet come lista di dict."""
-    import io
-
-    import pyarrow.parquet as pq
-
-    print("  Download source_check_results.parquet...", end=" ", flush=True)
-    resp = requests.get(SOURCE_CHECK_URL, timeout=60)
-    resp.raise_for_status()
-    data = io.BytesIO(resp.content)
-    table = pq.read_table(data)
-    df = table.to_pandas()
+    """Legge source_check_results.parquet da GCS via DuckDB S3 diretto."""
+    print("  Lettura source_check_results.parquet via DuckDB S3...", end=" ", flush=True)
+    with gcs_connect(SOURCE_CHECK_URL) as con:
+        df = con.execute(f"SELECT * FROM read_parquet('{SOURCE_CHECK_URL}')").fetchdf()
     print(f"{len(df)} righe, {len(df.columns)} colonne")
     return df.to_dict("records")
 
 
 def load_clean_catalog() -> list[dict[str, Any]]:
-    """Scarica e carica clean_catalog.json come lista di dataset."""
+    """Scarica clean_catalog.json da GitHub via HttpClient."""
     print("  Download clean_catalog.json...", end=" ", flush=True)
-    resp = requests.get(CATALOG_URL, timeout=30)
-    resp.raise_for_status()
-    raw = resp.json()
-    datasets: list[dict] = raw if isinstance(raw, list) else raw.get("datasets", [])
-    print(f"{len(datasets)} dataset")
-    return datasets
+    client = HttpClient(timeout=30)
+    try:
+        result = client.get(CATALOG_URL)
+        if not result.is_ok or result.response is None:
+            raise RuntimeError(f"Failed to fetch catalog: {result.err}")
+        raw = result.response.json()
+        datasets: list[dict] = raw if isinstance(raw, list) else raw.get("datasets", [])
+        print(f"{len(datasets)} dataset")
+        return datasets
+    finally:
+        client.close()
 
 
 def parse_columns(columns_raw: Any) -> list[str]:

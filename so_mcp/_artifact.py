@@ -23,8 +23,8 @@ from pathlib import Path
 from typing import Any
 
 import duckdb
-import requests
 from lab_connectors.gcs.paths import CLEAN_BUCKET
+from lab_connectors.http import HttpClient
 
 # ── Repo root & path setup ────────────────────────────────────────────────────
 # Aggiunge scripts/ a sys.path per importare _constants e altri moduli scripts
@@ -326,12 +326,19 @@ def _probe_s3_parquet(s3_uri: str) -> bool:
 
 
 def _download_public_to_temp(uri: str, tmp_path: Path) -> None:
-    response = requests.get(_public_url(uri), timeout=120, stream=True)
-    response.raise_for_status()
-    with tmp_path.open("wb") as fh:
-        for chunk in response.iter_content(chunk_size=1024 * 1024):
-            if chunk:
-                fh.write(chunk)
+    """Scarica un artifact GCS pubblico su file temporaneo via HttpClient.
+
+    Usato per artifact JSON (es. catalog_inventory_report.json).
+    I parquet usano DuckDB S3 diretto (vedi _resolved_artifact → _ParquetArtifact).
+    """
+    client = HttpClient(timeout=120)
+    try:
+        result = client.get(_public_url(uri))
+        if not result.is_ok or result.response is None:
+            raise RuntimeError(f"Failed to download {uri}: {result.err}")
+        tmp_path.write_bytes(result.response.content)
+    finally:
+        client.close()
 
 
 def _copy_gcs_to_temp(uri: str, artifact_name: str) -> Path:
@@ -344,7 +351,7 @@ def _copy_gcs_to_temp(uri: str, artifact_name: str) -> Path:
     try:
         try:
             _download_public_to_temp(uri, tmp_path)
-        except requests.RequestException:
+        except Exception:
             subprocess.run(
                 ["gcloud", "storage", "cp", uri, str(tmp_path)],
                 check=True,
