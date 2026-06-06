@@ -5,6 +5,7 @@ Strati:
   toolkit.scout.http  → funzioni HTTP/fetch condivise (probe, format, CKAN, SDMX, HTML)
   Questo modulo        → circuit breaker bulk + orchestrazione specifica SO
 """
+
 from __future__ import annotations
 
 import logging
@@ -118,7 +119,11 @@ def _circuit_after_result(url: str, result: HttpResult) -> None:
     host = _netloc(url)
     if not host:
         return
-    failed = result.err is not None or result.response is None or getattr(result.response, "status_code", 200) >= 500
+    failed = (
+        result.err is not None
+        or result.response is None
+        or getattr(result.response, "status_code", 200) >= 500
+    )
     with _cb_lock:
         if failed:
             n = _cb_consecutive.get(host, 0) + 1
@@ -160,7 +165,9 @@ def _tracked_http_get(url: str, **kwargs: Any) -> HttpResult | None:
 # ── Probe principale (usato da bulk_source_check) ────────────────────────────
 
 
-def _http_head_with_retry(url: str, max_retries: int = 1) -> tuple[Optional[int], bool, str, Optional[str]]:
+def _http_head_with_retry(
+    url: str, max_retries: int = 1
+) -> tuple[Optional[int], bool, str, Optional[str]]:
     """HTTP HEAD con retry e circuit breaker. Usa toolkit.scout per format detection.
 
     Mantiene _tracked_http_head per il circuit breaker (non usa direttamente toolkit
@@ -218,7 +225,9 @@ def _fetch_ckan_package(base_api: str, item_name: str) -> Optional[dict]:
     try:
         pkg = _toolkit_ckan_package(portal_url, item_name, client=client)
         if pkg is None:
-            logger.warning("CKAN package_show returned None for %s (portal: %s)", item_name, portal_url)
+            logger.warning(
+                "CKAN package_show returned None for %s (portal: %s)", item_name, portal_url
+            )
         return pkg
     except Exception as exc:
         logger.error("CKAN package_show failed for %s (portal: %s): %s", item_name, portal_url, exc)
@@ -287,7 +296,7 @@ def _fetch_html_metadata(url: str) -> dict:
         html = body["html_text"]
         resource_format: Optional[str] = None
         patterns = [
-            (r'\.(csv|xlsx?|json|xml|zip|parquet)\b', 1),
+            (r"\.(csv|xlsx?|json|xml|zip|parquet)\b", 1),
             (r'["\']([^"\']+\.(csv|xlsx?|json|xml|zip|parquet))["\']', 1),
         ]
         for pattern, _gidx in patterns:
@@ -327,7 +336,9 @@ def _content_type_format(url: str) -> Optional[str]:
     client = _get_circuit_client()
     try:
         probe = _toolkit_probe_headers(url, client=client)
-        return _toolkit_preview_kind(url, probe.get("content_type"), probe.get("content_disposition"))
+        return _toolkit_preview_kind(
+            url, probe.get("content_type"), probe.get("content_disposition")
+        )
     except Exception:
         return None
 
@@ -349,7 +360,9 @@ def _resolve_preview_kind(url: str) -> tuple[str | None, bool]:
         return None, False
     try:
         probe = _toolkit_probe_headers(url, client=_get_circuit_client())
-        kind = _toolkit_preview_kind(url, probe.get("content_type"), probe.get("content_disposition"))
+        kind = _toolkit_preview_kind(
+            url, probe.get("content_type"), probe.get("content_disposition")
+        )
         return kind, kind is not None
     except Exception:
         return None, False
@@ -407,6 +420,7 @@ def _extract_year_values_from_sample(
     year hint (``_YEAR_COLUMN_HINTS``).  Filters out NaN values that would
     crash ``int()``.
     """
+
     def _safe_ints(vals: list) -> list[int]:
         return [int(v) for v in vals if not (isinstance(v, float) and math.isnan(v))]
 
@@ -414,10 +428,7 @@ def _extract_year_values_from_sample(
     if not sample:
         return year_values
     for col in columns:
-        vals = [
-            r.get(col) for r in sample
-            if isinstance(r.get(col), (int, float))
-        ]
+        vals = [r.get(col) for r in sample if isinstance(r.get(col), (int, float))]
         if vals:
             y_vals = [v for v in _safe_ints(vals) if 1900 <= v <= 2100]
             if len(y_vals) >= 2:
@@ -425,10 +436,7 @@ def _extract_year_values_from_sample(
     if not year_values:
         for col in columns:
             if col.lower() in _YEAR_COLUMN_HINTS:
-                vals = [
-                    r.get(col) for r in sample
-                    if isinstance(r.get(col), (int, float))
-                ]
+                vals = [r.get(col) for r in sample if isinstance(r.get(col), (int, float))]
                 if vals:
                     return _safe_ints(vals)
     return []
@@ -549,7 +557,8 @@ def _profile_downloaded_excel(
         }
     except Exception:
         return {
-            "columns": [], "col_types": {},
+            "columns": [],
+            "col_types": {},
             "preview_row_count": None,
             "mapping_suggestions": None,
             "robust_read_suggested": False,
@@ -652,19 +661,34 @@ def _fetch_data_preview(
         # ── Profile ─────────────────────────────────────────────────────
         if fmt in ("csv", "tsv"):
             p = _profile_downloaded_csv(
-                tmp_path, sniff, fmt,
-                encoding_suggested, delim_suggested, decimal_suggested, skip_suggested,
+                tmp_path,
+                sniff,
+                fmt,
+                encoding_suggested,
+                delim_suggested,
+                decimal_suggested,
+                skip_suggested,
             )
         elif fmt in ("xlsx", "xls"):
             p = _profile_downloaded_excel(
-                tmp_path, sniff,
-                encoding_suggested, delim_suggested, decimal_suggested, skip_suggested,
+                tmp_path,
+                sniff,
+                encoding_suggested,
+                delim_suggested,
+                decimal_suggested,
+                skip_suggested,
             )
         elif fmt == "json":
             p = _profile_downloaded_json(content)
         else:
-            p = {"columns": [], "col_types": {}, "preview_row_count": None,
-                 "mapping_suggestions": None, "robust_read_suggested": False, "year_values": []}
+            p = {
+                "columns": [],
+                "col_types": {},
+                "preview_row_count": None,
+                "mapping_suggestions": None,
+                "robust_read_suggested": False,
+                "year_values": [],
+            }
 
         columns = p["columns"]
         col_types = p["col_types"]
@@ -683,23 +707,27 @@ def _fetch_data_preview(
 
     # ── Build result ────────────────────────────────────────────────────
     result = _EMPTY_ENRICH.copy()
-    result.update({
-        "columns": _json.dumps(columns) if columns else None,
-        "col_types": _json.dumps(col_types) if col_types else None,
-        "file_size": file_size,
-        "preview_row_count": preview_row_count,
-        "year_min": year_min,
-        "year_max": year_max,
-        "granularity": granularity,
-        "resource_format": resource_kind.upper(),
-        "enrich_method": "csv_preview",
-        "encoding_suggested": encoding_suggested,
-        "delim_suggested": delim_suggested,
-        "decimal_suggested": decimal_suggested,
-        "skip_suggested": skip_suggested,
-        "robust_read_suggested": robust_read_suggested,
-        "mapping_suggestions": _json.dumps(mapping_suggestions) if isinstance(mapping_suggestions, dict) else "{}",
-    })
+    result.update(
+        {
+            "columns": _json.dumps(columns) if columns else None,
+            "col_types": _json.dumps(col_types) if col_types else None,
+            "file_size": file_size,
+            "preview_row_count": preview_row_count,
+            "year_min": year_min,
+            "year_max": year_max,
+            "granularity": granularity,
+            "resource_format": resource_kind.upper(),
+            "enrich_method": "csv_preview",
+            "encoding_suggested": encoding_suggested,
+            "delim_suggested": delim_suggested,
+            "decimal_suggested": decimal_suggested,
+            "skip_suggested": skip_suggested,
+            "robust_read_suggested": robust_read_suggested,
+            "mapping_suggestions": _json.dumps(mapping_suggestions)
+            if isinstance(mapping_suggestions, dict)
+            else "{}",
+        }
+    )
     return result
 
 

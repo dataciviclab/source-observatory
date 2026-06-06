@@ -35,17 +35,19 @@ def registry_query(
             continue
         if observation_mode and info.get("observation_mode") != observation_mode:
             continue
-        results.append({
-            "source_id": sid,
-            "source_kind": info.get("source_kind"),
-            "protocol": info.get("protocol"),
-            "observation_mode": info.get("observation_mode"),
-            "base_url": info.get("base_url"),
-            "verdict": info.get("verdict"),
-            "last_probed": info.get("last_probed"),
-            "datasets_in_use": info.get("datasets_in_use", []),
-            "note": info.get("note"),
-        })
+        results.append(
+            {
+                "source_id": sid,
+                "source_kind": info.get("source_kind"),
+                "protocol": info.get("protocol"),
+                "observation_mode": info.get("observation_mode"),
+                "base_url": info.get("base_url"),
+                "verdict": info.get("verdict"),
+                "last_probed": info.get("last_probed"),
+                "datasets_in_use": info.get("datasets_in_use", []),
+                "note": info.get("note"),
+            }
+        )
 
     return {
         "artifact": _artifact._display_path(_artifact._REGISTRY_YAML),

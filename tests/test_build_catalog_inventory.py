@@ -81,9 +81,7 @@ def test_collect_ckan_inventory_merges_current_list_metadata(monkeypatch) -> Non
             None,
         )
 
-    monkeypatch.setattr(
-        build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search
-    )
+    monkeypatch.setattr(build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search)
     monkeypatch.setattr(
         build_catalog_inventory,
         "collect_ckan_inventory_via_package_list",
@@ -151,9 +149,7 @@ def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None
     def fake_package_show_sample(*_args, **_kwargs):
         return ([], None)
 
-    monkeypatch.setattr(
-        build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search
-    )
+    monkeypatch.setattr(build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search)
     monkeypatch.setattr(
         build_catalog_inventory,
         "collect_ckan_inventory_via_package_list",
@@ -251,9 +247,7 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
     def fail_if_called(*_args, **_kwargs):
         raise AssertionError("current list non dovrebbe essere chiamato per INPS")
 
-    monkeypatch.setattr(
-        build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search
-    )
+    monkeypatch.setattr(build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search)
     monkeypatch.setattr(
         build_catalog_inventory,
         "collect_ckan_inventory_via_package_list",
@@ -414,7 +408,14 @@ class TestResourceUrlExtraction:
         assert collectors.ckan._resource_first_url(item) == "http://example.com/file1.csv"
 
     def test_resource_first_url_skips_empty_and_none(self):
-        item = {"resources": [{"url": ""}, {"url": None}, {"url": "  "}, {"url": "http://valid.it/file.xls"}]}
+        item = {
+            "resources": [
+                {"url": ""},
+                {"url": None},
+                {"url": "  "},
+                {"url": "http://valid.it/file.xls"},
+            ]
+        }
         assert collectors.ckan._resource_first_url(item) == "http://valid.it/file.xls"
 
     def test_resource_first_url_returns_none_when_no_resources(self):
@@ -466,7 +467,11 @@ def test_extract_ckan_inventory_row_includes_landing_page_and_distribution_url()
             {"url": "http://example.it/data.json", "format": "json"},
         ],
     }
-    source_cfg = {"source_kind": "catalog", "protocol": "ckan", "base_url": "https://example.it/api"}
+    source_cfg = {
+        "source_kind": "catalog",
+        "protocol": "ckan",
+        "base_url": "https://example.it/api",
+    }
     row = collectors.ckan.extract_ckan_inventory_row(
         source_id="test_src",
         source_cfg=source_cfg,
@@ -484,7 +489,11 @@ def test_extract_ckan_inventory_row_includes_landing_page_and_distribution_url()
 def test_extract_ckan_inventory_row_phantom_item_has_none_for_urls():
     """A phantom item (from package_list without enrichment) should have None for landing_page and distribution_url."""
     item = {"id": "123", "name": "123"}  # no title, no resources
-    source_cfg = {"source_kind": "catalog", "protocol": "ckan", "base_url": "https://example.it/api"}
+    source_cfg = {
+        "source_kind": "catalog",
+        "protocol": "ckan",
+        "base_url": "https://example.it/api",
+    }
     row = collectors.ckan.extract_ckan_inventory_row(
         source_id="test_src",
         source_cfg=source_cfg,
@@ -558,19 +567,31 @@ class TestScanAreaPagesPagination:
         """Collector stops when a page has no links at all (empty HTML, no <a> tags)."""
         fake = FakeHttpClient()
         fake.responses["https://example.com/data?page=0"] = HttpResult(
-            response=fake_response(200, text='<a href="https://docs.example.com/file1.csv">file1.csv</a>',
-                                   headers={"content-type": "text/html"}),
-            err=None, ssl_fallback_used=None,
+            response=fake_response(
+                200,
+                text='<a href="https://docs.example.com/file1.csv">file1.csv</a>',
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+            ssl_fallback_used=None,
         )
         fake.responses["https://example.com/data?page=1"] = HttpResult(
-            response=fake_response(200, text='<a href="https://docs.example.com/file2.csv">file2.csv</a>',
-                                   headers={"content-type": "text/html"}),
-            err=None, ssl_fallback_used=None,
+            response=fake_response(
+                200,
+                text='<a href="https://docs.example.com/file2.csv">file2.csv</a>',
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+            ssl_fallback_used=None,
         )
         fake.responses["https://example.com/data?page=2"] = HttpResult(
-            response=fake_response(200, text="<html><body><p>No results</p></body></html>",
-                                   headers={"content-type": "text/html"}),
-            err=None, ssl_fallback_used=None,
+            response=fake_response(
+                200,
+                text="<html><body><p>No results</p></body></html>",
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+            ssl_fallback_used=None,
         )
         monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
@@ -598,24 +619,38 @@ class TestScanAreaPagesPagination:
         """Collector continues past pages where all links are duplicates of previous pages."""
         fake = FakeHttpClient()
         fake.responses["https://example.com/data?page=0"] = HttpResult(
-            response=fake_response(200, text='<a href="https://docs.example.com/file1.csv">file1.csv</a>',
-                                   headers={"content-type": "text/html"}),
-            err=None, ssl_fallback_used=None,
+            response=fake_response(
+                200,
+                text='<a href="https://docs.example.com/file1.csv">file1.csv</a>',
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+            ssl_fallback_used=None,
         )
         fake.responses["https://example.com/data?page=1"] = HttpResult(
-            response=fake_response(200, text='<a href="https://docs.example.com/file1.csv">file1.csv</a>',
-                                   headers={"content-type": "text/html"}),
-            err=None, ssl_fallback_used=None,
+            response=fake_response(
+                200,
+                text='<a href="https://docs.example.com/file1.csv">file1.csv</a>',
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+            ssl_fallback_used=None,
         )
         fake.responses["https://example.com/data?page=2"] = HttpResult(
-            response=fake_response(200, text='<a href="https://docs.example.com/file2.csv">file2.csv</a>',
-                                   headers={"content-type": "text/html"}),
-            err=None, ssl_fallback_used=None,
+            response=fake_response(
+                200,
+                text='<a href="https://docs.example.com/file2.csv">file2.csv</a>',
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+            ssl_fallback_used=None,
         )
         fake.responses["https://example.com/data?page=3"] = HttpResult(
-            response=fake_response(200, text="<html><body></body></html>",
-                                   headers={"content-type": "text/html"}),
-            err=None, ssl_fallback_used=None,
+            response=fake_response(
+                200, text="<html><body></body></html>", headers={"content-type": "text/html"}
+            ),
+            err=None,
+            ssl_fallback_used=None,
         )
         monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
@@ -641,9 +676,13 @@ class TestScanAreaPagesPagination:
         fake = FakeHttpClient()
         for i in range(3):
             fake.responses[f"https://example.com/data?page={i}"] = HttpResult(
-                response=fake_response(200, text=f'<a href="https://docs.example.com/file{i}.csv">file.csv</a>',
-                                       headers={"content-type": "text/html"}),
-                err=None, ssl_fallback_used=None,
+                response=fake_response(
+                    200,
+                    text=f'<a href="https://docs.example.com/file{i}.csv">file.csv</a>',
+                    headers={"content-type": "text/html"},
+                ),
+                err=None,
+                ssl_fallback_used=None,
             )
         monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
@@ -671,15 +710,23 @@ class TestContentTypeProbe:
         """Dopo il probe, by_format deve riflettere i formati aggiornati, non quelli pre-probe."""
         fake = FakeHttpClient()
         fake.responses["https://example.test/data?page=0"] = HttpResult(
-            response=fake_response(200, text='<a href="https://example.test/data.zip">data</a>',
-                                   headers={"content-type": "text/html"}),
-            err=None, ssl_fallback_used=None,
+            response=fake_response(
+                200,
+                text='<a href="https://example.test/data.zip">data</a>',
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+            ssl_fallback_used=None,
         )
         # Il collector fa anche una GET alla base_url per l'area page iniziale
         fake.responses["https://example.test"] = HttpResult(
-            response=fake_response(200, text='<a href="https://example.test/data.zip">data</a>',
-                                   headers={"content-type": "text/html"}),
-            err=None, ssl_fallback_used=None,
+            response=fake_response(
+                200,
+                text='<a href="https://example.test/data.zip">data</a>',
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+            ssl_fallback_used=None,
         )
         monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
@@ -754,7 +801,9 @@ def test_collect_named_graphs_inventory(monkeypatch):
     monkeypatch.setattr(collectors.sparql, "infer_graph_schema", mock_infer)
 
     result = collectors.sparql._collect_named_graphs(
-        "dati_test", source_cfg, "2026-05-31T12:00:00+00:00",
+        "dati_test",
+        source_cfg,
+        "2026-05-31T12:00:00+00:00",
     )
 
     assert len(result.rows) == 2

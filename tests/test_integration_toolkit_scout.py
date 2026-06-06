@@ -14,12 +14,17 @@ pytestmark = pytest.mark.contract
 def test_preview_kind_uppercase():
     """resolve_preview_kind deve restituire UPPERCASE."""
     assert resolve_preview_kind("http://example.com/data", content_type="text/csv") == "CSV"
-    assert resolve_preview_kind("http://example.com/data", content_type="application/json") == "JSON"
+    assert (
+        resolve_preview_kind("http://example.com/data", content_type="application/json") == "JSON"
+    )
     assert resolve_preview_kind("http://example.com/data.xlsx") == "XLSX"
     assert resolve_preview_kind("http://example.com/data.xls") == "XLS"
     assert resolve_preview_kind("http://example.com/data.tsv") == "TSV"
     assert resolve_preview_kind("http://example.com/data.csv") == "CSV"
-    assert resolve_preview_kind("http://example.com/data", content_type="text/tab-separated-values") == "TSV"
+    assert (
+        resolve_preview_kind("http://example.com/data", content_type="text/tab-separated-values")
+        == "TSV"
+    )
 
 
 def test_infer_years_start_regex():

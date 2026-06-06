@@ -20,7 +20,10 @@ pytestmark = pytest.mark.pure_unit
 
 class TestStaleReason:
     def test_500(self):
-        assert stale_reason_from_exception(RuntimeError("HTTP 500 — Internal Server Error")) == "source_500"
+        assert (
+            stale_reason_from_exception(RuntimeError("HTTP 500 — Internal Server Error"))
+            == "source_500"
+        )
         assert stale_reason_from_exception(RuntimeError("500")) == "source_500"
 
     def test_503(self):
@@ -35,7 +38,9 @@ class TestStaleReason:
         assert stale_reason_from_exception(RuntimeError("ssl_v3 handshake failed")) == "ssl_error"
 
     def test_connection_error(self):
-        assert stale_reason_from_exception(ConnectionError("Connection refused")) == "connection_error"
+        assert (
+            stale_reason_from_exception(ConnectionError("Connection refused")) == "connection_error"
+        )
 
     def test_dns(self):
         assert stale_reason_from_exception(RuntimeError("Name or service not known")) == "dns_error"
@@ -87,7 +92,9 @@ class TestRadarHistory:
         assert result["probes"][0]["probe_date"] == "2024-01-01"
 
     def test_append_probe_trims_to_14(self):
-        history = {"probes": [{"probe_date": f"2024-01-{d:02d}", "sources": []} for d in range(1, 20)]}
+        history = {
+            "probes": [{"probe_date": f"2024-01-{d:02d}", "sources": []} for d in range(1, 20)]
+        }
         result = append_radar_probe(history, "2024-01-20", [{"id": "s1", "status": "GREEN"}])
         assert len(result["probes"]) == 14
 

@@ -80,10 +80,14 @@ def list_source_items(
                     ]
                     if search_columns:
                         like = f"%{clean_query}%"
-                        search_clause = "(" + " OR ".join(
-                            f"lower(coalesce(cast({col} as varchar), '')) LIKE ?"
-                            for col in search_columns
-                        ) + ")"
+                        search_clause = (
+                            "("
+                            + " OR ".join(
+                                f"lower(coalesce(cast({col} as varchar), '')) LIKE ?"
+                                for col in search_columns
+                            )
+                            + ")"
+                        )
                         where_parts.append(search_clause)
                         params.extend([like] * len(search_columns))
 

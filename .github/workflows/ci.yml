@@ -45,5 +45,3 @@ jobs:
 
       - name: Run tests
         run: pytest -v --cov-fail-under=60
-
-

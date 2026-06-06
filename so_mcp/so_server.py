@@ -7,6 +7,7 @@ I moduli _*.py in questa directory si importano come sibling
 (``import _artifact``, ``from _inventory import ...``) grazie alla directory
 stessa aggiunta a ``sys.path`` da ``conftest.py`` (test) o dal runner MCP.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -48,7 +49,9 @@ def so_inventory_query(
     has_results: bool | None = None,
     grouped: bool = False,
 ) -> dict[str, Any]:
-    return guard_timed(query_inventory, "so_inventory_query", source_id, min_score, limit, has_results, grouped)
+    return guard_timed(
+        query_inventory, "so_inventory_query", source_id, min_score, limit, has_results, grouped
+    )
 
 
 @mcp.tool(
@@ -101,7 +104,9 @@ def so_catalog_inventory_search(
     protocol: str | None = None,
     limit: int = 25,
 ) -> dict[str, Any]:
-    return guard_timed(catalog_inventory_search, "so_catalog_inventory_search", query, source_id, protocol, limit)
+    return guard_timed(
+        catalog_inventory_search, "so_catalog_inventory_search", query, source_id, protocol, limit
+    )
 
 
 @mcp.tool(
@@ -131,7 +136,9 @@ def so_registry_query(
     observation_mode: str | None = None,
     source_id: str | None = None,
 ) -> dict[str, Any]:
-    return guard_timed(registry_query, "so_registry_query", protocol, source_kind, observation_mode, source_id)
+    return guard_timed(
+        registry_query, "so_registry_query", protocol, source_kind, observation_mode, source_id
+    )
 
 
 @mcp.tool(

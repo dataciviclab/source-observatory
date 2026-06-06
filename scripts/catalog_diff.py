@@ -61,7 +61,14 @@ def generate_diff(old_report: dict, new_report: dict) -> str:
                 if old_rows != new_rows:
                     changed.append((key, old_rows, new_rows))
 
-    if not added and not removed and not changed and not regressions and not recoveries and not persistent_errors:
+    if (
+        not added
+        and not removed
+        and not changed
+        and not regressions
+        and not recoveries
+        and not persistent_errors
+    ):
         return ""
 
     lines = ["### Variazioni nel Catalogo", ""]
@@ -94,9 +101,7 @@ def generate_diff(old_report: dict, new_report: dict) -> str:
     if added:
         lines.append("#### Nuove fonti rilevate")
         for key, val in added:
-            lines.append(
-                f"- `{key}`: {val.get('rows', 0)} item ({val.get('protocol', 'n/d')})"
-            )
+            lines.append(f"- `{key}`: {val.get('rows', 0)} item ({val.get('protocol', 'n/d')})")
         lines.append("")
 
     if removed:

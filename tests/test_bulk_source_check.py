@@ -1,4 +1,5 @@
 """Tests per bulk_source_check: regole non ovvie, edge case, bug già visti."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -26,9 +27,8 @@ def _resp(
     return r
 
 
-
-
 # ── _infer_granularity ────────────────────────────────────────────────────────
+
 
 class TestInferGranularity:
     def test_comune_wins_over_regione(self):
@@ -57,6 +57,7 @@ class TestInferGranularity:
 
 # ── _infer_years ──────────────────────────────────────────────────────────────
 
+
 class TestInferYears:
     def test_single_year(self):
         assert _infer_years("dati 2022") == (2022, 2022)
@@ -84,6 +85,7 @@ class TestInferYears:
 
 # ── _intake_score ─────────────────────────────────────────────────────────────
 
+
 class TestIntakeScore:
     def test_nan_format_does_not_crash(self):
         # bug già visto: float('nan') passato come resource_format crashava
@@ -104,7 +106,9 @@ class TestIntakeScore:
         assert isinstance(score, int)
 
     def test_high_score_comune_long_span(self):
-        score, candidate = _intake_score("comune", 2000, 2023, True, "CSV", "ckan_package_show", False)
+        score, candidate = _intake_score(
+            "comune", 2000, 2023, True, "CSV", "ckan_package_show", False
+        )
         assert score >= 80
         assert candidate is True
 
@@ -127,11 +131,14 @@ class TestIntakeScore:
 
     def test_xls_csv_xml_normalized_to_xls(self):
         """'xls,csv,xml' should normalize to 'XLS' (score 10)."""
-        score, _ = _intake_score("comune", 2015, 2022, True, "xls,csv,xml", "ckan_package_show", False)
+        score, _ = _intake_score(
+            "comune", 2015, 2022, True, "xls,csv,xml", "ckan_package_show", False
+        )
         assert score >= 10  # XLS format gives 10 points
 
 
 # ── _ckan_api_base ────────────────────────────────────────────────────────────
+
 
 class TestCkanApiBase:
     def test_standard_endpoint(self):
@@ -155,6 +162,7 @@ class TestCkanApiBase:
 
 
 # ── Regression: max_age_days=None with existing output ─────────────────────────
+
 
 class TestMaxAgeDaysNone:
     def test_max_age_days_none_does_not_crash_with_existing_output(self, tmp_path):
@@ -230,7 +238,9 @@ def test_fetch_sdmx_years_allow_fetch_false_skips_http() -> None:
     """allow_fetch=False must return (None, None) without any HTTP call."""
     from source_check_fetch import _fetch_sdmx_years
 
-    year_min, year_max = _fetch_sdmx_years("https://example.test/sdmx", "flow123", allow_fetch=False)
+    year_min, year_max = _fetch_sdmx_years(
+        "https://example.test/sdmx", "flow123", allow_fetch=False
+    )
     assert year_min is None
     assert year_max is None
 
@@ -260,9 +270,12 @@ def test_fetch_data_preview_returns_new_fields(monkeypatch) -> None:
     assert result.get("file_size") == len(b"col1,col2,col3\n1,2,3\n4,5,6")
     assert result.get("preview_row_count") == 2
     import json
+
     # DuckDB restituisce BIGINT per interi (non int64 come pandas)
     ct = json.loads(result.get("col_types") or "{}")
-    assert all(v.upper() in ("BIGINT", "INTEGER", "INT64") for v in ct.values()), f"Unexpected types: {ct}"
+    assert all(v.upper() in ("BIGINT", "INTEGER", "INT64") for v in ct.values()), (
+        f"Unexpected types: {ct}"
+    )
     assert list(ct.keys()) == ["col1", "col2", "col3"]
     assert json.loads(result.get("columns") or "[]") == ["col1", "col2", "col3"]
 
@@ -376,7 +389,12 @@ def test_fetch_data_preview_tsv_extension(monkeypatch) -> None:
 
     def fake_get(self, url, **kwargs):
         return HttpResult(
-            response=_resp(200, text="a\tb\tc\n1\t2\t3\n", headers={"Content-Type": "text/tab-separated-values"}, url=url),
+            response=_resp(
+                200,
+                text="a\tb\tc\n1\t2\t3\n",
+                headers={"Content-Type": "text/tab-separated-values"},
+                url=url,
+            ),
             err=None,
         )
 
@@ -397,8 +415,12 @@ def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
 
     def fake_get(self, url, **kwargs):
         return HttpResult(
-            response=_resp(200, text="col1\tcol2\tcol3\n1\t2\t3\n4\t5\t6",
-                          headers={"Content-Type": "application/octet-stream"}, url=url),
+            response=_resp(
+                200,
+                text="col1\tcol2\tcol3\n1\t2\t3\n4\t5\t6",
+                headers={"Content-Type": "application/octet-stream"},
+                url=url,
+            ),
             err=None,
         )
 
@@ -407,6 +429,7 @@ def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
     result = _fetch_data_preview("https://example.test/data.xls")
     assert result.get("enrich_method") == "csv_preview"
     import json
+
     cols = json.loads(result.get("columns") or "[]")
     assert len(cols) == 3
     assert cols == ["col1", "col2", "col3"]
@@ -426,7 +449,9 @@ def test_http_circuit_breaker_blocks_host_after_failures(monkeypatch) -> None:
         return HttpResult(response=None, err=requests.exceptions.ConnectTimeout())
 
     monkeypatch.setattr(HttpClient, "head", fake_head)
-    configure_source_check_http(circuit_fail_threshold=2, http_timeout=(1.0, 2.0), http_max_retries=1)
+    configure_source_check_http(
+        circuit_fail_threshold=2, http_timeout=(1.0, 2.0), http_max_retries=1
+    )
     try:
         u = "https://slow-host.example/resource/1"
         _http_head_with_retry(u)
@@ -435,7 +460,9 @@ def test_http_circuit_breaker_blocks_host_after_failures(monkeypatch) -> None:
         assert note == "circuit_open"
         assert len(heads) == 2
     finally:
-        configure_source_check_http(circuit_fail_threshold=0, http_timeout=(5.0, 10.0), http_max_retries=2)
+        configure_source_check_http(
+            circuit_fail_threshold=0, http_timeout=(5.0, 10.0), http_max_retries=2
+        )
 
 
 # ── _extract_year_values_from_sample ──────────────────────────────────────────
@@ -446,6 +473,7 @@ class TestExtractYearValuesFromSample:
 
     def test_multiple_years_in_column(self) -> None:
         from source_check_fetch import _extract_year_values_from_sample
+
         sample = [
             {"Anno": 2020, "Regione": "Lombardia", "Valore": 100},
             {"Anno": 2021, "Regione": "Lombardia", "Valore": 110},
@@ -458,6 +486,7 @@ class TestExtractYearValuesFromSample:
     def test_single_year_without_hint_column(self) -> None:
         """Un solo valore anno senza colonna hint non basta — servono almeno 2 numeri."""
         from source_check_fetch import _extract_year_values_from_sample
+
         sample = [{"codice": 2020, "valore": 100}]
         columns = ["codice", "valore"]
         result = _extract_year_values_from_sample(sample, columns)
@@ -465,6 +494,7 @@ class TestExtractYearValuesFromSample:
 
     def test_falls_back_to_year_hint_column(self) -> None:
         from source_check_fetch import _extract_year_values_from_sample
+
         sample = [
             {"periodo": "2020-2021", "anno": 2020, "valore": 100},
             {"periodo": "2020-2021", "anno": 2021, "valore": 110},
@@ -476,10 +506,12 @@ class TestExtractYearValuesFromSample:
 
     def test_empty_sample(self) -> None:
         from source_check_fetch import _extract_year_values_from_sample
+
         assert _extract_year_values_from_sample([], ["A", "B"]) == []
 
     def test_no_year_values_at_all(self) -> None:
         from source_check_fetch import _extract_year_values_from_sample
+
         sample = [{"nome": "Mario", "eta": 30}, {"nome": "Luigi", "eta": 25}]
         result = _extract_year_values_from_sample(sample, ["nome", "eta"])
         assert result == []
@@ -487,6 +519,7 @@ class TestExtractYearValuesFromSample:
     def test_out_of_range_ignored(self) -> None:
         """Valori fuori 1900-2100 non sono anni."""
         from source_check_fetch import _extract_year_values_from_sample
+
         sample = [
             {"codice": 1, "valore": 100},
             {"codice": 2, "valore": 200},
@@ -497,6 +530,7 @@ class TestExtractYearValuesFromSample:
     def test_nan_values_in_sample(self) -> None:
         """NaN nei sample non deve crashare int(). Bug reale da fonte mef_irpef."""
         from source_check_fetch import _extract_year_values_from_sample
+
         sample = [
             {"Anno": float("nan"), "Regione": "Lombardia", "Valore": 100},
             {"Anno": 2021.0, "Regione": "Lombardia", "Valore": 110},
@@ -514,28 +548,34 @@ class TestInferGranularityFromColumns:
 
     def test_comune(self) -> None:
         from source_check_fetch import _infer_granularity_from_columns
+
         assert _infer_granularity_from_columns(["Comune", "Popolazione"]) == "comune"
 
     def test_regione(self) -> None:
         from source_check_fetch import _infer_granularity_from_columns
+
         assert _infer_granularity_from_columns(["Regione", "Anno", "Valore"]) == "regione"
 
     def test_comune_wins_over_regione(self) -> None:
         """Comune ha precedenza quando entrambi i pattern matchano."""
         from source_check_fetch import _infer_granularity_from_columns
+
         assert _infer_granularity_from_columns(["Comune", "Regione"]) == "comune"
 
     def test_no_territorial_columns(self) -> None:
         from source_check_fetch import _infer_granularity_from_columns
+
         assert _infer_granularity_from_columns(["Anno", "Valore", "Categoria"]) == "non_determinato"
 
     def test_empty_columns_list(self) -> None:
         from source_check_fetch import _infer_granularity_from_columns
+
         assert _infer_granularity_from_columns([]) == "non_determinato"
 
     def test_comune_in_substring(self) -> None:
         """'comune' dentro una parola composta matcha lo stesso."""
         from source_check_fetch import _infer_granularity_from_columns
+
         assert _infer_granularity_from_columns(["Denominazione_comune", "CAP"]) == "comune"
 
 
@@ -567,11 +607,14 @@ def test_normalize_preview_columns_for_parquet_handles_existing_nested_rows(tmp_
     normalized.to_parquet(out, index=False)
 
     reloaded = pd.read_parquet(out)
-    assert json.loads(reloaded.loc[reloaded["item_id"] == "old", "col_types"].iloc[0]) == {"b": "object"}
+    assert json.loads(reloaded.loc[reloaded["item_id"] == "old", "col_types"].iloc[0]) == {
+        "b": "object"
+    }
     assert json.loads(reloaded.loc[reloaded["item_id"] == "old", "columns"].iloc[0]) == ["b"]
 
 
 # ── _enrich_with_inventory: HTML NaN fallback ──────────────────────────────────
+
 
 class TestEnrichWithInventoryHtmlFallback:
     """Regressione: organization/tags/notes_excerpt NaN nelle fonti HTML devono
@@ -581,6 +624,7 @@ class TestEnrichWithInventoryHtmlFallback:
         """Costruisce una pd.Series finta con i campi minimi dell'inventory."""
         import numpy as np
         import pandas as pd
+
         base = {
             "source_id": source_id,
             "item_id": "test-item-001",
@@ -605,6 +649,7 @@ class TestEnrichWithInventoryHtmlFallback:
     def test_aifa_produces_org_tags_notes(self):
         import yaml
         from bulk_source_check import _enrich_with_inventory
+
         with open("data/radar/sources_registry.yaml") as f:
             registry = yaml.safe_load(f)
 
@@ -612,13 +657,17 @@ class TestEnrichWithInventoryHtmlFallback:
         result = _enrich_with_inventory(row, registry)
 
         assert result["enriched_org"] == "AIFA", f"expected AIFA, got {result['enriched_org']!r}"
-        assert result["enriched_tags"] == "sanita", f"expected sanita, got {result['enriched_tags']!r}"
-        assert "Portale Open Data AIFA" in (result["enriched_notes"] or ""), \
+        assert result["enriched_tags"] == "sanita", (
+            f"expected sanita, got {result['enriched_tags']!r}"
+        )
+        assert "Portale Open Data AIFA" in (result["enriched_notes"] or ""), (
             f"expected AIFA note, got {result['enriched_notes']!r}"
+        )
 
     def test_mim_opendata_produces_org_tags_notes(self):
         import yaml
         from bulk_source_check import _enrich_with_inventory
+
         with open("data/radar/sources_registry.yaml") as f:
             registry = yaml.safe_load(f)
 
@@ -634,14 +683,16 @@ class TestEnrichWithInventoryHtmlFallback:
         import numpy as np
         import yaml
         from bulk_source_check import _enrich_with_inventory
+
         with open("data/radar/sources_registry.yaml") as f:
             registry = yaml.safe_load(f)
 
         row = self._make_row("mim_opendata", organization="MIM ufficiale", tags=np.nan)
         result = _enrich_with_inventory(row, registry)
 
-        assert result["enriched_org"] == "MIM ufficiale", \
+        assert result["enriched_org"] == "MIM ufficiale", (
             f"non deve sovrascrivere org esistente: {result['enriched_org']!r}"
+        )
 
 
 # ── SDMX enrichment contract ──────────────────────────────────────────────────
@@ -680,6 +731,7 @@ class TestSdmxParseAnnotations:
         import xml.etree.ElementTree as ET
 
         from bulk_source_check import _parse_sdmx_annotations
+
         root = ET.fromstring(_SDMX_XML)
         result = _parse_sdmx_annotations(root, "https://example.test/dataflow/IT1", "32_221")
         assert result["sdmx_flow"] == "32_221"
@@ -693,18 +745,19 @@ class TestSdmxParseAnnotations:
         import xml.etree.ElementTree as ET
 
         from bulk_source_check import _parse_sdmx_annotations
+
         root = ET.fromstring(_SDMX_XML_NO_AGENCY)
         result = _parse_sdmx_annotations(root, "https://example.test/dataflow/IT1", "42_999")
         assert result["sdmx_flow"] == "42_999"
         assert result["sdmx_version"] == "2.0"
-        assert result["sdmx_agency"] is None, \
-            f"expected None, got {result['sdmx_agency']!r}"
+        assert result["sdmx_agency"] is None, f"expected None, got {result['sdmx_agency']!r}"
 
     def test_extracts_keywords(self) -> None:
         """Le annotation keywords continuano a funzionare."""
         import xml.etree.ElementTree as ET
 
         from bulk_source_check import _parse_sdmx_annotations
+
         xml_with_ann = _SDMX_XML.replace(
             "<common:Name>Test dataflow</common:Name>",
             "<common:Name>Test dataflow</common:Name>\n"
@@ -723,6 +776,7 @@ class TestSdmxEnrichWithInventory:
 
     def _make_sdmx_row(self, **overrides) -> dict:
         import numpy as np
+
         base = {
             "source_id": "istat_sdmx",
             "item_id": "32_221",
@@ -765,9 +819,11 @@ class TestSdmxEnrichWithInventory:
             captured_args["base_url"] = base_url
             captured_args["flow_id"] = flow_id
             import xml.etree.ElementTree as ET
+
             return ET.fromstring(_SDMX_XML)
 
         import bulk_source_check as bsc
+
         monkeypatch.setattr(bsc, "_fetch_sdmx_dataflow", _mock_fetch)
         # _fetch_sdmx_years non mockato → farebbe HTTP request reale verso ISTAT
         # (down). La logica SDMX enrichment non dipende dagli anni per i campi
@@ -778,8 +834,9 @@ class TestSdmxEnrichWithInventory:
         result = _enrich_with_inventory(row, registry)
 
         # Verifica che _fetch_sdmx_dataflow abbia ricevuto base_url dal registry
-        assert captured_args["base_url"] == registry["istat_sdmx"]["base_url"], \
+        assert captured_args["base_url"] == registry["istat_sdmx"]["base_url"], (
             f"atteso {registry['istat_sdmx']['base_url']}, ottenuto {captured_args['base_url']}"
+        )
         assert captured_args["flow_id"] == "32_221"
         # Verifica i campi SDMX nel risultato
         assert result["sdmx_flow"] == "32_221"
@@ -790,16 +847,25 @@ class TestSdmxEnrichWithInventory:
     def test_sdmx_passes_url_filter(self) -> None:
         """Item con protocol==\"sdmx\" passano il filtro URL anche senza landing_page."""
         import pandas as pd
+
         row = pd.Series(self._make_sdmx_row())
         # Stessa logica del filtro reale in main(): usa .notna() per NaN
         has_url = row["landing_page"] if pd.notna(row.get("landing_page")) else False
-        has_url = has_url or (row["distribution_url"] if pd.notna(row.get("distribution_url")) else False)
+        has_url = has_url or (
+            row["distribution_url"] if pd.notna(row.get("distribution_url")) else False
+        )
         has_url = has_url or (row["protocol"] == "sdmx")
         assert has_url is True
         # Verifica anche che SENZA protocol sdmx fallirebbe
         row_no_sdmx = pd.Series(self._make_sdmx_row(protocol="ckan"))
-        has_url_no_sdmx = row_no_sdmx["landing_page"] if pd.notna(row_no_sdmx.get("landing_page")) else False
-        has_url_no_sdmx = has_url_no_sdmx or (row_no_sdmx["distribution_url"] if pd.notna(row_no_sdmx.get("distribution_url")) else False)
+        has_url_no_sdmx = (
+            row_no_sdmx["landing_page"] if pd.notna(row_no_sdmx.get("landing_page")) else False
+        )
+        has_url_no_sdmx = has_url_no_sdmx or (
+            row_no_sdmx["distribution_url"]
+            if pd.notna(row_no_sdmx.get("distribution_url"))
+            else False
+        )
         has_url_no_sdmx = has_url_no_sdmx or (row_no_sdmx["protocol"] == "sdmx")
         assert has_url_no_sdmx is False
 
@@ -829,6 +895,7 @@ class TestSdmxCheckRowPassthrough:
             return 200, True, None, "application/xml"
 
         import bulk_source_check as bsc
+
         monkeypatch.setattr(bsc, "_fetch_sdmx_dataflow", _mock_fetch)
         monkeypatch.setattr(bsc, "_fetch_data_preview", _mock_preview)
         monkeypatch.setattr(bsc, "_http_head_with_retry", _mock_head)
@@ -836,30 +903,32 @@ class TestSdmxCheckRowPassthrough:
         # (down). Gli anni sono accessori — non servono per i campi SDMX testati.
         monkeypatch.setattr(bsc, "_fetch_sdmx_years", lambda *a, **kw: (None, None))
 
-        row = pd.Series({
-            "source_id": "istat_sdmx",
-            "item_id": "32_221",
-            "item_name": "32_221",
-            "item_slug": np.nan,
-            "title": "Test SDMX",
-            "organization": np.nan,
-            "tags": np.nan,
-            "notes_excerpt": np.nan,
-            "format": np.nan,
-            "protocol": "sdmx",
-            "source_url": np.nan,
-            "api_base_url": np.nan,
-            "landing_page": np.nan,
-            "distribution_url": np.nan,
-            "url": np.nan,
-            "granularity": np.nan,
-            "year_signal": np.nan,
-            "encoding_suggested": np.nan,
-            "delim_suggested": np.nan,
-            "decimal_suggested": np.nan,
-            "skip_suggested": np.nan,
-            "source_status": "active",
-        })
+        row = pd.Series(
+            {
+                "source_id": "istat_sdmx",
+                "item_id": "32_221",
+                "item_name": "32_221",
+                "item_slug": np.nan,
+                "title": "Test SDMX",
+                "organization": np.nan,
+                "tags": np.nan,
+                "notes_excerpt": np.nan,
+                "format": np.nan,
+                "protocol": "sdmx",
+                "source_url": np.nan,
+                "api_base_url": np.nan,
+                "landing_page": np.nan,
+                "distribution_url": np.nan,
+                "url": np.nan,
+                "granularity": np.nan,
+                "year_signal": np.nan,
+                "encoding_suggested": np.nan,
+                "delim_suggested": np.nan,
+                "decimal_suggested": np.nan,
+                "skip_suggested": np.nan,
+                "source_status": "active",
+            }
+        )
         result = _check_row(row, "2026-05-21T12:00:00", registry)
 
         assert result["sdmx_flow"] == "32_221"
@@ -910,29 +979,35 @@ class TestNormalizeTitleForGrouping:
     @pytest.mark.parametrize("title,expected", CASES)
     def test_normalize(self, title, expected):
         from source_check_analyze import _normalize_title_for_grouping
+
         assert _normalize_title_for_grouping(title) == expected
 
 
 class TestToSlug:
     def test_basic(self):
         from source_check_analyze import _to_slug
+
         assert _to_slug("hello world") == "hello-world"
 
     def test_special_chars_stripped(self):
         from source_check_analyze import _to_slug
+
         assert _to_slug("Economic activities (Nace 2 digit)!") == "economic-activities-nace-2-digit"
 
     def test_max_len(self):
         from source_check_analyze import _to_slug
+
         long = "a" * 200
         assert len(_to_slug(long)) == 80
 
     def test_empty(self):
         from source_check_analyze import _to_slug
+
         assert _to_slug("") == "unknown"
 
     def test_whitespace_collapsed(self):
         from source_check_analyze import _to_slug
+
         assert _to_slug("  many   spaces  ") == "many-spaces"
 
 
@@ -941,11 +1016,13 @@ class TestComputeDatasetGroup:
 
     def test_via_title(self):
         from source_check_analyze import compute_dataset_group
+
         g = compute_dataset_group("inps", "Numero pensionati 2022", "item_123")
         assert g == "inps/numero-pensionati"
 
     def test_via_sdmx_prefix(self):
         from source_check_analyze import compute_dataset_group
+
         g = compute_dataset_group("istat_sdmx", None, "183_1163_DF_DICA_ASIAULP_2", protocol="sdmx")
         # trailing _2 stripped, underscores removed by slugify
         assert "/sdmx/" in g
@@ -955,12 +1032,14 @@ class TestComputeDatasetGroup:
 
     def test_via_item_id_fallback(self):
         from source_check_analyze import compute_dataset_group
+
         g = compute_dataset_group("anac", None, "da10182d-75ba-4894")
         assert "anac/" in g
         assert "da10182d" in g
 
     def test_unknown(self):
         from source_check_analyze import compute_dataset_group
+
         g = compute_dataset_group("x", None, None)
         assert g == "x/unknown"
 
@@ -972,10 +1051,24 @@ class TestAddDatasetGroupColumns:
         import pandas as pd
         from source_check_analyze import add_dataset_group_columns
 
-        df = pd.DataFrame([
-            {"source_id": "s1", "item_id": "a", "title": "Population 2022", "year_min": 2022, "year_max": 2022},
-            {"source_id": "s1", "item_id": "b", "title": "Population 2023", "year_min": 2023, "year_max": 2023},
-        ])
+        df = pd.DataFrame(
+            [
+                {
+                    "source_id": "s1",
+                    "item_id": "a",
+                    "title": "Population 2022",
+                    "year_min": 2022,
+                    "year_max": 2022,
+                },
+                {
+                    "source_id": "s1",
+                    "item_id": "b",
+                    "title": "Population 2023",
+                    "year_min": 2023,
+                    "year_max": 2023,
+                },
+            ]
+        )
         result = add_dataset_group_columns(df)
         assert "dataset_group" in result.columns
         assert "dataset_group_size" in result.columns
@@ -992,10 +1085,17 @@ class TestAddDatasetGroupColumns:
         from source_check_analyze import add_dataset_group_columns
 
         # Row without year_min/year_max (e.g. enrichment failed)
-        df = pd.DataFrame([{
-            "source_id": "s1", "item_id": "z", "title": None,
-            "year_min": None, "year_max": None,
-        }])
+        df = pd.DataFrame(
+            [
+                {
+                    "source_id": "s1",
+                    "item_id": "z",
+                    "title": None,
+                    "year_min": None,
+                    "year_max": None,
+                }
+            ]
+        )
         result = add_dataset_group_columns(df)
         assert "dataset_group" in result.columns
         assert result["dataset_group"].iloc[0] is not None

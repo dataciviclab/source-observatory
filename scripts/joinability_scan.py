@@ -52,39 +52,57 @@ OUTPUT_PATH = os.path.join(
 BRIDGE_SLUG: str = "bdap_anagrafe_enti"
 
 KEY_PATTERNS: list[tuple[str, str, str]] = [
-    ("istat_comune",
-     r"(?i)(codice_istat_comune|codice_comune_istat|^codice_comune$|^pro_com$|^comune$)",
-     "Codice ISTAT comune (8 digit alfanumerico)"),
-    ("istat_regione",
-     r"(?i)(codice_istat_regione|^codice_regione$|^codreg$|regione_istat_cod|^cod_reg$)",
-     "Codice ISTAT regione"),
-    ("anno",
-     r"(?i)^(anno|anno_di_imposta|anno_scolastico|annoscolastico|anno_riferimento|anno_presentazione|esercizio_finanziario)$",
-     "Anno / esercizio"),
-    ("provincia",
-     r"(?i)(sigla_provincia|^provincia$|codice_provincia|sigla_prov|^prov$)",
-     "Provincia (sigla o codice)"),
-    ("codice_catastale",
-     r"(?i)(codice_catastale|cod_catastale|catastale)",
-     "Codice catastale comune"),
-    ("codice_ente",
-     r"(?i)(codice_ente_ipa|^id_ente$|codice_ente_siope|codice_istituzione|codice_ente_bdap|codice_ente_ssn)",
-     "Codice ente pubblico (IPA/SIOPE/BDAP/SSN)"),
-    ("codice_scuola",
-     r"(?i)(codice_scuola|codicescuola|codice_meccanografico|^codice_scuola$|^cod_scuola$)",
-     "Codice scuola (MIM)"),
-    ("atc",
-     r"(?i)(^atc[1-5]$|^atc$|^atc1$|^atc2$|^atc3$|^atc4$|^atc5$)",
-     "Classificazione ATC farmaceutica"),
-    ("ateco",
-     r"(?i)(codice_ateco|^ateco$|sezione_ateco)",
-     "Classificazione ATECO attività economica"),
-    ("mese",
-     r"(?i)^mese$",
-     "Mese (1-12)"),
-    ("codice_comune_anagrafe",
-     r"(?i)(^codice_comune$|^comune_istat$|^comune_codice$)",
-     "Codice comune (generico, forse ISTAT)"),
+    (
+        "istat_comune",
+        r"(?i)(codice_istat_comune|codice_comune_istat|^codice_comune$|^pro_com$|^comune$)",
+        "Codice ISTAT comune (8 digit alfanumerico)",
+    ),
+    (
+        "istat_regione",
+        r"(?i)(codice_istat_regione|^codice_regione$|^codreg$|regione_istat_cod|^cod_reg$)",
+        "Codice ISTAT regione",
+    ),
+    (
+        "anno",
+        r"(?i)^(anno|anno_di_imposta|anno_scolastico|annoscolastico|anno_riferimento|anno_presentazione|esercizio_finanziario)$",
+        "Anno / esercizio",
+    ),
+    (
+        "provincia",
+        r"(?i)(sigla_provincia|^provincia$|codice_provincia|sigla_prov|^prov$)",
+        "Provincia (sigla o codice)",
+    ),
+    (
+        "codice_catastale",
+        r"(?i)(codice_catastale|cod_catastale|catastale)",
+        "Codice catastale comune",
+    ),
+    (
+        "codice_ente",
+        r"(?i)(codice_ente_ipa|^id_ente$|codice_ente_siope|codice_istituzione|codice_ente_bdap|codice_ente_ssn)",
+        "Codice ente pubblico (IPA/SIOPE/BDAP/SSN)",
+    ),
+    (
+        "codice_scuola",
+        r"(?i)(codice_scuola|codicescuola|codice_meccanografico|^codice_scuola$|^cod_scuola$)",
+        "Codice scuola (MIM)",
+    ),
+    (
+        "atc",
+        r"(?i)(^atc[1-5]$|^atc$|^atc1$|^atc2$|^atc3$|^atc4$|^atc5$)",
+        "Classificazione ATC farmaceutica",
+    ),
+    (
+        "ateco",
+        r"(?i)(codice_ateco|^ateco$|sezione_ateco)",
+        "Classificazione ATECO attività economica",
+    ),
+    ("mese", r"(?i)^mese$", "Mese (1-12)"),
+    (
+        "codice_comune_anagrafe",
+        r"(?i)(^codice_comune$|^comune_istat$|^comune_codice$)",
+        "Codice comune (generico, forse ISTAT)",
+    ),
 ]
 
 
@@ -152,10 +170,7 @@ def build_catalog_index(catalog: list[dict]) -> dict[str, dict]:
         slug = ds.get("slug", ds.get("name", ""))
         cols_raw = ds.get("columns", [])
         if isinstance(cols_raw, list):
-            col_names = [
-                c.get("name", str(c)) if isinstance(c, dict) else str(c)
-                for c in cols_raw
-            ]
+            col_names = [c.get("name", str(c)) if isinstance(c, dict) else str(c) for c in cols_raw]
         elif isinstance(cols_raw, dict):
             col_names = list(cols_raw.keys())
         else:
@@ -242,14 +257,16 @@ def cross_reference(
                 tags.append("diretto")
             if via_bridge:
                 tags.append("via bridge")
-            matches.append({
-                "slug": slug,
-                "name": info["name"],
-                "matched_keys": sorted(common),
-                "match_count": len(common),
-                "match_tags": "+".join(tags),
-                "source": info["source"],
-            })
+            matches.append(
+                {
+                    "slug": slug,
+                    "name": info["name"],
+                    "matched_keys": sorted(common),
+                    "match_count": len(common),
+                    "match_tags": "+".join(tags),
+                    "source": info["source"],
+                }
+            )
 
     matches.sort(key=lambda m: -m["match_count"])
     return matches
@@ -299,7 +316,12 @@ def compute_joinability_score(
 
 def item_sort_key(item: dict) -> tuple:
     """Chiave di ordinamento: score decrescente, poi numero chiavi, poi nome."""
-    return (-item["joinability_score"], -len(item["found_keys"]), item["source_id"], item["item_name"])
+    return (
+        -item["joinability_score"],
+        -len(item["found_keys"]),
+        item["source_id"],
+        item["item_name"],
+    )
 
 
 def build_json_output(
@@ -312,25 +334,36 @@ def build_json_output(
     # ― Item con chiavi trovate, ordinati per score
     scored_items: list[dict] = []
     for item in items:
-        scored_items.append({
-            "source_id": item["source_id"],
-            "item_name": item["item_name"],
-            "intake_score": item["intake_score"],
-            "joinability_score": item["joinability_score"],
-            "col_count": item["col_count"],
-            "keys_found": item["found_keys"],
-            "matches": [
-                {
-                    "slug": m["slug"],
-                    "name": m["name"],
-                    "matched_keys": m["matched_keys"],
-                    "match_type": "direct" if "diretto" in m.get("match_tags", "") else "via_bridge",
-                }
-                for m in item["catalog_matches"]
-            ],
-            "joined_datasets": [m["slug"] for m in item["catalog_matches"]],
-        })
-    scored_items.sort(key=lambda x: (-x["joinability_score"], -len(x["keys_found"]), x["source_id"], x["item_name"]))
+        scored_items.append(
+            {
+                "source_id": item["source_id"],
+                "item_name": item["item_name"],
+                "intake_score": item["intake_score"],
+                "joinability_score": item["joinability_score"],
+                "col_count": item["col_count"],
+                "keys_found": item["found_keys"],
+                "matches": [
+                    {
+                        "slug": m["slug"],
+                        "name": m["name"],
+                        "matched_keys": m["matched_keys"],
+                        "match_type": "direct"
+                        if "diretto" in m.get("match_tags", "")
+                        else "via_bridge",
+                    }
+                    for m in item["catalog_matches"]
+                ],
+                "joined_datasets": [m["slug"] for m in item["catalog_matches"]],
+            }
+        )
+    scored_items.sort(
+        key=lambda x: (
+            -x["joinability_score"],
+            -len(x["keys_found"]),
+            x["source_id"],
+            x["item_name"],
+        )
+    )
 
     # ― Statistiche chiavi aggregate
     key_counts: dict[str, int] = {}
@@ -339,18 +372,20 @@ def build_json_output(
             key_counts[k] = key_counts.get(k, 0) + 1
 
     # ― Effetto bridge
-    bridge_items = sum(
-        1 for item in items
-        if set(item["found_keys"].keys()) & bridge_semantic_keys
-    )
+    bridge_items = sum(1 for item in items if set(item["found_keys"].keys()) & bridge_semantic_keys)
     bridge_extended = sum(
-        1 for item in items
+        1
+        for item in items
         if any("bridge" in m.get("match_tags", "") for m in item["catalog_matches"])
     )
 
     # ― Item ad alto intake score senza chiavi di join
     no_key_high_score = [
-        {"source_id": item["source_id"], "item_name": item["item_name"], "intake_score": item["intake_score"]}
+        {
+            "source_id": item["source_id"],
+            "item_name": item["item_name"],
+            "intake_score": item["intake_score"],
+        }
         for item in items
         if not item["found_keys"] and item["intake_score"] and item["intake_score"] >= 50
     ]
@@ -402,11 +437,12 @@ def main() -> None:
     print("[2/5] Deriva bridge keys dal catalogo...")
     bridge_semantic_keys = derive_bridge_keys(catalog_index)
     if bridge_semantic_keys:
-        print(f"     Bridge `{BRIDGE_SLUG}` → {len(bridge_semantic_keys)} chiavi: "
-              f"{sorted(bridge_semantic_keys)}")
+        print(
+            f"     Bridge `{BRIDGE_SLUG}` → {len(bridge_semantic_keys)} chiavi: "
+            f"{sorted(bridge_semantic_keys)}"
+        )
     else:
-        print(f"     Bridge `{BRIDGE_SLUG}` non trovato nel catalogo — "
-              f"solo match diretti")
+        print(f"     Bridge `{BRIDGE_SLUG}` non trovato nel catalogo — solo match diretti")
     print()
 
     # 3. Analisi chiavi su tutti gli item
@@ -430,18 +466,20 @@ def main() -> None:
         catalog_matches = cross_reference(found_keys, catalog_index, bridge_semantic_keys)
         joinability_score = compute_joinability_score(found_keys, catalog_matches)
 
-        items.append({
-            "source_id": record.get("source_id", "?"),
-            "item_name": record.get("item_name", record.get("title", "?")),
-            "title": record.get("title", ""),
-            "intake_score": record.get("intake_score", 0) or 0,
-            "granularity": record.get("granularity", ""),
-            "resource_format": record.get("resource_format", ""),
-            "col_count": len(col_names),
-            "found_keys": found_keys,
-            "catalog_matches": catalog_matches,
-            "joinability_score": joinability_score,
-        })
+        items.append(
+            {
+                "source_id": record.get("source_id", "?"),
+                "item_name": record.get("item_name", record.get("title", "?")),
+                "title": record.get("title", ""),
+                "intake_score": record.get("intake_score", 0) or 0,
+                "granularity": record.get("granularity", ""),
+                "resource_format": record.get("resource_format", ""),
+                "col_count": len(col_names),
+                "found_keys": found_keys,
+                "catalog_matches": catalog_matches,
+                "joinability_score": joinability_score,
+            }
+        )
 
     items.sort(key=item_sort_key)
 

@@ -51,9 +51,9 @@ OFFSET {offset}
 
 def build_sparql_query(source_cfg: dict[str, Any], offset: int = 0) -> tuple[str, str]:
     sparql_cfg = source_cfg.get("sparql") or {}
-    query_name = sparql_cfg.get("query_name") or source_cfg.get(
-        "catalog_baseline", {}
-    ).get("query_name")
+    query_name = sparql_cfg.get("query_name") or source_cfg.get("catalog_baseline", {}).get(
+        "query_name"
+    )
     query_text = sparql_cfg.get("query")
     if not query_text:
         query_name = query_name or "dcat_datasets"
@@ -90,21 +90,15 @@ def _group_sparql_bindings(bindings: list[dict[str, Any]]) -> dict[str, dict[str
                 "themes": [],
             },
         )
-        row_state["title"] = row_state["title"] or sparql_binding_value(
-            binding, "title"
-        )
+        row_state["title"] = row_state["title"] or sparql_binding_value(binding, "title")
         row_state["description"] = row_state["description"] or sparql_binding_value(
             binding, "description"
         )
         row_state["publisher"] = row_state["publisher"] or sparql_binding_value(
             binding, "publisherName"
         )
-        row_state["issued"] = row_state["issued"] or sparql_binding_value(
-            binding, "issued"
-        )
-        row_state["modified"] = row_state["modified"] or sparql_binding_value(
-            binding, "modified"
-        )
+        row_state["issued"] = row_state["issued"] or sparql_binding_value(binding, "issued")
+        row_state["modified"] = row_state["modified"] or sparql_binding_value(binding, "modified")
         row_state["landing_page"] = row_state["landing_page"] or sparql_binding_value(
             binding, "landingPage"
         )
@@ -135,9 +129,7 @@ def _build_sparql_rows(
     query_name: str,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    inventory_method = source_cfg.get("catalog_baseline", {}).get(
-        "method", "sparql_query"
-    )
+    inventory_method = source_cfg.get("catalog_baseline", {}).get("method", "sparql_query")
 
     for idx, (dataset_uri, row_state) in enumerate(by_dataset.items(), start=1):
         description = row_state["description"]
@@ -190,7 +182,9 @@ def _query_supports_offset(source_cfg: dict[str, Any], query_name: str) -> bool:
 
 
 def _execute_sparql_query(
-    endpoint: str, query_text: str, timeout: int,
+    endpoint: str,
+    query_text: str,
+    timeout: int,
 ) -> list[dict[str, Any]]:
     """Execute a single SPARQL query and return bindings.
 
@@ -204,7 +198,9 @@ def _execute_sparql_query(
 
 
 def _collect_named_graphs(
-    source_id: str, source_cfg: dict[str, Any], captured_at: str,
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
 ) -> CollectorResult:
     """Enumerate all named graphs as proxy inventory items.
 
@@ -216,9 +212,19 @@ def _collect_named_graphs(
     endpoint = sparql_cfg.get("endpoint_url") or source_cfg["base_url"]
     timeout = int(sparql_cfg.get("timeout_seconds", 60))
     graph_uri_prefix = sparql_cfg.get("graph_uri_prefix", "")
-    graph_uri_blacklist = [str(b) for b in sparql_cfg.get("graph_uri_blacklist", [
-        "localhost", "virtrdf", "owl#", "rules.skos", "virtrdf-label",
-    ])]
+    graph_uri_blacklist = [
+        str(b)
+        for b in sparql_cfg.get(
+            "graph_uri_blacklist",
+            [
+                "localhost",
+                "virtrdf",
+                "owl#",
+                "rules.skos",
+                "virtrdf-label",
+            ],
+        )
+    ]
     enrich_schema = sparql_cfg.get("enrich_schema", False)
     schema_predicate_limit = int(sparql_cfg.get("schema_predicate_limit", 20))
     enrich_workers = int(sparql_cfg.get("enrich_workers", 4))
@@ -242,29 +248,31 @@ def _collect_named_graphs(
         title = uri_path.replace("_", " ").replace("/", " \u2014 Legislatura ")
         if title:
             title = title[0].upper() + title[1:]
-        rows.append({
-            "captured_at": captured_at,
-            "source_id": source_id,
-            "source_kind": source_cfg.get("source_kind"),
-            "protocol": "sparql",
-            "inventory_method": "named_graphs",
-            "item_kind": "dataset",
-            "item_id": graph_uri,
-            "item_name": compact_uri_name(graph_uri),
-            "title": title,
-            "organization": None,
-            "tags": None,
-            "notes_excerpt": f"Named graph: {uri_path}",
-            "source_url": endpoint,
-            "ordinal": idx,
-            "issued": None,
-            "modified": None,
-            "landing_page": None,
-            "distribution_url": None,
-            "distribution_count": None,
-            "format": None,
-            "theme": None,
-        })
+        rows.append(
+            {
+                "captured_at": captured_at,
+                "source_id": source_id,
+                "source_kind": source_cfg.get("source_kind"),
+                "protocol": "sparql",
+                "inventory_method": "named_graphs",
+                "item_kind": "dataset",
+                "item_id": graph_uri,
+                "item_name": compact_uri_name(graph_uri),
+                "title": title,
+                "organization": None,
+                "tags": None,
+                "notes_excerpt": f"Named graph: {uri_path}",
+                "source_url": endpoint,
+                "ordinal": idx,
+                "issued": None,
+                "modified": None,
+                "landing_page": None,
+                "distribution_url": None,
+                "distribution_count": None,
+                "format": None,
+                "theme": None,
+            }
+        )
 
     # Schema enrichment parallelo
     enrich_count = 0
@@ -277,8 +285,11 @@ def _collect_named_graphs(
             for row in rows:
                 g = row["item_id"]
                 fut = pool.submit(
-                    infer_graph_schema, endpoint, g,
-                    timeout=timeout, limit=schema_predicate_limit,
+                    infer_graph_schema,
+                    endpoint,
+                    g,
+                    timeout=timeout,
+                    limit=schema_predicate_limit,
                 )
                 fut_to_row[fut] = row
 
@@ -287,13 +298,10 @@ def _collect_named_graphs(
                 try:
                     schema = fut.result()
                     if schema:
-                        pred_strings = [
-                            f"{p['compact_name']}({p['count']})" for p in schema
-                        ]
+                        pred_strings = [f"{p['compact_name']}({p['count']})" for p in schema]
                         row["tags"] = ", ".join(pred_strings)
                         row["notes_excerpt"] = (
-                            f"{row['notes_excerpt']} | "
-                            f"Predicati ({len(schema)}): {row['tags']}"
+                            f"{row['notes_excerpt']} | Predicati ({len(schema)}): {row['tags']}"
                         )
                         enrich_count += 1
                 except Exception:
@@ -301,9 +309,7 @@ def _collect_named_graphs(
     t_enrich_end = time.monotonic()
 
     if not rows:
-        raise ValueError(
-            f"Named graph enumeration returned no rows for {source_id}"
-        )
+        raise ValueError(f"Named graph enumeration returned no rows for {source_id}")
 
     return CollectorResult(
         rows=rows,
@@ -356,7 +362,12 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
 
         by_dataset = _group_sparql_bindings(all_bindings)
         rows, summary = _build_sparql_rows(
-            by_dataset, source_id, source_cfg, captured_at, endpoint, query_name,
+            by_dataset,
+            source_id,
+            source_cfg,
+            captured_at,
+            endpoint,
+            query_name,
         )
         if not rows:
             raise ValueError(f"SPARQL query returned no inventory rows for {source_id}")
@@ -372,7 +383,12 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         bindings = _execute_sparql_query(endpoint, query_text, timeout)
         by_dataset = _group_sparql_bindings(bindings)
         rows, summary = _build_sparql_rows(
-            by_dataset, source_id, source_cfg, captured_at, endpoint, query_name,
+            by_dataset,
+            source_id,
+            source_cfg,
+            captured_at,
+            endpoint,
+            query_name,
         )
         if not rows:
             raise ValueError(f"SPARQL query returned no inventory rows for {source_id}")

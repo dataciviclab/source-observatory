@@ -234,7 +234,10 @@ def catalog_inventory_search(
                     if column in columns
                 ]
                 if not search_columns:
-                    return {"error": "schema_mismatch", "message": "No searchable text columns found."}
+                    return {
+                        "error": "schema_mismatch",
+                        "message": "No searchable text columns found.",
+                    }
                 where = [
                     "("
                     + " OR ".join(
@@ -270,7 +273,9 @@ def catalog_inventory_search(
                     "captured_at",
                     "civic_priority",
                 ]
-                select_sql = ", ".join(_artifact._select_expr(column, columns) for column in select_columns)
+                select_sql = ", ".join(
+                    _artifact._select_expr(column, columns) for column in select_columns
+                )
                 sql = f"""
                     SELECT {select_sql}
                     FROM "{parquet_path}"
@@ -365,7 +370,12 @@ def inventory_diff(source_id: str) -> dict[str, Any]:
         }
 
     baseline = source_info.get("catalog_baseline", {})
-    baseline_value = baseline.get("value") or source_info.get("package_count") or source_info.get("dataflow_count") or source_info.get("rows")
+    baseline_value = (
+        baseline.get("value")
+        or source_info.get("package_count")
+        or source_info.get("dataflow_count")
+        or source_info.get("rows")
+    )
     baseline_date = baseline.get("captured_at") or source_info.get("last_inventory")
 
     try:
@@ -384,10 +394,16 @@ def inventory_diff(source_id: str) -> dict[str, Any]:
 
     notes: list[str] = []
     if not baseline_date:
-        notes.append("baseline_date non disponibile — report non contiene captured_at o last_inventory per questa fonte")
+        notes.append(
+            "baseline_date non disponibile — report non contiene captured_at o last_inventory per questa fonte"
+        )
     if not baseline_value:
-        notes.append("baseline_value non disponibile — delta non calcolabile; current_count è il primo inventario")
-    notes.append("delta calcolato vs baseline nel registry; verificare se baseline_value è aggiornato")
+        notes.append(
+            "baseline_value non disponibile — delta non calcolabile; current_count è il primo inventario"
+        )
+    notes.append(
+        "delta calcolato vs baseline nel registry; verificare se baseline_value è aggiornato"
+    )
 
     return {
         "source_id": source_id,

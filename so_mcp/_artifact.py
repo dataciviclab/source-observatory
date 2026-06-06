@@ -301,7 +301,9 @@ def _download_public_to_temp(uri: str, tmp_path: Path) -> None:
 
 def _copy_gcs_to_temp(uri: str, artifact_name: str) -> Path:
     suffix = Path(artifact_name).suffix or ".tmp"
-    tmp = tempfile.NamedTemporaryFile(prefix=f"so_mcp_{artifact_name}_", suffix=suffix, delete=False)
+    tmp = tempfile.NamedTemporaryFile(
+        prefix=f"so_mcp_{artifact_name}_", suffix=suffix, delete=False
+    )
     tmp_path = Path(tmp.name)
     tmp.close()
     try:
@@ -346,11 +348,14 @@ def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
                 tmp_path.unlink(missing_ok=True)
 
     if artifact.local_path.exists():
-        yield artifact.local_path, _artifact_cache_info(
+        yield (
             artifact.local_path,
-            source="local_cache",
-            uri=uri,
-            fallback_warning=fallback_warning,
+            _artifact_cache_info(
+                artifact.local_path,
+                source="local_cache",
+                uri=uri,
+                fallback_warning=fallback_warning,
+            ),
         )
         return
 
@@ -360,7 +365,9 @@ def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
     )
 
 
-def _resolved_parquet(artifact: _ParquetArtifact) -> AbstractContextManager[tuple[Path, dict[str, Any]]]:
+def _resolved_parquet(
+    artifact: _ParquetArtifact,
+) -> AbstractContextManager[tuple[Path, dict[str, Any]]]:
     return _resolved_artifact(artifact)
 
 

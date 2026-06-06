@@ -32,7 +32,9 @@ def main() -> None:
         lines.append("")
     for src in summary.get("sources", []):
         flag = "⚠️" if src.get("red_streak", 0) >= 2 else "  "
-        lines.append(f"{flag} `{src['id']}` — {src['status']} | HTTP {src.get('http_code','-')} | {src.get('note','') or 'ok'}")
+        lines.append(
+            f"{flag} `{src['id']}` — {src['status']} | HTTP {src.get('http_code', '-')} | {src.get('note', '') or 'ok'}"
+        )
 
     Path("radar_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 

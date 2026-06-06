@@ -23,11 +23,14 @@ CATALOG_INVENTORY_REPORT_PATH = CATALOG_INVENTORY_DIR_PATH / "catalog_inventory_
 CATALOG_WATCH_REPORT_PATH = REPO_ROOT / "data" / "catalog" / "CATALOG_WATCH_REPORT.md"
 
 # ── Source check (scripts/bulk_source_check.py → so_mcp/_signals.py) ─────────
-CHECK_PARQUET_PATH = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
+CHECK_PARQUET_PATH = (
+    REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
+)
 CATALOG_SIGNALS_PATH = REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
 
 # ── Schemas (scripts/build_catalog_signals.py) ────────────────────────────────
 SCHEMA_DIR_PATH = REPO_ROOT / "schemas"
+
 
 def validate_schema(instance: dict, schema_name: str) -> None:
     """Validate a dict against the JSON schema file in schemas/."""
@@ -69,7 +72,12 @@ def stale_reason_from_exception(exc: Exception) -> str:
         return "ssl_error"
     if "connection error" in msg or "connectionerror" in msg or "connect" in msg:
         return "connection_error"
-    if "resolution error" in msg or "resolutionerror" in msg or "name or service not known" in msg or "getaddrinfo" in msg:
+    if (
+        "resolution error" in msg
+        or "resolutionerror" in msg
+        or "name or service not known" in msg
+        or "getaddrinfo" in msg
+    ):
         return "dns_error"
     return "unknown"
 
@@ -97,11 +105,13 @@ def append_radar_probe(history: dict, probe_date: str, sources: list[dict]) -> d
     if "probes" not in history:
         history["probes"] = []
 
-    history["probes"].append({
-        "probe_date": probe_date,
-        "captured_at": datetime.now(timezone.utc).isoformat(),
-        "sources": sources,
-    })
+    history["probes"].append(
+        {
+            "probe_date": probe_date,
+            "captured_at": datetime.now(timezone.utc).isoformat(),
+            "sources": sources,
+        }
+    )
 
     # Keep only last 14 days
     cutoff = len(history["probes"]) - 14

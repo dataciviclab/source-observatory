@@ -60,7 +60,7 @@ def build_issue(gcs_prefix: str) -> None:
 
     parts = []
     if regressions:
-        parts.append(f"{regressions} regressione{'e' if regressions==1 else 'i'}")
+        parts.append(f"{regressions} regressione{'e' if regressions == 1 else 'i'}")
     if new_sources:
         parts.append(f"{new_sources} nuova fonte")
     if recoveries:
@@ -93,8 +93,12 @@ def build_issue(gcs_prefix: str) -> None:
     body.append("")
     stamp = captured[:10].replace("-", "")
     body.append("## Risorse")
-    body.append(f"- [Snapshot GCS](https://console.cloud.google.com/storage/browser/{gcs_path}/snapshots/catalog_inventory_{stamp}.parquet)")
-    body.append(f"- [Report JSON](https://console.cloud.google.com/storage/browser/{gcs_path}/snapshots/catalog_inventory_report_{stamp}.json)")
+    body.append(
+        f"- [Snapshot GCS](https://console.cloud.google.com/storage/browser/{gcs_path}/snapshots/catalog_inventory_{stamp}.parquet)"
+    )
+    body.append(
+        f"- [Report JSON](https://console.cloud.google.com/storage/browser/{gcs_path}/snapshots/catalog_inventory_report_{stamp}.json)"
+    )
     body.append("- [Radar summary](../../data/radar/radar_summary.json)")
 
     labels = ["catalog-alert"]

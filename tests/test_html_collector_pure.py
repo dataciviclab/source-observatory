@@ -29,9 +29,9 @@ def test_extract_page_meta_open_data_prefix():
 def test_extract_page_meta_with_description():
     """Estrae description da <meta name='description'>."""
     html = (
-        '<html><head><title>Title</title>'
+        "<html><head><title>Title</title>"
         '<meta name="description" content="A portal description here.">'
-        '</head><body></body></html>'
+        "</head><body></body></html>"
     )
     meta = _extract_page_meta(html)
     assert meta.get("title") == "Title"

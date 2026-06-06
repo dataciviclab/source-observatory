@@ -20,13 +20,19 @@ def _ckan_api_base(url: str) -> str | None:
     if not url:
         return None
     from urllib.parse import urlparse
+
     parsed = urlparse(url)
     path = parsed.path
     if "/api/3/action/" in path:
         root = path[: path.index("/api/3/action/")]
         return f"{parsed.scheme}://{parsed.netloc}{root}/api/3/action"
     # endpoint non-standard (es. INPS /odapi): usa il path fino all'ultima action nota
-    for action in ("package_list", "package_search", "package_show", "current_package_list_with_resources"):
+    for action in (
+        "package_list",
+        "package_search",
+        "package_show",
+        "current_package_list_with_resources",
+    ):
         if f"/{action}" in path:
             root = path[: path.index(f"/{action}")]
             return f"{parsed.scheme}://{parsed.netloc}{root}"
@@ -183,7 +189,9 @@ def extract_ckan_inventory_row(
     }
 
 
-def _ckan_search_params(source_cfg: dict[str, Any], *, page_size: int, start: int) -> dict[str, Any]:
+def _ckan_search_params(
+    source_cfg: dict[str, Any], *, page_size: int, start: int
+) -> dict[str, Any]:
     """Build package_search params, optionally adding fq from inventory config."""
     inv = source_cfg.get("inventory") or {}
     params: dict[str, Any] = {"rows": page_size, "start": start}
@@ -203,7 +211,9 @@ def collect_ckan_inventory_via_search(
     rows: list[dict[str, Any]] = []
 
     while True:
-        payload = ckan_get_json(endpoint, params=_ckan_search_params(source_cfg, page_size=page_size, start=start))
+        payload = ckan_get_json(
+            endpoint, params=_ckan_search_params(source_cfg, page_size=page_size, start=start)
+        )
         if not payload.get("success"):
             raise ValueError(f"CKAN package_search failed for {source_id}")
 
@@ -279,9 +289,7 @@ def _fetch_ckan_chunk_with_fallback(
 def collect_ckan_inventory_via_current_list(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-    endpoint = ckan_action_endpoint(
-        source_cfg["base_url"], "current_package_list_with_resources"
-    )
+    endpoint = ckan_action_endpoint(source_cfg["base_url"], "current_package_list_with_resources")
     page_size = 100
     fallback_page_sizes = (50, 10)
     request_timeout = 15
@@ -316,9 +324,7 @@ def collect_ckan_inventory_via_current_list(
             )
 
         if not payload.get("success"):
-            raise ValueError(
-                f"CKAN current_package_list_with_resources failed for {source_id}"
-            )
+            raise ValueError(f"CKAN current_package_list_with_resources failed for {source_id}")
 
         result = payload.get("result")
         if not isinstance(result, list):
@@ -364,9 +370,7 @@ def collect_ckan_inventory_via_package_list(
 
     result = payload.get("result")
     if not isinstance(result, list):
-        raise ValueError(
-            f"Unexpected CKAN payload for {source_id}: result is not a list"
-        )
+        raise ValueError(f"Unexpected CKAN payload for {source_id}: result is not a list")
 
     rows: list[dict[str, Any]] = []
     for idx, item_name in enumerate(result, start=1):
@@ -586,9 +590,7 @@ def _ckan_standard_path(
                 missing_metadata += 1
                 fallback_merged_rows.append(row)
             else:
-                fallback_merged_rows.append(
-                    {**row, **enriched, "ordinal": row["ordinal"]}
-                )
+                fallback_merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
 
         fallback_warning: dict[str, Any] = {
             "type": "fallback_current_package_list_with_resources",
@@ -606,6 +608,8 @@ def _ckan_standard_path(
         return package_list_rows, {
             "type": "fallback_package_list",
             "message": "Fallback finale a package_list dopo fallimento di package_search e current_package_list_with_resources.",
-            "package_search_error": str(search_exc) if search_exc is not None else "package_search skipped",
+            "package_search_error": str(search_exc)
+            if search_exc is not None
+            else "package_search skipped",
             "current_list_error": str(current_list_exc),
         }

@@ -30,7 +30,7 @@ def main() -> None:
     lines = ["## Source check results", ""]
     lines.append(f"- Item in database: {total}")
     if total:
-        lines.append(f"- Raggiungibili: {reachable} ({reachable/total*100:.0f}%)")
+        lines.append(f"- Raggiungibili: {reachable} ({reachable / total * 100:.0f}%)")
     lines.append(f"- Intake candidates (score >= 40): {candidates}")
     lines.append(f"- Score medio: {avg_score:.0f}")
     lines.append("")

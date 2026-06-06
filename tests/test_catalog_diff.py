@@ -1,4 +1,5 @@
 """Tests for catalog_diff.py — generate_diff."""
+
 from __future__ import annotations
 
 import pytest
@@ -84,4 +85,6 @@ def test_recovery_not_in_changed_table():
     new = _report(("alpha", "ok", 50))
     diff = generate_diff(old, new)
     assert "Variazione numero item" not in diff
+
+
 pytestmark = pytest.mark.contract

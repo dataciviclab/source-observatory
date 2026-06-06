@@ -42,7 +42,6 @@ def observatory_get(
     raise result.err if result.err else RuntimeError(f"GET failed for {url}")
 
 
-
 def strip_query(url: str) -> str:
     parts = urlsplit(url)
     return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))

@@ -81,7 +81,9 @@ def _make_error_result(
 ) -> ProbeResult:
     if isinstance(exc, requests.exceptions.Timeout):
         if ssl_fallback_used:
-            note = f"SSL verify failed; fallback timed out ({(ssl_failure or exc).__class__.__name__})"
+            note = (
+                f"SSL verify failed; fallback timed out ({(ssl_failure or exc).__class__.__name__})"
+            )
         else:
             note = f"Timeout ({exc.__class__.__name__})"
         return ProbeResult(
@@ -217,9 +219,7 @@ def build_status_report(
     mode_counts = Counter(
         (meta.get("observation_mode") or "radar-only") for meta in registry.values()
     )
-    kind_counts = Counter(
-        (meta.get("source_kind") or "source") for meta in registry.values()
-    )
+    kind_counts = Counter((meta.get("source_kind") or "source") for meta in registry.values())
 
     lines: list[str] = [
         "# Stato Radar",
@@ -259,9 +259,7 @@ def build_status_report(
 
     notes: list[str] = []
 
-    def format_probe_details(
-        result: ProbeResult, fallback_note: str | None = None
-    ) -> str:
+    def format_probe_details(result: ProbeResult, fallback_note: str | None = None) -> str:
         details: list[str] = []
         if result.http_code != "-":
             details.append(f"HTTP {result.http_code}")
@@ -373,9 +371,7 @@ def build_radar_summary(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Probe radar source portals and build STATUS.md."
-    )
+    parser = argparse.ArgumentParser(description="Probe radar source portals and build STATUS.md.")
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -390,9 +386,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _probe_one(
-    portal: str, base_url: str | None
-) -> tuple[str, ProbeResult]:
+def _probe_one(portal: str, base_url: str | None) -> tuple[str, ProbeResult]:
     """Worker for ThreadPoolExecutor — probes a single portal."""
     if not base_url:
         return portal, ProbeResult(
@@ -461,7 +455,9 @@ def main() -> int:
     print(f"Wrote {STATUS_MD_PATH}")
     print(f"Wrote {RADAR_SUMMARY_PATH}")
     if summary.get("persistent_red"):
-        print(f"⚠️  Persistent RED: {summary['persistent_red']} fonti ({', '.join(s['id'] for s in summary['sources'] if s.get('red_streak'))})")
+        print(
+            f"⚠️  Persistent RED: {summary['persistent_red']} fonti ({', '.join(s['id'] for s in summary['sources'] if s.get('red_streak'))})"
+        )
     print(f"Wrote {RADAR_HISTORY_PATH} ({len(history['probes'])} probes)")
     print(f"Updated {REGISTRY_PATH}")
     return 0
