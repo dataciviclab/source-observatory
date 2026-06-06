@@ -123,7 +123,7 @@ def load_clean_catalog() -> list[dict[str, Any]]:
     client = HttpClient(timeout=30)
     try:
         result = client.get(CATALOG_URL)
-        if result.is_error:
+        if not result.is_ok or result.response is None:
             raise RuntimeError(f"Failed to fetch catalog: {result.err}")
         raw = result.response.json()
         datasets: list[dict] = raw if isinstance(raw, list) else raw.get("datasets", [])

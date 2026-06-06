@@ -334,7 +334,7 @@ def _download_public_to_temp(uri: str, tmp_path: Path) -> None:
     client = HttpClient(timeout=120)
     try:
         result = client.get(_public_url(uri))
-        if result.is_error:
+        if not result.is_ok or result.response is None:
             raise RuntimeError(f"Failed to download {uri}: {result.err}")
         tmp_path.write_bytes(result.response.content)
     finally:
