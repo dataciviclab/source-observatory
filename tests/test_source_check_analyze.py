@@ -282,6 +282,47 @@ class TestFinalizeScores:
         assert isinstance(result["intake_score"], int)
         assert isinstance(result["intake_candidate"], bool)
 
+    def test_finalize_adds_join_keys_mapping(self):
+        """_finalize_scores produce join_keys come mapping {key: [colonne]}."""
+        import json
+
+        columns_raw = json.dumps(["Comune", "Anno", "Sesso", "Importo"])
+        result = _finalize_scores({
+            "columns": columns_raw,
+            "granularity": "comune",
+            "year_min": 2020,
+            "year_max": 2024,
+            "reachable": True,
+            "resource_format": "CSV",
+            "enrich_method": "csv_preview",
+            "needs_review": False,
+        })
+        assert "join_keys" in result
+        assert "joinability_score" in result
+        assert result["joinability_score"] > 0
+
+        # join_keys deve essere dict {key: [colonne_matched]}
+        parsed = json.loads(result["join_keys"])
+        assert isinstance(parsed, dict), f"expected dict, got {type(parsed)}"
+        assert "istat_comune" in parsed
+        assert parsed["istat_comune"] == ["Comune"]
+        assert "anno" in parsed
+        assert parsed["anno"] == ["Anno"]
+
+    def test_finalize_join_keys_none_without_columns(self):
+        """Senza colonne profilate, join_keys deve essere None."""
+        result = _finalize_scores({
+            "columns": None,
+            "granularity": "non_determinato",
+            "year_min": None,
+            "year_max": None,
+            "reachable": False,
+            "enrich_method": "inventory_only",
+            "needs_review": True,
+        })
+        assert result["join_keys"] is None
+        assert result["joinability_score"] == 0
+
 
 class TestFallbackInfer:
     def test_fallback_from_title_and_tags(self):

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 from joinability_scan import (
     BRIDGE_SLUG,
     build_catalog_index,
+    build_json_output,
     compute_joinability_score,
     cross_reference,
     derive_bridge_keys,
@@ -273,3 +276,55 @@ class TestComputeJoinabilityScore:
         score = compute_joinability_score(keys, matches)
         # 30 (istat) + 3 (1 diretto * 3) + 2 (2 bridge * 1)
         assert score == 35.0
+
+
+class TestBuildJsonOutput:
+    """build_json_output() emette campi corretti e ordina per enriched score."""
+
+    def _make_item(self, base_score: float, enriched_score: float, n_keys: int) -> dict:
+        """Helper per creare item di test."""
+        return {
+            "source_id": "test",
+            "item_name": "item",
+            "intake_score": 50,
+            "joinability_score": base_score,
+            "enriched_joinability_score": enriched_score,
+            "col_count": 5,
+            "found_keys": {f"k{i}": [f"col{i}"] for i in range(n_keys)},
+            "catalog_matches": [],
+        }
+
+    def test_emits_enriched_score(self):
+        """build_json_output include enriched_joinability_score nel JSON."""
+        items = [self._make_item(30, 55, 2)]
+        output = build_json_output(items, {}, set(), {"total": 1, "total_with_keys": 1, "catalog_size": 0})
+        top = output["top_items"]
+        assert len(top) == 1
+        assert "enriched_joinability_score" in top[0]
+        assert top[0]["enriched_joinability_score"] == 55.0
+        assert top[0]["joinability_score"] == 30.0
+
+    def test_sorts_by_enriched_score_desc(self):
+        """build_json_output ordina per enriched_joinability_score decrescente."""
+        items = [
+            self._make_item(10, 20, 1),
+            self._make_item(30, 80, 2),
+            self._make_item(20, 50, 1),
+        ]
+        output = build_json_output(items, {}, set(), {"total": 3, "total_with_keys": 3, "catalog_size": 0})
+        scores = [i["enriched_joinability_score"] for i in output["top_items"]]
+        assert scores == [80, 50, 20], f"expected descending scores, got {scores}"
+
+    def test_fallback_when_missing_enriched(self):
+        """Senza enriched_joinability_score, usa joinability_score."""
+        items = [{
+            "source_id": "test",
+            "item_name": "item",
+            "intake_score": 50,
+            "joinability_score": 42,
+            "col_count": 5,
+            "found_keys": {"k1": ["c1"]},
+            "catalog_matches": [],
+        }]
+        output = build_json_output(items, {}, set(), {"total": 1, "total_with_keys": 1, "catalog_size": 0})
+        assert output["top_items"][0]["enriched_joinability_score"] == 42.0
