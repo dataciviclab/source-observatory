@@ -1,4 +1,4 @@
-"""Smoke test: verify so_server.py registers 13 MCP tools via create_mcp_server."""
+"""Smoke test: verify so_server.py registers 14 MCP tools via create_mcp_server."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ import pytest
 import so_server  # noqa: E402  # conftest aggiunge so_mcp/ a sys.path
 
 
-def test_mcp_server_registers_13_tools() -> None:
-    """Verify all 13 tools are registered on the mcp server object."""
+def test_mcp_server_registers_14_tools() -> None:
+    """Verify all 14 tools are registered on the mcp server object."""
     tools = asyncio.run(so_server.mcp.list_tools())
     tool_names = sorted(t.name for t in tools)
 
@@ -28,6 +28,7 @@ def test_mcp_server_registers_13_tools() -> None:
             "so_radar_summary",
             "so_recommend_sources",
             "so_registry_query",
+            "so_source_overview",
         ]
     )
 
