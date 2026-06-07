@@ -340,6 +340,7 @@ def build_json_output(
                 "item_name": item["item_name"],
                 "intake_score": item["intake_score"],
                 "joinability_score": item["joinability_score"],
+                "enriched_joinability_score": item.get("enriched_joinability_score", item["joinability_score"]),
                 "col_count": item["col_count"],
                 "keys_found": item["found_keys"],
                 "matches": [
@@ -358,7 +359,7 @@ def build_json_output(
         )
     scored_items.sort(
         key=lambda x: (
-            -x["joinability_score"],
+            -x["enriched_joinability_score"],
             -len(x["keys_found"]),
             x["source_id"],
             x["item_name"],
@@ -459,13 +460,20 @@ def main() -> None:
             continue
         total_with_columns += 1
 
-        # Prefer pre-computed join_keys from source_check (joinability nativa)
+        # Prefer pre-computed join_keys from source_check (joinability nativa).
+        # Il mapping completo {chiave: [colonne_matched]} è salvato nel parquet.
         # Fall back to detecting from columns for backward compatibility.
         join_keys_raw = record.get("join_keys")
         if join_keys_raw and isinstance(join_keys_raw, str):
             try:
-                key_names = json.loads(join_keys_raw)
-                found_keys = {k: [k] for k in key_names if isinstance(k, str)}
+                parsed = json.loads(join_keys_raw)
+                if isinstance(parsed, dict):
+                    found_keys = parsed  # mapping completo {key: [cols]}
+                elif isinstance(parsed, list):
+                    # backward compat: era solo lista nomi chiave
+                    found_keys = {k: [k] for k in parsed if isinstance(k, str)}
+                else:
+                    found_keys = detect_keys(col_names)
             except (json.JSONDecodeError, TypeError):
                 found_keys = detect_keys(col_names)
         else:

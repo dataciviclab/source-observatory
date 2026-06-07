@@ -515,9 +515,11 @@ def _finalize_scores(result: dict) -> dict:
     result["intake_candidate"] = candidate
 
     # ── Joinability: detect join keys from profiled columns ──────────────────
+    # join_keys salva il mapping completo {chiave: [colonne_matched]} per
+    # consentire a joinability_scan.py di fare cross-reference accurato.
     columns_raw = result.get("columns")
     found_keys = detect_join_keys(columns_raw)
-    result["join_keys"] = json.dumps(list(found_keys.keys())) if found_keys else None
+    result["join_keys"] = json.dumps(found_keys) if found_keys else None
     result["joinability_score"] = compute_joinability_score(found_keys)
 
     return result
