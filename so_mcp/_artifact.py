@@ -4,9 +4,8 @@ Shared artifact infrastructure for SO MCP modules.
 Path constants, artifact resolution (local/GCS), env loading, and helper
 utilities used by all other ``so_mcp/_*.py`` modules.
 
-Sibling modules import via ``import _artifact``, relying on ``so_mcp/`` being
-in ``sys.path`` (added automatically when running ``python so_mcp/so_server.py``
-or via conftest for tests).
+Sibling modules import via ``from . import _artifact`` (package-relative import,
+relying on ``so_mcp/`` being installed or ``so_mcp/`` being in ``sys.path``).
 
 Path constants live in ``so_mcp/_paths.py`` — imported normally, no sys.path hack.
 """

@@ -646,9 +646,9 @@ def _ckan_standard_path(
 
     time.sleep(1.0)
     try:
-        current_rows, current_warning = current_list_fn(
-            source_id, source_cfg, captured_at, client=client
-        )
+        # current_list ha timeout 15s proprio — non passare il client condiviso
+        # (creato con timeout 60s) per non alterare il comportamento di retry
+        current_rows, current_warning = current_list_fn(source_id, source_cfg, captured_at)
         enriched_by_id = {row["item_id"]: row for row in current_rows}
         fallback_merged_rows: list[dict[str, Any]] = []
         missing_metadata = 0
