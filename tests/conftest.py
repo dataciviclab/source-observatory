@@ -15,10 +15,12 @@ from typing import Any
 import pytest
 
 # Aggiungi percorsi di import prima di qualsiasi test
-_SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
-_SO_MCP_DIR = Path(__file__).resolve().parent.parent / "so_mcp"
+# REPO_ROOT serve per importare so_mcp come package (from so_mcp._discovery import ...)
+# SCRIPTS_DIR serve per importare _constants da scripts/ (non è un package)
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+_SCRIPTS_DIR = _REPO_ROOT / "scripts"
 
-for _p in (_SCRIPTS_DIR, _SO_MCP_DIR):
+for _p in (_REPO_ROOT, _SCRIPTS_DIR):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
