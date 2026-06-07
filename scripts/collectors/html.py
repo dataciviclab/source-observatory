@@ -131,12 +131,18 @@ def _guess_topic(url: str, topic_hint: str | None) -> str:
 # ─── Sitemap Helper ───────────────────────────────────────────────────────────
 
 
-def _fetch_sitemap(sitemap_url: str, timeout: int = 15) -> tuple[list[str] | None, str | None]:
+def _fetch_sitemap(
+    sitemap_url: str,
+    timeout: int = 15,
+    *,
+    client: HttpClient | None = None,
+) -> tuple[list[str] | None, str | None]:
     """Fetch e parse sitemap XML, ritorna lista di <loc> URL."""
     import xml.etree.ElementTree as ET
 
     try:
-        client = HttpClient(timeout=timeout)
+        if client is None:
+            client = HttpClient(timeout=timeout)
         result = client.get(sitemap_url)
         if not result.is_ok or result.response is None:
             err_str = str(result.err) if result.err else "unknown"
@@ -296,6 +302,7 @@ def _scan_sitemap(
     *,
     sample_pages: int = 30,
     page_delay: float = 0.2,
+    client: HttpClient | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Scan un portale HTML via sitemap con quick sample.
 
@@ -307,7 +314,7 @@ def _scan_sitemap(
     Returns:
         summary dict, rows list
     """
-    sitemap_urls, sitemap_err = _fetch_sitemap(sitemap_url)
+    sitemap_urls, sitemap_err = _fetch_sitemap(sitemap_url, client=client)
     if sitemap_err or sitemap_urls is None:
         return {"error": f"sitemap failed: {sitemap_err}"}, []
 
@@ -340,7 +347,8 @@ def _scan_sitemap(
     for page_url in sampled:
         time.sleep(page_delay)
         # Fetch page directly — no separate HEAD probe (saves one round-trip)
-        client = HttpClient(timeout=10)
+        if client is None:
+            client = HttpClient(timeout=10)
         result = client.get(page_url)
         if not result.is_ok or result.response is None:
             continue
@@ -402,6 +410,7 @@ def _scan_area_pages(
     page_start: int = 0,
     page_max: int = 200,
     page_stop_on_empty: bool = True,
+    client: HttpClient | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     """Scan portale HTML via area_pages (nessun second-level crawl).
 
@@ -432,7 +441,8 @@ def _scan_area_pages(
         while pages_scanned < page_max:
             area_url = page_url_template.format(page=page)
             time.sleep(page_delay)
-            client = HttpClient(timeout=5)
+            if client is None:
+                client = HttpClient(timeout=5)
             if _ssl_bypass:
                 result = client.get(area_url, verify=False)
             else:
@@ -455,7 +465,8 @@ def _scan_area_pages(
     else:
         for area_url in area_pages:
             time.sleep(page_delay)
-            client = HttpClient(timeout=15)
+            if client is None:
+                client = HttpClient(timeout=15)
             result = client.get(area_url)
             if not result.is_ok or result.response is None:
                 continue
@@ -484,13 +495,23 @@ def _scan_area_pages(
 # ─── Collector Interface ──────────────────────────────────────────────────────
 
 
-def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> CollectorResult:
+def collect(
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
+    *,
+    client: HttpClient | None = None,
+) -> CollectorResult:
     """Collect HTML portal stats via CSV magnet quick survey.
 
     Strategia:
       - sitemap_url → _scan_sitemap (sample pages, estimate)
       - area_pages → _scan_area_pages (full fetch, exact count)
       - homepage only → quick probe only
+
+    Args:
+        client: Opzionale, ``HttpClient`` riusabile per connection pooling.
+            Se non fornito, ne crea uno nuovo.
 
     Returns:
         CollectorResult with rows (data link URLs) and summary (stats).
@@ -501,6 +522,9 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             rows=[],
             summary={"error": "no base_url configured"},
         )
+
+    if client is None:
+        client = HttpClient(timeout=10)
 
     html_portal_cfg = source_cfg.get("html_portal", {})
     sitemap_url = html_portal_cfg.get("sitemap_url")
@@ -522,6 +546,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             base_url,
             sample_pages=sample,
             page_delay=delay,
+            client=client,
         )
     elif area_pages or page_url_template:
         summary, rows = _scan_area_pages(
@@ -534,10 +559,10 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             page_start=page_start,
             page_max=page_max,
             page_stop_on_empty=page_stop_on_empty,
+            client=client,
         )
     else:
         # Homepage only probe
-        client = HttpClient(timeout=5)
         result = client.get(base_url)
         if not result.is_ok or result.response is None:
             err_msg = str(result.err) if result.err else "unknown"
