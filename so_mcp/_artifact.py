@@ -1,12 +1,14 @@
 """
 Shared artifact infrastructure for SO MCP modules.
 
-Path constants, artifact resolution (local/GCS), env loading, format maps,
-and helper utilities used by all other ``so_mcp/_*.py`` modules.
+Path constants, artifact resolution (local/GCS), env loading, and helper
+utilities used by all other ``so_mcp/_*.py`` modules.
 
 Sibling modules import via ``import _artifact``, relying on ``so_mcp/`` being
 in ``sys.path`` (added automatically when running ``python so_mcp/so_server.py``
 or via conftest for tests).
+
+Path constants live in ``so_mcp/_paths.py`` — imported normally, no sys.path hack.
 """
 
 from __future__ import annotations
@@ -14,7 +16,6 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-import sys
 import tempfile
 from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
@@ -26,18 +27,7 @@ import duckdb
 from lab_connectors.gcs.paths import CLEAN_BUCKET
 from lab_connectors.http import HttpClient
 
-# ── Repo root & path setup ────────────────────────────────────────────────────
-# Aggiunge scripts/ a sys.path per importare _constants e altri moduli scripts
-# senza ricorrere a importlib. Idempotente: se già in path, non fa nulla.
-
-_REPO_ROOT = Path(__file__).resolve().parents[1]
-_SCRIPTS_DIR = str(_REPO_ROOT / "scripts")
-if _SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, _SCRIPTS_DIR)
-
-# ── Artifact paths (canonical source: scripts/_constants.py) ──────────────────
-
-from _constants import (  # noqa: E402
+from ._paths import (
     CATALOG_INVENTORY_REPORT_PATH,
     CATALOG_SIGNALS_PATH,
     CHECK_PARQUET_PATH,
@@ -47,6 +37,9 @@ from _constants import (  # noqa: E402
     REGISTRY_PATH,
     STATUS_MD_PATH,
 )
+
+# Repo root for relative path display and env file resolution.
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 
 _CHECK_PARQUET = CHECK_PARQUET_PATH
 _INVENTORY_PARQUET = INVENTORY_PARQUET_PATH
