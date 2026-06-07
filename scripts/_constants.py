@@ -15,8 +15,31 @@ from pathlib import Path
 import jsonschema
 
 from so_mcp._paths import (
-    RADAR_HISTORY_PATH,
-    REGISTRY_PATH,
+    CATALOG_INVENTORY_DIR_PATH as CATALOG_INVENTORY_DIR_PATH,  # noqa: F401 — re‑export per scripts
+)
+from so_mcp._paths import (
+    CATALOG_INVENTORY_REPORT_PATH as CATALOG_INVENTORY_REPORT_PATH,  # noqa: F401
+)
+from so_mcp._paths import (
+    CATALOG_SIGNALS_PATH as CATALOG_SIGNALS_PATH,  # noqa: F401
+)
+from so_mcp._paths import (
+    CHECK_PARQUET_PATH as CHECK_PARQUET_PATH,  # noqa: F401
+)
+from so_mcp._paths import (
+    INVENTORY_PARQUET_PATH as INVENTORY_PARQUET_PATH,  # noqa: F401
+)
+from so_mcp._paths import (
+    RADAR_HISTORY_PATH as RADAR_HISTORY_PATH,  # noqa: F401
+)
+from so_mcp._paths import (
+    RADAR_SUMMARY_PATH as RADAR_SUMMARY_PATH,  # noqa: F401
+)
+from so_mcp._paths import (
+    REGISTRY_PATH as REGISTRY_PATH,  # noqa: F401
+)
+from so_mcp._paths import (
+    STATUS_MD_PATH as STATUS_MD_PATH,  # noqa: F401
 )
 
 # Repo root per path non esportati da so_mcp._paths (solo script).
