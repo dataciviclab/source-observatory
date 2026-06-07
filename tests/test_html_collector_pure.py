@@ -1,10 +1,13 @@
 """Test delle funzioni pure di collectors.html (nessun HTTP)."""
 
+from unittest.mock import patch
+
 import pytest
 from collectors.html import (
     _extract_page_meta,
     _extract_prefix,
     _extract_years,
+    collect,
 )
 
 pytestmark = pytest.mark.pure_unit
@@ -102,3 +105,53 @@ def test_extract_years_none():
 def test_extract_years_four_digit_pattern():
     """Match 20xx anche per anni futuri (es. 2026)."""
     assert _extract_years("FRM_FARMA_5_20260427.csv") == [2026]
+
+
+# ─── collect() — timeout storici per ramo ────────────────────────────────
+
+
+class _MockHttpResponse:
+    """Fake HTTP response per evitare I/O reale nei test."""
+
+    def __init__(self, text: str = ""):
+        self.text = text
+        self.status_code = 200
+        self.ok = True
+        self.is_ok = True
+        self.err = None
+
+
+class _ResultStub:
+    """Fake result per HttpClient.get()."""
+
+    def __init__(self, text: str = ""):
+        self.response = _MockHttpResponse(text)
+        self.is_ok = True
+        self.err = None
+
+
+def test_collect_homepage_uses_timeout_5():
+    """collect() senza client → homepage probe crea HttpClient(timeout=5)."""
+    recorded_timeouts: list[int] = []
+
+    def _mock_init(self, **kwargs):
+        recorded_timeouts.append(kwargs.get("timeout", 60))
+
+    _MockClient = type(
+        "MockClient",
+        (),
+        {"__init__": _mock_init, "get": lambda *a, **kw: _ResultStub("<html></html>")},
+    )
+
+    with patch("collectors.html.HttpClient", _MockClient):
+        result = collect(
+            source_id="test_source",
+            source_cfg={"base_url": "https://example.com"},
+            captured_at="2026-06-07T12:00:00",
+        )
+
+    assert len(recorded_timeouts) == 1, (
+        f"expected exactly one HttpClient creation, got {len(recorded_timeouts)}"
+    )
+    assert recorded_timeouts[0] == 5, f"expected timeout=5 for homepage, got {recorded_timeouts[0]}"
+    assert result is not None

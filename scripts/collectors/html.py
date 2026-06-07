@@ -511,7 +511,9 @@ def collect(
 
     Args:
         client: Opzionale, ``HttpClient`` riusabile per connection pooling.
-            Se non fornito, ne crea uno nuovo.
+            Se non fornito, ogni ramo crea il proprio con il timeout storico
+            del ramo (15s per sitemap fetch, 10s per pagine campionate,
+            5s per paginazione, 5s per homepage).
 
     Returns:
         CollectorResult with rows (data link URLs) and summary (stats).
@@ -523,9 +525,8 @@ def collect(
             summary={"error": "no base_url configured"},
         )
 
-    if client is None:
-        client = HttpClient(timeout=10)
-
+    # No default client here — each branch creates its own pooled client
+    # with the historical timeout for that branch (5s, 10s, or 15s).
     html_portal_cfg = source_cfg.get("html_portal", {})
     sitemap_url = html_portal_cfg.get("sitemap_url")
     area_pages = html_portal_cfg.get("area_pages", [])
@@ -562,7 +563,9 @@ def collect(
             client=client,
         )
     else:
-        # Homepage only probe
+        # Homepage only probe (historical timeout: 5s)
+        if client is None:
+            client = HttpClient(timeout=5)
         result = client.get(base_url)
         if not result.is_ok or result.response is None:
             err_msg = str(result.err) if result.err else "unknown"
