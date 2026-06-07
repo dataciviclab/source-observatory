@@ -12,20 +12,21 @@ from __future__ import annotations
 
 from typing import Any
 
-from _discovery import list_source_items
-from _find_url import find_by_url
-from _inventory import (
+from lab_connectors.mcp import create_mcp_server, guard_timed
+
+from ._discovery import list_source_items
+from ._find_url import find_by_url
+from ._inventory import (
     catalog_inventory_search,
     inventory_diff,
     inventory_status,
     query_inventory,
 )
-from _radar import radar_history, radar_status_md, radar_summary
-from _recommend import recommend_sources
-from _registry import registry_query
-from _sdmx import discover_sdmx
-from _signals import query_signals
-from lab_connectors.mcp import create_mcp_server, guard_timed
+from ._radar import radar_history, radar_status_md, radar_summary
+from ._recommend import recommend_sources
+from ._registry import registry_query
+from ._sdmx import discover_sdmx
+from ._signals import query_signals
 
 mcp = create_mcp_server(
     name="source-observatory",

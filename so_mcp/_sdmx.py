@@ -5,8 +5,9 @@ from __future__ import annotations
 import re
 from typing import Any
 
-import _artifact
 from lab_connectors.duckdb import gcs_connect
+
+from . import _artifact
 
 
 def _score_dataflow(text: str, keywords: list[str]) -> int:

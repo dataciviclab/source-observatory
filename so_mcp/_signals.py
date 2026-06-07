@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-import _artifact
+from . import _artifact
 
 
 def query_signals(source_id: str | None = None, limit: int | None = None) -> dict[str, Any]:
