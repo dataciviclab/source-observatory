@@ -736,7 +736,7 @@ def parse_args() -> argparse.Namespace:
         "--max-items",
         type=int,
         default=500,
-        help="Target massimo di item da processare per run. Prioritize: items senza format + sample random. Default: 500",
+        help="Target massimo di item da processare per run. Prioritize: items CON formato (CSV/JSON prima). Default: 500",
     )
     p.add_argument(
         "--include-no-url",
@@ -883,34 +883,49 @@ def main() -> None:
         return
 
     # ── Smart sampling per target size ───────────────────────────────────────────
-    # Prioritize: items senza format (arricchimento needed) + random sample
-    # per validation coverage
+    # Priority: items WITH format (CSV/JSON/XLSX) first — they yield column profiles
+    # and join keys. Items without format are deprioritized.
     if len(df) > args.max_items:
-        # 70% of target: items without format (enrichment value)
-        no_format = df[df["format"].isna() | (df["format"] == "")]
-        target_no_format = int(args.max_items * 0.7)
-
-        # 30% of target: random sample from items WITH format (validation)
         has_format = df[df["format"].notna() & (df["format"] != "")]
-        target_has_format = args.max_items - target_no_format
+        no_format = df[df["format"].isna() | (df["format"] == "")]
+
+        # 80% of target: items WITH format (column profiling → joinability)
+        target_has_format = int(args.max_items * 0.8)
+        # 20% of target: items without format (enrichment only)
+        target_no_format = args.max_items - target_has_format
+
+        # Within has-format, prioritize CSV/JSON over XLSX over the rest
+        def _fmt_priority(f: str) -> int:
+            up = str(f).strip().upper()
+            if "CSV" in up:
+                return 0
+            if "JSON" in up:
+                return 1
+            if "XLSX" in up or "XLS" in up:
+                return 2
+            return 3
+
+        has_format = has_format.copy()
+        has_format["_fmt_prio"] = has_format["format"].map(_fmt_priority)
+        has_format = has_format.sort_values("_fmt_prio").drop(columns=["_fmt_prio"])
 
         # Sample from each group (deterministic seed for reproducible runs)
+        if len(has_format) > target_has_format:
+            has_format_sample = has_format.head(target_has_format)
+        else:
+            has_format_sample = has_format
+
         if len(no_format) > target_no_format:
             no_format_sample = no_format.sample(n=target_no_format, random_state=42)
         else:
             no_format_sample = no_format
 
-        if len(has_format) > target_has_format:
-            has_format_sample = has_format.sample(n=target_has_format, random_state=42)
-        else:
-            has_format_sample = has_format
-
         df = pd.concat([no_format_sample, has_format_sample]).reset_index(drop=True)
         logger.info(
-            "  smart sampling to %d items (no_format=%d, has_format=%d)",
+            "  smart sampling to %d items (has_format=%d, no_format=%d)",
             len(df),
-            len(no_format_sample),
             len(has_format_sample),
+            len(no_format_sample),
         )
 
     # ── Logica incrementale ──────────────────────────────────────────────────────
@@ -1037,6 +1052,22 @@ def main() -> None:
         ]
         if not top.empty:
             logger.info("Top candidates:\n%s", top.to_string(index=False))
+
+    # ── Riepilogo joinabilità ────────────────────────────────────────────────
+    if "joinability_score" in results.columns:
+        with_keys = results["join_keys"].notna().sum()
+        avg_jscore = results["joinability_score"].mean()
+        logger.info(
+            "Joinability: %d/%d items with keys (avg score: %.1f)",
+            with_keys,
+            len(results),
+            avg_jscore,
+        )
+        top_j = results[results["join_keys"].notna()].nlargest(5, "joinability_score")[
+            ["title", "join_keys", "joinability_score", "intake_score"]
+        ]
+        if not top_j.empty:
+            logger.info("Top joinable:\n%s", top_j.to_string(index=False))
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     results = _normalize_preview_columns_for_parquet(results)
