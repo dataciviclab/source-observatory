@@ -61,39 +61,6 @@ _SOURCE_CHECK_ARTIFACT = "source_check_results.parquet"
 _CATALOG_INVENTORY_ARTIFACT = "catalog_inventory_latest.parquet"
 _CATALOG_INVENTORY_REPORT_ARTIFACT = "catalog_inventory_report.json"
 
-# ── Format maps ───────────────────────────────────────────────────────────────
-
-_FORMAT_BY_CONTENT_TYPE: dict[str, str] = {
-    "text/csv": "CSV",
-    "application/json": "JSON",
-    "application/ld+json": "JSON",
-    "application/vnd.ms-excel": "XLS",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "XLSX",
-    "application/xml": "XML",
-    "text/xml": "XML",
-    "application/pdf": "PDF",
-    "application/parquet": "PARQUET",
-    "text/html": "HTML",
-    "text/plain": "TXT",
-    "application/octet-stream": "BIN",
-    "text/tab-separated-values": "TSV",
-    "application/gzip": "GZ",
-    "application/zip": "ZIP",
-    "application/x-tar": "TAR",
-    "application/vnd.oasis.opendocument.spreadsheet": "ODS",
-}
-_FORMAT_BY_SUFFIX: dict[str, str] = {
-    ".csv": "CSV",
-    ".json": "JSON",
-    ".geojson": "JSON",
-    ".xlsx": "XLSX",
-    ".xls": "XLS",
-    ".xml": "XML",
-    ".pdf": "PDF",
-    ".parquet": "PARQUET",
-    ".zip": "ZIP",
-}
-
 # ── Env loading (lazy, once) ─────────────────────────────────────────────────
 
 _ENV_LOADED = False
