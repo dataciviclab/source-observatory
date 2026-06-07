@@ -6,7 +6,7 @@ from typing import Any
 
 import requests
 
-from .base import CollectorResult, inventory_cfg, observatory_get, strip_query
+from .base import USER_AGENT, CollectorResult, inventory_cfg, strip_query
 
 CKAN_ACTION_NAMES = {
     "package_list",
@@ -59,9 +59,15 @@ def ckan_action_endpoint(base_url: str, action: str) -> str:
 
 
 def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
+    from lab_connectors.http import HttpClient
+
     timeout = kwargs.pop("timeout", 60)
     headers = kwargs.pop("headers", None)
-    response = observatory_get(url, timeout=timeout, headers=headers, **kwargs)
+    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
+    result = client.get(url, headers=headers or {}, **kwargs)
+    if not result.is_ok or result.response is None:
+        raise result.err if result.err else RuntimeError(f"GET failed for {url}")
+    response = result.response
     response.raise_for_status()
     content_type = (response.headers.get("content-type") or "").lower()
     if "json" not in content_type:

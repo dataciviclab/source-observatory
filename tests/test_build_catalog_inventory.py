@@ -280,14 +280,16 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
 
 
 def test_ckan_get_json_reports_non_json_response(monkeypatch) -> None:
-    def fake_get(*_args, **_kwargs):
-        return fake_response(
+    fake = FakeHttpClient()
+    fake.responses["https://example.test/api/3/action/package_list"] = HttpResult(
+        response=fake_response(
             200,
             text="<html>Request Rejected</html>",
             headers={"content-type": "text/html"},
-        )
-
-    monkeypatch.setattr(collectors.ckan, "observatory_get", fake_get)
+        ),
+        err=None,
+    )
+    monkeypatch.setattr("lab_connectors.http.HttpClient", lambda *a, **kw: fake)
 
     try:
         collectors.ckan.ckan_get_json("https://example.test/api/3/action/package_list")

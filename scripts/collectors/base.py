@@ -5,8 +5,6 @@ from datetime import datetime, timezone
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
-import requests
-
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 DEFAULT_TIMEOUT_SECONDS = 60
 
@@ -23,23 +21,6 @@ class CollectorResult:
 
 def now_utc_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-
-
-def observatory_get(
-    url: str,
-    *,
-    timeout: int | float | tuple[int | float, int | float] = DEFAULT_TIMEOUT_SECONDS,
-    headers: dict[str, str] | None = None,
-    **kwargs: Any,
-) -> requests.Response:
-    """GET request with SSL fallback via HttpClient."""
-    from lab_connectors.http import HttpClient
-
-    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)  # type: ignore[arg-type]
-    result = client.get(url, headers=headers or {}, **kwargs)
-    if result.is_ok and result.response is not None:
-        return result.response
-    raise result.err if result.err else RuntimeError(f"GET failed for {url}")
 
 
 def strip_query(url: str) -> str:
