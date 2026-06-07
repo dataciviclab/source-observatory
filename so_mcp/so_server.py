@@ -177,5 +177,30 @@ def so_list_source_items(
     return guard_timed(list_source_items, "so_list_source_items", source_id, limit, offset, query)
 
 
+@mcp.tool(
+    description=(
+        "Overview completo di una fonte: stato radar, stato inventory, "
+        "delta item count, signals recenti. Compone so_radar_summary + "
+        "so_inventory_status + so_inventory_diff + so_catalog_signals "
+        "in una singola chiamata."
+    ),
+    structured_output=True,
+)
+def so_source_overview(source_id: str) -> dict[str, Any]:
+    """Overview completo di una fonte in un giro solo."""
+
+    def _exec() -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "source_id": source_id,
+            "radar": radar_summary(source_id),
+            "inventory_status": inventory_status(source_id),
+            "inventory_diff": inventory_diff(source_id),
+            "signals": query_signals(source_id, limit=5),
+        }
+        return result
+
+    return guard_timed(_exec, "so_source_overview")
+
+
 if __name__ == "__main__":
     mcp.run()
