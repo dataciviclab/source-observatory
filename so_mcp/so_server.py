@@ -202,5 +202,10 @@ def so_source_overview(source_id: str) -> dict[str, Any]:
     return guard_timed(_exec, "so_source_overview")
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Entry point per l'MCP server."""
     mcp.run()
+
+
+if __name__ == "__main__":
+    main()
