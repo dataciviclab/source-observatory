@@ -14,6 +14,7 @@ Ogni riga corrisponde a un item controllato. Le colonne si dividono in quattro g
 | **Check** | `url_checked`, `http_status`, `reachable`, `check_notes`, `granularity`, `year_min`, `year_max`, `resource_format`, `notes` |
 | **Preview** | `file_size`, `preview_row_count`, `col_types`, `columns`, `encoding_suggested`, `delim_suggested`, `decimal_suggested`, `skip_suggested`, `robust_read_suggested`, `mapping_suggestions` |
 | **Score** | `intake_score`, `intake_candidate`, `needs_review`, `enrich_method`, `check_timestamp` |
+| **Joinability** | `join_keys`, `joinability_score` |
 
 ---
 
@@ -72,6 +73,8 @@ o ereditati dall'inventory sniff (Phase 1). Vedi anche `catalog_inventory_latest
 | `needs_review` | `bool` | `True` se `granularity = "non_determinato"` oppure `year_min is None`. Segnala che il dato richiede valutazione manuale prima dell'intake. |
 | `enrich_method` | `str` | Metodo usato per arricchire i metadata. Valori: `ckan_package_show` (arricchimento pieno CKAN, +5 punti), `sdmx_dataflow_annotations` (arricchimento SDMX, +5 punti), `inventory_only` (solo metadata inventario), `content_type` (formato da HEAD HTTP su URL diretto), `content_type_landing` (formato da HEAD HTTP su landing page), `csv_preview` (profiling DuckDB con toolkit eseguito), `html_scrape` (estrazione link da HTML), `scraping_blocked` (fonte bloccata per scraping, nessun bonus), `html_scrape_failed`, `error`. |
 | `check_timestamp` | `str` | ISO 8601 timestamp in UTC del momento in cui il check è stato eseguito (es. `"2026-04-21T05:00:00+00:00"`). |
+| `join_keys` | `str` (JSON) | Lista delle chiavi di join riconosciute nei nomi colonna (es. `["istat_comune", "anno"]`). `None` se nessuna chiave trovata o colonne non profilate. Calcolato da `detect_join_keys()` in `source_check_analyze.py`. |
+| `joinability_score` | `float` (0–100) | Punteggio di joinabilità basato sulle chiavi trovate: somma pesi per tipo chiave + bonus per chiavi multiple. Non include cross-reference col catalogo (demandato a `joinability_scan.py`). |
 
 ---
 

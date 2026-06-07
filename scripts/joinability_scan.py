@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-joinability_scan.py — Scansione leggera della joinabilità dei candidate in source_check_results.
+joinability_scan.py — Scansione della joinabilità con cross-reference al catalogo.
 
-Legge source_check_results.parquet (da GCS pubblico), analizza la colonna `columns`
-di ogni item e identifica pattern di chiavi di join note (codici ISTAT, anno, provincia,
-codice ente, ecc.). Cross-referenzia col catalogo esistente (clean_catalog.json) per
-mostrare quali dataset del Lab diventerebbero joinabili.
+Legge source_check_results.parquet (da GCS pubblico). Usa le chiavi di join
+già pre-calcolate (colonna `join_keys`) se presenti, altrimenti le rileva da
+`columns`. Cross-referenzia col catalogo esistente (clean_catalog.json) per
+mostrare quali dataset del Lab diventerebbero joinabili, e produce uno score
+arricchito (incluso bonus cross-ref).
 
-Output: observatory-results/joinability_report.md (gitignorato)
-Nessuna modifica a workflow, CI o artifact SO.
+Output: observatory-results/joinability_report.json (gitignorato)
 """
 
 from __future__ import annotations
@@ -459,12 +459,31 @@ def main() -> None:
             continue
         total_with_columns += 1
 
-        found_keys = detect_keys(col_names)
+        # Prefer pre-computed join_keys from source_check (joinability nativa)
+        # Fall back to detecting from columns for backward compatibility.
+        join_keys_raw = record.get("join_keys")
+        if join_keys_raw and isinstance(join_keys_raw, str):
+            try:
+                key_names = json.loads(join_keys_raw)
+                found_keys = {k: [k] for k in key_names if isinstance(k, str)}
+            except (json.JSONDecodeError, TypeError):
+                found_keys = detect_keys(col_names)
+        else:
+            found_keys = detect_keys(col_names)
+
         if found_keys:
             total_with_keys += 1
 
         catalog_matches = cross_reference(found_keys, catalog_index, bridge_semantic_keys)
-        joinability_score = compute_joinability_score(found_keys, catalog_matches)
+        # Use pre-computed base score, enrich with cross-ref bonus
+        base_score = record.get("joinability_score", 0) or 0
+        cross_ref_bonus = min(
+            len([m for m in catalog_matches if "bridge" not in m.get("match_tags", "")]) * 3, 20
+        )
+        cross_ref_bonus += min(
+            len([m for m in catalog_matches if "bridge" in m.get("match_tags", "")]) * 1, 10
+        )
+        enriched_score = min(base_score + cross_ref_bonus, 100)
 
         items.append(
             {
@@ -477,7 +496,8 @@ def main() -> None:
                 "col_count": len(col_names),
                 "found_keys": found_keys,
                 "catalog_matches": catalog_matches,
-                "joinability_score": joinability_score,
+                "joinability_score": base_score,
+                "enriched_joinability_score": enriched_score,
             }
         )
 
