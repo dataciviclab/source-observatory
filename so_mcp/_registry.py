@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import _artifact
+from . import _artifact
 
 
 def registry_query(

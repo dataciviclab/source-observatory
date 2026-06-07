@@ -2,24 +2,25 @@ from __future__ import annotations
 
 import json
 
-import _artifact
 import duckdb  # noqa: E402
 import pandas as pd  # must be before duckdb
 import pytest
-from _discovery import list_source_items
-from _find_url import find_by_url
-from _inventory import (
+
+from so_mcp import _artifact
+from so_mcp._discovery import list_source_items
+from so_mcp._find_url import find_by_url
+from so_mcp._inventory import (
     _source_radar_context,
     catalog_inventory_search,
     inventory_diff,
     inventory_status,
     query_inventory,
 )
-from _radar import radar_history, radar_status_md, radar_summary
-from _recommend import recommend_sources
-from _registry import registry_query
-from _sdmx import discover_sdmx
-from _signals import query_signals
+from so_mcp._radar import radar_history, radar_status_md, radar_summary
+from so_mcp._recommend import recommend_sources
+from so_mcp._registry import registry_query
+from so_mcp._sdmx import discover_sdmx
+from so_mcp._signals import query_signals
 
 pytestmark = pytest.mark.contract
 

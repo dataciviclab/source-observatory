@@ -8,8 +8,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
-import _artifact
 from lab_connectors.duckdb import gcs_connect
+
+from . import _artifact
 
 
 def query_inventory(

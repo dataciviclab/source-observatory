@@ -10,8 +10,9 @@ from __future__ import annotations
 
 from typing import Any
 
-import _artifact
 from lab_connectors.duckdb import gcs_connect
+
+from . import _artifact
 
 
 def list_source_items(

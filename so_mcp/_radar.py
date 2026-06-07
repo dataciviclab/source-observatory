@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timezone
 from typing import Any
 
-import _artifact
+from . import _artifact
 
 
 def radar_summary(source_id: str | None = None) -> dict[str, Any]:
