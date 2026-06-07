@@ -6,7 +6,7 @@ from typing import Any
 
 import requests
 
-from .base import CollectorResult, inventory_cfg, observatory_get, strip_query
+from .base import USER_AGENT, CollectorResult, inventory_cfg, strip_query
 
 CKAN_ACTION_NAMES = {
     "package_list",
@@ -59,9 +59,28 @@ def ckan_action_endpoint(base_url: str, action: str) -> str:
 
 
 def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
+    """GET JSON da un'API CKAN.
+
+    Args:
+        url: Endpoint URL (es. ``/api/3/action/package_show``).
+        client: Opzionale, ``HttpClient`` riusabile per connection pooling.
+            Se non fornito, ne crea uno nuovo (comportamento legacy).
+        **kwargs: Passati a ``HttpClient.get()``; ``timeout`` e ``headers``
+            vengono estratti prima di passarli.
+    """
+    from lab_connectors.http import HttpClient
+
+    client: HttpClient | None = kwargs.pop("client", None)
     timeout = kwargs.pop("timeout", 60)
     headers = kwargs.pop("headers", None)
-    response = observatory_get(url, timeout=timeout, headers=headers, **kwargs)
+
+    if client is None:
+        client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
+
+    result = client.get(url, headers=headers or {}, **kwargs)
+    if not result.is_ok or result.response is None:
+        raise result.err if result.err else RuntimeError(f"GET failed for {url}")
+    response = result.response
     response.raise_for_status()
     content_type = (response.headers.get("content-type") or "").lower()
     if "json" not in content_type:
@@ -202,8 +221,23 @@ def _ckan_search_params(
 
 
 def collect_ckan_inventory_via_search(
-    source_id: str, source_cfg: dict[str, Any], captured_at: str
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
+    *,
+    client: Any | None = None,
 ) -> list[dict[str, Any]]:
+    """Inventory via paginated package_search.
+
+    Args:
+        client: Opzionale, ``HttpClient`` riusabile per connection pooling.
+            Se non fornito, ne crea uno nuovo.
+    """
+    from lab_connectors.http import HttpClient
+
+    if client is None:
+        client = HttpClient(timeout=60, user_agent=USER_AGENT)
+
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_search")
     page_size = 1000
     start = 0
@@ -212,7 +246,9 @@ def collect_ckan_inventory_via_search(
 
     while True:
         payload = ckan_get_json(
-            endpoint, params=_ckan_search_params(source_cfg, page_size=page_size, start=start)
+            endpoint,
+            client=client,
+            params=_ckan_search_params(source_cfg, page_size=page_size, start=start),
         )
         if not payload.get("success"):
             raise ValueError(f"CKAN package_search failed for {source_id}")
@@ -254,6 +290,7 @@ def _fetch_ckan_chunk_with_fallback(
     request_timeout: int,
     max_retries: int,
     retry_delay: float,
+    client: Any | None = None,
 ) -> tuple[dict[str, Any] | None, str | None, int]:
     current_limit = page_size
 
@@ -262,6 +299,7 @@ def _fetch_ckan_chunk_with_fallback(
             try:
                 payload = ckan_get_json(
                     endpoint,
+                    client=client,
                     params={**params, "limit": current_limit},
                     timeout=request_timeout,
                 )
@@ -287,8 +325,16 @@ def _fetch_ckan_chunk_with_fallback(
 
 
 def collect_ckan_inventory_via_current_list(
-    source_id: str, source_cfg: dict[str, Any], captured_at: str
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
+    *,
+    client: Any | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+    from lab_connectors.http import HttpClient
+
+    if client is None:
+        client = HttpClient(timeout=15, user_agent=USER_AGENT)
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "current_package_list_with_resources")
     page_size = 100
     fallback_page_sizes = (50, 10)
@@ -304,6 +350,7 @@ def collect_ckan_inventory_via_current_list(
             endpoint,
             {"offset": offset},
             page_size,
+            client=client,
             fallback_page_sizes=fallback_page_sizes,
             request_timeout=request_timeout,
             max_retries=max_retries,
@@ -361,10 +408,18 @@ def collect_ckan_inventory_via_current_list(
 
 
 def collect_ckan_inventory_via_package_list(
-    source_id: str, source_cfg: dict[str, Any], captured_at: str
+    source_id: str,
+    source_cfg: dict[str, Any],
+    captured_at: str,
+    *,
+    client: Any | None = None,
 ) -> list[dict[str, Any]]:
+    from lab_connectors.http import HttpClient
+
+    if client is None:
+        client = HttpClient(timeout=60, user_agent=USER_AGENT)
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_list")
-    payload = ckan_get_json(endpoint)
+    payload = ckan_get_json(endpoint, client=client)
     if not payload.get("success"):
         raise ValueError(f"CKAN action failed for {source_id}")
 
@@ -501,17 +556,23 @@ def collect(
     source_cfg: dict[str, Any],
     captured_at: str,
     *,
+    client: Any | None = None,
     search_fn=collect_ckan_inventory_via_search,
     current_list_fn=collect_ckan_inventory_via_current_list,
     package_list_fn=collect_ckan_inventory_via_package_list,
     package_show_sample_fn=collect_ckan_inventory_via_package_show_sample,
 ) -> CollectorResult:
+    from lab_connectors.http import HttpClient
+
+    if client is None:
+        client = HttpClient(timeout=60, user_agent=USER_AGENT)
     inv = inventory_cfg(source_cfg)
     rows, warning = _ckan_standard_path(
         source_id=source_id,
         source_cfg=source_cfg,
         captured_at=captured_at,
         inv=inv,
+        client=client,
         search_fn=search_fn,
         current_list_fn=current_list_fn,
         package_list_fn=package_list_fn,
@@ -525,17 +586,22 @@ def _ckan_standard_path(
     source_cfg: dict[str, Any],
     captured_at: str,
     inv: dict[str, Any],
+    *,
+    client: Any | None = None,
     search_fn,
     current_list_fn,
     package_list_fn,
     package_show_sample_fn,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-    """Ramo standard: package_search -> fallback package_list -> current_list."""
+    """Ramo standard: package_search -> fallback package_list -> current_list.
+
+    Tutte le funzioni di inventory ricevono il client condiviso per connection pooling.
+    """
     search_exc: Exception | None = None
 
     if not inv.get("skip_package_search"):
         try:
-            rows = search_fn(source_id, source_cfg, captured_at)
+            rows = search_fn(source_id, source_cfg, captured_at, client=client)
             return rows, None
         except Exception as exc:
             search_exc = exc  # per debug
@@ -544,7 +610,7 @@ def _ckan_standard_path(
             f"CKAN package_search disabled for {source_id} ({inv.get('skip_package_search_reason', 'disabled by registry config')})."
         )
 
-    package_list_rows = package_list_fn(source_id, source_cfg, captured_at)
+    package_list_rows = package_list_fn(source_id, source_cfg, captured_at, client=client)
     if inv.get("skip_current_list"):
         if inv.get("package_show_sample"):
             enriched_rows, sample_warning = package_show_sample_fn(
@@ -580,6 +646,8 @@ def _ckan_standard_path(
 
     time.sleep(1.0)
     try:
+        # current_list ha timeout 15s proprio — non passare il client condiviso
+        # (creato con timeout 60s) per non alterare il comportamento di retry
         current_rows, current_warning = current_list_fn(source_id, source_cfg, captured_at)
         enriched_by_id = {row["item_id"]: row for row in current_rows}
         fallback_merged_rows: list[dict[str, Any]] = []

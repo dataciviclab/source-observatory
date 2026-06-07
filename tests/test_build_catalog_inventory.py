@@ -22,7 +22,7 @@ def test_collect_ckan_inventory_merges_current_list_metadata(monkeypatch) -> Non
     def fake_search(*_args, **_kwargs):
         raise ValueError("package_search rotto")
 
-    def fake_package_list(source_id, source_cfg, captured_at):
+    def fake_package_list(source_id, source_cfg, captured_at, **kwargs):
         return [
             {
                 "captured_at": captured_at,
@@ -58,7 +58,7 @@ def test_collect_ckan_inventory_merges_current_list_metadata(monkeypatch) -> Non
             },
         ]
 
-    def fake_current_list(source_id, source_cfg, captured_at):
+    def fake_current_list(source_id, source_cfg, captured_at, **kwargs):
         return (
             [
                 {
@@ -123,7 +123,7 @@ def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None
     def fake_search(*_args, **_kwargs):
         raise ValueError("package_search rotto")
 
-    def fake_package_list(source_id, source_cfg, captured_at):
+    def fake_package_list(source_id, source_cfg, captured_at, **kwargs):
         return [
             {
                 "captured_at": captured_at,
@@ -190,7 +190,7 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
     def fake_search(*_args, **_kwargs):
         raise ValueError("package_search rotto")
 
-    def fake_package_list(source_id, source_cfg, captured_at):
+    def fake_package_list(source_id, source_cfg, captured_at, **kwargs):
         return [
             {
                 "captured_at": captured_at,
@@ -280,14 +280,16 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
 
 
 def test_ckan_get_json_reports_non_json_response(monkeypatch) -> None:
-    def fake_get(*_args, **_kwargs):
-        return fake_response(
+    fake = FakeHttpClient()
+    fake.responses["https://example.test/api/3/action/package_list"] = HttpResult(
+        response=fake_response(
             200,
             text="<html>Request Rejected</html>",
             headers={"content-type": "text/html"},
-        )
-
-    monkeypatch.setattr(collectors.ckan, "observatory_get", fake_get)
+        ),
+        err=None,
+    )
+    monkeypatch.setattr("lab_connectors.http.HttpClient", lambda *a, **kw: fake)
 
     try:
         collectors.ckan.ckan_get_json("https://example.test/api/3/action/package_list")

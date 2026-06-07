@@ -5,7 +5,7 @@
 ```
 scripts/
   collectors/          # package: logica di inventory per protocollo
-    base.py            # utility condivise: observatory_get, CollectorResult, strip_query
+    base.py            # utility condivise: CollectorResult, strip_query, USER_AGENT
     ckan.py            # collector CKAN
     sdmx.py            # collector SDMX
     sparql.py          # collector SPARQL
@@ -22,9 +22,10 @@ scripts/
   gha/                         # helper per CI (issue body, publish summary)
 ```
 
-## Regola fondamentale: riusa collectors/base.py
+## Regola fondamentale: usa `HttpClient` per chiamate HTTP
 
-Tutti gli script che fanno chiamate HTTP **devono** usare `observatory_get()` da `collectors/base.py`, non `requests.get()` diretto. Motivo: User-Agent coerente, session management, timeout standard.
+Tutti gli script che fanno chiamate HTTP **devono** usare `HttpClient` da `lab_connectors.http`,
+non `requests.get()` diretto. Motivo: SSL fallback automatico, retry, backoff, User-Agent coerente.
 
 ```python
 # ✗ non fare
@@ -32,13 +33,17 @@ import requests
 r = requests.get(url, timeout=15)
 
 # ✓ fare
-from collectors.base import observatory_get
-r = observatory_get(url, timeout=15)
+from lab_connectors.http import HttpClient
+client = HttpClient(timeout=15, user_agent=USER_AGENT)
+result = client.get(url)
+if result.is_ok:
+    response = result.response
 ```
 
 Per importare `collectors` da uno script in `scripts/`, usa:
 ```python
-from collectors.base import observatory_get
+from lab_connectors.http import HttpClient
+from collectors.base import USER_AGENT
 from collectors.ckan import ckan_get_json
 ```
 
@@ -98,7 +103,7 @@ Il source-check implementa un circuit breaker host-level per evitare di martella
 1. Scrivi `_fetch_X()` e `_parse_X()` — restituiscono sempre il dict shape di `_EMPTY_ENRICH`
 2. Aggiungi un branch in `_enrich()` con la condizione sul protocollo
 3. Aggiungi la costante stringa `ENRICH_X = "x_method"` vicino a `_EMPTY_ENRICH`
-4. Usa `observatory_get()` invece di `requests.get()`
+4. Usa `HttpClient` invece di `requests.get()`
 
 ## Pattern: dict shape degli enricher
 
@@ -122,9 +127,9 @@ Ogni enricher restituisce esattamente queste chiavi (valore `None` se non dispon
 
 ## Utility da collectors/base.py
 
-### Funzioni HTTP
-- `observatory_get(url, *, timeout=60, headers=None, **kwargs)` — GET con User-Agent coerente
-- `get_observatory_session()` → `requests.Session` con header predefiniti
+### Costanti
+- `USER_AGENT` — User-Agent standard per chiamate HTTP
+- `DEFAULT_TIMEOUT_SECONDS` — timeout predefinito
 
 ### Tipi
 - `CollectorResult(rows, warning=None, summary=None)` — risultato di una collezione
