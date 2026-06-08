@@ -287,15 +287,15 @@ _JOIN_KEY_PATTERNS: list[tuple[str, str]] = [
     ),
     (
         "istat_regione",
-        r"(?i)(codice_istat_regione|^codice_regione$|^codreg$|regione_istat_cod|^cod_reg$)",
+        r"(?i)(codice_istat_regione|^codice_regione$|^codreg$|regione_istat_cod|^cod_reg$|^regione$)",
     ),
     (
         "anno",
-        r"(?i)^(anno|anno_di_imposta|anno_scolastico|annoscolastico|anno_riferimento|anno_presentazione|esercizio_finanziario)$",
+        r"(?i)^(anno(_|$)|anno_di_imposta$|anno_scolastico$|annoscolastico$|anno_riferimento$|anno_presentazione$|esercizio_finanziario$)",
     ),
     (
         "provincia",
-        r"(?i)(sigla_provincia|^provincia$|codice_provincia|sigla_prov|^prov$|^cod_prov$)",
+        r"(?i)(sigla_provincia|^provincia(_|$)|codice_provincia|sigla_prov|^prov$|^cod_prov$)",
     ),
     ("codice_catastale", r"(?i)(codice_catastale|cod_catastale|catastale)"),
     (
@@ -496,7 +496,43 @@ def _intake_score(
     return score, candidate
 
 
+def _infer_granularity_from_columns(columns_raw: str | None) -> str | None:
+    """Inferisce granularità geografica dalle colonne profilate.
+
+    Se il dataset ha colonne tipo 'Comune', 'Provincia', 'Regione',
+    la granularità è determinata con certezza.
+    Confronto su nome colonna ripulito (strip + lower).
+    Ordine: comune > provincia > regione > nazionale (più granulare vince).
+    """
+    col_names = _parse_columns(columns_raw)
+    if not col_names:
+        return None
+    cleaned = {c.strip().lower().replace("_", " ") for c in col_names if c}
+    for c in cleaned:
+        if c in ("comune", "codice comune", "codice istat comune", "pro com"):
+            return "comune"
+    for c in cleaned:
+        if c in ("provincia", "sigla provincia", "codice provincia", "prov", "cod prov"):
+            return "provincia"
+    for c in cleaned:
+        if c in ("regione", "codice regione", "codice istat regione", "codreg", "cod reg"):
+            return "regione"
+    for c in cleaned:
+        if c in ("nazionale", "italia", "paese", "stato"):
+            return "nazionale"
+    return None
+
+
 def _finalize_scores(result: dict) -> dict:
+    # ── Granularità: se non determinata, prova dalle colonne profilate ──────
+    if result.get("granularity") in ("non_determinato", None):
+        cols_gran = _infer_granularity_from_columns(result.get("columns"))
+        if cols_gran:
+            result["granularity"] = cols_gran
+            # Se la granularità è stata determinata, rivedi needs_review
+            if result.get("year_min") is not None:
+                result["needs_review"] = False
+
     score, candidate = _intake_score(
         granularity=result.get("granularity"),
         year_min=result.get("year_min"),
