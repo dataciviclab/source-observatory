@@ -34,6 +34,9 @@ from toolkit.scout.http import (
 from toolkit.scout.http import (
     resolve_preview_kind as _toolkit_preview_kind,
 )
+from toolkit.scout.sparql import (
+    fetch_sparql_count as _toolkit_sparql_count,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +73,8 @@ _EMPTY_ENRICH: dict[str, Any] = {
     "sdmx_flow": None,
     "sdmx_version": None,
     "sdmx_agency": None,
+    "sparql_responding": None,
+    "sparql_triple_count": None,
 }
 
 
@@ -275,6 +280,26 @@ def _fetch_sdmx_dataflow(base_url: str, flow_id: str) -> Optional[ET.Element]:
         return ET.fromstring(r.text)
     except Exception:
         return None
+
+
+# ── SPARQL probe ─────────────────────────────────────────────────────────────
+
+
+def _fetch_sparql_count(
+    endpoint: str,
+    graph_uri: str | None = None,
+    timeout: int = 15,
+) -> int | None:
+    """Conta triple su un endpoint SPARQL, con/senza named graph.
+
+    Wrapper bulk-safe su toolkit.scout.sparql.fetch_sparql_count.
+    Gestisce timeout e fallimenti senza sollevare eccezioni.
+    """
+    return _toolkit_sparql_count(
+        endpoint=endpoint,
+        graph_uri=graph_uri,
+        timeout=timeout,
+    )
 
 
 # ── HTML metadata (format detection) ─────────────────────────────────────────
