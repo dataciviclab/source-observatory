@@ -13,6 +13,7 @@ from typing import Optional
 
 import pandas as pd
 from toolkit.scout.infer import infer_granularity as _infer_granularity
+from toolkit.scout.infer import infer_granularity_from_name_and_columns as _infer_gran_cols
 from toolkit.scout.infer import infer_years as _infer_years
 
 # ── dataset grouping ──────────────────────────────────────────────────────────
@@ -287,15 +288,15 @@ _JOIN_KEY_PATTERNS: list[tuple[str, str]] = [
     ),
     (
         "istat_regione",
-        r"(?i)(codice_istat_regione|^codice_regione$|^codreg$|regione_istat_cod|^cod_reg$)",
+        r"(?i)(codice_istat_regione|^codice_regione$|^codreg$|regione_istat_cod|^cod_reg$|^regione$)",
     ),
     (
         "anno",
-        r"(?i)^(anno|anno_di_imposta|anno_scolastico|annoscolastico|anno_riferimento|anno_presentazione|esercizio_finanziario)$",
+        r"(?i)^(anno(_|$)|anno_di_imposta$|anno_scolastico$|annoscolastico$|anno_riferimento$|anno_presentazione$|esercizio_finanziario$)",
     ),
     (
         "provincia",
-        r"(?i)(sigla_provincia|^provincia$|codice_provincia|sigla_prov|^prov$|^cod_prov$)",
+        r"(?i)(sigla_provincia|^provincia(_|$)|codice_provincia|sigla_prov|^prov$|^cod_prov$)",
     ),
     ("codice_catastale", r"(?i)(codice_catastale|cod_catastale|catastale)"),
     (
@@ -496,7 +497,75 @@ def _intake_score(
     return score, candidate
 
 
+def _infer_sdmx_join_keys(result: dict) -> dict[str, list[str]]:
+    """Inferisce join keys dalle metadata SDMX quando non ci sono colonne profilate.
+
+    SDMX non ha file CSV scaricabili, ma le dimensioni del dataflow
+    (territorio, tempo, sesso, età, cittadinanza, mese) sono deducibili
+    dai campi `granularity`, `year_min`/`year_max`, `tags` e `notes`.
+    """
+    found: dict[str, list[str]] = {}
+    combined = ""
+
+    tags = result.get("tags")
+    if tags and isinstance(tags, str):
+        combined += " " + tags.lower()
+    notes = result.get("notes")
+    if notes and isinstance(notes, str):
+        combined += " " + notes.lower()
+    title = result.get("title")
+    if title and isinstance(title, str):
+        combined += " " + title.lower()
+    sdmx_flow = result.get("sdmx_flow")
+    if sdmx_flow and isinstance(sdmx_flow, str):
+        combined += " " + sdmx_flow.lower()
+
+    # ── Chiave territoriale da granularity ──
+    gran = result.get("granularity")
+    if gran == "comune":
+        found["istat_comune"] = ["REF_AREA"]
+    elif gran == "provincia":
+        found["provincia"] = ["REF_AREA"]
+    elif gran == "regione":
+        found["istat_regione"] = ["REF_AREA"]
+
+    # ── Chiave temporale ──
+    if result.get("year_min") is not None or result.get("year_max") is not None:
+        found["anno"] = ["TIME_PERIOD"]
+
+    # ── Chiavi demografiche da keywords ──
+    if re.search(r"(?i)(sesso|sex|gender)", combined):
+        found["sesso"] = ["SEX"]
+    # age con word boundary — evita falsi positivi come wage, damage
+    if re.search(r"(?i)(età|eta'|\bage\b|classe_eta|fascia_eta)", combined):
+        found["eta"] = ["AGE"]
+    if re.search(r"(?i)(cittadinanza|citizenship|nazionalit)", combined):
+        found["cittadinanza"] = ["CITIZENSHIP"]
+    # "paese" da solo è troppo generico (paese geografico)
+    if re.search(r"(?i)\bpaese di cittadinanza\b", combined):
+        found["cittadinanza"] = ["CITIZENSHIP"]
+    if re.search(r"(?i)(mese|month)", combined):
+        found["mese"] = ["TIME_FORMAT"]
+
+    return found
+
+
 def _finalize_scores(result: dict) -> dict:
+    # ── Granularità: se non determinata, prova dalle colonne profilate ──────
+    # Usa la funzione del toolkit (migliorata) che controlla i nomi colonna
+    # individualmente prima del fallback regex.
+    if result.get("granularity") in ("non_determinato", None):
+        cols_raw = result.get("columns")
+        if cols_raw:
+            col_names = _parse_columns(cols_raw)
+            if col_names:
+                title = result.get("title") or ""
+                inferred = _infer_gran_cols(title, col_names)
+                if inferred and inferred != "non_determinato":
+                    result["granularity"] = inferred
+                    if result.get("year_min") is not None:
+                        result["needs_review"] = False
+
     score, candidate = _intake_score(
         granularity=result.get("granularity"),
         year_min=result.get("year_min"),
@@ -519,6 +588,11 @@ def _finalize_scores(result: dict) -> dict:
     # consentire a joinability_scan.py di fare cross-reference accurato.
     columns_raw = result.get("columns")
     found_keys = detect_join_keys(columns_raw)
+
+    # ── SDMX fallback: se nessuna colonna profilata, inferisci dalle metadata ──
+    if not found_keys and result.get("resource_format") == "SDMX":
+        found_keys = _infer_sdmx_join_keys(result)
+
     result["join_keys"] = json.dumps(found_keys) if found_keys else None
     result["joinability_score"] = compute_joinability_score(found_keys)
 
