@@ -1,15 +1,8 @@
 # Catalog Watch Report
 
-_Generato: 2026-06-01T08:48:05+00:00 — 23 fonti controllate_
+_Generato: 2026-06-08T08:25:35+00:00 — 26 fonti controllate_
 
 ## Segnali attivi
-
-### 📦 `openbdap` — inventory change
-
-- **Protocollo**: ckan
-- **Dettaglio**: 3809 item (package_list), delta +28 rispetto al run precedente (3781).
-- **Item**: 3809
-- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
 
 ### • `mim_opendata` — csv_magnet
 
@@ -18,12 +11,18 @@ _Generato: 2026-06-01T08:48:05+00:00 — 23 fonti controllate_
 - **Item**: 1116
 - **Azione**: catalog-watch-ready
 
+### 📦 `ispra_linked_data` — inventory change
+
+- **Protocollo**: sparql
+- **Dettaglio**: 67 item (sparql_query), delta +1 rispetto al run precedente (66).
+- **Item**: 67
+- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
+
 ### • `mef_irpef` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 147 link data (CSV 81, ZIP 66)
-- **Item**: 147
-- **Azione**: catalog-watch-ready
+- **Dettaglio**: HTTPSConnectionPool(host='www1.finanze.gov.it', port=443): Max retries exceeded with url: /finanze/analisi_stat/public/index.php?opendata=yes (Caused by ConnectTimeoutError(<HTTPSConnection(host='www1.finanze.gov.it', port=443) at 0x7f6620168200>, 'Connection to www1.finanze.gov.it timed out. (connect timeout=5)'))
+- **Azione**: verificare raggiungibilità del portale
 
 ### • `opencivitas` — csv_magnet
 
@@ -42,7 +41,7 @@ _Generato: 2026-06-01T08:48:05+00:00 — 23 fonti controllate_
 ### • `giustizia_statistiche` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 8 link data (XLSX 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1
+- **Dettaglio**: 8 link data (XLS 8), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Interc=1
 - **Item**: 8
 - **Azione**: low signal
 
@@ -55,6 +54,6 @@ _Generato: 2026-06-01T08:48:05+00:00 — 23 fonti controllate_
 
 ## Fonti stabili / skipped
 
-_16 fonti senza segnali inventariali in questo run._
+_19 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
