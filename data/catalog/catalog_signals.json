@@ -1,13 +1,14 @@
 {
-  "captured_at": "2026-06-08T08:25:35+00:00",
+  "captured_at": "2026-06-08T13:11:31+00:00",
   "sources_checked": 26,
   "signals": [
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 4871,
+      "detail": "4871 item (dataflow_count), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -32,8 +33,9 @@
       "source": "openbdap",
       "protocol": "ckan",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 3817,
+      "detail": "3817 item (package_list), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -591,7 +593,7 @@
             2026
           ],
           "count": 3,
-          "sample": "ALTSICILIA000020260604"
+          "sample": "ALTSICILIA000020260608"
         },
         "ALTTOSCA": {
           "years": [
@@ -642,9 +644,8 @@
       "source": "dati_camera",
       "protocol": "sparql",
       "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 104,
-      "detail": "104 item (sparql_query), in linea con la baseline.",
+      "result": "skipped",
+      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
       "suggested_action": "nessuna"
     },
     {
@@ -668,18 +669,19 @@
     {
       "source": "ispra_linked_data",
       "protocol": "sparql",
-      "signal_type": "inventory change",
-      "result": "inventory change",
+      "signal_type": "no signal",
+      "result": "stabile",
       "metric_value": 67,
-      "detail": "67 item (sparql_query), delta +1 rispetto al run precedente (66).",
-      "suggested_action": "verificare se variazione attesa; avviare inventory-triage se nuovi dataset"
+      "detail": "67 item (sparql_query), in linea con la baseline.",
+      "suggested_action": "nessuna"
     },
     {
       "source": "consip_open_data",
       "protocol": "ckan",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 16,
+      "detail": "16 item (package_list), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -713,9 +715,14 @@
       "source": "mef_irpef",
       "protocol": "html",
       "signal_type": "csv_magnet",
-      "result": "error",
-      "detail": "HTTPSConnectionPool(host='www1.finanze.gov.it', port=443): Max retries exceeded with url: /finanze/analisi_stat/public/index.php?opendata=yes (Caused by ConnectTimeoutError(<HTTPSConnection(host='www1.finanze.gov.it', port=443) at 0x7f6620168200>, 'Connection to www1.finanze.gov.it timed out. (connect timeout=5)'))",
-      "suggested_action": "verificare raggiungibilità del portale"
+      "result": "scan_completed",
+      "metric_value": 147,
+      "detail": "147 link data (CSV 81, ZIP 66)",
+      "prefix_matrix": {},
+      "series": {},
+      "topics": {},
+      "years_range": [],
+      "suggested_action": "catalog-watch-ready"
     },
     {
       "source": "opencivitas",
@@ -1233,7 +1240,7 @@
             2026
           ],
           "count": 2,
-          "sample": "Elenco_Registri_PT_attivi_05.06.2026"
+          "sample": "Elenco_Registri_PT_attivi_08.06.2026"
         },
         "Strutture": {
           "years": [

@@ -1,6 +1,6 @@
 # Catalog Watch Report
 
-_Generato: 2026-06-08T08:25:35+00:00 — 26 fonti controllate_
+_Generato: 2026-06-08T13:11:31+00:00 — 26 fonti controllate_
 
 ## Segnali attivi
 
@@ -11,18 +11,12 @@ _Generato: 2026-06-08T08:25:35+00:00 — 26 fonti controllate_
 - **Item**: 1116
 - **Azione**: catalog-watch-ready
 
-### 📦 `ispra_linked_data` — inventory change
-
-- **Protocollo**: sparql
-- **Dettaglio**: 67 item (sparql_query), delta +1 rispetto al run precedente (66).
-- **Item**: 67
-- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
-
 ### • `mef_irpef` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: HTTPSConnectionPool(host='www1.finanze.gov.it', port=443): Max retries exceeded with url: /finanze/analisi_stat/public/index.php?opendata=yes (Caused by ConnectTimeoutError(<HTTPSConnection(host='www1.finanze.gov.it', port=443) at 0x7f6620168200>, 'Connection to www1.finanze.gov.it timed out. (connect timeout=5)'))
-- **Azione**: verificare raggiungibilità del portale
+- **Dettaglio**: 147 link data (CSV 81, ZIP 66)
+- **Item**: 147
+- **Azione**: catalog-watch-ready
 
 ### • `opencivitas` — csv_magnet
 
@@ -54,6 +48,6 @@ _Generato: 2026-06-08T08:25:35+00:00 — 26 fonti controllate_
 
 ## Fonti stabili / skipped
 
-_19 fonti senza segnali inventariali in questo run._
+_20 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
