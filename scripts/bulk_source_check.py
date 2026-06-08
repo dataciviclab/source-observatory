@@ -61,6 +61,7 @@ from source_check_fetch import (
     _fetch_html_metadata,
     _fetch_sdmx_dataflow,
     _fetch_sdmx_years,
+    _fetch_sparql_count,
     _http_head_with_retry,
     configure_source_check_http,
 )
@@ -303,37 +304,67 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
 
 
 def _enrich_sparql(row: pd.Series, base: dict) -> dict | None:
-    """Arricchimento SPARQL: HEAD probe sull'endpoint + format."""
+    """Arricchimento SPARQL: probe semantico con COUNT + HEAD format.
+
+    Usa query SPARQL COUNT per verificare che l'endpoint risponda e abbia
+    dati. Se l'item ha un graph URI (item_id), conta triple in quel grafo.
+    Fallback: HEAD probe sulla landing_page (backward compat).
+    """
     if base["protocol"] != "sparql":
         return None
 
-    # NaN/None-safe fallback: pd.NA/np.nan sono truthy in Python!
+    # 1. Endpoint SPARQL: da config registry, non dall'item
+    source_cfg = base.get("source_cfg", {})
+    sparql_cfg = source_cfg.get("sparql") or {}
+    endpoint = sparql_cfg.get("endpoint_url") or source_cfg.get("base_url", "")
+
+    sparql_responding: bool | None = None
+    sparql_triple_count: int | None = None
+
+    if endpoint and isinstance(endpoint, str) and endpoint.startswith("http"):
+        # 2a. Prova COUNT sul named graph (item_id = graph URI)
+        item_id = row.get("item_id")
+        if item_id and isinstance(item_id, str) and item_id.startswith("http"):
+            count = _fetch_sparql_count(endpoint, graph_uri=item_id)
+            if count is not None:
+                sparql_responding = True
+                sparql_triple_count = count
+            else:
+                sparql_responding = False
+        else:
+            # 2b. COUNT globale sull'endpoint
+            count = _fetch_sparql_count(endpoint)
+            if count is not None:
+                sparql_responding = True
+                sparql_triple_count = count
+            else:
+                sparql_responding = False
+
+    # 3. Formato: HEAD probe su landing_page (backward compat)
     landing = (
         _safe_str(row.get("landing_page"))
         or _safe_str(row.get("url"))
         or _safe_str(row.get("source_url"))
     )
-    if not landing or not landing.startswith("http"):
-        return None
-
-    # HEAD probe leggero
-    http_status_raw, reachable, note, content_type = _http_head_with_retry(landing)
-    if content_type:
-        fmt = _normalize_format(content_type)
-    else:
-        fmt = "SPARQL"
+    fmt = "SPARQL"
+    if landing and landing.startswith("http"):
+        http_status_raw, reachable, note, content_type = _http_head_with_retry(landing)
+        if content_type:
+            fmt = _normalize_format(content_type)
 
     return _apply_encoding_to_enrich(
         {
             "enriched_title": base["inv_title"],
             "enriched_tags": base["inv_tags"],
             "enriched_notes": base["inv_notes"],
-            "resource_url": landing,
+            "resource_url": endpoint or landing,
             "resource_format": fmt,
             "granularity": base.get("inv_granularity") or "non_determinato",
             "year_min": row.get("year_signal"),
             "year_max": row.get("year_signal"),
             "enrich_method": "sparql_probe",
+            "sparql_responding": sparql_responding,
+            "sparql_triple_count": sparql_triple_count,
         },
         row,
         base,
@@ -611,6 +642,9 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         "sdmx_flow": enrich.get("sdmx_flow"),
         "sdmx_version": enrich.get("sdmx_version"),
         "sdmx_agency": enrich.get("sdmx_agency"),
+        # SPARQL — verifica semantica endpoint
+        "sparql_responding": enrich.get("sparql_responding"),
+        "sparql_triple_count": enrich.get("sparql_triple_count"),
         # Protocol — propagato dal catalogo per il grouping SDMX
         "protocol": row.get("protocol"),
     }

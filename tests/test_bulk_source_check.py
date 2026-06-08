@@ -1102,4 +1102,211 @@ class TestAddDatasetGroupColumns:
         assert result["dataset_group_size"].iloc[0] == 1
 
 
+# ── SPARQL enrichment contract ────────────────────────────────────────────────
+
+
+class TestSparqlEnrichment:
+    """contract: _enrich_sparql esegue query COUNT reali su endpoint SPARQL."""
+
+    def _make_sparql_row(
+        self,
+        source_id: str = "dati_senato",
+        item_id: str = "http://dati.senato.it/ddl/19",
+        **overrides,
+    ):
+        import numpy as np
+        import pandas as pd
+
+        base = {
+            "source_id": source_id,
+            "item_id": item_id,
+            "item_name": "19",
+            "title": "Ddl — Legislatura 19",
+            "organization": np.nan,
+            "tags": np.nan,
+            "notes_excerpt": np.nan,
+            "url": np.nan,
+            "landing_page": np.nan,
+            "format": np.nan,
+            "granularity": np.nan,
+            "year_signal": np.nan,
+            "encoding_suggested": np.nan,
+            "delim_suggested": np.nan,
+            "decimal_suggested": np.nan,
+            "skip_suggested": np.nan,
+            "protocol": "sparql",
+        }
+        base.update(overrides)
+        return pd.Series(base)
+
+    def test_sparql_enrich_calls_count_on_endpoint(self, monkeypatch):
+        """Con endpoint configurato, fa query COUNT e propaga i campi."""
+        import yaml
+        from bulk_source_check import _enrich_with_inventory
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        def _mock_count(endpoint, graph_uri=None, timeout=15):
+            assert endpoint == "https://dati.senato.it/sparql"
+            assert graph_uri == "http://dati.senato.it/ddl/19"
+            return 879751
+
+        import bulk_source_check as bsc
+
+        monkeypatch.setattr(bsc, "_fetch_sparql_count", _mock_count)
+        # Evita chiamate HTTP reali
+        monkeypatch.setattr(bsc, "_http_head_with_retry", lambda *a, **kw: (200, True, None, None))
+
+        row = self._make_sparql_row()
+        result = _enrich_with_inventory(row, registry)
+
+        assert result["sparql_responding"] is True
+        assert result["sparql_triple_count"] == 879751
+        assert result["enrich_method"] == "sparql_probe"
+        assert "SPARQL" in result["resource_format"]
+
+    def test_sparql_enrich_failing_endpoint(self, monkeypatch):
+        """Endpoint non raggiungibile → sparql_responding=False."""
+        import yaml
+        from bulk_source_check import _enrich_with_inventory
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        def _mock_count(endpoint, graph_uri=None, timeout=15):
+            return None  # endpoint irraggiungibile
+
+        import bulk_source_check as bsc
+
+        monkeypatch.setattr(bsc, "_fetch_sparql_count", _mock_count)
+        monkeypatch.setattr(bsc, "_http_head_with_retry", lambda *a, **kw: (200, True, None, None))
+
+        row = self._make_sparql_row()
+        result = _enrich_with_inventory(row, registry)
+
+        assert result["sparql_responding"] is False
+        assert result["sparql_triple_count"] is None
+
+    def test_sparql_enrich_without_graph_uri(self, monkeypatch):
+        """Item senza graph URI fa COUNT globale sull'endpoint."""
+        import yaml
+        from bulk_source_check import _enrich_with_inventory
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        captured_graph = None
+
+        def _mock_count(endpoint, graph_uri=None, timeout=15):
+            nonlocal captured_graph
+            captured_graph = graph_uri
+            return 1000
+
+        import bulk_source_check as bsc
+
+        monkeypatch.setattr(bsc, "_fetch_sparql_count", _mock_count)
+        monkeypatch.setattr(bsc, "_http_head_with_retry", lambda *a, **kw: (200, True, None, None))
+
+        row = self._make_sparql_row(item_id="no-graph-uri")
+        result = _enrich_with_inventory(row, registry)
+
+        assert captured_graph is None  # COUNT globale senza graph_uri
+        assert result["sparql_responding"] is True
+        assert result["sparql_triple_count"] == 1000
+
+    def test_sparql_fallback_handles_missing_fields(self, monkeypatch):
+        """Fallback (protocollo non SPARQL) → campi assenti ma .get() safe."""
+        import numpy as np
+        import pandas as pd
+        import yaml
+        from bulk_source_check import _enrich_with_inventory
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        row = pd.Series(
+            {
+                "source_id": "consip_open_data",
+                "item_id": "test-ckan-item",
+                "item_name": "test",
+                "title": "Test CKAN",
+                "organization": np.nan,
+                "tags": np.nan,
+                "notes_excerpt": np.nan,
+                "url": np.nan,
+                "landing_page": np.nan,
+                "format": np.nan,
+                "granularity": np.nan,
+                "year_signal": np.nan,
+                "encoding_suggested": np.nan,
+                "delim_suggested": np.nan,
+                "decimal_suggested": np.nan,
+                "skip_suggested": np.nan,
+                "protocol": "ckan",
+            }
+        )
+        result = _enrich_with_inventory(row, registry)
+
+        # I campi SPARQL non sono nell'enrich di handler CKAN,
+        # ma sono safe via .get() (non sollevano KeyError)
+        assert result.get("sparql_responding") is None  # non presente
+        assert result.get("sparql_triple_count") is None
+
+
+class TestSparqlCheckRowPassthrough:
+    """contract: _check_row passa sparql_responding e sparql_triple_count."""
+
+    def test_sparql_fields_in_result(self, monkeypatch):
+        import numpy as np
+        import pandas as pd
+        import yaml
+        from bulk_source_check import _check_row
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        def _mock_count(endpoint, graph_uri=None, timeout=15):
+            return 879751
+
+        import bulk_source_check as bsc
+
+        monkeypatch.setattr(bsc, "_fetch_sparql_count", _mock_count)
+        monkeypatch.setattr(bsc, "_http_head_with_retry", lambda *a, **kw: (200, True, None, None))
+        monkeypatch.setattr(
+            bsc, "_fetch_data_preview", lambda *a, **kw: {"enrich_method": "inventory_only"}
+        )
+
+        row = pd.Series(
+            {
+                "source_id": "dati_senato",
+                "item_id": "http://dati.senato.it/ddl/19",
+                "item_name": "19",
+                "title": "Ddl — Legislatura 19",
+                "organization": np.nan,
+                "tags": np.nan,
+                "notes_excerpt": np.nan,
+                "url": np.nan,
+                "landing_page": np.nan,
+                "distribution_url": np.nan,
+                "format": np.nan,
+                "protocol": "sparql",
+                "source_url": np.nan,
+                "api_base_url": np.nan,
+                "granularity": np.nan,
+                "year_signal": np.nan,
+                "encoding_suggested": np.nan,
+                "delim_suggested": np.nan,
+                "decimal_suggested": np.nan,
+                "skip_suggested": np.nan,
+                "source_status": "active",
+            }
+        )
+        result = _check_row(row, "2026-06-08T12:00:00", registry)
+
+        assert result["sparql_responding"] is True
+        assert result["sparql_triple_count"] == 879751
+        assert result["enrich_method"] == "sparql_probe"
+
+
 pytestmark = pytest.mark.contract
