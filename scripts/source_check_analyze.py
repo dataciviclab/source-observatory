@@ -13,6 +13,7 @@ from typing import Optional
 
 import pandas as pd
 from toolkit.scout.infer import infer_granularity as _infer_granularity
+from toolkit.scout.infer import infer_granularity_from_name_and_columns as _infer_gran_cols
 from toolkit.scout.infer import infer_years as _infer_years
 
 # ── dataset grouping ──────────────────────────────────────────────────────────
@@ -496,33 +497,6 @@ def _intake_score(
     return score, candidate
 
 
-def _infer_granularity_from_columns(columns_raw: str | None) -> str | None:
-    """Inferisce granularità geografica dalle colonne profilate.
-
-    Se il dataset ha colonne tipo 'Comune', 'Provincia', 'Regione',
-    la granularità è determinata con certezza.
-    Confronto su nome colonna ripulito (strip + lower).
-    Ordine: comune > provincia > regione > nazionale (più granulare vince).
-    """
-    col_names = _parse_columns(columns_raw)
-    if not col_names:
-        return None
-    cleaned = {c.strip().lower().replace("_", " ") for c in col_names if c}
-    for c in cleaned:
-        if c in ("comune", "codice comune", "codice istat comune", "pro com"):
-            return "comune"
-    for c in cleaned:
-        if c in ("provincia", "sigla provincia", "codice provincia", "prov", "cod prov"):
-            return "provincia"
-    for c in cleaned:
-        if c in ("regione", "codice regione", "codice istat regione", "codreg", "cod reg"):
-            return "regione"
-    for c in cleaned:
-        if c in ("nazionale", "italia", "paese", "stato"):
-            return "nazionale"
-    return None
-
-
 def _infer_sdmx_join_keys(result: dict) -> dict[str, list[str]]:
     """Inferisce join keys dalle metadata SDMX quando non ci sono colonne profilate.
 
@@ -574,13 +548,19 @@ def _infer_sdmx_join_keys(result: dict) -> dict[str, list[str]]:
 
 def _finalize_scores(result: dict) -> dict:
     # ── Granularità: se non determinata, prova dalle colonne profilate ──────
+    # Usa la funzione del toolkit (migliorata) che controlla i nomi colonna
+    # individualmente prima del fallback regex.
     if result.get("granularity") in ("non_determinato", None):
-        cols_gran = _infer_granularity_from_columns(result.get("columns"))
-        if cols_gran:
-            result["granularity"] = cols_gran
-            # Se la granularità è stata determinata, rivedi needs_review
-            if result.get("year_min") is not None:
-                result["needs_review"] = False
+        cols_raw = result.get("columns")
+        if cols_raw:
+            col_names = _parse_columns(cols_raw)
+            if col_names:
+                title = result.get("title") or ""
+                inferred = _infer_gran_cols(title, col_names)
+                if inferred and inferred != "non_determinato":
+                    result["granularity"] = inferred
+                    if result.get("year_min") is not None:
+                        result["needs_review"] = False
 
     score, candidate = _intake_score(
         granularity=result.get("granularity"),

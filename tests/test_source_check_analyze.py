@@ -287,16 +287,18 @@ class TestFinalizeScores:
         import json
 
         columns_raw = json.dumps(["Comune", "Anno", "Sesso", "Importo"])
-        result = _finalize_scores({
-            "columns": columns_raw,
-            "granularity": "comune",
-            "year_min": 2020,
-            "year_max": 2024,
-            "reachable": True,
-            "resource_format": "CSV",
-            "enrich_method": "csv_preview",
-            "needs_review": False,
-        })
+        result = _finalize_scores(
+            {
+                "columns": columns_raw,
+                "granularity": "comune",
+                "year_min": 2020,
+                "year_max": 2024,
+                "reachable": True,
+                "resource_format": "CSV",
+                "enrich_method": "csv_preview",
+                "needs_review": False,
+            }
+        )
         assert "join_keys" in result
         assert "joinability_score" in result
         assert result["joinability_score"] > 0
@@ -311,17 +313,183 @@ class TestFinalizeScores:
 
     def test_finalize_join_keys_none_without_columns(self):
         """Senza colonne profilate, join_keys deve essere None."""
-        result = _finalize_scores({
-            "columns": None,
-            "granularity": "non_determinato",
-            "year_min": None,
-            "year_max": None,
-            "reachable": False,
-            "enrich_method": "inventory_only",
-            "needs_review": True,
-        })
+        result = _finalize_scores(
+            {
+                "columns": None,
+                "granularity": "non_determinato",
+                "year_min": None,
+                "year_max": None,
+                "reachable": False,
+                "enrich_method": "inventory_only",
+                "needs_review": True,
+            }
+        )
         assert result["join_keys"] is None
         assert result["joinability_score"] == 0
+
+    # ── Pattern anno lasco (ANNO_DEPOSITO sì, ANNOTAZIONI no) ────────────
+
+    def test_anno_pattern_matches_ANNO_DEPOSITO(self):
+        """ANNO_DEPOSITO deve matchare il pattern anno (prefix)."""
+        import json
+
+        result = _finalize_scores(
+            {
+                "columns": json.dumps(["ANNO_DEPOSITO", "CODICE_SEDE", "VALORE"]),
+                "granularity": "non_determinato",
+                "year_min": None,
+                "year_max": None,
+                "reachable": False,
+                "resource_format": "CSV",
+                "enrich_method": "csv_preview",
+                "needs_review": True,
+            }
+        )
+        keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
+        assert "anno" in keys, f"expected anno in keys, got {keys}"
+
+    def test_anno_pattern_rejects_ANNOTAZIONI(self):
+        """ANNOTAZIONI non deve matchare il pattern anno."""
+        import json
+
+        result = _finalize_scores(
+            {
+                "columns": json.dumps(["ANNOTAZIONI", "VALORE"]),
+                "granularity": "non_determinato",
+                "year_min": None,
+                "year_max": None,
+                "reachable": False,
+                "resource_format": "CSV",
+                "enrich_method": "csv_preview",
+                "needs_review": True,
+            }
+        )
+        keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
+        assert "anno" not in keys, f"ANNOTAZIONI should NOT match anno, got {keys}"
+
+    # ── Granularità da colonne profilate ─────────────────────────────────
+
+    def test_granularity_from_columns_comune(self):
+        """Colonna 'Comune' → granularità determinata come comune."""
+        import json
+
+        result = _finalize_scores(
+            {
+                "columns": json.dumps(["Comune", "Anno", "Reddito"]),
+                "granularity": "non_determinato",
+                "year_min": 2020,
+                "year_max": 2024,
+                "reachable": True,
+                "resource_format": "CSV",
+                "enrich_method": "csv_preview",
+                "needs_review": True,
+            }
+        )
+        assert result["granularity"] == "comune", f"expected comune, got {result['granularity']}"
+        assert result["needs_review"] is False, "needs_review should become False"
+
+    def test_granularity_from_columns_provincia(self):
+        """Colonna 'Provincia' → granularità determinata come provincia."""
+        import json
+
+        result = _finalize_scores(
+            {
+                "columns": json.dumps(["Provincia", "Anno", "Importo"]),
+                "granularity": "non_determinato",
+                "year_min": 2020,
+                "year_max": 2024,
+                "reachable": True,
+                "resource_format": "CSV",
+                "enrich_method": "csv_preview",
+                "needs_review": True,
+            }
+        )
+        assert result["granularity"] == "provincia"
+
+    def test_granularity_from_columns_codice_comune(self):
+        """Colonna 'CODICE_COMUNE' → granularità comune."""
+        import json
+
+        result = _finalize_scores(
+            {
+                "columns": json.dumps(["CODICE_COMUNE", "ANNO", "VALORE"]),
+                "granularity": "non_determinato",
+                "year_min": 2020,
+                "year_max": 2024,
+                "reachable": True,
+                "resource_format": "CSV",
+                "enrich_method": "csv_preview",
+                "needs_review": True,
+            }
+        )
+        assert result["granularity"] == "comune"
+
+    def test_granularity_not_inferred_without_geo_columns(self):
+        """Senza colonne geografiche, granularità resta non_determinato."""
+        import json
+
+        result = _finalize_scores(
+            {
+                "columns": json.dumps(["Nome", "Cognome", "Reddito"]),
+                "granularity": "non_determinato",
+                "year_min": None,
+                "year_max": None,
+                "reachable": False,
+                "resource_format": "CSV",
+                "enrich_method": "inventory_only",
+                "needs_review": True,
+            }
+        )
+        assert result["granularity"] == "non_determinato"
+
+    # ── SDMX fallback join keys ──────────────────────────────────────────
+
+    def test_sdmx_fallback_join_keys(self):
+        """SDMX con granularità+anni+tags produce join_keys da metadata."""
+        result = _finalize_scores(
+            {
+                "resource_format": "SDMX",
+                "granularity": "provincia",
+                "year_min": 2015,
+                "year_max": 2024,
+                "tags": "monthly, monthly data, short term",
+                "notes": None,
+                "title": "Producer price index",
+                "sdmx_flow": "101_12_DF_DCSP_PREZZIAGR_2",
+                "enrich_method": "sdmx_dataflow_annotations",
+                "needs_review": False,
+                "reachable": False,
+            }
+        )
+        import json
+
+        keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
+        assert "provincia" in keys, f"expected provincia, got {keys}"
+        assert "anno" in keys, f"expected anno, got {keys}"
+        assert "mese" in keys, f"expected mese from 'monthly' tag, got {keys}"
+        assert result["joinability_score"] > 0
+
+    def test_sdmx_fallback_no_false_keys(self):
+        """SDMX senza metadata rilevanti → nessuna chiave falsa."""
+        result = _finalize_scores(
+            {
+                "resource_format": "SDMX",
+                "granularity": "nazionale",
+                "year_min": None,
+                "year_max": None,
+                "tags": "structural, annual, general",
+                "notes": None,
+                "title": "National accounts",
+                "sdmx_flow": "101_XX_DF_DCSP_XXX_1",
+                "enrich_method": "sdmx_dataflow_annotations",
+                "needs_review": True,
+                "reachable": False,
+            }
+        )
+        # nazionale → no territorial key
+        # no years → no temporal key
+        # tags "structural, annual, general" → non contengono sesso/eta/cittadinanza/mese
+        assert result["join_keys"] is None, f"expected no keys, got {result['join_keys']}"
 
 
 class TestFallbackInfer:
