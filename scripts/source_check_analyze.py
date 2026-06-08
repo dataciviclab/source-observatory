@@ -523,6 +523,55 @@ def _infer_granularity_from_columns(columns_raw: str | None) -> str | None:
     return None
 
 
+def _infer_sdmx_join_keys(result: dict) -> dict[str, list[str]]:
+    """Inferisce join keys dalle metadata SDMX quando non ci sono colonne profilate.
+
+    SDMX non ha file CSV scaricabili, ma le dimensioni del dataflow
+    (territorio, tempo, sesso, età, cittadinanza, mese) sono deducibili
+    dai campi `granularity`, `year_min`/`year_max`, `tags` e `notes`.
+    """
+    found: dict[str, list[str]] = {}
+    combined = ""
+
+    tags = result.get("tags")
+    if tags and isinstance(tags, str):
+        combined += " " + tags.lower()
+    notes = result.get("notes")
+    if notes and isinstance(notes, str):
+        combined += " " + notes.lower()
+    title = result.get("title")
+    if title and isinstance(title, str):
+        combined += " " + title.lower()
+    sdmx_flow = result.get("sdmx_flow")
+    if sdmx_flow and isinstance(sdmx_flow, str):
+        combined += " " + sdmx_flow.lower()
+
+    # ── Chiave territoriale da granularity ──
+    gran = result.get("granularity")
+    if gran == "comune":
+        found["istat_comune"] = ["REF_AREA"]
+    elif gran == "provincia":
+        found["provincia"] = ["REF_AREA"]
+    elif gran == "regione":
+        found["istat_regione"] = ["REF_AREA"]
+
+    # ── Chiave temporale ──
+    if result.get("year_min") is not None or result.get("year_max") is not None:
+        found["anno"] = ["TIME_PERIOD"]
+
+    # ── Chiavi demografiche da keywords ──
+    if re.search(r"(?i)(sesso|sex|gender)", combined):
+        found["sesso"] = ["SEX"]
+    if re.search(r"(?i)(età|eta'|age|classe_eta|fascia_eta)", combined):
+        found["eta"] = ["AGE"]
+    if re.search(r"(?i)(cittadinanza|citizenship|nazionalit|paese)", combined):
+        found["cittadinanza"] = ["CITIZENSHIP"]
+    if re.search(r"(?i)(mese|month)", combined):
+        found["mese"] = ["TIME_FORMAT"]
+
+    return found
+
+
 def _finalize_scores(result: dict) -> dict:
     # ── Granularità: se non determinata, prova dalle colonne profilate ──────
     if result.get("granularity") in ("non_determinato", None):
@@ -555,6 +604,11 @@ def _finalize_scores(result: dict) -> dict:
     # consentire a joinability_scan.py di fare cross-reference accurato.
     columns_raw = result.get("columns")
     found_keys = detect_join_keys(columns_raw)
+
+    # ── SDMX fallback: se nessuna colonna profilata, inferisci dalle metadata ──
+    if not found_keys and result.get("resource_format") == "SDMX":
+        found_keys = _infer_sdmx_join_keys(result)
+
     result["join_keys"] = json.dumps(found_keys) if found_keys else None
     result["joinability_score"] = compute_joinability_score(found_keys)
 
