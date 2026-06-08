@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-06-07T07:12:50.149928+00:00",
-  "probe_date": "2026-06-07",
+  "generated_at": "2026-06-08T08:21:00.162474+00:00",
+  "probe_date": "2026-06-08",
   "sources_total": 30,
   "status_counts": {
-    "GREEN": 29,
-    "YELLOW": 1,
+    "GREEN": 30,
+    "YELLOW": 0,
     "RED": 0
   },
   "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sdmx",
-      "http_code": "-",
-      "note": "Timeout (ReadTimeout)"
+      "http_code": "200",
+      "note": null
     },
     {
       "id": "anac",
