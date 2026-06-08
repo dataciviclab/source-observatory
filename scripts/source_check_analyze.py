@@ -536,9 +536,13 @@ def _infer_sdmx_join_keys(result: dict) -> dict[str, list[str]]:
     # ── Chiavi demografiche da keywords ──
     if re.search(r"(?i)(sesso|sex|gender)", combined):
         found["sesso"] = ["SEX"]
-    if re.search(r"(?i)(età|eta'|age|classe_eta|fascia_eta)", combined):
+    # age con word boundary — evita falsi positivi come wage, damage
+    if re.search(r"(?i)(età|eta'|\bage\b|classe_eta|fascia_eta)", combined):
         found["eta"] = ["AGE"]
-    if re.search(r"(?i)(cittadinanza|citizenship|nazionalit|paese)", combined):
+    if re.search(r"(?i)(cittadinanza|citizenship|nazionalit)", combined):
+        found["cittadinanza"] = ["CITIZENSHIP"]
+    # "paese" da solo è troppo generico (paese geografico)
+    if re.search(r"(?i)\bpaese di cittadinanza\b", combined):
         found["cittadinanza"] = ["CITIZENSHIP"]
     if re.search(r"(?i)(mese|month)", combined):
         found["mese"] = ["TIME_FORMAT"]

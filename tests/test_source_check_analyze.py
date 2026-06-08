@@ -491,6 +491,64 @@ class TestFinalizeScores:
         # tags "structural, annual, general" → non contengono sesso/eta/cittadinanza/mese
         assert result["join_keys"] is None, f"expected no keys, got {result['join_keys']}"
 
+    def test_sdmx_age_does_not_match_wage(self):
+        """'Wage' non deve attivare eta (falso positivo)."""
+        result = _finalize_scores({
+            "resource_format": "SDMX", "granularity": "nazionale",
+            "year_min": None, "year_max": None,
+            "tags": "wage statistics by country",
+            "notes": None, "title": "Wage survey",
+            "sdmx_flow": "test", "enrich_method": "sdmx_dataflow_annotations",
+            "needs_review": True, "reachable": False,
+        })
+        import json
+        keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
+        assert "eta" not in keys, f"wage should not match eta, got {keys}"
+
+    def test_sdmx_age_does_not_match_damage(self):
+        """'Damage' non deve attivare eta (falso positivo)."""
+        result = _finalize_scores({
+            "resource_format": "SDMX", "granularity": "nazionale",
+            "year_min": None, "year_max": None,
+            "tags": "damage reports",
+            "notes": None, "title": "Damage assessment",
+            "sdmx_flow": "test", "enrich_method": "sdmx_dataflow_annotations",
+            "needs_review": True, "reachable": False,
+        })
+        import json
+        keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
+        assert "eta" not in keys, f"damage should not match eta, got {keys}"
+
+    def test_sdmx_paese_alone_does_not_match_cittadinanza(self):
+        """'Paese' da solo non deve attivare cittadinanza (falso positivo)."""
+        result = _finalize_scores({
+            "resource_format": "SDMX", "granularity": "nazionale",
+            "year_min": 2020, "year_max": 2024,
+            "tags": "indicatori per paese",
+            "notes": None, "title": "Indicatori per paese",
+            "sdmx_flow": "test", "enrich_method": "sdmx_dataflow_annotations",
+            "needs_review": True, "reachable": False,
+        })
+        import json
+        keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
+        assert "cittadinanza" not in keys, f"paese should not match cittadinanza alone, got {keys}"
+        # deve comunque avere anno
+        assert "anno" in keys, f"expected anno, got {keys}"
+
+    def test_sdmx_paese_di_cittadinanza_matches(self):
+        """'Paese di cittadinanza' deve attivare cittadinanza."""
+        result = _finalize_scores({
+            "resource_format": "SDMX", "granularity": "nazionale",
+            "year_min": 2020, "year_max": 2024,
+            "tags": "popolazione per paese di cittadinanza",
+            "notes": None, "title": "Popolazione per paese di cittadinanza",
+            "sdmx_flow": "test", "enrich_method": "sdmx_dataflow_annotations",
+            "needs_review": True, "reachable": False,
+        })
+        import json
+        keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
+        assert "cittadinanza" in keys, f"expected cittadinanza, got {keys}"
+
 
 class TestFallbackInfer:
     def test_fallback_from_title_and_tags(self):
