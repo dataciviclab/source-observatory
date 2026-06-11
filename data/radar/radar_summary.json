@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-06-10T07:16:37.248923+00:00",
-  "probe_date": "2026-06-10",
+  "generated_at": "2026-06-11T08:14:19.625357+00:00",
+  "probe_date": "2026-06-11",
   "sources_total": 30,
   "status_counts": {
-    "GREEN": 29,
-    "YELLOW": 1,
+    "GREEN": 26,
+    "YELLOW": 4,
     "RED": 0
   },
   "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Timeout (ConnectTimeout)"
     },
     {
       "id": "anac",
@@ -32,10 +32,10 @@
     },
     {
       "id": "openbdap",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "ckan",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
     },
     {
       "id": "inail_opendata",
@@ -53,9 +53,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sparql",
-      "http_code": "403",
+      "http_code": "200",
       "note": null
     },
     {
@@ -81,10 +81,10 @@
     },
     {
       "id": "consip_open_data",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "ckan",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
     },
     {
       "id": "lavoro_opendata",
@@ -109,10 +109,10 @@
     },
     {
       "id": "mef_irpef",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "html",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
     },
     {
       "id": "opencivitas",
