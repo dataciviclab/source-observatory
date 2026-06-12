@@ -48,7 +48,7 @@ OUTPUT_PATH = os.path.join(
 # ── Join key patterns ───────────────────────────────────────────────────────
 # I pattern canonici sono in _constants.JOIN_KEY_PATTERNS.
 # KEY_PATTERNS alias per backward compat interna a questo file.
-KEY_PATTERNS: list[tuple[str, str, str]] = JOIN_KEY_PATTERNS  # type: ignore[assignment]
+KEY_PATTERNS: list[tuple[str, str, str]] = JOIN_KEY_PATTERNS
 
 # ── Bridge table ──────────────────────────────────────────────────────────────
 # Il dataset nel catalogo che funge da bridge table per join indiretti.

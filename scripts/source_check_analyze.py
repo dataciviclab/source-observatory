@@ -288,11 +288,11 @@ def _fallback_infer(row: pd.Series) -> tuple[str, Optional[int], Optional[int]]:
 # source_check_analyze li ri-importa per backward compat interna.
 # Il cross-ref con clean_catalog.json è demandato a joinability_scan.py.
 
-_JOIN_KEY_PATTERNS = JOIN_KEY_PATTERNS  # type: ignore[assignment]
+_JOIN_KEY_PATTERNS = JOIN_KEY_PATTERNS
 _JOIN_KEY_WEIGHTS = JOIN_KEY_WEIGHTS
 _parse_columns = parse_columns
-detect_join_keys = detect_join_keys  # type: ignore[assignment]
-compute_joinability_score = compute_joinability_score  # type: ignore[assignment]
+detect_join_keys = detect_join_keys
+compute_joinability_score = compute_joinability_score
 
 
 # ── intake scoring ────────────────────────────────────────────────────────────
