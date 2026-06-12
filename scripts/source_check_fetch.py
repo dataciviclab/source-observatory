@@ -2,8 +2,9 @@
 Fetch fase per bulk source-check.
 
 Strati:
-  toolkit.scout.http  → funzioni HTTP/fetch condivise (probe, format, CKAN, SDMX, HTML)
-  Questo modulo        → circuit breaker bulk + orchestrazione specifica SO
+  lab_connectors.http  → HttpClient con circuit breaker opzionale
+  toolkit.scout.http   → funzioni HTTP/fetch condivise (probe, format, CKAN, SDMX, HTML)
+  Questo modulo         → orchestrazione specifica SO
 """
 
 from __future__ import annotations
@@ -11,17 +12,12 @@ from __future__ import annotations
 import logging
 import math
 import re
-import threading
 import time
-import urllib.parse
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Optional
 
-from lab_connectors.http import HttpClient, HttpResult
-from toolkit.scout.http import (
-    fetch_ckan_package as _toolkit_ckan_package,
-)
+from lab_connectors.http import CircuitOpenError, HttpClient
 from toolkit.scout.http import (
     fetch_html_body as _toolkit_html_body,
 )
@@ -42,16 +38,9 @@ logger = logging.getLogger(__name__)
 
 # ── Config HTTP (sovrascrivibile da configure_source_check_http) ──────────────
 
-HTTP_TIMEOUT: tuple[float, float] = (5, 10)
-_http_timeout: int | float | tuple[int | float, int | float] = (5.0, 10.0)
-_http_max_retries = 2
-
-# ── Circuit breaker per host (bulk-specific) ─────────────────────────────────
-
-_circuit_threshold = 0
-_cb_lock = threading.Lock()
-_cb_consecutive: dict[str, int] = {}
-_YEAR_RE = re.compile(r"(?<!\d)(19\d{2}|20[012]\d)(?!\d)")
+_DEFAULT_HTTP_TIMEOUT: tuple[int, int] = (5, 10)
+_DEFAULT_HTTP_RETRIES = 2
+_DEFAULT_CIRCUIT_THRESHOLD = 3
 
 SDMX_NS = {
     "message": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message",
@@ -78,118 +67,65 @@ _EMPTY_ENRICH: dict[str, Any] = {
 }
 
 
-# ── Config ───────────────────────────────────────────────────────────────────
+# ── Client HTTP condiviso ──────────────────────────────────────────────────────
 
 
 def configure_source_check_http(
     *,
-    circuit_fail_threshold: int = 3,
-    http_timeout: tuple[float, float] | None = None,
-    http_max_retries: int = 1,
-) -> None:
-    """Reimposta stato HTTP/circuit per un run di bulk_source_check."""
-    global _circuit_threshold, _http_timeout, _http_max_retries
-    with _cb_lock:
-        _cb_consecutive.clear()
-    _circuit_threshold = max(0, int(circuit_fail_threshold))
-    if http_timeout is not None:
-        _http_timeout = (float(http_timeout[0]), float(http_timeout[1]))
-    _http_max_retries = max(1, int(http_max_retries))
+    circuit_fail_threshold: int = _DEFAULT_CIRCUIT_THRESHOLD,
+    http_timeout: tuple[int, int] | None = None,
+    http_max_retries: int = _DEFAULT_HTTP_RETRIES,
+) -> HttpClient:
+    """Crea un HttpClient configurato per bulk source-check.
 
-
-# ── Circuit breaker helpers ──────────────────────────────────────────────────
-
-
-def _netloc(url: str) -> str | None:
-    try:
-        parsed = urllib.parse.urlparse(url)
-        return (parsed.netloc or "").lower() or None
-    except Exception:
-        return None
-
-
-def _circuit_should_block(url: str) -> bool:
-    if _circuit_threshold <= 0:
-        return False
-    host = _netloc(url)
-    if not host:
-        return False
-    with _cb_lock:
-        return _cb_consecutive.get(host, 0) >= _circuit_threshold
-
-
-def _circuit_after_result(url: str, result: HttpResult) -> None:
-    if _circuit_threshold <= 0:
-        return
-    host = _netloc(url)
-    if not host:
-        return
-    failed = (
-        result.err is not None
-        or result.response is None
-        or getattr(result.response, "status_code", 200) >= 500
+    Il client include circuit breaker per-host: dopo ``circuit_fail_threshold``
+    errori consecutivi sullo stesso host, le richieste successive restituiscono
+    ``CircuitOpenError`` senza fare rete.
+    """
+    return HttpClient(
+        timeout=http_timeout or _DEFAULT_HTTP_TIMEOUT,
+        max_retries=max(1, int(http_max_retries)),
+        circuit_threshold=max(0, int(circuit_fail_threshold)),
     )
-    with _cb_lock:
-        if failed:
-            n = _cb_consecutive.get(host, 0) + 1
-            _cb_consecutive[host] = n
-            if n == _circuit_threshold:
-                logger.warning("Circuit: host %s aperto dopo %d errori", host, n)
-        else:
-            _cb_consecutive[host] = 0
 
 
-# ── Client HTTP con circuit breaker (usato da toolkit.scout) ──────────────────
-
-
-def _get_circuit_client() -> HttpClient:
-    """Crea HttpClient con timeout/retry configurati (senza circuit breaker built-in)."""
-    return HttpClient(timeout=_http_timeout, max_retries=_http_max_retries)  # type: ignore[arg-type]
-
-
-def _tracked_http_head(url: str) -> HttpResult | None:
-    """HEAD con circuit breaker. None = circuit aperto."""
-    if not url.startswith("http") or _circuit_should_block(url):
-        return None
-    client = _get_circuit_client()
-    result = client.head(url)
-    _circuit_after_result(url, result)
-    return result
-
-
-def _tracked_http_get(url: str, **kwargs: Any) -> HttpResult | None:
-    """GET con circuit breaker. None = circuit aperto."""
-    if not url.startswith("http") or _circuit_should_block(url):
-        return None
-    client = _get_circuit_client()
-    result = client.get(url, **kwargs)
-    _circuit_after_result(url, result)
-    return result
+# ═══════════════════════════════════════════════════════════════════════════════
+# NOTA: Il circuit breaker e' ora gestito direttamente da ``HttpClient``
+# (parametro ``circuit_threshold`` in ``configure_source_check_http``).
+# Le vecchie funzioni ``_netloc``, ``_circuit_should_block``,
+# ``_circuit_after_result``, ``_tracked_http_head`` e ``_tracked_http_get``
+# sono state rimosse — usare ``client.head()`` / ``client.get()`` direttamente.
+# ═══════════════════════════════════════════════════════════════════════════════
 
 
 # ── Probe principale (usato da bulk_source_check) ────────────────────────────
 
 
 def _http_head_with_retry(
-    url: str, max_retries: int = 1
+    url: str,
+    client: HttpClient | None = None,
+    max_retries: int = 1,
 ) -> tuple[Optional[int], bool, str, Optional[str]]:
-    """HTTP HEAD con retry e circuit breaker. Usa toolkit.scout per format detection.
+    """HTTP HEAD con retry e circuit breaker via HttpClient.
 
-    Mantiene _tracked_http_head per il circuit breaker (non usa direttamente toolkit
-    per l'HTTP perché toolkit non ha circuit breaker). La format detection usa
-    toolkit.scout.http.resolve_preview_kind invece che la vecchia _format_from_content_type.
+    Usa ``client.head(url)`` che internamente gestisce circuit breaker,
+    retry su 5xx e connection error.  La format detection usa
+    ``toolkit.scout.http.resolve_preview_kind``.
+
+    Se *client* non e' fornito, ne crea uno di default (senza circuit breaker).
 
     Returns: (status_code, reachable, error, content_type_format).
     """
     if not isinstance(url, str) or not url.startswith("http"):
         return None, False, "url_missing_or_invalid", None
-    if _circuit_should_block(url):
-        return None, False, "circuit_open", None
+
+    if client is None:
+        client = HttpClient(timeout=(5, 10))
 
     last_error = ""
 
     for attempt in range(max_retries + 1):
-        result = _tracked_http_head(url)
+        result = client.head(url)
         if result is None:
             return None, False, "circuit_open", None
 
@@ -207,6 +143,8 @@ def _http_head_with_retry(
             return resp.status_code, reachable, "", fmt
 
         if result.err is not None:
+            if isinstance(result.err, CircuitOpenError):
+                return None, False, "circuit_open", None
             err_name = type(result.err).__name__
             if "Timeout" in err_name and attempt < max_retries:
                 last_error = "timeout"
@@ -222,36 +160,19 @@ def _http_head_with_retry(
 # ── CKAN fetch (wrapper: adatta base_api SO a portal_url toolkit) ─────────────
 
 
-def _fetch_ckan_package(base_api: str, item_name: str) -> Optional[dict]:
-    """Fetch CKAN package_show. Usa toolkit.scout con client SO."""
-    parsed = urllib.parse.urlparse(base_api)
-    portal_url = f"{parsed.scheme}://{parsed.netloc}"
-    client = _get_circuit_client()
-    try:
-        pkg = _toolkit_ckan_package(portal_url, item_name, client=client)
-        if pkg is None:
-            logger.warning(
-                "CKAN package_show returned None for %s (portal: %s)", item_name, portal_url
-            )
-        return pkg
-    except Exception as exc:
-        logger.error("CKAN package_show failed for %s (portal: %s): %s", item_name, portal_url, exc)
-        return None
-
-
 # ── SDMX years ───────────────────────────────────────────────────────────────
 
 
 def _fetch_sdmx_years(
     base_url: str,
     flow_id: str,
+    client: HttpClient | None = None,
     *,
     allow_fetch: bool = True,
 ) -> tuple[Optional[int], Optional[int]]:
     """SDMX years via toolkit.scout con allow_fetch SO."""
     if not allow_fetch:
         return None, None
-    client = _get_circuit_client()
     try:
         return _toolkit_sdmx_years(base_url, flow_id, client=client)
     except Exception:
@@ -261,15 +182,18 @@ def _fetch_sdmx_years(
 # ── SDMX dataflow annotations ────────────────────────────────────────────────
 
 
-def _fetch_sdmx_dataflow(base_url: str, flow_id: str) -> Optional[ET.Element]:
+def _fetch_sdmx_dataflow(
+    base_url: str, flow_id: str, client: HttpClient | None = None
+) -> Optional[ET.Element]:
     """Fetch SDMX dataflow definition XML (annotations con keywords). SO-specific URL construction."""
+    if client is None:
+        client = HttpClient(timeout=_DEFAULT_HTTP_TIMEOUT)
     base = base_url.split("?")[0].rstrip("/")
     if base.endswith("/IT1"):
         root_url = base
     else:
         root_url = base.rsplit("/", 1)[0]
     url = f"{root_url}/{flow_id}"
-    client = _get_circuit_client()
     try:
         result = client.get(url, headers={"Accept": "application/xml"})
         if not result.is_ok or result.response is None:
@@ -305,13 +229,12 @@ def _fetch_sparql_count(
 # ── HTML metadata (format detection) ─────────────────────────────────────────
 
 
-def _fetch_html_metadata(url: str) -> dict:
+def _fetch_html_metadata(url: str, client: HttpClient | None = None) -> dict:
     """Scarica HTML e cerca formato dati. Usa toolkit.scout.fetch_html_body."""
     if not url.startswith("http"):
         result = _EMPTY_ENRICH.copy()
         result["enrich_method"] = "html_scrape_invalid_url"
         return result
-    client = _get_circuit_client()
     try:
         body = _toolkit_html_body(url, client=client)
         if not body or not body.get("html_text"):
@@ -351,23 +274,6 @@ def _fetch_html_metadata(url: str) -> dict:
         return result
 
 
-# ── Content-type format (probe HEAD → format) ────────────────────────────────
-
-
-def _content_type_format(url: str) -> Optional[str]:
-    """Formato da Content-Type via HEAD. Usa toolkit.scout con circuit breaker."""
-    if not url.startswith("http"):
-        return None
-    client = _get_circuit_client()
-    try:
-        probe = _toolkit_probe_headers(url, client=client)
-        return _toolkit_preview_kind(
-            url, probe.get("content_type"), probe.get("content_disposition")
-        )
-    except Exception:
-        return None
-
-
 # ── Data preview (toolkit profiler + SO enrichment) ──────────────────────────
 
 
@@ -376,27 +282,12 @@ COMUNE_COLUMNS = ["comune", "municip", "localita", "citta", "city"]
 _YEAR_COLUMN_HINTS = ["anno", "year", "data", "date", "periodo", "period", "mese", "month"]
 
 
-def _resolve_preview_kind(url: str) -> tuple[str | None, bool]:
-    """Ritorna (kind, inferred_via_head). Usa toolkit per URL extension + HEAD probe."""
-    kind = _toolkit_preview_kind(url)
-    if kind is not None:
-        return kind, False
-    if not url.startswith("http"):
-        return None, False
-    try:
-        probe = _toolkit_probe_headers(url, client=_get_circuit_client())
-        kind = _toolkit_preview_kind(
-            url, probe.get("content_type"), probe.get("content_disposition")
-        )
-        return kind, kind is not None
-    except Exception:
-        return None, False
-
-
 # ── Download phase ──────────────────────────────────────────────────────────
 
 
-def _download_preview_content(url: str, fmt: str) -> tuple[bytes, int] | None:
+def _download_preview_content(
+    url: str, fmt: str, client: HttpClient | None = None
+) -> tuple[bytes, int] | None:
     """Download a preview chunk of a data file.
 
     Returns ``(content: bytes, file_size: int)`` or ``None`` on any failure
@@ -407,7 +298,9 @@ def _download_preview_content(url: str, fmt: str) -> tuple[bytes, int] | None:
     range_limit = 1 * 1024 * 1024 if fmt in ("csv", "tsv", "json") else 5 * 1024 * 1024
     sample_size = 100 * 1024 if fmt in ("csv", "tsv", "json") else None
 
-    fetch_result = _tracked_http_get(url, headers={"Range": f"bytes=0-{range_limit - 1}"})
+    if client is None:
+        client = HttpClient(timeout=(5, 10))
+    fetch_result = client.get(url, headers={"Range": f"bytes=0-{range_limit - 1}"})
     if fetch_result is None:
         return None
     if not fetch_result.is_ok or fetch_result.response is None:
@@ -624,6 +517,7 @@ def _profile_downloaded_json(content: bytes) -> dict:
 
 def _fetch_data_preview(
     url: str,
+    client: HttpClient | None = None,
     *,
     known_encoding: str | None = None,
     known_delim: str | None = None,
@@ -645,7 +539,17 @@ def _fetch_data_preview(
         result["enrich_method"] = "csv_preview_failed"
         return result
 
-    kind, _preview_inferred_via_head = _resolve_preview_kind(url)
+    if client is None:
+        client = HttpClient(timeout=(5, 10))
+    kind = _toolkit_preview_kind(url)
+    if kind is None and url.startswith("http"):
+        try:
+            probe = _toolkit_probe_headers(url, client=client)
+            kind = _toolkit_preview_kind(
+                url, probe.get("content_type"), probe.get("content_disposition")
+            )
+        except Exception:
+            kind = None
     if kind is None:
         result = _EMPTY_ENRICH.copy()
         result["enrich_method"] = "csv_preview_skipped"
@@ -654,7 +558,7 @@ def _fetch_data_preview(
     resource_kind = kind
 
     # ── Download ──────────────────────────────────────────────────────────
-    downloaded = _download_preview_content(url, fmt)
+    downloaded = _download_preview_content(url, fmt, client)
     if downloaded is None:
         result = _EMPTY_ENRICH.copy()
         result["enrich_method"] = "csv_preview_fetch_failed"
@@ -754,6 +658,3 @@ def _fetch_data_preview(
         }
     )
     return result
-
-
-# ── Helpers interni ──────────────────────────────────────────────────────────

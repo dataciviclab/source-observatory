@@ -43,6 +43,7 @@ from _constants import (
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
 )
+from lab_connectors.http import HttpClient
 from source_check_analyze import (
     _fallback_infer,
     _finalize_scores,
@@ -55,8 +56,6 @@ from source_check_analyze import (
 from source_check_fetch import (
     _EMPTY_ENRICH,
     SDMX_NS,
-    _content_type_format,
-    _fetch_ckan_package,
     _fetch_data_preview,
     _fetch_html_metadata,
     _fetch_sdmx_dataflow,
@@ -64,6 +63,15 @@ from source_check_fetch import (
     _fetch_sparql_count,
     _http_head_with_retry,
     configure_source_check_http,
+)
+from toolkit.scout.http import (
+    fetch_ckan_package as _toolkit_ckan_package,
+)
+from toolkit.scout.http import (
+    probe_url_headers as _toolkit_probe_headers,
+)
+from toolkit.scout.http import (
+    resolve_preview_kind as _toolkit_preview_kind,
 )
 
 logger = logging.getLogger(__name__)
@@ -88,7 +96,9 @@ def _load_registry() -> dict[str, Any]:
 # ── SDMX enrichment ───────────────────────────────────────────────────────────
 
 
-def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -> dict:
+def _parse_sdmx_annotations(
+    xml_root: ET.Element, base_url: str, flow_id: str, client: HttpClient | None = None
+) -> dict:
     annotations: dict[str, str] = {}
     for ann in xml_root.findall(".//common:Annotation", SDMX_NS):
         atype_el = ann.find("common:AnnotationType", SDMX_NS)
@@ -108,7 +118,9 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 
     # se le annotations non contengono anni, prova a ricavarli dall'endpoint dati
     if year_min is None:
-        year_min, year_max = _fetch_sdmx_years(base_url, flow_id, allow_fetch=not _NO_SDMX_YEARS)
+        year_min, year_max = _fetch_sdmx_years(
+            base_url, flow_id, client=client, allow_fetch=not _NO_SDMX_YEARS
+        )
 
     metadata_url = annotations.get("METADATA_URL")
 
@@ -212,7 +224,7 @@ def _apply_encoding_to_enrich(r: dict, row: pd.Series, base: dict) -> dict:
 # ── Handler CKAN ──────────────────────────────────────────────────────────────
 
 
-def _enrich_ckan(row: pd.Series, base: dict) -> dict | None:
+def _enrich_ckan(row: pd.Series, base: dict, client: HttpClient | None = None) -> dict | None:
     """Re-fetch package_show se inventory non ha format E title."""
     if base["protocol"] != "ckan" or not base["base_url"] or not base["item_name"]:
         return None
@@ -227,7 +239,9 @@ def _enrich_ckan(row: pd.Series, base: dict) -> dict | None:
         if isinstance(api_base_url, str) and api_base_url.startswith("http")
         else base["base_url"]
     )
-    pkg = _fetch_ckan_package(base_api, base["item_name"])
+    parsed = urllib.parse.urlparse(base_api)
+    portal_url = f"{parsed.scheme}://{parsed.netloc}"
+    pkg = _toolkit_ckan_package(portal_url, base["item_name"], client=client)
     if pkg:
         return _parse_ckan_package(pkg)
     return None
@@ -236,20 +250,20 @@ def _enrich_ckan(row: pd.Series, base: dict) -> dict | None:
 # ── Handler SDMX ──────────────────────────────────────────────────────────────
 
 
-def _enrich_sdmx(row: pd.Series, base: dict) -> dict | None:
+def _enrich_sdmx(row: pd.Series, base: dict, client: HttpClient | None = None) -> dict | None:
     """Legge annotations SDMX dal dataflow XML."""
     if base["protocol"] != "sdmx" or not base["base_url"] or not base["item_name"]:
         return None
-    xml_root = _fetch_sdmx_dataflow(base["base_url"], base["item_name"])
+    xml_root = _fetch_sdmx_dataflow(base["base_url"], base["item_name"], client=client)
     if xml_root is not None:
-        return _parse_sdmx_annotations(xml_root, base["base_url"], base["item_name"])
+        return _parse_sdmx_annotations(xml_root, base["base_url"], base["item_name"], client=client)
     return None
 
 
 # ── Handler HTML ──────────────────────────────────────────────────────────────
 
 
-def _enrich_html(row: pd.Series, base: dict) -> dict | None:
+def _enrich_html(row: pd.Series, base: dict, client: HttpClient | None = None) -> dict | None:
     """Arricchimento HTML: content-type → preview download → landing page."""
     if base["protocol"] != "html":
         return None
@@ -257,10 +271,16 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
     def _e(r: dict) -> dict:
         return _apply_encoding_to_enrich(r, row, base)
 
-    # 1. content-type su data_url
+    # 1. content-type su data_url via toolkit (probe HEAD → format)
     data_url = row.get("url")
     if isinstance(data_url, str):
-        fmt = _content_type_format(data_url)
+        try:
+            probe = _toolkit_probe_headers(data_url, client=client)
+        except RuntimeError:
+            probe = {}
+        fmt = _toolkit_preview_kind(
+            data_url, probe.get("content_type"), probe.get("content_disposition")
+        )
         if fmt:
             return _e(
                 {
@@ -282,7 +302,7 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
         path = parsed.path or ""
         fmt_ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
         if fmt_ext in ("csv", "json", "xlsx", "xls"):
-            preview = _fetch_data_preview(data_url)
+            preview = _fetch_data_preview(data_url, client=client)
             if preview:
                 _e(preview)
             return preview
@@ -295,7 +315,7 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
             result = _EMPTY_ENRICH.copy()
             result["enrich_method"] = "scraping_blocked"
             return result
-        return _fetch_html_metadata(landing)
+        return _fetch_html_metadata(landing, client=client)
 
     return None
 
@@ -303,7 +323,7 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
 # ── Handler SPARQL ────────────────────────────────────────────────────────────
 
 
-def _enrich_sparql(row: pd.Series, base: dict) -> dict | None:
+def _enrich_sparql(row: pd.Series, base: dict, client: HttpClient | None = None) -> dict | None:
     """Arricchimento SPARQL: probe semantico con COUNT + HEAD format.
 
     Usa query SPARQL COUNT per verificare che l'endpoint risponda e abbia
@@ -348,7 +368,9 @@ def _enrich_sparql(row: pd.Series, base: dict) -> dict | None:
     )
     fmt = "SPARQL"
     if landing and landing.startswith("http"):
-        http_status_raw, reachable, note, content_type = _http_head_with_retry(landing)
+        http_status_raw, reachable, note, content_type = _http_head_with_retry(
+            landing, client=client
+        )
         if content_type:
             fmt = _normalize_format(content_type)
 
@@ -405,17 +427,27 @@ _ENRICH_HANDLERS: dict[str, Any] = {
 # ── Orchestrator ──────────────────────────────────────────────────────────────
 
 
-def _enrich_with_inventory(row: pd.Series, registry: dict[str, Any]) -> dict:
+def _enrich_with_inventory(
+    row: pd.Series,
+    registry: dict[str, Any],
+    client: HttpClient | None = None,
+) -> dict:
     """Enrich item usando inventory + dispatch per protocollo.
 
     Ogni handler puo' ritornare un dict di arricchimento (successo) o None
     (fall through). Se nessun handler riesce, usa inventory cosi' com'e'.
+
+    Args:
+        row: Riga del catalogo.
+        registry: Registry delle fonti.
+        client: HttpClient condiviso (con circuit breaker). Passato
+            agli handler HTTP (CKAN, SDMX, HTML) per condividere stato.
     """
     base = _extract_base_enrich(row, registry)
 
     handler = _ENRICH_HANDLERS.get(base["protocol"])
     if handler:
-        result = handler(row, base)
+        result = handler(row, base, client=client)
         if result is not None:
             return result
 
@@ -504,8 +536,12 @@ def _normalize_preview_columns_for_parquet(df: pd.DataFrame) -> pd.DataFrame:
     return normalized
 
 
-def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
-    enrich = _enrich_with_inventory(row, registry)
+def _check_row(
+    row: pd.Series, check_ts: str, registry: dict[str, Any], client: HttpClient | None = None
+) -> dict:
+    if client is None:
+        client = configure_source_check_http()
+    enrich = _enrich_with_inventory(row, registry, client=client)
 
     # granularità e anni: da enrichment, poi fallback su campi catalogo
     granularity = enrich["granularity"]
@@ -550,13 +586,14 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         if known_enc:
             preview = _fetch_data_preview(
                 preview_url,
+                client,
                 known_encoding=known_enc,
                 known_delim=enrich.get("delim_suggested"),
                 known_decimal=enrich.get("decimal_suggested"),
                 known_skip=enrich.get("skip_suggested"),
             )
         else:
-            preview = _fetch_data_preview(preview_url)
+            preview = _fetch_data_preview(preview_url, client)
         if preview.get("enrich_method") == "csv_preview":
             # Anni/granularità: solo se metadati non bastano
             if granularity in (None, "non_determinato") and preview.get("granularity"):
@@ -592,7 +629,9 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         note = None
         content_type = None
     else:
-        http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "")
+        http_status_raw, reachable, note, content_type = _http_head_with_retry(
+            url_to_check or "", client=client
+        )
         http_status = http_status_raw if http_status_raw is not None else 0
 
         # Content-type format as primary detection (now unified in _http_head_with_retry)
@@ -650,10 +689,18 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
     }
 
 
-def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame:
+def run_bulk_check(
+    df: pd.DataFrame,
+    workers: int = MAX_WORKERS,
+    client: HttpClient | None = None,
+) -> pd.DataFrame:
     registry = _load_registry()
     check_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     results = []
+
+    # Client HTTP condiviso con circuit breaker
+    _owns_client = client is None
+    client = client or configure_source_check_http()
 
     # Per-source timing (stesso pattern di build_catalog_inventory)
     source_first_submit: dict[str, float] = {}
@@ -669,7 +716,7 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
         # non accetta per df.loc/df.iloc — con enumerate pos abbiamo int certo.
         future_to_idx = {}
         for pos, (_idx, row) in enumerate(df.iterrows()):
-            f = pool.submit(_check_row, row, check_ts, registry)
+            f = pool.submit(_check_row, row, check_ts, registry, client)
             future_to_idx[f] = pos
             sid = str(row.get("source_id", ""))
             source_first_submit.setdefault(sid, time.time())
@@ -715,6 +762,8 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
         )
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
+        if _owns_client:
+            client.close()
 
     # ── Per-source timing table ───────────────────────────────────────────────────
     if source_item_count:
@@ -808,18 +857,11 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def main() -> None:
-    logging.basicConfig(format="%(levelname)s %(message)s", level=logging.INFO)
-    args = parse_args()
-    global _NO_SDMX_YEARS
-    _NO_SDMX_YEARS = args.no_sdmx_years
+def _run_source_check(http_client: HttpClient, args: argparse.Namespace) -> None:
+    """Esegue il source-check vero e proprio.
 
-    configure_source_check_http(
-        circuit_fail_threshold=args.circuit_fail_threshold,
-        http_timeout=(4.0, 9.0),
-        http_max_retries=1,
-    )
-
+    Estratta da main() per garantire chiusura del client via try/finally.
+    """
     logger.info("Loading catalog: %s", args.input)
     df = pd.read_parquet(args.input)
     logger.info("  %d total items", len(df))
@@ -895,6 +937,7 @@ def main() -> None:
 
     if df.empty:
         logger.info("No items to check. Exiting.")
+        http_client.close()
         return
 
     # ── Fix A: dedup per (source_id, item_id) — stesso dataset, formati multipli ───
@@ -914,6 +957,7 @@ def main() -> None:
 
     if df.empty:
         logger.info("No items to check. Exiting.")
+        http_client.close()
         return
 
     # ── Smart sampling per target size ───────────────────────────────────────────
@@ -1030,11 +1074,12 @@ def main() -> None:
 
     if df.empty:
         logger.info("No new items to check. Exiting.")
+        http_client.close()
         return
 
     logger.info("Starting check on %d items (%d workers)...", len(df), args.workers)
     t0 = time.time()
-    results = run_bulk_check(df, workers=args.workers)
+    results = run_bulk_check(df, workers=args.workers, client=http_client)
     elapsed = time.time() - t0
     logger.info("Completed in %.1fs", elapsed)
 
@@ -1107,6 +1152,24 @@ def main() -> None:
     results = _normalize_preview_columns_for_parquet(results)
     results.to_parquet(args.out, index=False)
     logger.info("Results: %s", args.out)
+
+
+def main() -> None:
+    """Entry point: crea il client HTTP e avvia il source-check."""
+    logging.basicConfig(format="%(levelname)s %(message)s", level=logging.INFO)
+    args = parse_args()
+    global _NO_SDMX_YEARS
+    _NO_SDMX_YEARS = args.no_sdmx_years
+
+    http_client = configure_source_check_http(
+        circuit_fail_threshold=args.circuit_fail_threshold,
+        http_timeout=(4, 9),
+        http_max_retries=1,
+    )
+    try:
+        _run_source_check(http_client, args)
+    finally:
+        http_client.close()
 
 
 if __name__ == "__main__":
