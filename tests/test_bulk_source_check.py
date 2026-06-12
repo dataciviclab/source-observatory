@@ -439,7 +439,6 @@ def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
 def test_http_circuit_breaker_blocks_host_after_failures(monkeypatch) -> None:
     """Dopo N errori di trasporto sullo stesso host, HEAD successivi ritornano circuit_open."""
     import requests
-    from lab_connectors.http import CircuitOpenError, HttpResult
     from source_check_fetch import _http_head_with_retry, configure_source_check_http
 
     heads: list[str] = []
@@ -451,7 +450,9 @@ def test_http_circuit_breaker_blocks_host_after_failures(monkeypatch) -> None:
         raise requests.exceptions.ConnectTimeout()
 
     monkeypatch.setattr(requests, "head", fake_requests_head)
-    monkeypatch.setattr(requests.Session, "head", lambda self, url, **kw: fake_requests_head(url, **kw))
+    monkeypatch.setattr(
+        requests.Session, "head", lambda self, url, **kw: fake_requests_head(url, **kw)
+    )
 
     client = configure_source_check_http(
         circuit_fail_threshold=2, http_timeout=(1.0, 2.0), http_max_retries=1
@@ -460,7 +461,9 @@ def test_http_circuit_breaker_blocks_host_after_failures(monkeypatch) -> None:
         u = "https://slow-host.example/resource/1"
         _http_head_with_retry(u, client=client)
         assert len(heads) == 2
-        _st, _ok, note, _fmt = _http_head_with_retry("https://slow-host.example/other", client=client)
+        _st, _ok, note, _fmt = _http_head_with_retry(
+            "https://slow-host.example/other", client=client
+        )
         assert note == "circuit_open"
         assert len(heads) == 2
     finally:
@@ -819,7 +822,7 @@ class TestSdmxEnrichWithInventory:
         # Mock _fetch_sdmx_dataflow per catturare quale URL riceve
         captured_args = {}
 
-        def _mock_fetch(base_url, flow_id):
+        def _mock_fetch(base_url, flow_id, **kwargs):
             captured_args["base_url"] = base_url
             captured_args["flow_id"] = flow_id
             import xml.etree.ElementTree as ET
@@ -889,7 +892,7 @@ class TestSdmxCheckRowPassthrough:
         # Mock tutte le funzioni HTTP per evitare chiamate reali
         import xml.etree.ElementTree as ET
 
-        def _mock_fetch(base_url, flow_id):
+        def _mock_fetch(base_url, flow_id, **kwargs):
             return ET.fromstring(_SDMX_XML)
 
         def _mock_preview(url, **kwargs):

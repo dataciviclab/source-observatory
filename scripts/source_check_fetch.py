@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 # ── Config HTTP (sovrascrivibile da configure_source_check_http) ──────────────
 
-_DEFAULT_HTTP_TIMEOUT: tuple[float, float] = (5.0, 10.0)
+_DEFAULT_HTTP_TIMEOUT: tuple[int, int] = (5, 10)
 _DEFAULT_HTTP_RETRIES = 2
 _DEFAULT_CIRCUIT_THRESHOLD = 3
 
@@ -73,7 +73,7 @@ _EMPTY_ENRICH: dict[str, Any] = {
 def configure_source_check_http(
     *,
     circuit_fail_threshold: int = _DEFAULT_CIRCUIT_THRESHOLD,
-    http_timeout: tuple[float, float] | None = None,
+    http_timeout: tuple[int, int] | None = None,
     http_max_retries: int = _DEFAULT_HTTP_RETRIES,
 ) -> HttpClient:
     """Crea un HttpClient configurato per bulk source-check.
@@ -182,8 +182,12 @@ def _fetch_sdmx_years(
 # ── SDMX dataflow annotations ────────────────────────────────────────────────
 
 
-def _fetch_sdmx_dataflow(base_url: str, flow_id: str, client: HttpClient | None = None) -> Optional[ET.Element]:
+def _fetch_sdmx_dataflow(
+    base_url: str, flow_id: str, client: HttpClient | None = None
+) -> Optional[ET.Element]:
     """Fetch SDMX dataflow definition XML (annotations con keywords). SO-specific URL construction."""
+    if client is None:
+        client = HttpClient(timeout=_DEFAULT_HTTP_TIMEOUT)
     base = base_url.split("?")[0].rstrip("/")
     if base.endswith("/IT1"):
         root_url = base
@@ -281,7 +285,9 @@ _YEAR_COLUMN_HINTS = ["anno", "year", "data", "date", "periodo", "period", "mese
 # ── Download phase ──────────────────────────────────────────────────────────
 
 
-def _download_preview_content(url: str, fmt: str, client: HttpClient | None = None) -> tuple[bytes, int] | None:
+def _download_preview_content(
+    url: str, fmt: str, client: HttpClient | None = None
+) -> tuple[bytes, int] | None:
     """Download a preview chunk of a data file.
 
     Returns ``(content: bytes, file_size: int)`` or ``None`` on any failure

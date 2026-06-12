@@ -220,7 +220,7 @@ def _apply_encoding_to_enrich(r: dict, row: pd.Series, base: dict) -> dict:
 # ── Handler CKAN ──────────────────────────────────────────────────────────────
 
 
-def _enrich_ckan(row: pd.Series, base: dict) -> dict | None:
+def _enrich_ckan(row: pd.Series, base: dict, client: HttpClient | None = None) -> dict | None:
     """Re-fetch package_show se inventory non ha format E title."""
     if base["protocol"] != "ckan" or not base["base_url"] or not base["item_name"]:
         return None
@@ -237,7 +237,7 @@ def _enrich_ckan(row: pd.Series, base: dict) -> dict | None:
     )
     parsed = urllib.parse.urlparse(base_api)
     portal_url = f"{parsed.scheme}://{parsed.netloc}"
-    pkg = _toolkit_ckan_package(portal_url, base["item_name"])
+    pkg = _toolkit_ckan_package(portal_url, base["item_name"], client=client)
     if pkg:
         return _parse_ckan_package(pkg)
     return None
@@ -246,11 +246,11 @@ def _enrich_ckan(row: pd.Series, base: dict) -> dict | None:
 # ── Handler SDMX ──────────────────────────────────────────────────────────────
 
 
-def _enrich_sdmx(row: pd.Series, base: dict) -> dict | None:
+def _enrich_sdmx(row: pd.Series, base: dict, client: HttpClient | None = None) -> dict | None:
     """Legge annotations SDMX dal dataflow XML."""
     if base["protocol"] != "sdmx" or not base["base_url"] or not base["item_name"]:
         return None
-    xml_root = _fetch_sdmx_dataflow(base["base_url"], base["item_name"])
+    xml_root = _fetch_sdmx_dataflow(base["base_url"], base["item_name"], client=client)
     if xml_root is not None:
         return _parse_sdmx_annotations(xml_root, base["base_url"], base["item_name"])
     return None
@@ -259,7 +259,7 @@ def _enrich_sdmx(row: pd.Series, base: dict) -> dict | None:
 # ── Handler HTML ──────────────────────────────────────────────────────────────
 
 
-def _enrich_html(row: pd.Series, base: dict) -> dict | None:
+def _enrich_html(row: pd.Series, base: dict, client: HttpClient | None = None) -> dict | None:
     """Arricchimento HTML: content-type → preview download → landing page."""
     if base["protocol"] != "html":
         return None
@@ -270,7 +270,10 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
     # 1. content-type su data_url via toolkit (probe HEAD → format)
     data_url = row.get("url")
     if isinstance(data_url, str):
-        probe = _toolkit_probe_headers(data_url)
+        try:
+            probe = _toolkit_probe_headers(data_url, client=client)
+        except RuntimeError:
+            probe = {}
         fmt = _toolkit_preview_kind(
             data_url, probe.get("content_type"), probe.get("content_disposition")
         )
@@ -295,7 +298,7 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
         path = parsed.path or ""
         fmt_ext = path.rsplit(".", 1)[-1].lower() if "." in path else ""
         if fmt_ext in ("csv", "json", "xlsx", "xls"):
-            preview = _fetch_data_preview(data_url)
+            preview = _fetch_data_preview(data_url, client=client)
             if preview:
                 _e(preview)
             return preview
@@ -308,7 +311,7 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
             result = _EMPTY_ENRICH.copy()
             result["enrich_method"] = "scraping_blocked"
             return result
-        return _fetch_html_metadata(landing)
+        return _fetch_html_metadata(landing, client=client)
 
     return None
 
@@ -316,7 +319,7 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
 # ── Handler SPARQL ────────────────────────────────────────────────────────────
 
 
-def _enrich_sparql(row: pd.Series, base: dict) -> dict | None:
+def _enrich_sparql(row: pd.Series, base: dict, client: HttpClient | None = None) -> dict | None:
     """Arricchimento SPARQL: probe semantico con COUNT + HEAD format.
 
     Usa query SPARQL COUNT per verificare che l'endpoint risponda e abbia
@@ -418,17 +421,27 @@ _ENRICH_HANDLERS: dict[str, Any] = {
 # ── Orchestrator ──────────────────────────────────────────────────────────────
 
 
-def _enrich_with_inventory(row: pd.Series, registry: dict[str, Any]) -> dict:
+def _enrich_with_inventory(
+    row: pd.Series,
+    registry: dict[str, Any],
+    client: HttpClient | None = None,
+) -> dict:
     """Enrich item usando inventory + dispatch per protocollo.
 
     Ogni handler puo' ritornare un dict di arricchimento (successo) o None
     (fall through). Se nessun handler riesce, usa inventory cosi' com'e'.
+
+    Args:
+        row: Riga del catalogo.
+        registry: Registry delle fonti.
+        client: HttpClient condiviso (con circuit breaker). Passato
+            agli handler HTTP (CKAN, SDMX, HTML) per condividere stato.
     """
     base = _extract_base_enrich(row, registry)
 
     handler = _ENRICH_HANDLERS.get(base["protocol"])
     if handler:
-        result = handler(row, base)
+        result = handler(row, base, client=client)
         if result is not None:
             return result
 
@@ -517,10 +530,12 @@ def _normalize_preview_columns_for_parquet(df: pd.DataFrame) -> pd.DataFrame:
     return normalized
 
 
-def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], client: HttpClient | None = None) -> dict:
+def _check_row(
+    row: pd.Series, check_ts: str, registry: dict[str, Any], client: HttpClient | None = None
+) -> dict:
     if client is None:
         client = configure_source_check_http()
-    enrich = _enrich_with_inventory(row, registry)
+    enrich = _enrich_with_inventory(row, registry, client=client)
 
     # granularità e anni: da enrichment, poi fallback su campi catalogo
     granularity = enrich["granularity"]
@@ -608,7 +623,9 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], client: 
         note = None
         content_type = None
     else:
-        http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "", client=client)
+        http_status_raw, reachable, note, content_type = _http_head_with_retry(
+            url_to_check or "", client=client
+        )
         http_status = http_status_raw if http_status_raw is not None else 0
 
         # Content-type format as primary detection (now unified in _http_head_with_retry)
@@ -842,7 +859,7 @@ def main() -> None:
 
     http_client = configure_source_check_http(
         circuit_fail_threshold=args.circuit_fail_threshold,
-        http_timeout=(4.0, 9.0),
+        http_timeout=(4, 9),
         http_max_retries=1,
     )
 
@@ -1133,6 +1150,7 @@ def main() -> None:
     results = _normalize_preview_columns_for_parquet(results)
     results.to_parquet(args.out, index=False)
     logger.info("Results: %s", args.out)
+    http_client.close()
 
 
 if __name__ == "__main__":
