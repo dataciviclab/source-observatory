@@ -33,7 +33,6 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -41,7 +40,10 @@ from _constants import (
     CHECK_PARQUET_PATH,
     INVENTORY_PARQUET_PATH,
     RADAR_SUMMARY_PATH,
-    REGISTRY_PATH,
+    get_red_source_ids,
+)
+from _constants import (
+    safe_str as _safe_str,
 )
 from lab_connectors.http import HttpClient
 from source_check_analyze import (
@@ -87,10 +89,12 @@ _NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
 
 
 def _load_registry() -> dict[str, Any]:
-    if not REGISTRY_PATH.exists():
+    from _constants import load_registry
+
+    try:
+        return load_registry()
+    except Exception:
         return {}
-    with REGISTRY_PATH.open(encoding="utf-8") as fh:
-        return yaml.safe_load(fh) or {}
 
 
 # ── SDMX enrichment ───────────────────────────────────────────────────────────
@@ -454,11 +458,7 @@ def _enrich_with_inventory(
     return _enrich_fallback(row, base)
 
 
-def _safe_str(v: Any) -> str | None:
-    """Convert a value to string, handling pandas NaN."""
-    if v is None or (isinstance(v, float) and pd.isna(v)):
-        return None
-    return str(v)
+# _safe_str importata da _constants — non ridefinire localmente
 
 
 def _preview_meta_from_enrich(enrich: dict[str, Any]) -> dict[str, Any]:
@@ -887,27 +887,14 @@ def _run_source_check(http_client: HttpClient, args: argparse.Namespace) -> None
     # Evita di campionare item da fonti che timeoutmano su Actions (IP cloud blocked)
     # e allungano il source-check senza produrre valore.
     if args.skip_red_sources:
-        radar_summary_path = RADAR_SUMMARY_PATH
-        if radar_summary_path.exists():
-            import json
-
-            try:
-                with radar_summary_path.open() as f:
-                    radar = json.load(f)
-                red_source_ids = [
-                    s["id"] for s in radar.get("sources", []) if s.get("status") == "RED"
-                ]
-                if red_source_ids:
-                    skipped = df["source_id"].isin(red_source_ids).sum()
-                    df = df[~df["source_id"].isin(red_source_ids)]
-                    logger.info(
-                        "  skip RED sources (radar): %s — %d items rimossi", red_source_ids, skipped
-                    )
-            except Exception as exc:
-                logger.warning("  skip-red-sources: could not read radar_summary: %s", exc)
-        else:
+        red_ids = get_red_source_ids()
+        if red_ids:
+            n_skipped = df["source_id"].isin(red_ids).sum()
+            df = df[~df["source_id"].isin(red_ids)]
+            logger.info("  skip RED sources (radar): %s — %d items rimossi", red_ids, n_skipped)
+        elif not RADAR_SUMMARY_PATH.exists():
             logger.warning(
-                "  skip-red-sources: radar_summary.json not found at %s", radar_summary_path
+                "  skip-red-sources: radar_summary.json not found at %s", RADAR_SUMMARY_PATH
             )
 
     if args.limit:

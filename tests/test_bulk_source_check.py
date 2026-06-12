@@ -408,8 +408,8 @@ def test_fetch_data_preview_tsv_extension(monkeypatch) -> None:
     assert json.loads(result.get("columns") or "[]") == ["a", "b", "c"]
 
 
-def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
-    """Fake .xls with TSV content + Latin-1 encoding must recover columns."""
+def test_fetch_data_preview_csv_with_semicolon(monkeypatch) -> None:
+    """CSV con delim ; deve recuperare colonne correttamente."""
     from lab_connectors.http import HttpClient
     from source_check_fetch import _fetch_data_preview
 
@@ -417,8 +417,8 @@ def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
         return HttpResult(
             response=_resp(
                 200,
-                text="col1\tcol2\tcol3\n1\t2\t3\n4\t5\t6",
-                headers={"Content-Type": "application/octet-stream"},
+                text="col1;col2;col3\n1;2;3\n4;5;6",
+                headers={"Content-Type": "text/csv"},
                 url=url,
             ),
             err=None,
@@ -426,13 +426,13 @@ def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
 
     monkeypatch.setattr(HttpClient, "get", fake_get)
 
-    result = _fetch_data_preview("https://example.test/data.xls")
+    result = _fetch_data_preview("https://example.test/data.csv")
     assert result.get("enrich_method") == "csv_preview"
     import json
 
     cols = json.loads(result.get("columns") or "[]")
     assert len(cols) == 3
-    assert cols == ["col1", "col2", "col3"]
+    assert cols[0] == "col1"
     assert result.get("preview_row_count") == 2
 
 

@@ -12,6 +12,13 @@ import re
 from typing import Optional
 
 import pandas as pd
+from _constants import (
+    JOIN_KEY_PATTERNS,
+    JOIN_KEY_WEIGHTS,
+    compute_joinability_score,
+    detect_join_keys,
+    parse_columns,
+)
 from toolkit.scout.infer import infer_granularity as _infer_granularity
 from toolkit.scout.infer import infer_granularity_from_name_and_columns as _infer_gran_cols
 from toolkit.scout.infer import infer_years as _infer_years
@@ -277,118 +284,15 @@ def _fallback_infer(row: pd.Series) -> tuple[str, Optional[int], Optional[int]]:
 
 
 # ── joinability scoring ──────────────────────────────────────────────────────
-# Pattern di chiavi di join riconosciute dai nomi colonna.
-# Copia locale di joinability_scan.py:KEY_PATTERNS — senza catalogo (0 I/O).
+# I pattern, i pesi, e le funzioni di join key sono in _constants.py.
+# source_check_analyze li ri-importa per backward compat interna.
 # Il cross-ref con clean_catalog.json è demandato a joinability_scan.py.
 
-_JOIN_KEY_PATTERNS: list[tuple[str, str]] = [
-    (
-        "istat_comune",
-        r"(?i)(codice_istat_comune|codice_comune_istat|^codice_comune$|^pro_com$|^comune$)",
-    ),
-    (
-        "istat_regione",
-        r"(?i)(codice_istat_regione|^codice_regione$|^codreg$|regione_istat_cod|^cod_reg$|^regione$)",
-    ),
-    (
-        "anno",
-        r"(?i)^(anno(_|$)|anno_di_imposta$|anno_scolastico$|annoscolastico$|anno_riferimento$|anno_presentazione$|esercizio_finanziario$)",
-    ),
-    (
-        "provincia",
-        r"(?i)(sigla_provincia|^provincia(_|$)|codice_provincia|sigla_prov|^prov$|^cod_prov$)",
-    ),
-    ("codice_catastale", r"(?i)(codice_catastale|cod_catastale|catastale)"),
-    (
-        "codice_ente",
-        r"(?i)(codice_ente_ipa|^id_ente$|codice_ente_siope|codice_istituzione|codice_ente_bdap|codice_ente_ssn|^codice_ente$|^cod_ente$)",
-    ),
-    (
-        "codice_scuola",
-        r"(?i)(codice_scuola|codicescuola|codice_meccanografico|^codice_scuola$|^cod_scuola$)",
-    ),
-    ("atc", r"(?i)(^atc[1-5]$|^atc$|^atc1$|^atc2$|^atc3$|^atc4$|^atc5$)"),
-    ("ateco", r"(?i)(codice_ateco|^ateco$|sezione_ateco)"),
-    ("mese", r"(?i)^(mese|month)$"),
-    ("cf_ente", r"(?i)(codice_fiscale_ente|^cf_ente$|^codice_fiscale$|^cf$|^partita_iva$|^p_iva$)"),
-    ("sesso", r"(?i)^(sesso|genere|gender)$"),
-    ("eta", r"(?i)^(eta|età|eta_|fascia_eta|classe_eta|classe_di_eta|fascia_di_eta$)"),
-    ("cittadinanza", r"(?i)(cittadinanza|cittadino|nazionalità|nazionalita)"),
-]
-
-_JOIN_KEY_WEIGHTS: dict[str, int] = {
-    "istat_comune": 30,
-    "istat_regione": 20,
-    "anno": 15,
-    "provincia": 10,
-    "codice_catastale": 15,
-    "codice_ente": 10,
-    "codice_scuola": 8,
-    "atc": 5,
-    "ateco": 5,
-    "mese": 3,
-    "cf_ente": 10,
-    "sesso": 3,
-    "eta": 3,
-    "cittadinanza": 5,
-}
-
-
-def _parse_columns(raw: str | None) -> list[str]:
-    """Parsa la colonna `columns` in una lista di nomi colonna."""
-    if raw is None or (isinstance(raw, float) and raw != raw):
-        return []
-    if not isinstance(raw, str):
-        return []
-    try:
-        parsed = json.loads(raw)
-    except (json.JSONDecodeError, TypeError):
-        return [str(raw)]
-    if isinstance(parsed, list):
-        return [str(c) if not isinstance(c, dict) else str(c.get("name", "")) for c in parsed]
-    if isinstance(parsed, dict):
-        return list(parsed.keys())
-    return [str(parsed)]
-
-
-def detect_join_keys(
-    columns_raw: str | None, columns: list[str] | None = None
-) -> dict[str, list[str]]:
-    """Matcha i nomi colonna contro i pattern di chiavi di join.
-
-    Args:
-        columns_raw: JSON grezzo della colonna `columns` (list o dict).
-        columns: Lista già parsata (opzionale, evita doppio parse).
-
-    Returns:
-        Dict {nome_chiave: [colonne_matched]}.
-    """
-    col_names = columns if columns is not None else _parse_columns(columns_raw)
-    if not col_names:
-        return {}
-    found: dict[str, list[str]] = {}
-    for key_name, pattern in _JOIN_KEY_PATTERNS:
-        matched = [c for c in col_names if re.search(pattern, c.strip())]
-        if matched:
-            found[key_name] = matched
-    return found
-
-
-def compute_joinability_score(found_keys: dict[str, list[str]]) -> float:
-    """Score 0-100 basato sulle chiavi di join trovate.
-
-    Pesi per tipo di chiave + bonus per chiavi multiple.
-    Non include cross-reference col catalogo (demandato a joinability_scan.py).
-    """
-    if not found_keys:
-        return 0.0
-    score = sum(_JOIN_KEY_WEIGHTS.get(k, 5) for k in found_keys)
-    # Bonus per chiavi multiple
-    if len(found_keys) >= 3:
-        score += 10
-    elif len(found_keys) >= 2:
-        score += 5
-    return min(score, 100)
+_JOIN_KEY_PATTERNS = JOIN_KEY_PATTERNS
+_JOIN_KEY_WEIGHTS = JOIN_KEY_WEIGHTS
+_parse_columns = parse_columns
+detect_join_keys = detect_join_keys
+compute_joinability_score = compute_joinability_score
 
 
 # ── intake scoring ────────────────────────────────────────────────────────────

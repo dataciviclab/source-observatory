@@ -15,6 +15,7 @@ from _constants import (
     CATALOG_INVENTORY_DIR_PATH,
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
+    get_red_source_ids,
     load_registry,
     stale_reason_from_exception,
 )
@@ -186,24 +187,17 @@ def main() -> None:
 
     # ── Skip RED sources da radar ─────────────────────────────────────────────
     if args.skip_red_sources:
-        radar_path = RADAR_SUMMARY_PATH
-        if radar_path.exists():
-            try:
-                with radar_path.open() as fh:
-                    radar = json.load(fh)
-                red_ids = [s["id"] for s in radar.get("sources", []) if s.get("status") == "RED"]
-                if red_ids:
-                    before = len(inventoriable)
-                    inventoriable = [(sid, cfg) for sid, cfg in inventoriable if sid not in red_ids]
-                    skipped = before - len(inventoriable)
-                    if skipped:
-                        print(
-                            f"  skip RED sources (radar): {red_ids} — {skipped} fonti saltate",
-                            file=sys.stderr,
-                        )
-            except Exception as exc:
-                print(f"  skip-red-sources: cannot read radar_summary: {exc}", file=sys.stderr)
-        else:
+        red_ids = get_red_source_ids()
+        if red_ids:
+            before = len(inventoriable)
+            inventoriable = [(sid, cfg) for sid, cfg in inventoriable if sid not in red_ids]
+            skipped = before - len(inventoriable)
+            if skipped:
+                print(
+                    f"  skip RED sources (radar): {red_ids} — {skipped} fonti saltate",
+                    file=sys.stderr,
+                )
+        elif not RADAR_SUMMARY_PATH.exists():
             print("  skip-red-sources: radar_summary.json not found", file=sys.stderr)
 
     collected: dict[

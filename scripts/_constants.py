@@ -158,3 +158,195 @@ def save_registry(path: Path | None, registry: dict) -> None:
     p = path or REGISTRY_PATH
     with p.open("w", encoding="utf-8") as fh:
         yaml.safe_dump(registry, fh, sort_keys=False, allow_unicode=True)
+
+
+# ── Utility generiche ──────────────────────────────────────────────────────────
+
+
+def safe_str(v: object) -> str | None:
+    """Convert a value to string, handling pandas NaN and None."""
+    import math
+
+    if v is None:
+        return None
+    if isinstance(v, float) and (math.isnan(v) or v != v):
+        return None
+    return str(v)
+
+
+def get_red_source_ids(radar_path: Path | None = None) -> list[str]:
+    """Read radar_summary.json and return list of RED source IDs.
+
+    Returns empty list if file is missing or unreadable.
+    """
+    path = radar_path or RADAR_SUMMARY_PATH
+    if not path.exists():
+        return []
+    try:
+        radar = json.loads(path.read_text(encoding="utf-8"))
+        return [s["id"] for s in radar.get("sources", []) if s.get("status") == "RED"]
+    except Exception:
+        return []
+
+
+# ── Join key patterns (condivisi tra source_check_analyze e joinability_scan) ──
+# Ogni entry: (chiave_semantica, regex, descrizione)
+
+JOIN_KEY_PATTERNS: list[tuple[str, str, str]] = [
+    (
+        "istat_comune",
+        r"(?i)(codice_istat_comune|codice_comune_istat|^codice_comune$|^pro_com$|^comune$)",
+        "Codice ISTAT comune (8 digit alfanumerico)",
+    ),
+    (
+        "istat_regione",
+        r"(?i)(codice_istat_regione|^codice_regione$|^codreg$|regione_istat_cod|^cod_reg$|^regione$)",
+        "Codice ISTAT regione",
+    ),
+    (
+        "anno",
+        r"(?i)^(anno(_|$)|anno_di_imposta$|anno_scolastico$|annoscolastico$|anno_riferimento$|"
+        r"anno_presentazione$|esercizio_finanziario$)",
+        "Anno / esercizio",
+    ),
+    (
+        "provincia",
+        r"(?i)(sigla_provincia|^provincia(_|$)|codice_provincia|sigla_prov|^prov$|^cod_prov$)",
+        "Provincia (sigla o codice)",
+    ),
+    (
+        "codice_catastale",
+        r"(?i)(codice_catastale|cod_catastale|catastale)",
+        "Codice catastale comune",
+    ),
+    (
+        "codice_ente",
+        r"(?i)(codice_ente_ipa|^id_ente$|codice_ente_siope|codice_istituzione|"
+        r"codice_ente_bdap|codice_ente_ssn|^codice_ente$|^cod_ente$)",
+        "Codice ente pubblico (IPA/SIOPE/BDAP/SSN)",
+    ),
+    (
+        "codice_scuola",
+        r"(?i)(codice_scuola|codicescuola|codice_meccanografico|^codice_scuola$|^cod_scuola$)",
+        "Codice scuola (MIM)",
+    ),
+    (
+        "atc",
+        r"(?i)(^atc[1-5]$|^atc$|^atc1$|^atc2$|^atc3$|^atc4$|^atc5$)",
+        "Classificazione ATC farmaceutica",
+    ),
+    (
+        "ateco",
+        r"(?i)(codice_ateco|^ateco$|sezione_ateco)",
+        "Classificazione ATECO attività economica",
+    ),
+    ("mese", r"(?i)^(mese|month)$", "Mese (1-12)"),
+    (
+        "cf_ente",
+        r"(?i)(codice_fiscale_ente|^cf_ente$|^codice_fiscale$|^cf$|^partita_iva$|^p_iva$)",
+        "Codice fiscale / partita IVA ente",
+    ),
+    (
+        "sesso",
+        r"(?i)^(sesso|genere|gender)$",
+        "Sesso / genere",
+    ),
+    (
+        "eta",
+        r"(?i)^(eta|età|eta_|fascia_eta|classe_eta|classe_di_eta|fascia_di_eta$)",
+        "Età / fascia età",
+    ),
+    (
+        "cittadinanza",
+        r"(?i)(cittadinanza|cittadino|nazionalità|nazionalita)",
+        "Cittadinanza / nazionalità",
+    ),
+    (
+        "codice_comune_anagrafe",
+        r"(?i)(^codice_comune$|^comune_istat$|^comune_codice$)",
+        "Codice comune (generico, forse ISTAT)",
+    ),
+]
+
+JOIN_KEY_WEIGHTS: dict[str, int] = {
+    "istat_comune": 30,
+    "istat_regione": 20,
+    "anno": 15,
+    "provincia": 10,
+    "codice_catastale": 15,
+    "codice_ente": 10,
+    "codice_scuola": 8,
+    "atc": 5,
+    "ateco": 5,
+    "mese": 3,
+    "cf_ente": 10,
+    "sesso": 3,
+    "eta": 3,
+    "cittadinanza": 5,
+    "codice_comune_anagrafe": 5,
+}
+
+
+def parse_columns(raw: str | None) -> list[str]:
+    """Parse a JSON-encoded columns field into a list of column names.
+
+    Handles None, NaN, JSON list, JSON dict (keys as columns), and
+    scalar fallback.  Canonical version shared by source_check_analyze
+    and joinability_scan.
+    """
+    import math
+
+    if raw is None or (isinstance(raw, float) and math.isnan(raw)):
+        return []
+    if not isinstance(raw, str):
+        return []
+    try:
+        parsed = json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return [str(raw)]
+    if isinstance(parsed, list):
+        return [str(c) if not isinstance(c, dict) else str(c.get("name", "")) for c in parsed]
+    if isinstance(parsed, dict):
+        return list(parsed.keys())
+    return [str(parsed)]
+
+
+def detect_join_keys(
+    columns_raw: str | None, columns: list[str] | None = None
+) -> dict[str, list[str]]:
+    """Match column names against join key patterns.
+
+    Args:
+        columns_raw: JSON-encoded columns field (list or dict).
+        columns: Already-parsed list (avoids double parse).
+
+    Returns:
+        Dict {chiave_semantica: [colonne_matched]}.
+    """
+    import re
+
+    col_names = columns if columns is not None else parse_columns(columns_raw)
+    if not col_names:
+        return {}
+    found: dict[str, list[str]] = {}
+    for key_name, pattern, _desc in JOIN_KEY_PATTERNS:
+        matched = [c for c in col_names if re.search(pattern, c.strip())]
+        if matched:
+            found[key_name] = matched
+    return found
+
+
+def compute_joinability_score(found_keys: dict[str, list[str]]) -> float:
+    """Score 0-100 based on found join keys.
+
+    Uses JOIN_KEY_WEIGHTS.  Does not include catalog cross-reference
+    (that is added by joinability_scan.py).
+    """
+    if not found_keys:
+        return 0.0
+    score = sum(JOIN_KEY_WEIGHTS.get(k, 5) for k in found_keys)
+    if len(found_keys) >= 3:
+        score += 10
+    elif len(found_keys) >= 2:
+        score += 5
+    return min(score, 100)
