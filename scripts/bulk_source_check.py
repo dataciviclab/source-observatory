@@ -56,8 +56,6 @@ from source_check_analyze import (
 from source_check_fetch import (
     _EMPTY_ENRICH,
     SDMX_NS,
-    _content_type_format,
-    _fetch_ckan_package,
     _fetch_data_preview,
     _fetch_html_metadata,
     _fetch_sdmx_dataflow,
@@ -65,6 +63,15 @@ from source_check_fetch import (
     _fetch_sparql_count,
     _http_head_with_retry,
     configure_source_check_http,
+)
+from toolkit.scout.http import (
+    fetch_ckan_package as _toolkit_ckan_package,
+)
+from toolkit.scout.http import (
+    probe_url_headers as _toolkit_probe_headers,
+)
+from toolkit.scout.http import (
+    resolve_preview_kind as _toolkit_preview_kind,
 )
 
 logger = logging.getLogger(__name__)
@@ -228,7 +235,9 @@ def _enrich_ckan(row: pd.Series, base: dict) -> dict | None:
         if isinstance(api_base_url, str) and api_base_url.startswith("http")
         else base["base_url"]
     )
-    pkg = _fetch_ckan_package(base_api, base["item_name"])
+    parsed = urllib.parse.urlparse(base_api)
+    portal_url = f"{parsed.scheme}://{parsed.netloc}"
+    pkg = _toolkit_ckan_package(portal_url, base["item_name"])
     if pkg:
         return _parse_ckan_package(pkg)
     return None
@@ -258,10 +267,13 @@ def _enrich_html(row: pd.Series, base: dict) -> dict | None:
     def _e(r: dict) -> dict:
         return _apply_encoding_to_enrich(r, row, base)
 
-    # 1. content-type su data_url
+    # 1. content-type su data_url via toolkit (probe HEAD → format)
     data_url = row.get("url")
     if isinstance(data_url, str):
-        fmt = _content_type_format(data_url)
+        probe = _toolkit_probe_headers(data_url)
+        fmt = _toolkit_preview_kind(
+            data_url, probe.get("content_type"), probe.get("content_disposition")
+        )
         if fmt:
             return _e(
                 {

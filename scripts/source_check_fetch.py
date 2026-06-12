@@ -13,15 +13,11 @@ import logging
 import math
 import re
 import time
-import urllib.parse
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Optional
 
 from lab_connectors.http import CircuitOpenError, HttpClient
-from toolkit.scout.http import (
-    fetch_ckan_package as _toolkit_ckan_package,
-)
 from toolkit.scout.http import (
     fetch_html_body as _toolkit_html_body,
 )
@@ -164,22 +160,6 @@ def _http_head_with_retry(
 # ── CKAN fetch (wrapper: adatta base_api SO a portal_url toolkit) ─────────────
 
 
-def _fetch_ckan_package(base_api: str, item_name: str, client: HttpClient | None = None) -> Optional[dict]:
-    """Fetch CKAN package_show. Usa toolkit.scout con client SO."""
-    parsed = urllib.parse.urlparse(base_api)
-    portal_url = f"{parsed.scheme}://{parsed.netloc}"
-    try:
-        pkg = _toolkit_ckan_package(portal_url, item_name, client=client)
-        if pkg is None:
-            logger.warning(
-                "CKAN package_show returned None for %s (portal: %s)", item_name, portal_url
-            )
-        return pkg
-    except Exception as exc:
-        logger.error("CKAN package_show failed for %s (portal: %s): %s", item_name, portal_url, exc)
-        return None
-
-
 # ── SDMX years ───────────────────────────────────────────────────────────────
 
 
@@ -290,47 +270,12 @@ def _fetch_html_metadata(url: str, client: HttpClient | None = None) -> dict:
         return result
 
 
-# ── Content-type format (probe HEAD → format) ────────────────────────────────
-
-
-def _content_type_format(url: str, client: HttpClient | None = None) -> Optional[str]:
-    """Formato da Content-Type via HEAD. Usa toolkit.scout."""
-    if not url.startswith("http"):
-        return None
-    if client is None:
-        client = HttpClient(timeout=(5, 10))
-    try:
-        probe = _toolkit_probe_headers(url, client=client)
-        return _toolkit_preview_kind(
-            url, probe.get("content_type"), probe.get("content_disposition")
-        )
-    except Exception:
-        return None
-
-
 # ── Data preview (toolkit profiler + SO enrichment) ──────────────────────────
 
 
 REGION_COLUMNS = ["regione", "region", "provincia", "province", "area", "territorio"]
 COMUNE_COLUMNS = ["comune", "municip", "localita", "citta", "city"]
 _YEAR_COLUMN_HINTS = ["anno", "year", "data", "date", "periodo", "period", "mese", "month"]
-
-
-def _resolve_preview_kind(url: str, client: HttpClient | None = None) -> tuple[str | None, bool]:
-    """Ritorna (kind, inferred_via_head). Usa toolkit per URL extension + HEAD probe."""
-    kind = _toolkit_preview_kind(url)
-    if kind is not None:
-        return kind, False
-    if not url.startswith("http"):
-        return None, False
-    try:
-        probe = _toolkit_probe_headers(url, client=client)
-        kind = _toolkit_preview_kind(
-            url, probe.get("content_type"), probe.get("content_disposition")
-        )
-        return kind, kind is not None
-    except Exception:
-        return None, False
 
 
 # ── Download phase ──────────────────────────────────────────────────────────
@@ -590,7 +535,15 @@ def _fetch_data_preview(
 
     if client is None:
         client = HttpClient(timeout=(5, 10))
-    kind, _preview_inferred_via_head = _resolve_preview_kind(url, client)
+    kind = _toolkit_preview_kind(url)
+    if kind is None and url.startswith("http"):
+        try:
+            probe = _toolkit_probe_headers(url, client=client)
+            kind = _toolkit_preview_kind(
+                url, probe.get("content_type"), probe.get("content_disposition")
+            )
+        except Exception:
+            kind = None
     if kind is None:
         result = _EMPTY_ENRICH.copy()
         result["enrich_method"] = "csv_preview_skipped"
