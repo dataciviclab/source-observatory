@@ -1,11 +1,11 @@
 # Stato Radar
 
-Ultimo run: 2026-06-11
+Ultimo run: 2026-06-12
 
 ## Sommario
 
-- Fonti controllate: 30
-- GREEN: 26
+- Fonti controllate: 31
+- GREEN: 27
 - YELLOW: 4
 - RED: 0
 
@@ -13,7 +13,7 @@ Ultimo run: 2026-06-11
 
 | Tipo | Conteggio |
 | --- | --- |
-| catalog | 29 |
+| catalog | 30 |
 | portal | 1 |
 | source | 0 |
 
@@ -22,7 +22,7 @@ Ultimo run: 2026-06-11
 | Modalita' | Conteggio | Significato |
 | --- | --- | --- |
 | radar-only | 4 | Salute della fonte senza segnali di inventario |
-| catalog-watch | 26 | Inventario e drift strutturale del catalogo |
+| catalog-watch | 27 | Inventario e drift strutturale del catalogo |
 | monitor-active | 0 | Caso ristretto con monitoraggio piu' vicino alla risorsa |
 
 Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornamento del dataset.
@@ -61,6 +61,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | ministero_salute | catalog | ckan | catalog-watch | GREEN | 200 | reparti_ricovero, strutture_asl, strutture_ricovero_asl |
 | agcm | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | unioncamere | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| pagopa | catalog | ckan | catalog-watch | GREEN | 200 | - |
 
 ## Note
 

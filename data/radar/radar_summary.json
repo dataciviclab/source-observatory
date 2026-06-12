@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-06-11T08:14:19.625357+00:00",
-  "probe_date": "2026-06-11",
-  "sources_total": 30,
+  "generated_at": "2026-06-12T08:00:57.940367+00:00",
+  "probe_date": "2026-06-12",
+  "sources_total": 31,
   "status_counts": {
-    "GREEN": 26,
+    "GREEN": 27,
     "YELLOW": 4,
     "RED": 0
   },
@@ -214,6 +214,13 @@
     },
     {
       "id": "unioncamere",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "pagopa",
       "status": "GREEN",
       "protocol": "ckan",
       "http_code": "200",
