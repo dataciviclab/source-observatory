@@ -857,18 +857,11 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def main() -> None:
-    logging.basicConfig(format="%(levelname)s %(message)s", level=logging.INFO)
-    args = parse_args()
-    global _NO_SDMX_YEARS
-    _NO_SDMX_YEARS = args.no_sdmx_years
+def _run_source_check(http_client: HttpClient, args: argparse.Namespace) -> None:
+    """Esegue il source-check vero e proprio.
 
-    http_client = configure_source_check_http(
-        circuit_fail_threshold=args.circuit_fail_threshold,
-        http_timeout=(4, 9),
-        http_max_retries=1,
-    )
-
+    Estratta da main() per garantire chiusura del client via try/finally.
+    """
     logger.info("Loading catalog: %s", args.input)
     df = pd.read_parquet(args.input)
     logger.info("  %d total items", len(df))
@@ -1159,7 +1152,24 @@ def main() -> None:
     results = _normalize_preview_columns_for_parquet(results)
     results.to_parquet(args.out, index=False)
     logger.info("Results: %s", args.out)
-    http_client.close()
+
+
+def main() -> None:
+    """Entry point: crea il client HTTP e avvia il source-check."""
+    logging.basicConfig(format="%(levelname)s %(message)s", level=logging.INFO)
+    args = parse_args()
+    global _NO_SDMX_YEARS
+    _NO_SDMX_YEARS = args.no_sdmx_years
+
+    http_client = configure_source_check_http(
+        circuit_fail_threshold=args.circuit_fail_threshold,
+        http_timeout=(4, 9),
+        http_max_retries=1,
+    )
+    try:
+        _run_source_check(http_client, args)
+    finally:
+        http_client.close()
 
 
 if __name__ == "__main__":
