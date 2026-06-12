@@ -32,7 +32,7 @@ dependencies = [
   "jsonschema>=4.26.0",
   "mcp>=1.27.1",
   "ddgs>=9.14.4",
-  "lab-connectors[duckdb,gcs] @ git+https://github.com/dataciviclab/lab-connectors.git@v0.14.0",
+  "lab-connectors[duckdb,gcs] @ git+https://github.com/dataciviclab/lab-connectors.git@v0.14.1",
   "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@v1.34.0",
 ]
 
