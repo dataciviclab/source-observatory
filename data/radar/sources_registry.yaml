@@ -806,3 +806,25 @@ pagopa:
     per ambito, geografia comuni, numero notifiche). Dati su digitalizzazione pagamenti
     PA e adozione piattaforme digitali (IO, SEND).'
   datasets_in_use: []
+
+aci:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:aci
+    timeout: 180
+    skip_current_list: true
+    skip_current_list_reason: package_search con fq=organization:aci restituisce 35 dataset con metadata completi.
+  last_probed: '2026-06-11'
+  catalog_baseline:
+    captured_at: '2026-06-11'
+    metric: package_count
+    value: 35
+    method: package_search
+    reliability: high
+    note: 'Conteggio via package_search con fq=organization:aci su dati.gov.it. 35 dataset: prime iscrizioni veicoli nuovi (2017-2024, per comune, alimentazione), radiazioni, parco circolante.'
+  verdict: go
+  note: 'Fonte via dati.gov.it. 35 dataset ACI su parco veicolare: prime iscrizioni autovetture (per comune, alimentazione, classe euro, 2017-2024), radiazioni per demolizione. CSV su lod.aci.it in formato tidy. Incrociabile con MIT incidentalità.'
+  datasets_in_use: []
