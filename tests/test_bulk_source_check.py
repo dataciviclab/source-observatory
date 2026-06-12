@@ -439,24 +439,28 @@ def test_fetch_data_preview_xls_fake_tsv_latin1(monkeypatch) -> None:
 def test_http_circuit_breaker_blocks_host_after_failures(monkeypatch) -> None:
     """Dopo N errori di trasporto sullo stesso host, HEAD successivi ritornano circuit_open."""
     import requests
-    from lab_connectors.http import HttpClient, HttpResult
+    from lab_connectors.http import CircuitOpenError, HttpResult
     from source_check_fetch import _http_head_with_retry, configure_source_check_http
 
     heads: list[str] = []
 
-    def fake_head(self, url, **kwargs):
+    # Mokka a livello requests (non HttpClient.head), cosi' il vero
+    # HttpClient.head() esegue e il circuit breaker viene aggiornato.
+    def fake_requests_head(url, **kwargs):
         heads.append(url)
-        return HttpResult(response=None, err=requests.exceptions.ConnectTimeout())
+        raise requests.exceptions.ConnectTimeout()
 
-    monkeypatch.setattr(HttpClient, "head", fake_head)
-    configure_source_check_http(
+    monkeypatch.setattr(requests, "head", fake_requests_head)
+    monkeypatch.setattr(requests.Session, "head", lambda self, url, **kw: fake_requests_head(url, **kw))
+
+    client = configure_source_check_http(
         circuit_fail_threshold=2, http_timeout=(1.0, 2.0), http_max_retries=1
     )
     try:
         u = "https://slow-host.example/resource/1"
-        _http_head_with_retry(u)
+        _http_head_with_retry(u, client=client)
         assert len(heads) == 2
-        _st, _ok, note, _fmt = _http_head_with_retry("https://slow-host.example/other")
+        _st, _ok, note, _fmt = _http_head_with_retry("https://slow-host.example/other", client=client)
         assert note == "circuit_open"
         assert len(heads) == 2
     finally:

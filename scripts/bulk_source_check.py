@@ -43,6 +43,7 @@ from _constants import (
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
 )
+from lab_connectors.http import HttpClient
 from source_check_analyze import (
     _fallback_infer,
     _finalize_scores,
@@ -504,7 +505,9 @@ def _normalize_preview_columns_for_parquet(df: pd.DataFrame) -> pd.DataFrame:
     return normalized
 
 
-def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
+def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any], client: HttpClient | None = None) -> dict:
+    if client is None:
+        client = configure_source_check_http()
     enrich = _enrich_with_inventory(row, registry)
 
     # granularità e anni: da enrichment, poi fallback su campi catalogo
@@ -550,13 +553,14 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         if known_enc:
             preview = _fetch_data_preview(
                 preview_url,
+                client,
                 known_encoding=known_enc,
                 known_delim=enrich.get("delim_suggested"),
                 known_decimal=enrich.get("decimal_suggested"),
                 known_skip=enrich.get("skip_suggested"),
             )
         else:
-            preview = _fetch_data_preview(preview_url)
+            preview = _fetch_data_preview(preview_url, client)
         if preview.get("enrich_method") == "csv_preview":
             # Anni/granularità: solo se metadati non bastano
             if granularity in (None, "non_determinato") and preview.get("granularity"):
@@ -592,7 +596,7 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
         note = None
         content_type = None
     else:
-        http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "")
+        http_status_raw, reachable, note, content_type = _http_head_with_retry(url_to_check or "", client=client)
         http_status = http_status_raw if http_status_raw is not None else 0
 
         # Content-type format as primary detection (now unified in _http_head_with_retry)
@@ -650,10 +654,18 @@ def _check_row(row: pd.Series, check_ts: str, registry: dict[str, Any]) -> dict:
     }
 
 
-def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame:
+def run_bulk_check(
+    df: pd.DataFrame,
+    workers: int = MAX_WORKERS,
+    client: HttpClient | None = None,
+) -> pd.DataFrame:
     registry = _load_registry()
     check_ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
     results = []
+
+    # Client HTTP condiviso con circuit breaker
+    _owns_client = client is None
+    client = client or configure_source_check_http()
 
     # Per-source timing (stesso pattern di build_catalog_inventory)
     source_first_submit: dict[str, float] = {}
@@ -669,7 +681,7 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
         # non accetta per df.loc/df.iloc — con enumerate pos abbiamo int certo.
         future_to_idx = {}
         for pos, (_idx, row) in enumerate(df.iterrows()):
-            f = pool.submit(_check_row, row, check_ts, registry)
+            f = pool.submit(_check_row, row, check_ts, registry, client)
             future_to_idx[f] = pos
             sid = str(row.get("source_id", ""))
             source_first_submit.setdefault(sid, time.time())
@@ -715,6 +727,8 @@ def run_bulk_check(df: pd.DataFrame, workers: int = MAX_WORKERS) -> pd.DataFrame
         )
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
+        if _owns_client:
+            client.close()
 
     # ── Per-source timing table ───────────────────────────────────────────────────
     if source_item_count:
@@ -814,7 +828,7 @@ def main() -> None:
     global _NO_SDMX_YEARS
     _NO_SDMX_YEARS = args.no_sdmx_years
 
-    configure_source_check_http(
+    http_client = configure_source_check_http(
         circuit_fail_threshold=args.circuit_fail_threshold,
         http_timeout=(4.0, 9.0),
         http_max_retries=1,
@@ -1034,7 +1048,7 @@ def main() -> None:
 
     logger.info("Starting check on %d items (%d workers)...", len(df), args.workers)
     t0 = time.time()
-    results = run_bulk_check(df, workers=args.workers)
+    results = run_bulk_check(df, workers=args.workers, client=http_client)
     elapsed = time.time() - t0
     logger.info("Completed in %.1fs", elapsed)
 
