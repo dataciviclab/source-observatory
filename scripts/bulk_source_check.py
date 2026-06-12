@@ -96,7 +96,9 @@ def _load_registry() -> dict[str, Any]:
 # ── SDMX enrichment ───────────────────────────────────────────────────────────
 
 
-def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -> dict:
+def _parse_sdmx_annotations(
+    xml_root: ET.Element, base_url: str, flow_id: str, client: HttpClient | None = None
+) -> dict:
     annotations: dict[str, str] = {}
     for ann in xml_root.findall(".//common:Annotation", SDMX_NS):
         atype_el = ann.find("common:AnnotationType", SDMX_NS)
@@ -116,7 +118,9 @@ def _parse_sdmx_annotations(xml_root: ET.Element, base_url: str, flow_id: str) -
 
     # se le annotations non contengono anni, prova a ricavarli dall'endpoint dati
     if year_min is None:
-        year_min, year_max = _fetch_sdmx_years(base_url, flow_id, allow_fetch=not _NO_SDMX_YEARS)
+        year_min, year_max = _fetch_sdmx_years(
+            base_url, flow_id, client=client, allow_fetch=not _NO_SDMX_YEARS
+        )
 
     metadata_url = annotations.get("METADATA_URL")
 
@@ -252,7 +256,7 @@ def _enrich_sdmx(row: pd.Series, base: dict, client: HttpClient | None = None) -
         return None
     xml_root = _fetch_sdmx_dataflow(base["base_url"], base["item_name"], client=client)
     if xml_root is not None:
-        return _parse_sdmx_annotations(xml_root, base["base_url"], base["item_name"])
+        return _parse_sdmx_annotations(xml_root, base["base_url"], base["item_name"], client=client)
     return None
 
 
@@ -364,7 +368,9 @@ def _enrich_sparql(row: pd.Series, base: dict, client: HttpClient | None = None)
     )
     fmt = "SPARQL"
     if landing and landing.startswith("http"):
-        http_status_raw, reachable, note, content_type = _http_head_with_retry(landing)
+        http_status_raw, reachable, note, content_type = _http_head_with_retry(
+            landing, client=client
+        )
         if content_type:
             fmt = _normalize_format(content_type)
 
@@ -938,6 +944,7 @@ def main() -> None:
 
     if df.empty:
         logger.info("No items to check. Exiting.")
+        http_client.close()
         return
 
     # ── Fix A: dedup per (source_id, item_id) — stesso dataset, formati multipli ───
@@ -957,6 +964,7 @@ def main() -> None:
 
     if df.empty:
         logger.info("No items to check. Exiting.")
+        http_client.close()
         return
 
     # ── Smart sampling per target size ───────────────────────────────────────────
@@ -1073,6 +1081,7 @@ def main() -> None:
 
     if df.empty:
         logger.info("No new items to check. Exiting.")
+        http_client.close()
         return
 
     logger.info("Starting check on %d items (%d workers)...", len(df), args.workers)
