@@ -19,6 +19,7 @@ import re
 from datetime import date
 from typing import Any
 
+from _constants import JOIN_KEY_PATTERNS, detect_join_keys, parse_columns
 from lab_connectors.duckdb import gcs_connect
 from lab_connectors.http import HttpClient
 
@@ -44,68 +45,16 @@ OUTPUT_PATH = os.path.join(
 )
 
 
-# ── Pattern di chiavi di join ─────────────────────────────────────────────────
-# Ogni entry: (chiave_semantica, regex, descrizione)
+# ── Join key patterns ───────────────────────────────────────────────────────
+# I pattern canonici sono in _constants.JOIN_KEY_PATTERNS.
+# KEY_PATTERNS alias per backward compat interna a questo file.
+KEY_PATTERNS: list[tuple[str, str, str]] = JOIN_KEY_PATTERNS  # type: ignore[assignment]
 
 # ── Bridge table ──────────────────────────────────────────────────────────────
 # Il dataset nel catalogo che funge da bridge table per join indiretti.
 # Le sue colonne vengono lette dinamicamente dal clean_catalog.json e
 # processate con KEY_PATTERNS per derivare le chiavi semantiche coperte.
 BRIDGE_SLUG: str = "bdap_anagrafe_enti"
-
-KEY_PATTERNS: list[tuple[str, str, str]] = [
-    (
-        "istat_comune",
-        r"(?i)(codice_istat_comune|codice_comune_istat|^codice_comune$|^pro_com$|^comune$)",
-        "Codice ISTAT comune (8 digit alfanumerico)",
-    ),
-    (
-        "istat_regione",
-        r"(?i)(codice_istat_regione|^codice_regione$|^codreg$|regione_istat_cod|^cod_reg$)",
-        "Codice ISTAT regione",
-    ),
-    (
-        "anno",
-        r"(?i)^(anno|anno_di_imposta|anno_scolastico|annoscolastico|anno_riferimento|anno_presentazione|esercizio_finanziario)$",
-        "Anno / esercizio",
-    ),
-    (
-        "provincia",
-        r"(?i)(sigla_provincia|^provincia$|codice_provincia|sigla_prov|^prov$)",
-        "Provincia (sigla o codice)",
-    ),
-    (
-        "codice_catastale",
-        r"(?i)(codice_catastale|cod_catastale|catastale)",
-        "Codice catastale comune",
-    ),
-    (
-        "codice_ente",
-        r"(?i)(codice_ente_ipa|^id_ente$|codice_ente_siope|codice_istituzione|codice_ente_bdap|codice_ente_ssn)",
-        "Codice ente pubblico (IPA/SIOPE/BDAP/SSN)",
-    ),
-    (
-        "codice_scuola",
-        r"(?i)(codice_scuola|codicescuola|codice_meccanografico|^codice_scuola$|^cod_scuola$)",
-        "Codice scuola (MIM)",
-    ),
-    (
-        "atc",
-        r"(?i)(^atc[1-5]$|^atc$|^atc1$|^atc2$|^atc3$|^atc4$|^atc5$)",
-        "Classificazione ATC farmaceutica",
-    ),
-    (
-        "ateco",
-        r"(?i)(codice_ateco|^ateco$|sezione_ateco)",
-        "Classificazione ATECO attività economica",
-    ),
-    ("mese", r"(?i)^mese$", "Mese (1-12)"),
-    (
-        "codice_comune_anagrafe",
-        r"(?i)(^codice_comune$|^comune_istat$|^comune_codice$)",
-        "Codice comune (generico, forse ISTAT)",
-    ),
-]
 
 
 def load_source_check() -> list[dict[str, Any]]:
@@ -133,34 +82,11 @@ def load_clean_catalog() -> list[dict[str, Any]]:
         client.close()
 
 
-def parse_columns(columns_raw: Any) -> list[str]:
-    """Parsa la colonna `columns` in una lista di nomi colonna."""
-    if columns_raw is None or (isinstance(columns_raw, float) and columns_raw != columns_raw):
-        return []
-    if not isinstance(columns_raw, str):
-        return []
-    try:
-        parsed = json.loads(columns_raw)
-    except (json.JSONDecodeError, TypeError):
-        return [str(columns_raw)]
-    if isinstance(parsed, list):
-        return [str(c) if not isinstance(c, dict) else str(c.get("name", "")) for c in parsed]
-    if isinstance(parsed, dict):
-        return list(parsed.keys())
-    return [str(parsed)]
-
-
+# parse_columns e detect_join_keys importate da _constants.
+# detect_keys alias per backward compat interna a questo file.
 def detect_keys(column_names: list[str]) -> dict[str, list[str]]:
-    """Matcha i nomi colonna contro i pattern di chiavi di join.
-
-    Restituisce dict {nome_chiave: [colonne_matched]}.
-    """
-    found: dict[str, list[str]] = {}
-    for key_name, pattern, _desc in KEY_PATTERNS:
-        matched = [col for col in column_names if re.search(pattern, col.strip())]
-        if matched:
-            found[key_name] = matched
-    return found
+    """Matcha i nomi colonna contro i pattern di chiavi di join."""
+    return detect_join_keys(None, columns=column_names)
 
 
 def build_catalog_index(catalog: list[dict]) -> dict[str, dict]:
@@ -340,7 +266,9 @@ def build_json_output(
                 "item_name": item["item_name"],
                 "intake_score": item["intake_score"],
                 "joinability_score": item["joinability_score"],
-                "enriched_joinability_score": item.get("enriched_joinability_score", item["joinability_score"]),
+                "enriched_joinability_score": item.get(
+                    "enriched_joinability_score", item["joinability_score"]
+                ),
                 "col_count": item["col_count"],
                 "keys_found": item["found_keys"],
                 "matches": [
