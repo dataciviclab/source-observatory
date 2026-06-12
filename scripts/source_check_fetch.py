@@ -16,11 +16,10 @@ import xml.etree.ElementTree as ET
 from typing import Any, Optional
 
 from lab_connectors.http import CircuitOpenError, HttpClient
-from toolkit.profile.preview import (  # noqa: F401 — backward compat per test SO
-    _extract_year_values_from_sample,
-)
-from toolkit.profile.preview import (
-    _infer_granularity_from_columns as _tk_infer_gran,
+
+# backward compat per test SO: importa funzioni pubbliche di toolkit
+from toolkit.profile.preview import (  # noqa: F401
+    extract_year_values_from_sample as _extract_year_values_from_sample,
 )
 from toolkit.scout.http import (
     fetch_html_body as _toolkit_html_body,
@@ -31,16 +30,16 @@ from toolkit.scout.http import (
 from toolkit.scout.http import (
     resolve_preview_kind as _toolkit_preview_kind,
 )
+from toolkit.scout.infer import infer_granularity as _infer_granularity
 from toolkit.scout.sparql import (
     fetch_sparql_count as _toolkit_sparql_count,
 )
 
 
 def _infer_granularity_from_columns(columns: list[str]) -> str:
-    """Backward compat: pure function wrapper su toolkit."""
-    result: dict[str, str] = {}
-    _tk_infer_gran(columns, result)
-    return result.get("granularity", "non_determinato")
+    """Backward compat: pure function, inferisce da nomi colonna."""
+    combined = " ".join(c.lower().replace("_", " ") for c in columns) if columns else ""
+    return _infer_granularity(combined)
 
 
 logger = logging.getLogger(__name__)
@@ -324,35 +323,30 @@ def _fetch_data_preview(
         known_skip=known_skip,
     )
 
-    if not p.get("reachable") or p.get("enrich_method") in (
-        "probe_failed",
-        "unsupported_format",
-        "download_failed",
-        "json_decode_failed",
-    ):
+    if p.status != "success":
         result = _EMPTY_ENRICH.copy()
-        result["enrich_method"] = p.get("enrich_method", "csv_preview_failed")
+        result["enrich_method"] = p.status
         return result
 
     result = _EMPTY_ENRICH.copy()
     result.update(
         {
-            "columns": _json.dumps(p.get("columns")) if p.get("columns") else None,
-            "col_types": _json.dumps(p.get("col_types")) if p.get("col_types") else None,
-            "file_size": p.get("file_size"),
-            "preview_row_count": p.get("preview_row_count"),
-            "year_min": p.get("year_min"),
-            "year_max": p.get("year_max"),
-            "granularity": p.get("granularity", "non_determinato"),
-            "resource_format": p.get("resource_format", ""),
+            "columns": _json.dumps(p.columns) if p.columns else None,
+            "col_types": _json.dumps(p.col_types) if p.col_types else None,
+            "file_size": p.file_size,
+            "preview_row_count": p.preview_row_count,
+            "year_min": p.year_min,
+            "year_max": p.year_max,
+            "granularity": p.granularity,
+            "resource_format": p.resource_format or "",
             "enrich_method": "csv_preview",
-            "encoding_suggested": p.get("encoding_suggested"),
-            "delim_suggested": p.get("delim_suggested"),
-            "decimal_suggested": p.get("decimal_suggested"),
-            "skip_suggested": p.get("skip_suggested", 0),
-            "robust_read_suggested": p.get("robust_read_suggested", False),
-            "mapping_suggestions": _json.dumps(p.get("mapping_suggestions"))
-            if isinstance(p.get("mapping_suggestions"), dict)
+            "encoding_suggested": p.encoding_suggested,
+            "delim_suggested": p.delim_suggested,
+            "decimal_suggested": p.decimal_suggested,
+            "skip_suggested": p.skip_suggested,
+            "robust_read_suggested": p.robust_read_suggested,
+            "mapping_suggestions": _json.dumps(p.mapping_suggestions)
+            if isinstance(p.mapping_suggestions, dict)
             else "{}",
         }
     )
