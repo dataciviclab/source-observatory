@@ -42,12 +42,9 @@ logger = logging.getLogger(__name__)
 
 # ── Config HTTP (sovrascrivibile da configure_source_check_http) ──────────────
 
-HTTP_TIMEOUT: tuple[float, float] = (5, 10)
-_http_timeout: int | float | tuple[int | float, int | float] = (5.0, 10.0)
-_http_max_retries = 2
-_http_circuit_threshold = 3
-
-_YEAR_RE = re.compile(r"(?<!\d)(19\d{2}|20[012]\d)(?!\d)")
+_DEFAULT_HTTP_TIMEOUT: tuple[float, float] = (5.0, 10.0)
+_DEFAULT_HTTP_RETRIES = 2
+_DEFAULT_CIRCUIT_THRESHOLD = 3
 
 SDMX_NS = {
     "message": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message",
@@ -79,9 +76,9 @@ _EMPTY_ENRICH: dict[str, Any] = {
 
 def configure_source_check_http(
     *,
-    circuit_fail_threshold: int = 3,
+    circuit_fail_threshold: int = _DEFAULT_CIRCUIT_THRESHOLD,
     http_timeout: tuple[float, float] | None = None,
-    http_max_retries: int = 1,
+    http_max_retries: int = _DEFAULT_HTTP_RETRIES,
 ) -> HttpClient:
     """Crea un HttpClient configurato per bulk source-check.
 
@@ -89,15 +86,10 @@ def configure_source_check_http(
     errori consecutivi sullo stesso host, le richieste successive restituiscono
     ``CircuitOpenError`` senza fare rete.
     """
-    global _http_timeout, _http_max_retries, _http_circuit_threshold
-    _http_circuit_threshold = max(0, int(circuit_fail_threshold))
-    if http_timeout is not None:
-        _http_timeout = (float(http_timeout[0]), float(http_timeout[1]))
-    _http_max_retries = max(1, int(http_max_retries))
     return HttpClient(
-        timeout=_http_timeout,
-        max_retries=_http_max_retries,
-        circuit_threshold=_http_circuit_threshold,
+        timeout=http_timeout or _DEFAULT_HTTP_TIMEOUT,
+        max_retries=max(1, int(http_max_retries)),
+        circuit_threshold=max(0, int(circuit_fail_threshold)),
     )
 
 
