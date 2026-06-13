@@ -75,10 +75,10 @@ _SDMX_XML = """\
     xmlns:common="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
   <message:Structures>
     <structure:Dataflows>
-      <structure:Dataflow id="EX1">
+      <structure:Dataflow agencyID="IT1" id="EX1" version="1.0">
         <common:Name xml:lang="en">Example Flow 1</common:Name>
       </structure:Dataflow>
-      <structure:Dataflow id="EX2">
+      <structure:Dataflow agencyID="IT1" id="EX2" version="2.0">
         <common:Name xml:lang="en">Example Flow 2</common:Name>
       </structure:Dataflow>
       <structure:Dataflow id="EX3">
@@ -90,7 +90,7 @@ _SDMX_XML = """\
 
 
 def test_collect(monkeypatch, fake_http):
-    """collect() restituisce righe corrette da XML SDMX."""
+    """collect() restituisce righe corrette da XML SDMX con distribution_url CSV."""
     fake_http.responses["https://example.test/dataflow/IT1"] = HttpResult(
         response=fake_response(200, _SDMX_XML, headers={"content-type": "application/xml"}),
         err=None,
@@ -106,25 +106,34 @@ def test_collect(monkeypatch, fake_http):
 
     assert len(result.rows) == 3
 
-    # Primo flow: EX1
+    # Primo flow: EX1 — agencyID=IT1, version=1.0
     row1 = result.rows[0]
     assert row1["item_id"] == "EX1"
     assert row1["item_name"] == "EX1"
     assert row1["title"] == "Example Flow 1"
     assert row1["ordinal"] == 1
     assert row1["api_base_url"] == "https://example.test"
+    assert row1["organization"] == "IT1"
+    assert row1["distribution_url"] == "https://example.test/data/EX1/ALL/?format=csv"
+    assert row1["format"] == "CSV"
 
-    # Secondo flow: EX2
+    # Secondo flow: EX2 — agencyID=IT1, version=2.0
     row2 = result.rows[1]
     assert row2["item_id"] == "EX2"
     assert row2["title"] == "Example Flow 2"
     assert row2["ordinal"] == 2
+    assert row2["organization"] == "IT1"
+    assert row2["distribution_url"] == "https://example.test/data/EX2/ALL/?format=csv"
+    assert row2["format"] == "CSV"
 
-    # Terzo flow: EX3 con Name vuoto → title = None
+    # Terzo flow: EX3 senza agencyID/version — URL costruito comunque
     row3 = result.rows[2]
     assert row3["item_id"] == "EX3"
     assert row3["title"] is None
     assert row3["ordinal"] == 3
+    assert row3["organization"] is None  # agencyID mancante
+    assert row3["distribution_url"] == "https://example.test/data/EX3/ALL/?format=csv"
+    assert row3["format"] == "CSV"
 
 
 def test_collect_http_error(monkeypatch, fake_http):

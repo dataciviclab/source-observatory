@@ -57,10 +57,21 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         "common": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common",
     }
 
+    api_base = _sdmx_api_base(source_cfg.get("base_url") or endpoint)
+
     rows: list[dict[str, Any]] = []
     for idx, flow in enumerate(root.findall(".//structure:Dataflow", ns), start=1):
         flow_id = flow.attrib.get("id")
         name_elem = flow.find("common:Name", ns)
+        agency = flow.attrib.get("agencyID")
+
+        # Costruisce URL di download CSV dall'SDMX REST data endpoint
+        # Pattern: {api_base}/data/{flow_id}/ALL/?format=csv
+        # (stesso pattern usato da istat_mcp_server per download CSV)
+        dist_url = None
+        if api_base and flow_id:
+            dist_url = f"{api_base}/data/{flow_id}/ALL/?format=csv"
+
         rows.append(
             {
                 "captured_at": captured_at,
@@ -74,11 +85,13 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 "item_id": flow_id,
                 "item_name": flow_id,
                 "title": parse_sdmx_name(name_elem),
-                "organization": None,
+                "organization": agency,
                 "tags": None,
                 "notes_excerpt": None,
                 "source_url": source_cfg["base_url"],
-                "api_base_url": _sdmx_api_base(source_cfg.get("base_url") or endpoint),
+                "api_base_url": api_base,
+                "distribution_url": dist_url,
+                "format": "CSV",
                 "ordinal": idx,
             }
         )
