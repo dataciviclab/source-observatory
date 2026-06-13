@@ -66,10 +66,7 @@ def query_inventory(
                         filters.append("paqa_score >= ?")
                         params.append(min_paqa_score)
                     elif min_paqa_score is not None:
-                        logger.warning(
-                            "min_paqa_score=%d ignored — paqa_score not in artifact (toolkit < v1.36.1)",
-                            min_paqa_score,
-                        )
+                        filters.append("1=0")  # colonna non disponibile → zero risultati
                     if has_results is not None:
                         if has_results:
                             filters.append("intake_score IS NOT NULL AND intake_score > 0")
@@ -121,6 +118,8 @@ def query_inventory(
                     if min_paqa_score is not None and "paqa_score" in col_set:
                         query_parts.append("paqa_score >= ?")
                         params.append(min_paqa_score)
+                    elif min_paqa_score is not None:
+                        query_parts.append("1=0")  # colonna non disponibile → zero risultati
                     if has_results is not None:
                         if has_results:
                             query_parts.append("intake_score IS NOT NULL AND intake_score > 0")
