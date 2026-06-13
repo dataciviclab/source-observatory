@@ -1,11 +1,11 @@
 # Stato Radar
 
-Ultimo run: 2026-06-12
+Ultimo run: 2026-06-13
 
 ## Sommario
 
-- Fonti controllate: 31
-- GREEN: 27
+- Fonti controllate: 32
+- GREEN: 28
 - YELLOW: 4
 - RED: 0
 
@@ -13,7 +13,7 @@ Ultimo run: 2026-06-12
 
 | Tipo | Conteggio |
 | --- | --- |
-| catalog | 30 |
+| catalog | 31 |
 | portal | 1 |
 | source | 0 |
 
@@ -22,7 +22,7 @@ Ultimo run: 2026-06-12
 | Modalita' | Conteggio | Significato |
 | --- | --- | --- |
 | radar-only | 4 | Salute della fonte senza segnali di inventario |
-| catalog-watch | 27 | Inventario e drift strutturale del catalogo |
+| catalog-watch | 28 | Inventario e drift strutturale del catalogo |
 | monitor-active | 0 | Caso ristretto con monitoraggio piu' vicino alla risorsa |
 
 Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornamento del dataset.
@@ -62,6 +62,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | agcm | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | unioncamere | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | pagopa | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| aci | catalog | ckan | catalog-watch | GREEN | 200 | - |
 
 ## Note
 
@@ -71,3 +72,4 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 - `mef_irpef`: Retry timeout/connection: Timeout (ConnectTimeout)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
 - `aifa`: HTTP 200 | content-type: text/html;charset=UTF-8 | url finale: https://www.aifa.gov.it/dati-aifa | SSL verify failed; fallback verify=False used (SSLError)
+- `openga`: HTTP 200 | content-type: application/json;charset=utf-8 | url finale: https://openga.giustizia-amministrativa.it/api/3/action/package_list?limit=1 | SSL verify failed; fallback verify=False used (SSLError)

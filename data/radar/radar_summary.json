@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-06-12T08:00:57.940367+00:00",
-  "probe_date": "2026-06-12",
-  "sources_total": 31,
+  "generated_at": "2026-06-13T07:05:52.018025+00:00",
+  "probe_date": "2026-06-13",
+  "sources_total": 32,
   "status_counts": {
-    "GREEN": 27,
+    "GREEN": 28,
     "YELLOW": 4,
     "RED": 0
   },
@@ -147,7 +147,7 @@
       "status": "GREEN",
       "protocol": "ckan",
       "http_code": "200",
-      "note": null
+      "note": "SSL verify failed; fallback verify=False used (SSLError)"
     },
     {
       "id": "giustizia_statistiche",
@@ -221,6 +221,13 @@
     },
     {
       "id": "pagopa",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "http_code": "200",
+      "note": null
+    },
+    {
+      "id": "aci",
       "status": "GREEN",
       "protocol": "ckan",
       "http_code": "200",
