@@ -76,7 +76,7 @@ _EMPTY_ENRICH: dict[str, Any] = {
     "paqa_verdict": None,
     "paqa_flags": None,
     "paqa_ontologies": None,
-    "paqa_sampled": None,
+    "paqa_sampled": None,  # bool: True = campione, False/None = file completo
 }
 
 
@@ -357,7 +357,7 @@ def _fetch_data_preview(
             "paqa_verdict": p.quality_verdict,
             "paqa_flags": _json.dumps(p.quality_flags) if p.quality_flags else None,
             "paqa_ontologies": _json.dumps(p.quality_ontologies) if p.quality_ontologies else None,
-            "paqa_sampled": p.quality_note or None,
+            "paqa_sampled": p.quality_sampled,  # bool: True se campione
         }
     )
     return result
