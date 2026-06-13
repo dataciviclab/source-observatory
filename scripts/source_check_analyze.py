@@ -182,6 +182,11 @@ def add_dataset_group_columns(df: pd.DataFrame) -> pd.DataFrame:
         .reset_index()
     )
 
+    # Drop existing group columns to avoid MergeError on suffixes
+    for col in ("dataset_group_size", "dataset_group_year_min", "dataset_group_year_max"):
+        if col in df.columns:
+            df = df.drop(columns=[col])
+
     # Merge back
     df = df.merge(group_agg, on="dataset_group", how="left")
     return df
