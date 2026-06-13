@@ -1108,6 +1108,51 @@ class TestAddDatasetGroupColumns:
         assert result["dataset_group"].iloc[0] is not None
         assert result["dataset_group_size"].iloc[0] == 1
 
+    def test_regression_pre_existing_group_columns(self):
+        """add_dataset_group_columns non crasha se colonne aggreg. gia' esistono.
+
+        Regressione: pandas MergeError quando l'inventory contiene gia'
+        dataset_group_size, dataset_group_year_min, dataset_group_year_max.
+        Vedi PR #353.
+        """
+        import pandas as pd
+        from source_check_analyze import add_dataset_group_columns
+
+        df = pd.DataFrame(
+            [
+                {
+                    "source_id": "s1",
+                    "item_id": "a",
+                    "title": "Dataset X",
+                    "year_min": 2020,
+                    "year_max": 2024,
+                    "dataset_group": "s1/x",
+                    "intake_score": 50,
+                    "dataset_group_size": 2,
+                    "dataset_group_year_min": 2020,
+                    "dataset_group_year_max": 2024,
+                },
+                {
+                    "source_id": "s1",
+                    "item_id": "b",
+                    "title": "Dataset X",
+                    "year_min": 2020,
+                    "year_max": 2024,
+                    "dataset_group": "s1/x",
+                    "intake_score": 80,
+                    "dataset_group_size": 2,
+                    "dataset_group_year_min": 2020,
+                    "dataset_group_year_max": 2024,
+                },
+            ]
+        )
+        # Prima del fix sollevava pandas MergeError
+        result = add_dataset_group_columns(df)
+        assert "dataset_group_size" in result.columns
+        assert result["dataset_group_size"].iloc[0] == 2
+        assert "dataset_group_year_min" in result.columns
+        assert "dataset_group_year_max" in result.columns
+
 
 # ── SPARQL enrichment contract ────────────────────────────────────────────────
 
