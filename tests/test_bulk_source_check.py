@@ -1316,4 +1316,81 @@ class TestSparqlCheckRowPassthrough:
         assert result["enrich_method"] == "sparql_probe"
 
 
+# ─── PAQA: propagazione _fetch_data_preview → _check_row → parquet ─────────────
+
+
+class TestPaqaCheckRowPassthrough:
+    """contract: _check_row propaga i 5 campi paqa_* nel risultato."""
+
+    def test_paqa_fields_in_result(self, monkeypatch):
+        import numpy as np
+        import pandas as pd
+        import yaml
+        from bulk_source_check import _check_row
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        import bulk_source_check as bsc
+
+        def _mock_preview(*a, **kw):
+            return {
+                "enrich_method": "csv_preview",
+                "paqa_score": 94,
+                "paqa_verdict": "buona",
+                "paqa_flags": '["column_naming"]',
+                "paqa_ontologies": '{"TI": ["TI (TimeInterval)"]}',
+                "paqa_sampled": False,
+                "granularity": "comune",
+                "year_min": 2024,
+                "year_max": 2024,
+                "columns": '["a","b"]',
+                "col_types": '{"a": "VARCHAR", "b": "BIGINT"}',
+                "file_size": 500,
+                "preview_row_count": 10,
+                "encoding_suggested": "utf-8",
+                "delim_suggested": ",",
+                "decimal_suggested": None,
+                "skip_suggested": 0,
+                "robust_read_suggested": False,
+                "mapping_suggestions": "{}",
+            }
+
+        monkeypatch.setattr(bsc, "_fetch_data_preview", _mock_preview)
+        monkeypatch.setattr(bsc, "_http_head_with_retry", lambda *a, **kw: (200, True, None, None))
+
+        row = pd.Series(
+            {
+                "source_id": "test_paqa",
+                "item_id": "paqa_001",
+                "item_name": "test-paqa-flow",
+                "title": "Test PAQA propagation",
+                "organization": np.nan,
+                "tags": np.nan,
+                "notes_excerpt": np.nan,
+                "url": "https://example.com/test.csv",
+                "landing_page": np.nan,
+                "distribution_url": np.nan,
+                "format": "CSV",
+                "protocol": np.nan,
+                "source_url": np.nan,
+                "api_base_url": np.nan,
+                "granularity": np.nan,
+                "year_signal": np.nan,
+                "encoding_suggested": np.nan,
+                "delim_suggested": np.nan,
+                "decimal_suggested": np.nan,
+                "skip_suggested": np.nan,
+                "source_status": "active",
+            }
+        )
+        result = _check_row(row, "2026-06-08T12:00:00", registry)
+
+        assert result.get("paqa_score") == 94, f"paqa_score: {result.get('paqa_score')}"
+        assert result.get("paqa_verdict") == "buona", f"paqa_verdict: {result.get('paqa_verdict')}"
+        assert result.get("paqa_flags") is not None, "paqa_flags mancante"
+        assert result.get("paqa_ontologies") is not None, "paqa_ontologies mancante"
+        assert result.get("paqa_sampled") is False, f"paqa_sampled: {result.get('paqa_sampled')}"
+
+
 pytestmark = pytest.mark.contract

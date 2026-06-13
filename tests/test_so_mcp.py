@@ -924,6 +924,77 @@ def test_query_inventory_grouped_aggregates(tmp_path, monkeypatch) -> None:
     assert results[1]["best_score"] == 50
 
 
+# ─── PAQA: min_paqa_score ─────────────────────────────────────────────────────
+
+
+def test_query_inventory_min_paqa_score_filters(tmp_path, monkeypatch) -> None:
+    """min_paqa_score filtra quando paqa_score esiste."""
+    parquet_path = tmp_path / "source_check_results.parquet"
+    _write_parquet(
+        parquet_path,
+        [
+            {"source_id": "a", "item_id": "x1", "intake_score": 50, "paqa_score": 80},
+            {"source_id": "a", "item_id": "x2", "intake_score": 50, "paqa_score": 60},
+            {"source_id": "a", "item_id": "x3", "intake_score": 50, "paqa_score": None},
+        ],
+    )
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
+    result = query_inventory(source_id="a", min_paqa_score=70)
+    assert result["returned"] == 1
+    assert result["results"][0]["item_id"] == "x1"
+
+
+def test_query_inventory_min_paqa_score_no_column(tmp_path, monkeypatch) -> None:
+    """min_paqa_score su artifact senza paqa_score → zero risultati."""
+    parquet_path = tmp_path / "source_check_results.parquet"
+    _write_parquet(
+        parquet_path,
+        [
+            {"source_id": "a", "item_id": "x1", "intake_score": 50},
+        ],
+    )
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
+    result = query_inventory(source_id="a", min_paqa_score=70)
+    assert result["returned"] == 0  # colonna mancante → nessun risultato
+
+
+def test_query_inventory_min_paqa_score_grouped(tmp_path, monkeypatch) -> None:
+    """min_paqa_score in grouped mode esclude gruppi sotto soglia."""
+    parquet_path = tmp_path / "source_check_results.parquet"
+    _write_parquet(
+        parquet_path,
+        [
+            {
+                "source_id": "s1",
+                "item_id": "a",
+                "intake_score": 50,
+                "paqa_score": 90,
+                "dataset_group": "s1/g1",
+                "dataset_group_size": 1,
+                "dataset_group_year_min": 2020,
+                "dataset_group_year_max": 2024,
+            },
+            {
+                "source_id": "s1",
+                "item_id": "b",
+                "intake_score": 50,
+                "paqa_score": 60,
+                "dataset_group": "s1/g2",
+                "dataset_group_size": 1,
+                "dataset_group_year_min": 2020,
+                "dataset_group_year_max": 2024,
+            },
+        ],
+    )
+    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
+    result = query_inventory(source_id="s1", grouped=True, min_paqa_score=80)
+    assert result["returned"] == 1  # solo g1 (paqa_score=90) supera 80
+    assert result["results"][0]["dataset_group"] == "s1/g1"
+
+
 # ─── Discovery: list_source_items ───────────────────────────────────────────────
 
 

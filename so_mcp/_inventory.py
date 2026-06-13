@@ -6,16 +6,20 @@ parquet files, and the inventory report.
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 
 from lab_connectors.duckdb import gcs_connect
 
 from . import _artifact
 
+logger = logging.getLogger("so_mcp._inventory")
+
 
 def query_inventory(
     source_id: str | None = None,
     min_score: int | None = None,
+    min_paqa_score: int | None = None,
     limit: int = 50,
     has_results: bool | None = None,
     grouped: bool = False,
@@ -58,6 +62,11 @@ def query_inventory(
                     if min_score is not None:
                         filters.append("intake_score >= ?")
                         params.append(min_score)
+                    if min_paqa_score is not None and "paqa_score" in col_set:
+                        filters.append("paqa_score >= ?")
+                        params.append(min_paqa_score)
+                    elif min_paqa_score is not None:
+                        filters.append("1=0")  # colonna non disponibile → zero risultati
                     if has_results is not None:
                         if has_results:
                             filters.append("intake_score IS NOT NULL AND intake_score > 0")
@@ -85,6 +94,7 @@ def query_inventory(
                         "filters": {
                             "source_id": source_id,
                             "min_score": min_score,
+                            "min_paqa_score": min_paqa_score,
                             "limit": safe_limit,
                             "has_results": has_results,
                             "grouped": True,
@@ -105,6 +115,11 @@ def query_inventory(
                     if min_score is not None:
                         query_parts.append("intake_score >= ?")
                         params.append(min_score)
+                    if min_paqa_score is not None and "paqa_score" in col_set:
+                        query_parts.append("paqa_score >= ?")
+                        params.append(min_paqa_score)
+                    elif min_paqa_score is not None:
+                        query_parts.append("1=0")  # colonna non disponibile → zero risultati
                     if has_results is not None:
                         if has_results:
                             query_parts.append("intake_score IS NOT NULL AND intake_score > 0")
@@ -129,6 +144,7 @@ def query_inventory(
         "filters": {
             "source_id": source_id,
             "min_score": min_score,
+            "min_paqa_score": min_paqa_score,
             "limit": safe_limit,
             "has_results": has_results,
             "grouped": bool(grouped),
@@ -136,6 +152,7 @@ def query_inventory(
         "results": [dict(zip(result_cols, row)) for row in rows],
         "returned": len(rows),
         "has_more": len(rows) == safe_limit,
+        "paqa_filter_available": "paqa_score" in col_set if min_paqa_score is not None else None,
     }
     if grouped and has_group_col:
         result["grouped"] = True

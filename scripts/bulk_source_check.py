@@ -499,6 +499,12 @@ def _preview_meta_from_enrich(enrich: dict[str, Any]) -> dict[str, Any]:
         "skip_suggested": enrich.get("skip_suggested"),
         "robust_read_suggested": enrich.get("robust_read_suggested"),
         "mapping_suggestions": mapping_val,
+        # PAQA quality score (toolkit v1.36.0+)
+        "paqa_score": enrich.get("paqa_score"),
+        "paqa_verdict": enrich.get("paqa_verdict"),
+        "paqa_flags": enrich.get("paqa_flags"),
+        "paqa_ontologies": enrich.get("paqa_ontologies"),
+        "paqa_sampled": enrich.get("paqa_sampled"),
     }
 
 
@@ -673,6 +679,14 @@ def _check_row(
         "skip_suggested": preview_meta.get("skip_suggested") or enrich.get("skip_suggested"),
         "robust_read_suggested": preview_meta.get("robust_read_suggested"),
         "mapping_suggestions": preview_meta.get("mapping_suggestions"),
+        # PAQA quality score (toolkit v1.36.0+)
+        "paqa_score": preview_meta.get("paqa_score") or enrich.get("paqa_score"),
+        "paqa_verdict": preview_meta.get("paqa_verdict") or enrich.get("paqa_verdict"),
+        "paqa_flags": preview_meta.get("paqa_flags") or enrich.get("paqa_flags"),
+        "paqa_ontologies": preview_meta.get("paqa_ontologies") or enrich.get("paqa_ontologies"),
+        "paqa_sampled": preview_meta["paqa_sampled"]
+        if "paqa_sampled" in preview_meta
+        else enrich.get("paqa_sampled"),
         "source_status": row.get("source_status", "unknown"),
         "needs_review": (granularity == "non_determinato") or pd.isna(year_min),
         "intake_score": None,  # placeholder, calcolato sotto

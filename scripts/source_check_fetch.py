@@ -72,6 +72,11 @@ _EMPTY_ENRICH: dict[str, Any] = {
     "sdmx_agency": None,
     "sparql_responding": None,
     "sparql_triple_count": None,
+    "paqa_score": None,
+    "paqa_verdict": None,
+    "paqa_flags": None,
+    "paqa_ontologies": None,
+    "paqa_sampled": None,  # bool: True = campione, False/None = file completo
 }
 
 
@@ -348,6 +353,11 @@ def _fetch_data_preview(
             "mapping_suggestions": _json.dumps(p.mapping_suggestions)
             if isinstance(p.mapping_suggestions, dict)
             else "{}",
+            "paqa_score": p.quality_score,
+            "paqa_verdict": p.quality_verdict,
+            "paqa_flags": _json.dumps(p.quality_flags) if p.quality_flags else None,
+            "paqa_ontologies": _json.dumps(p.quality_ontologies) if p.quality_ontologies else None,
+            "paqa_sampled": p.quality_sampled,  # bool: True se campione
         }
     )
     return result
