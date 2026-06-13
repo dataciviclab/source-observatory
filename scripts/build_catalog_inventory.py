@@ -130,12 +130,6 @@ def parse_args() -> argparse.Namespace:
         default=False,
         help="Skip fonti con status RED in radar_summary.json (evita timeout su fonti down).",
     )
-    parser.add_argument(
-        "--limit",
-        type=int,
-        default=None,
-        help="Max item per source (per test rapidi, default: tutti).",
-    )
     return parser.parse_args()
 
 
@@ -373,9 +367,6 @@ def main() -> None:
             row["source_status"] = "active"
             row["stale_reason"] = None
             row["last_successful_fetch"] = captured_at
-
-        if args.limit:
-            rows = rows[: args.limit]
 
         all_rows.extend(rows)
 
