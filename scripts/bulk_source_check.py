@@ -684,7 +684,9 @@ def _check_row(
         "paqa_verdict": preview_meta.get("paqa_verdict") or enrich.get("paqa_verdict"),
         "paqa_flags": preview_meta.get("paqa_flags") or enrich.get("paqa_flags"),
         "paqa_ontologies": preview_meta.get("paqa_ontologies") or enrich.get("paqa_ontologies"),
-        "paqa_sampled": preview_meta.get("paqa_sampled") or enrich.get("paqa_sampled"),
+        "paqa_sampled": preview_meta["paqa_sampled"]
+        if "paqa_sampled" in preview_meta
+        else enrich.get("paqa_sampled"),
         "source_status": row.get("source_status", "unknown"),
         "needs_review": (granularity == "non_determinato") or pd.isna(year_min),
         "intake_score": None,  # placeholder, calcolato sotto
