@@ -152,6 +152,7 @@ def query_inventory(
         "results": [dict(zip(result_cols, row)) for row in rows],
         "returned": len(rows),
         "has_more": len(rows) == safe_limit,
+        "paqa_filter_available": "paqa_score" in col_set if min_paqa_score is not None else None,
     }
     if grouped and has_group_col:
         result["grouped"] = True

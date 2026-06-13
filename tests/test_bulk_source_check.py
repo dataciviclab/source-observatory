@@ -1316,4 +1316,39 @@ class TestSparqlCheckRowPassthrough:
         assert result["enrich_method"] == "sparql_probe"
 
 
+# ─── PAQA: propagazione end-to-end _fetch_data_preview → parquet ──────────────
+
+
+@pytest.mark.smoke
+def test_paqa_fields_flow_through_preview() -> None:
+    """_fetch_data_preview su CSV reale produce i 5 campi paqa_*."""
+    from lab_connectors.http import HttpClient
+    from source_check_fetch import _fetch_data_preview
+
+    client = HttpClient(timeout=(5, 10))
+    result = _fetch_data_preview(
+        "https://www.mimit.gov.it/images/exportCSV/prezzo_alle_8.csv",
+        client=client,
+    )
+    client.close()
+
+    assert result["enrich_method"] == "csv_preview", (
+        f"expected csv_preview, got {result.get('enrich_method')}"
+    )
+    assert result.get("paqa_score") is not None, "paqa_score mancante"
+    assert result.get("paqa_verdict") is not None, "paqa_verdict mancante"
+    # paqa_flags e paqa_ontologies possono essere None/[] su CSV semplici
+    assert "paqa_flags" in result, "paqa_flags mancante"
+    assert "paqa_ontologies" in result, "paqa_ontologies mancante"
+    # paqa_sampled può essere True/False/None
+    assert "paqa_sampled" in result, "paqa_sampled mancante"
+
+    # Verifica anche che _preview_meta_from_enrich li propaghi
+    from bulk_source_check import _preview_meta_from_enrich
+
+    meta = _preview_meta_from_enrich(result)
+    assert meta.get("paqa_score") is not None, "paqa_score perso in preview_meta"
+    assert meta.get("paqa_verdict") is not None, "paqa_verdict perso in preview_meta"
+
+
 pytestmark = pytest.mark.contract
