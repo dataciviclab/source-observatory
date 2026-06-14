@@ -62,6 +62,7 @@ inps:
     skip_current_list_reason: "current_package_list_with_resources degrada a offset
       alti (2300+ timeout 30s) — package_show_sample +16 workers è più veloce.\n"
     package_show_sample: true
+    package_show_timeout: 5
     sample_size: 10000
   last_probed: '2026-06-14'
   catalog_baseline:
