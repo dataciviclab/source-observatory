@@ -478,10 +478,15 @@ def _fetch_package_show(
     source_cfg: dict[str, Any],
     captured_at: str,
     ordinal: int,
+    timeout: int = 10,
 ) -> tuple[dict[str, Any] | None, str | None]:
-    """Fetch and process a single package_show. Returns (row_dict, error_str)."""
+    """Fetch and process a single package_show. Returns (row_dict, error_str).
+
+    Timeout ereditato da ``source_cfg[inventory][package_show_timeout]``
+    o default 10s.
+    """
     try:
-        payload = ckan_get_json(endpoint, params={"id": package_id}, timeout=30)
+        payload = ckan_get_json(endpoint, params={"id": package_id}, timeout=timeout)
         if not payload.get("success"):
             return None, f"{package_id}: success=false"
         item = payload.get("result")
@@ -518,6 +523,10 @@ def collect_ckan_inventory_via_package_show_sample(
     enriched_rows: list[dict[str, Any]] = []
     errors: list[str] = []
 
+    # Timeout ereditato dal registry (inventory.package_show_timeout)
+    inv = inventory_cfg(source_cfg)
+    pkg_timeout = int(inv.get("package_show_timeout", 10))
+
     # Parallel fetch — saturare la rete, non la CPU
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         futures = {
@@ -529,6 +538,7 @@ def collect_ckan_inventory_via_package_show_sample(
                 source_cfg,
                 captured_at,
                 package_list_rows[idx]["ordinal"],
+                pkg_timeout,
             ): idx
             for idx in sampled_idx
         }

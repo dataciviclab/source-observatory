@@ -169,6 +169,46 @@ class TestPackageShowSample:
     def _make_rows(self, n):
         return [{"item_id": f"pkg-{i}", "ordinal": i + 1} for i in range(n)]
 
+    def test_package_show_timeout_forwarded(self, monkeypatch):
+        """package_show_timeout dal registry arriva a ckan_get_json."""
+        from collectors import ckan as ckan_module
+
+        captured_timeouts: list[int] = []
+
+        original = ckan_module.ckan_get_json
+
+        def fake_ckan_get_json(url, **kw):
+            captured_timeouts.append(kw.get("timeout", -1))
+            return {
+                "success": True,
+                "result": {
+                    "id": "x",
+                    "name": "x",
+                    "title": "x",
+                    "organization": {},
+                    "tags": [],
+                    "notes": "",
+                    "resources": [],
+                },
+            }
+
+        try:
+            monkeypatch.setattr(ckan_module, "ckan_get_json", fake_ckan_get_json)
+            rows = self._make_rows(3)
+            enriched, _ = collect_ckan_inventory_via_package_show_sample(
+                source_id="test",
+                source_cfg={"inventory": {"package_show_timeout": 5}, "base_url": "http://api"},
+                captured_at="2026-06-14",
+                package_list_rows=rows,
+                sample_size=3,
+            )
+            assert len(enriched) == 3
+            assert all(t == 5 for t in captured_timeouts), (
+                f"timeout non inoltrato: {captured_timeouts}"
+            )
+        finally:
+            monkeypatch.setattr(ckan_module, "ckan_get_json", original)
+
     def test_package_show_sample_enriches_rows(self, monkeypatch):
         from collectors import ckan as ckan_module
 
