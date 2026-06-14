@@ -1,15 +1,8 @@
 # Catalog Watch Report
 
-_Generato: 2026-06-13T20:22:48+00:00 — 28 fonti controllate_
+_Generato: 2026-06-14T09:21:11+00:00 — 28 fonti controllate_
 
 ## Segnali attivi
-
-### 📦 `istat_sdmx` — inventory change
-
-- **Protocollo**: sdmx
-- **Dettaglio**: 4874 item (dataflow_count), delta +3 rispetto al run precedente (4871).
-- **Item**: 4874
-- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
 
 ### • `mim_opendata` — csv_magnet
 
@@ -28,15 +21,21 @@ _Generato: 2026-06-13T20:22:48+00:00 — 28 fonti controllate_
 ### • `mef_irpef` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 147 link data (CSV 81, ZIP 66)
-- **Item**: 147
-- **Azione**: catalog-watch-ready
+- **Dettaglio**: HTTPSConnectionPool(host='www1.finanze.gov.it', port=443): Max retries exceeded with url: /finanze/analisi_stat/public/index.php?opendata=yes (Caused by ConnectTimeoutError(<HTTPSConnection(host='www1.finanze.gov.it', port=443) at 0x7f7d01035d30>, 'Connection to www1.finanze.gov.it timed out. (connect timeout=5)'))
+- **Azione**: verificare raggiungibilità del portale
 
 ### • `opencivitas` — csv_magnet
 
 - **Protocollo**: html
 - **Dettaglio**: 748 link data (ZIP 748), years 2010-2025 — top prefixes: 2010=90, 2013=72, Metadati=64, 2022=63, 2018=59
 - **Item**: 748
+- **Azione**: catalog-watch-ready
+
+### • `aifa` — csv_magnet
+
+- **Protocollo**: html
+- **Dettaglio**: 42 link data (CSV 38, XML 1, ZIP 3), years 2010-2027 — top prefixes: provvedimenti=8, Classe=4, sc=3, elenco=2, Elenco=2
+- **Item**: 42
 - **Azione**: catalog-watch-ready
 
 ### • `giustizia_statistiche` — csv_magnet
