@@ -1,6 +1,6 @@
 # Catalog Watch Report
 
-_Generato: 2026-06-14T09:21:11+00:00 — 28 fonti controllate_
+_Generato: 2026-06-14T12:33:16+00:00 — 28 fonti controllate_
 
 ## Segnali attivi
 
@@ -11,17 +11,10 @@ _Generato: 2026-06-14T09:21:11+00:00 — 28 fonti controllate_
 - **Item**: 1116
 - **Azione**: catalog-watch-ready
 
-### 📦 `ispra_linked_data` — inventory change
-
-- **Protocollo**: sparql
-- **Dettaglio**: 69 item (sparql_query), delta +2 rispetto al run precedente (67).
-- **Item**: 69
-- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
-
 ### • `mef_irpef` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: HTTPSConnectionPool(host='www1.finanze.gov.it', port=443): Max retries exceeded with url: /finanze/analisi_stat/public/index.php?opendata=yes (Caused by ConnectTimeoutError(<HTTPSConnection(host='www1.finanze.gov.it', port=443) at 0x7f7d01035d30>, 'Connection to www1.finanze.gov.it timed out. (connect timeout=5)'))
+- **Dettaglio**: HTTPSConnectionPool(host='www1.finanze.gov.it', port=443): Max retries exceeded with url: /finanze/analisi_stat/public/index.php?opendata=yes (Caused by ConnectTimeoutError(<HTTPSConnection(host='www1.finanze.gov.it', port=443) at 0x7f69c4ca6630>, 'Connection to www1.finanze.gov.it timed out. (connect timeout=5)'))
 - **Azione**: verificare raggiungibilità del portale
 
 ### • `opencivitas` — csv_magnet
@@ -41,7 +34,7 @@ _Generato: 2026-06-14T09:21:11+00:00 — 28 fonti controllate_
 ### • `giustizia_statistiche` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 9 link data (XLS 9), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Sorveglianza=1
+- **Dettaglio**: 9 link data (XLSX 9), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Sorveglianza=1
 - **Item**: 9
 - **Azione**: low signal
 
@@ -52,15 +45,8 @@ _Generato: 2026-06-14T09:21:11+00:00 — 28 fonti controllate_
 - **Item**: 33
 - **Azione**: catalog-watch-ready
 
-### 📦 `unioncamere` — inventory change
-
-- **Protocollo**: ckan
-- **Dettaglio**: 371 item (package_search), delta +19 rispetto al run precedente (352).
-- **Item**: 371
-- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
-
 ## Fonti stabili / skipped
 
-_20 fonti senza segnali inventariali in questo run._
+_22 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
