@@ -1514,6 +1514,10 @@ class TestSdmxPaqaFlow:
         assert result.get("paqa_score") == 92, f"paqa_score: {result.get('paqa_score')}"
         assert result.get("paqa_verdict") == "buona"
         assert result.get("paqa_sampled") is True
+        # Verifica che distribution_url sia propagato nel risultato (contratto)
+        assert result.get("distribution_url") == row.get("distribution_url"), (
+            f"distribution_url non propagato: {result.get('distribution_url')}"
+        )
 
 
 pytestmark = pytest.mark.contract
