@@ -1438,4 +1438,82 @@ class TestPaqaCheckRowPassthrough:
         assert result.get("paqa_sampled") is False, f"paqa_sampled: {result.get('paqa_sampled')}"
 
 
+class TestSdmxPaqaFlow:
+    """SDMX distribution_url → _fetch_data_preview → paqa_score."""
+
+    def test_sdmx_distribution_url_paqa(self, monkeypatch):
+        import numpy as np
+        import pandas as pd
+        import yaml
+        from bulk_source_check import _check_row
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+        import bulk_source_check as bsc
+
+        captured_urls: list[str] = []
+
+        def _mock_preview(url, *a, **kw):
+            captured_urls.append(url)
+            return {
+                "enrich_method": "csv_preview",
+                "paqa_score": 92,
+                "paqa_verdict": "buona",
+                "paqa_flags": None,
+                "paqa_ontologies": None,
+                "paqa_sampled": True,
+                "granularity": "comune",
+                "year_min": 2024,
+                "year_max": 2024,
+                "columns": '["a","b"]',
+                "col_types": '{"a":"VARCHAR","b":"BIGINT"}',
+                "file_size": 500,
+                "preview_row_count": 10,
+                "encoding_suggested": "utf-8",
+                "delim_suggested": ",",
+                "decimal_suggested": None,
+                "skip_suggested": 0,
+                "robust_read_suggested": False,
+                "mapping_suggestions": "{}",
+            }
+
+        monkeypatch.setattr(bsc, "_fetch_data_preview", _mock_preview)
+        monkeypatch.setattr(bsc, "_http_head_with_retry", lambda *a, **kw: (200, True, None, None))
+
+        row = pd.Series(
+            {
+                "source_id": "istat_sdmx",
+                "item_id": "EX1",
+                "item_name": "EX1",
+                "title": "Example SDMX flow",
+                "organization": np.nan,
+                "tags": np.nan,
+                "notes_excerpt": np.nan,
+                "url": np.nan,
+                "landing_page": np.nan,
+                "distribution_url": "https://esploradati.istat.it/SDMXWS/rest/data/EX1/ALL/?format=csv",
+                "format": "CSV",
+                "protocol": "sdmx",
+                "source_url": np.nan,
+                "api_base_url": np.nan,
+                "granularity": np.nan,
+                "year_signal": np.nan,
+                "encoding_suggested": np.nan,
+                "delim_suggested": np.nan,
+                "decimal_suggested": np.nan,
+                "skip_suggested": np.nan,
+                "source_status": "active",
+            }
+        )
+        result = _check_row(row, "2026-06-14T12:00:00", registry)
+
+        # Verifica che distribution_url sia stato usato per la preview
+        assert len(captured_urls) == 1, "preview_url non chiamata"
+        assert "format=csv" in captured_urls[0], f"distribution_url non usata: {captured_urls[0]}"
+        # Verifica PAQA score propagato
+        assert result.get("paqa_score") == 92, f"paqa_score: {result.get('paqa_score')}"
+        assert result.get("paqa_verdict") == "buona"
+        assert result.get("paqa_sampled") is True
+
+
 pytestmark = pytest.mark.contract
