@@ -709,6 +709,8 @@ def _check_row(
         "sparql_triple_count": enrich.get("sparql_triple_count"),
         # Protocol — propagato dal catalogo per il grouping SDMX
         "protocol": row.get("protocol"),
+        # Distribution URL — usata internamente per preview/HEAD, propagata per tracciabilità
+        "distribution_url": row.get("distribution_url"),
     }
 
 
