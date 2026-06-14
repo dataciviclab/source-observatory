@@ -75,10 +75,10 @@ _SDMX_XML = """\
     xmlns:common="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common">
   <message:Structures>
     <structure:Dataflows>
-      <structure:Dataflow id="EX1">
+      <structure:Dataflow agencyID="IT1" id="EX1" version="1.0">
         <common:Name xml:lang="en">Example Flow 1</common:Name>
       </structure:Dataflow>
-      <structure:Dataflow id="EX2">
+      <structure:Dataflow agencyID="IT1" id="EX2" version="2.0">
         <common:Name xml:lang="en">Example Flow 2</common:Name>
       </structure:Dataflow>
       <structure:Dataflow id="EX3">
@@ -113,6 +113,9 @@ def test_collect(monkeypatch, fake_http):
     assert row1["title"] == "Example Flow 1"
     assert row1["ordinal"] == 1
     assert row1["api_base_url"] == "https://example.test"
+    assert row1["organization"] == "IT1"
+    assert row1["distribution_url"] == "https://example.test/data/EX1/ALL/?format=csv"
+    assert row1["format"] == "CSV"
 
     # Secondo flow: EX2
     row2 = result.rows[1]

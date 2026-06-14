@@ -569,11 +569,20 @@ def _check_row(
     # già determinati — ma i campi di profiling (encoding_suggested, ecc.)
     # vengono SEMPRE popolati.
     preview_meta: dict[str, Any] = {}
-    # Per inventory_only e content_type_landing, enrich["resource_url"] è
-    # una landing page, non un file dati. In quei casi, distribution_url
-    # dal catalogo è più probabile sia un URL diretto a file CSV/XLSX.
-    # Per CKAN/SDMX/HTML, resource_url è già il file dati corretto.
-    if enrich["enrich_method"] in ("inventory_only", "content_type_landing"):
+    # Per SDMX: distribution_url è il CSV costruito dal collector
+    # ({api_base}/data/{flow_id}/ALL/?format=csv). Prevale su resource_url
+    # che punta all'endpoint SDMX (non un CSV profilabile).
+    # Per inventory_only e content_type_landing: distribution_url dal catalogo
+    # è più probabile sia un URL diretto a file CSV/XLSX.
+    # Per CKAN/HTML, resource_url è già il file dati corretto.
+    is_sdmx = str(row.get("protocol", "")).lower() == "sdmx"
+    if is_sdmx:
+        preview_url = (
+            _safe_str(row.get("distribution_url"))
+            or enrich.get("resource_url")
+            or _safe_str(row.get("url"))
+        )
+    elif enrich["enrich_method"] in ("inventory_only", "content_type_landing"):
         preview_url = (
             _safe_str(row.get("distribution_url"))
             or enrich.get("resource_url")
