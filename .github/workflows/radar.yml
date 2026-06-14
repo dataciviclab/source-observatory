@@ -27,6 +27,8 @@ jobs:
         uses: dataciviclab/.github/actions/python-setup@main
 
       - name: Run radar check
+        env:
+          HTTPS_PROXY: ${{ vars.BLOCKED_SOURCE_PROXY }}
         run: |
           python scripts/radar_check.py
 

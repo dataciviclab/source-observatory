@@ -65,6 +65,8 @@ jobs:
             data/catalog_inventory/generated/catalog_inventory_latest.parquet || echo "No inventory snapshot yet"
 
       - name: Build catalog inventory
+        env:
+          HTTPS_PROXY: ${{ vars.BLOCKED_SOURCE_PROXY }}
         run: |
           python scripts/build_catalog_inventory.py \
             --out-dir data/catalog_inventory/generated \
@@ -135,6 +137,8 @@ jobs:
             echo "No previous results — starting fresh"
 
       - name: Run bulk source-check
+        env:
+          HTTPS_PROXY: ${{ vars.BLOCKED_SOURCE_PROXY }}
         run: |
           python scripts/bulk_source_check.py \
             --skip-red-sources \
