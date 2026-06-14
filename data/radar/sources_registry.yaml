@@ -4,7 +4,7 @@ istat_sdmx:
   observation_mode: catalog-watch
   base_url: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1
   inventory:
-    timeout: 300
+    timeout: 600
   last_probed: '2026-06-14'
   catalog_baseline:
     captured_at: '2026-04-10'

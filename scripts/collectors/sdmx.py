@@ -26,7 +26,7 @@ def _sdmx_api_base(url: str) -> str | None:
 
 def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> CollectorResult:
     endpoint = source_cfg["base_url"]
-    client = HttpClient(timeout=300, max_retries=3)
+    client = HttpClient(timeout=330, max_retries=1)
     result = client.get(endpoint)
 
     if result.is_error:
