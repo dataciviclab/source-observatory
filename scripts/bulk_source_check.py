@@ -569,14 +569,18 @@ def _check_row(
     # già determinati — ma i campi di profiling (encoding_suggested, ecc.)
     # vengono SEMPRE popolati.
     preview_meta: dict[str, Any] = {}
-    # Per SDMX: distribution_url è il CSV costruito dal collector
+    # SDMX: distribution_url è il CSV costruito dal collector
     # ({api_base}/data/{flow_id}/ALL/?format=csv). Prevale su resource_url
     # che punta all'endpoint SDMX (non un CSV profilabile).
-    # Per inventory_only e content_type_landing: distribution_url dal catalogo
+    # SPARQL: distribution_url arriva da DCAT distribution/accessURL. Prevale
+    # su resource_url che punta all'endpoint SPARQL.
+    # inventory_only / content_type_landing: distribution_url dal catalogo
     # è più probabile sia un URL diretto a file CSV/XLSX.
-    # Per CKAN/HTML, resource_url è già il file dati corretto.
-    is_sdmx = str(row.get("protocol", "")).lower() == "sdmx"
-    if is_sdmx:
+    # CKAN/HTML: resource_url è già il file dati corretto.
+    protocol = str(row.get("protocol", "")).lower()
+    is_sdmx = protocol == "sdmx"
+    is_sparql = protocol == "sparql"
+    if is_sdmx or is_sparql:
         preview_url = (
             _safe_str(row.get("distribution_url"))
             or enrich.get("resource_url")

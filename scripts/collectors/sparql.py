@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import Any
 
 from lab_connectors.http.sparql import (
@@ -22,13 +23,40 @@ from .base import (
     sparql_binding_value,
 )
 
+# Estensioni tabulari/scaricabili in ordine di preferenza
+_TABULAR_EXT_RANK: dict[str, int] = {
+    ".csv": 0,
+    ".tsv": 1,
+    ".xlsx": 2,
+    ".xls": 3,
+    ".json": 4,
+    ".xml": 5,
+    ".zip": 6,
+}
+
+
+def _best_distribution_url(urls: list[str]) -> str | None:
+    """Sceglie la distribuzione più probabilmente tabulare/scaricabile.
+
+    Ordina per estensione file (CSV > TSV > XLSX > ...).
+    Se nessuna estensione riconosciuta, restituisce la prima URL.
+    """
+    if not urls:
+        return None
+    scored = sorted(
+        urls,
+        key=lambda u: _TABULAR_EXT_RANK.get(Path(u.split("?")[0]).suffix.lower(), 99),
+    )
+    return scored[0]
+
+
 SPARQL_QUERY_TEMPLATES = {
     "dcat_datasets": """
 PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT DISTINCT ?dataset ?title ?description ?publisherName ?issued ?modified ?landingPage ?theme
+SELECT DISTINCT ?dataset ?title ?description ?publisherName ?issued ?modified ?landingPage ?theme ?distributionURL ?format
 WHERE {
   ?dataset a dcat:Dataset .
   OPTIONAL { ?dataset dct:title ?title . }
@@ -41,6 +69,14 @@ WHERE {
   OPTIONAL { ?dataset dct:modified ?modified . }
   OPTIONAL { ?dataset dcat:landingPage ?landingPage . }
   OPTIONAL { ?dataset dcat:theme ?theme . }
+  OPTIONAL { ?dataset dcat:distribution ?dist . }
+  OPTIONAL { ?dist dcat:downloadURL ?distributionURL . }
+  OPTIONAL {
+    ?dist dcat:accessURL ?distributionURL .
+    FILTER NOT EXISTS { ?dist dcat:downloadURL [] . }
+  }
+  OPTIONAL { ?dist dct:format ?format . }
+  OPTIONAL { ?dist dcat:mediaType ?format . }
 }
 ORDER BY ?dataset
 LIMIT {limit}
@@ -156,7 +192,7 @@ def _build_sparql_rows(
                 "issued": row_state["issued"],
                 "modified": row_state["modified"],
                 "landing_page": row_state["landing_page"],
-                "distribution_url": distribution_urls[0] if distribution_urls else None,
+                "distribution_url": _best_distribution_url(distribution_urls),
                 "distribution_count": distribution_count
                 if distribution_count is not None
                 else (len(distribution_urls) if distribution_urls else None),
