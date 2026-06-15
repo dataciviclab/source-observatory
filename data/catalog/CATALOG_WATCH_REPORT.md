@@ -1,6 +1,6 @@
 # Catalog Watch Report
 
-_Generato: 2026-06-14T12:33:16+00:00 — 28 fonti controllate_
+_Generato: 2026-06-15T09:40:48+00:00 — 28 fonti controllate_
 
 ## Segnali attivi
 
@@ -14,8 +14,9 @@ _Generato: 2026-06-14T12:33:16+00:00 — 28 fonti controllate_
 ### • `mef_irpef` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: HTTPSConnectionPool(host='www1.finanze.gov.it', port=443): Max retries exceeded with url: /finanze/analisi_stat/public/index.php?opendata=yes (Caused by ConnectTimeoutError(<HTTPSConnection(host='www1.finanze.gov.it', port=443) at 0x7f69c4ca6630>, 'Connection to www1.finanze.gov.it timed out. (connect timeout=5)'))
-- **Azione**: verificare raggiungibilità del portale
+- **Dettaglio**: 147 link data (CSV 81, ZIP 66)
+- **Item**: 147
+- **Azione**: catalog-watch-ready
 
 ### • `opencivitas` — csv_magnet
 
@@ -34,7 +35,7 @@ _Generato: 2026-06-14T12:33:16+00:00 — 28 fonti controllate_
 ### • `giustizia_statistiche` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 9 link data (XLSX 9), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Sorveglianza=1
+- **Dettaglio**: 9 link data (XLS 9), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Sorveglianza=1
 - **Item**: 9
 - **Azione**: low signal
 

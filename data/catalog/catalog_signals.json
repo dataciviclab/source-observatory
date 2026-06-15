@@ -1,13 +1,14 @@
 {
-  "captured_at": "2026-06-14T12:33:16+00:00",
+  "captured_at": "2026-06-15T09:40:48+00:00",
   "sources_checked": 28,
   "signals": [
     {
       "source": "istat_sdmx",
       "protocol": "sdmx",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 4874,
+      "detail": "4874 item (dataflow_count), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -32,8 +33,9 @@
       "source": "openbdap",
       "protocol": "ckan",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 3817,
+      "detail": "3817 item (package_list), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -493,140 +495,140 @@
             2026
           ],
           "count": 3,
-          "sample": "ALTABRUZZO000020260610"
+          "sample": "ALTABRUZZO000020260615"
         },
         "ALTBASIL": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTBASILICATA000020260610"
+          "sample": "ALTBASILICATA000020260615"
         },
         "ALTCALAB": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTCALABRIA000020260610"
+          "sample": "ALTCALABRIA000020260615"
         },
         "ALTCAMPA": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTCAMPANIA000020260610"
+          "sample": "ALTCAMPANIA000020260615"
         },
         "ALTEMILI": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTEMILIAROMAGNA000020260610"
+          "sample": "ALTEMILIAROMAGNA000020260615"
         },
         "ALTFRIUL": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTFRIULIVENEZIAGIULIA000020260610"
+          "sample": "ALTFRIULIVENEZIAGIULIA000020260615"
         },
         "ALTLAZIO": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTLAZIO000020260610"
+          "sample": "ALTLAZIO000020260615"
         },
         "ALTLIGUR": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTLIGURIA000020260610"
+          "sample": "ALTLIGURIA000020260615"
         },
         "ALTLOMBA": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTLOMBARDIA000020260610"
+          "sample": "ALTLOMBARDIA000020260615"
         },
         "ALTMARCH": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTMARCHE000020260610"
+          "sample": "ALTMARCHE000020260615"
         },
         "ALTMOLIS": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTMOLISE000020260610"
+          "sample": "ALTMOLISE000020260615"
         },
         "ALTPIEMO": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTPIEMONTE000020260610"
+          "sample": "ALTPIEMONTE000020260615"
         },
         "ALTPUGLI": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTPUGLIA000020260610"
+          "sample": "ALTPUGLIA000020260615"
         },
         "ALTSARDE": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTSARDEGNA000020260610"
+          "sample": "ALTSARDEGNA000020260615"
         },
         "ALTSICIL": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTSICILIA000020260610"
+          "sample": "ALTSICILIA000020260615"
         },
         "ALTTOSCA": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTTOSCANA000020260610"
+          "sample": "ALTTOSCANA000020260615"
         },
         "ALTTRENT": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTTRENTINOALTOADIGE000020260610"
+          "sample": "ALTTRENTINOALTOADIGE000020260615"
         },
         "ALTUMBRI": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTUMBRIA000020260610"
+          "sample": "ALTUMBRIA000020260615"
         },
         "ALTVALLE": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTVALLEDAOSTA000020260610"
+          "sample": "ALTVALLEDAOSTA000020260615"
         },
         "ALTVENET": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTVENETO000020260610"
+          "sample": "ALTVENETO000020260615"
         }
       },
       "topics": {
@@ -677,8 +679,9 @@
       "source": "consip_open_data",
       "protocol": "ckan",
       "signal_type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
+      "result": "stabile",
+      "metric_value": 16,
+      "detail": "16 item (package_list), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
@@ -712,9 +715,14 @@
       "source": "mef_irpef",
       "protocol": "html",
       "signal_type": "csv_magnet",
-      "result": "error",
-      "detail": "HTTPSConnectionPool(host='www1.finanze.gov.it', port=443): Max retries exceeded with url: /finanze/analisi_stat/public/index.php?opendata=yes (Caused by ConnectTimeoutError(<HTTPSConnection(host='www1.finanze.gov.it', port=443) at 0x7f69c4ca6630>, 'Connection to www1.finanze.gov.it timed out. (connect timeout=5)'))",
-      "suggested_action": "verificare raggiungibilità del portale"
+      "result": "scan_completed",
+      "metric_value": 147,
+      "detail": "147 link data (CSV 81, ZIP 66)",
+      "prefix_matrix": {},
+      "series": {},
+      "topics": {},
+      "years_range": [],
+      "suggested_action": "catalog-watch-ready"
     },
     {
       "source": "opencivitas",
@@ -1368,7 +1376,7 @@
       "signal_type": "csv_magnet",
       "result": "scan_completed",
       "metric_value": 9,
-      "detail": "9 link data (XLSX 9), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Sorveglianza=1",
+      "detail": "9 link data (XLS 9), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Sorveglianza=1",
       "prefix_matrix": {
         "Civile": 1,
         "Indicatori": 2,
