@@ -552,7 +552,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 rows=[],
                 summary={"type": "csv_magnet_error", "message": err_msg},
             )
-        page_meta = _extract_page_meta(result.response.text)
+        page_meta = {base_url: _extract_page_meta(result.response.text)}
         links = _extract_data_links(base_url, result.response.text)
         rows = [
             _build_row(
