@@ -28,7 +28,7 @@ PREFIX dcat: <http://www.w3.org/ns/dcat#>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-SELECT DISTINCT ?dataset ?title ?description ?publisherName ?issued ?modified ?landingPage ?theme
+SELECT DISTINCT ?dataset ?title ?description ?publisherName ?issued ?modified ?landingPage ?theme ?distributionURL ?format
 WHERE {
   ?dataset a dcat:Dataset .
   OPTIONAL { ?dataset dct:title ?title . }
@@ -41,6 +41,11 @@ WHERE {
   OPTIONAL { ?dataset dct:modified ?modified . }
   OPTIONAL { ?dataset dcat:landingPage ?landingPage . }
   OPTIONAL { ?dataset dcat:theme ?theme . }
+  OPTIONAL { ?dataset dcat:distribution ?dist . }
+  OPTIONAL { ?dist dcat:accessURL ?distributionURL . }
+  OPTIONAL { ?dist dcat:downloadURL ?distributionURL . }
+  OPTIONAL { ?dist dct:format ?format . }
+  OPTIONAL { ?dist dcat:mediaType ?format . }
 }
 ORDER BY ?dataset
 LIMIT {limit}
