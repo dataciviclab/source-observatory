@@ -64,13 +64,12 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 
 | Tool | Uso |
 |---|---|
-| `so_inventory_status` | stato build inventory per fonte |
-| `so_inventory_diff` | baseline vs attuale (delta item) |
+| `so_inventory_status` | stato build inventory per fonte (con `include_diff=True` per delta item) |
 | `so_catalog_inventory_search` | cerca item per keyword/testo |
 | `so_recommend_sources` | trova source_id per keyword tema |
 | — | Topic inference: usa **`toolkit_infer_topic`** del toolkit MCP |
 
-> **Nota**: `so_infer_topic` è stato rimosso. Usa `toolkit_infer_topic` del toolkit MCP.
+> **Nota**: `so_infer_topic`, `so_inventory_diff` sono stati rimossi. Usa `so_inventory_status` con `include_diff=True` per il delta item.
 
 ### SO_03 — source-check
 
@@ -78,7 +77,6 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 |---|---|
 | `so_find_by_url` | pre-check: gia catalogato? |
 | `so_inventory_query` | score esistente per questa fonte |
-| `so_radar_summary` | stato radar (se gia nota) |
 | — | Probe, CKAN, Topic: usa i tool **`toolkit_*`** del toolkit MCP |
 
 > **Nota**: `so_probe_url`, `so_ckan_package_show`, `so_infer_topic` sono stati rimossi. Usa `toolkit_probe_url`, `toolkit_ckan_package_show`, `toolkit_infer_topic` del toolkit MCP.
@@ -87,13 +85,12 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 
 | Tool | Uso |
 |---|---|
-| `so_radar_history` | streak RED persistenti |
-| `so_radar_status_md` | sommario leggibile radar |
+| `so_radar_summary` | health portali (con `include_history=True` per cronologia probe) |
+| `so_radar_history` | **[deprecato]** usa `so_radar_summary include_history=True` |
 | `so_catalog_signals` | drift catalogo (weekly CI) |
-| `so_discover_sdmx` | discovery dataflow ISTAT |
 | — | SPARQL: usa **`toolkit_sparql_query`** del toolkit MCP |
 
-> **Nota**: `so_sparql_query` è stato rimosso. Usa `toolkit_sparql_query` del toolkit MCP.
+> **Nota**: `so_sparql_query`, `so_discover_sdmx`, `so_radar_status_md` sono stati rimossi. Usa `toolkit_sparql_query` per SPARQL, `so_list_source_items(source_id=istat_sdmx)` per SDMX, `so_radar_summary` per health portali.
 
 ## Tool detail
 
@@ -109,14 +106,10 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 - `so_radar_summary`
   - legge `radar_summary.json`
   - stato GREEN/YELLOW/RED per fonte
+  - con `include_history=True` include anche `radar_history.json`
 
-- `so_radar_history`
-  - legge `radar_history.json`
-  - streak RED e storia probes
-
-- `so_radar_status_md`
-  - legge `STATUS.md`
-  - sommario umano leggibile
+- `so_radar_history` **[deprecato]**
+  - usa `so_radar_summary` con `include_history=True`
 
 - `so_find_by_url`
   - cerca URL in source_check_results e catalog_inventory
@@ -129,6 +122,7 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 - `so_inventory_status`
   - legge `catalog_inventory_report.json`
   - distingue ok/error/protocol_not_supported
+  - con `include_diff=True` include anche il delta item (ex `so_inventory_diff`)
 
 - `so_catalog_inventory_search`
   - legge `catalog_inventory_latest.parquet`
@@ -139,13 +133,7 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
   - cerca in: item_name, title, tags, organization, notes_excerpt
   - ritorna: source_id, item_count, organizations
 
-- `so_inventory_diff`
-  - confronta inventory attuale vs baseline per source_id
-  - mostra delta righe, baseline_date, current_count
 
-- `so_discover_sdmx`
-  - discovery tematico ISTAT SDMX da artifact locali
-  - cerca dataflow per keywords
 
 ## Boundary
 

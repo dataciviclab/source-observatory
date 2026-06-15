@@ -1,9 +1,8 @@
-"""Radar queries: read-only access to radar_summary.json, radar_history.json, STATUS.md."""
+"""Radar queries: read-only access to radar_summary.json, radar_history.json."""
 
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
 from typing import Any
 
 from . import _artifact
@@ -88,22 +87,4 @@ def radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, Any
         "sources": results,
         "returned": len(results),
         "probes_in_window": len(recent_probes),
-    }
-
-
-def radar_status_md() -> dict[str, Any]:
-    """Return STATUS.md content as plain text for human-readable radar state."""
-    if not _artifact._STATUS_MD.exists():
-        return _artifact._artifact_not_found(_artifact._STATUS_MD, "STATUS.md")
-
-    content = _artifact._STATUS_MD.read_text(encoding="utf-8")
-    stat = _artifact._STATUS_MD.stat()
-    modified_at = datetime.fromtimestamp(stat.st_mtime, timezone.utc)
-    age_hours = (datetime.now(timezone.utc) - modified_at).total_seconds() / 3600
-
-    return {
-        "artifact": _artifact._display_path(_artifact._STATUS_MD),
-        "modified_at": modified_at.isoformat(),
-        "age_hours": round(age_hours, 2),
-        "content": content,
     }
