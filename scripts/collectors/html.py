@@ -435,6 +435,7 @@ def _scan_area_pages(
                 dk = (link["url"], link.get("format") or "")
                 if dk not in seen_dedup_keys:
                     seen_dedup_keys.add(dk)
+                    link["_page_url"] = area_url
                     links_this_page.append(link)
                     all_data_links.append(link)
             if not links and page_stop_on_empty:
@@ -598,6 +599,10 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
 
     summary["type"] = "csv_magnet"
     summary["source_id"] = source_id
+
+    # Homepage branch: _compute_summary senza area_pages_scanned non produce total_links_exact
+    if scan_params.get("method") == "csv_magnet_homepage_only":
+        summary["total_links_exact"] = len(rows)
 
     if probe_ct:
         summary["content_type_probes"] = min(
