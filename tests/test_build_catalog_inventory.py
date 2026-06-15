@@ -597,7 +597,7 @@ class TestScanAreaPagesPagination:
         )
         monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
-        summary, rows = html_collector._scan_area_pages(
+        rows, scan_params = html_collector._scan_area_pages(
             area_pages=[],
             topic_hint=None,
             source_id="test_source",
@@ -610,9 +610,8 @@ class TestScanAreaPagesPagination:
         )
 
         # page 0 (links) + page 1 (links) + page 2 (empty, stop) = 3 pages scanned
-        assert summary["area_pages_scanned"] == 3
-        assert summary["method"] == "csv_magnet_area_pages_paginated"
-        assert summary["total_links_exact"] == 2
+        assert scan_params["area_pages_scanned"] == 3
+        assert scan_params["method"] == "csv_magnet_area_pages_paginated"
         assert len(rows) == 2
         urls = {r["url"] for r in rows}
         assert urls == {"https://docs.example.com/file1.csv", "https://docs.example.com/file2.csv"}
@@ -656,7 +655,7 @@ class TestScanAreaPagesPagination:
         )
         monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
-        summary, rows = html_collector._scan_area_pages(
+        rows, scan_params = html_collector._scan_area_pages(
             area_pages=[],
             topic_hint=None,
             source_id="test_source",
@@ -669,8 +668,7 @@ class TestScanAreaPagesPagination:
         )
 
         # page 0 (links) + page 1 (duplicates, continue) + page 2 (new links) + page 3 (empty, stop) = 4
-        assert summary["area_pages_scanned"] == 4
-        assert summary["total_links_exact"] == 2
+        assert scan_params["area_pages_scanned"] == 4
         assert len(rows) == 2
 
     def test_page_url_template_respects_page_max(self, monkeypatch):
@@ -688,7 +686,7 @@ class TestScanAreaPagesPagination:
             )
         monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
-        summary, rows = html_collector._scan_area_pages(
+        rows, scan_params = html_collector._scan_area_pages(
             area_pages=[],
             topic_hint=None,
             source_id="test_source",
@@ -701,7 +699,7 @@ class TestScanAreaPagesPagination:
         )
 
         # Should have scanned exactly page_max pages
-        assert summary["area_pages_scanned"] == 3
+        assert scan_params["area_pages_scanned"] == 3
         assert len(rows) == 3
 
 
@@ -816,3 +814,106 @@ def test_collect_named_graphs_inventory(monkeypatch):
     assert result.rows[0]["tags"] is not None
     assert "name(100)" in result.rows[0]["tags"]
     assert result.summary["graphs"] == 2
+
+
+class TestScanSitemap:
+    """Tests for _scan_sitemap with mocked HTTP."""
+
+    def test_basic_sitemap_scan(self, monkeypatch):
+        """_scan_sitemap campiona pagine da sitemap e produce righe."""
+        import collectors.html as html_collector
+
+        # Mock _fetch_sitemap per tornare URL di dataset pages
+        def fake_fetch(url, timeout=15):
+            return [
+                "https://example.gov.it/dataset/1",
+                "https://example.gov.it/dataset/2",
+                "https://example.gov.it/other/3",  # non matcha dataset_signals
+            ], None
+
+        monkeypatch.setattr(html_collector, "_fetch_sitemap", fake_fetch)
+
+        # Mock HttpClient per tornare HTML con link CSV
+        fake = FakeHttpClient()
+        fake.responses["https://example.gov.it/dataset/1"] = HttpResult(
+            response=fake_response(
+                200,
+                text='<a href="https://example.gov.it/data/file1.csv">CSV1</a>',
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+            ssl_fallback_used=None,
+        )
+        fake.responses["https://example.gov.it/dataset/2"] = HttpResult(
+            response=fake_response(
+                200,
+                text='<a href="https://example.gov.it/data/file2.xlsx">XLSX1</a>',
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+            ssl_fallback_used=None,
+        )
+        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
+
+        rows, scan_params = html_collector._scan_sitemap(
+            "https://example.gov.it/sitemap.xml",
+            "test_topic",
+            "test_source",
+            "https://example.gov.it",
+            sample_pages=10,
+            page_delay=0,
+        )
+
+        assert len(rows) == 2
+        assert scan_params["method"] == "csv_magnet_sitemap_sample"
+        assert scan_params["total_pages"] == 2  # solo 2 matchano dataset_signals
+        assert scan_params["pages_probed"] == 2
+        assert scan_params["pages_sampled"] == 2
+        urls = [r["distribution_url"] for r in rows]
+        assert "https://example.gov.it/data/file1.csv" in urls
+        assert "https://example.gov.it/data/file2.xlsx" in urls
+
+    def test_sitemap_empty_dataset_pages(self, monkeypatch):
+        """_scan_sitemap restituisce errore se nessuna dataset page nella sitemap."""
+        import collectors.html as html_collector
+
+        def fake_fetch(url, timeout=15):
+            return [
+                "https://example.gov.it/about",
+                "https://example.gov.it/contact",
+            ], None
+
+        monkeypatch.setattr(html_collector, "_fetch_sitemap", fake_fetch)
+
+        rows, scan_params = html_collector._scan_sitemap(
+            "https://example.gov.it/sitemap.xml",
+            None,
+            "test_source",
+            "https://example.gov.it",
+            page_delay=0,
+        )
+
+        assert len(rows) == 0
+        assert "error" in scan_params
+        assert "no dataset pages found" in scan_params["error"]
+
+    def test_sitemap_fetch_failure(self, monkeypatch):
+        """_scan_sitemap restituisce errore se sitemap non raggiungibile."""
+        import collectors.html as html_collector
+
+        def fake_fetch(url, timeout=15):
+            return None, "HTTP 500"
+
+        monkeypatch.setattr(html_collector, "_fetch_sitemap", fake_fetch)
+
+        rows, scan_params = html_collector._scan_sitemap(
+            "https://example.gov.it/sitemap.xml",
+            None,
+            "test_source",
+            "https://example.gov.it",
+            page_delay=0,
+        )
+
+        assert len(rows) == 0
+        assert "error" in scan_params
+        assert "sitemap failed" in scan_params["error"]

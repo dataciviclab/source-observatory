@@ -22,6 +22,8 @@ from __future__ import annotations
 import random
 import re
 import time
+from collections import Counter
+from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urljoin
 
@@ -57,47 +59,44 @@ def _extract_page_meta(html: str) -> dict[str, str]:
     return meta
 
 
-class _DataLinksParser:
-    """Estrae link a file data da HTML già scaricato."""
+def _extract_data_links(base_url: str, html: str) -> list[dict[str, str]]:
+    """Estrae link a file data da HTML già scaricato.
 
-    def __init__(self, base_url: str, html: str):
-        from html.parser import HTMLParser
+    Returns:
+        list of {url, format, title}
+    """
 
-        class Parser(HTMLParser):
-            def __init__(self):
-                super().__init__()
-                self.links: list[dict[str, str]] = []
+    class _Parser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.links: list[dict[str, str]] = []
 
-            def handle_starttag(self, tag, attrs):
-                if tag not in ("a", "area"):
-                    return
-                attrs_dict = dict(attrs)
-                href = attrs_dict.get("href", "") or attrs_dict.get("xlink:href", "")
-                if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
-                    return
-                full_url = urljoin(base_url, href)
-                lower = full_url.lower()
-                fmt = None
-                for ext in DATA_EXTENSIONS:
-                    if ext in lower:
-                        fmt = ext.lstrip(".").upper()
-                        if fmt == "GEOJSON":
-                            fmt = "GEOJSON"
-                        break
-                if not fmt:
-                    return
-                title = (attrs_dict.get("aria-label") or attrs_dict.get("title") or "").strip()
-                self.links.append({"url": full_url, "format": fmt, "title": title})
+        def handle_starttag(self, tag, attrs):
+            if tag not in ("a", "area"):
+                return
+            attrs_dict = dict(attrs)
+            href = attrs_dict.get("href", "") or attrs_dict.get("xlink:href", "")
+            if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
+                return
+            full_url = urljoin(base_url, href)
+            lower = full_url.lower()
+            fmt = None
+            # Ordina per lunghezza decrescente: .xlsx prima di .xls, .geojson prima di .json
+            for ext in sorted(DATA_EXTENSIONS, key=len, reverse=True):
+                if ext in lower:
+                    fmt = ext.lstrip(".").upper()
+                    break
+            if not fmt:
+                return
+            title = (attrs_dict.get("aria-label") or attrs_dict.get("title") or "").strip()
+            self.links.append({"url": full_url, "format": fmt, "title": title})
 
-        parser = Parser()
-        try:
-            parser.feed(html)
-        except Exception:
-            pass
-        self.links = parser.links
-
-
-# ─── Content-Type probing (opt-in via toolkit) ─────────────────────────────
+    parser = _Parser()
+    try:
+        parser.feed(html)
+    except Exception:
+        pass
+    return parser.links
 
 
 # ─── URL Analysis ─────────────────────────────────────────────────────────────
@@ -225,8 +224,6 @@ def _compute_summary(
     area_pages_scanned: int | None = None,
 ) -> dict[str, Any]:
     """Calcola le statistiche aggregate da una lista di data link."""
-    from collections import Counter
-
     prefix_matrix: dict[str, int] = {}
     by_format: dict[str, int] = {}
     years_set: set[int] = set()
@@ -296,7 +293,7 @@ def _scan_sitemap(
     *,
     sample_pages: int = 30,
     page_delay: float = 0.2,
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Scan un portale HTML via sitemap con quick sample.
 
     1. Parse sitemap → dataset page URLs
@@ -305,11 +302,12 @@ def _scan_sitemap(
     4. Stima total links dal sample
 
     Returns:
-        summary dict, rows list
+        (rows list, scan_params dict with method / total_pages / pages_probed / pages_sampled)
+        On error: ([], {"error": "reason"})
     """
     sitemap_urls, sitemap_err = _fetch_sitemap(sitemap_url)
     if sitemap_err or sitemap_urls is None:
-        return {"error": f"sitemap failed: {sitemap_err}"}, []
+        return [], {"error": f"sitemap failed: {sitemap_err}"}
 
     dataset_signals = (
         "/it/dataset/",
@@ -322,7 +320,7 @@ def _scan_sitemap(
     dataset_page_urls = [u for u in sitemap_urls if any(s in u.lower() for s in dataset_signals)]
 
     if not dataset_page_urls:
-        return {"error": "no dataset pages found in sitemap"}, []
+        return [], {"error": "no dataset pages found in sitemap"}
 
     total_pages = len(dataset_page_urls)
 
@@ -333,7 +331,7 @@ def _scan_sitemap(
     sampled = sampled[:sample_size]
 
     all_data_links: list[dict[str, str]] = []
-    seen_data_urls: set[str] = set()
+    seen_dedup_keys: set[tuple[str, str]] = set()
     pages_probed = 0
     page_meta: dict[str, dict[str, str]] = {}  # page_url → {title, description}
 
@@ -349,22 +347,13 @@ def _scan_sitemap(
         # Extract page metadata (title, description) for enrichment
         page_meta[page_url] = _extract_page_meta(result.response.text)
 
-        parser = _DataLinksParser(page_url, result.response.text)
-        for link in parser.links:
-            if link["url"] not in seen_data_urls:
-                seen_data_urls.add(link["url"])
+        links = _extract_data_links(page_url, result.response.text)
+        for link in links:
+            dk = (link["url"], link.get("format") or "")
+            if dk not in seen_dedup_keys:
+                seen_dedup_keys.add(dk)
                 link["_page_url"] = page_url  # track provenance for metadata enrichment
                 all_data_links.append(link)
-
-    # Dedup by (url, format) — use frozenset as dict key, track separately
-    seen_url_formats: set[tuple[str, str]] = set()
-    deduped_links: list[dict[str, str]] = []
-    for link in all_data_links:
-        key = (link["url"], link.get("format") or "")
-        if key not in seen_url_formats:
-            seen_url_formats.add(key)
-            deduped_links.append(link)
-    all_data_links = deduped_links
 
     rows = [
         _build_row(
@@ -378,17 +367,14 @@ def _scan_sitemap(
         for link in all_data_links
     ]
 
-    summary = _compute_summary(
-        all_data_links,
-        topic_hint,
-        method="csv_magnet_sitemap_sample",
-        total_pages=total_pages,
-        pages_probed=pages_probed,
-        pages_sampled=sample_size,
-    )
-    summary["total_pages_in_sitemap"] = total_pages
+    scan_params: dict[str, Any] = {
+        "method": "csv_magnet_sitemap_sample",
+        "total_pages": total_pages,
+        "pages_probed": pages_probed,
+        "pages_sampled": sample_size,
+    }
 
-    return summary, rows
+    return rows, scan_params
 
 
 def _scan_area_pages(
@@ -402,7 +388,7 @@ def _scan_area_pages(
     page_start: int = 0,
     page_max: int = 200,
     page_stop_on_empty: bool = True,
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Scan portale HTML via area_pages (nessun second-level crawl).
 
     Fetch ogni area page direttamente → estrae tutti i link data.
@@ -418,11 +404,12 @@ def _scan_area_pages(
     indipendente, un errore non implica gli altri).
 
     Returns:
-        summary dict, rows list
+        (rows list, scan_params dict with method / area_pages_scanned)
     """
     all_data_links: list[dict[str, str]] = []
-    seen_data_urls: set[str] = set()
+    seen_dedup_keys: set[tuple[str, str]] = set()
     pages_scanned = 0
+    page_meta: dict[str, dict[str, str]] = {}
 
     if page_url_template:
         page = page_start
@@ -441,14 +428,19 @@ def _scan_area_pages(
                     _ssl_bypass = True
             if not result.is_ok or result.response is None:
                 break
-            parser = _DataLinksParser(area_url, result.response.text)
-            links_this_page = [link for link in parser.links if link["url"] not in seen_data_urls]
-            if not parser.links and page_stop_on_empty:
+            page_meta[area_url] = _extract_page_meta(result.response.text)
+            links = _extract_data_links(area_url, result.response.text)
+            links_this_page = []
+            for link in links:
+                dk = (link["url"], link.get("format") or "")
+                if dk not in seen_dedup_keys:
+                    seen_dedup_keys.add(dk)
+                    link["_page_url"] = area_url
+                    links_this_page.append(link)
+                    all_data_links.append(link)
+            if not links and page_stop_on_empty:
                 pages_scanned += 1
                 break
-            for link in links_this_page:
-                seen_data_urls.add(link["url"])
-                all_data_links.append(link)
             pages_scanned += 1
             page += 1
         area_pages_scanned = pages_scanned
@@ -459,26 +451,37 @@ def _scan_area_pages(
             result = client.get(area_url)
             if not result.is_ok or result.response is None:
                 continue
-            parser = _DataLinksParser(area_url, result.response.text)
-            for link in parser.links:
-                if link["url"] not in seen_data_urls:
-                    seen_data_urls.add(link["url"])
+            page_meta[area_url] = _extract_page_meta(result.response.text)
+            links = _extract_data_links(area_url, result.response.text)
+            for link in links:
+                dk = (link["url"], link.get("format") or "")
+                if dk not in seen_dedup_keys:
+                    seen_dedup_keys.add(dk)
+                    link["_page_url"] = area_url
                     all_data_links.append(link)
         area_pages_scanned = len(area_pages)
 
-    rows = [_build_row(link, source_id, base_url, topic_hint) for link in all_data_links]
+    rows = [
+        _build_row(
+            link,
+            source_id,
+            base_url,
+            topic_hint,
+            page_meta=page_meta,
+            data_page_url=link.get("_page_url") or None,
+        )
+        for link in all_data_links
+    ]
 
     method = (
         "csv_magnet_area_pages_paginated" if page_url_template else "csv_magnet_area_pages_direct"
     )
-    summary = _compute_summary(
-        all_data_links,
-        topic_hint,
-        method=method,
-        area_pages_scanned=area_pages_scanned,
-    )
+    scan_params: dict[str, Any] = {
+        "method": method,
+        "area_pages_scanned": area_pages_scanned,
+    }
 
-    return summary, rows
+    return rows, scan_params
 
 
 # ─── Collector Interface ──────────────────────────────────────────────────────
@@ -495,14 +498,16 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     Returns:
         CollectorResult with rows (data link URLs) and summary (stats).
     """
-    base_url = source_cfg.get("base_url", "")
+    html_portal_cfg = source_cfg.get("html_portal", {})
+
+    # base_url da config, con fallback a html_portal.homepage
+    # (entrambi i campi sono usati nel registry, homepage è più specifico)
+    base_url = source_cfg.get("base_url") or html_portal_cfg.get("homepage") or ""
     if not base_url:
         return CollectorResult(
             rows=[],
             summary={"error": "no base_url configured"},
         )
-
-    html_portal_cfg = source_cfg.get("html_portal", {})
     sitemap_url = html_portal_cfg.get("sitemap_url")
     area_pages = html_portal_cfg.get("area_pages", [])
     topic_hint = html_portal_cfg.get("topic_hint")
@@ -513,9 +518,12 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     page_stop_on_empty = html_portal_cfg.get("page_stop_on_empty", True)
     probe_ct = html_portal_cfg.get("probe_content_type", False)
 
+    rows: list[dict[str, Any]] = []
+    scan_params: dict[str, Any] = {}
+
     if sitemap_url:
         sample = html_portal_cfg.get("sample_pages", 30)
-        summary, rows = _scan_sitemap(
+        rows, scan_params = _scan_sitemap(
             sitemap_url,
             topic_hint,
             source_id,
@@ -524,7 +532,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             page_delay=delay,
         )
     elif area_pages or page_url_template:
-        summary, rows = _scan_area_pages(
+        rows, scan_params = _scan_area_pages(
             area_pages,
             topic_hint,
             source_id,
@@ -545,16 +553,30 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 rows=[],
                 summary={"type": "csv_magnet_error", "message": err_msg},
             )
-        parsed = _DataLinksParser(base_url, result.response.text)
-        all_links = [_build_row(link, source_id, base_url, topic_hint) for link in parsed.links]
-        rows = all_links
-        summary = {
-            "total_links_exact": len(rows),
-            "method": "csv_magnet_homepage_only",
-        }
+        page_meta = {base_url: _extract_page_meta(result.response.text)}
+        links = _extract_data_links(base_url, result.response.text)
+        rows = [
+            _build_row(
+                link, source_id, base_url, topic_hint, page_meta=page_meta, data_page_url=base_url
+            )
+            for link in links
+        ]
+        scan_params = {"method": "csv_magnet_homepage_only"}
+
+    # Check for scan error
+    if "error" in scan_params:
+        return CollectorResult(
+            rows=[],
+            summary={
+                "type": "csv_magnet_error",
+                "message": scan_params["error"],
+                "source_id": source_id,
+            },
+        )
 
     # Content-Type probe (opt-in): arricchisce formato per URL ambigui
-    if probe_ct and not summary.get("error"):
+    # ESEGUITO PRIMA di _compute_summary — così by_format è già corretto
+    if probe_ct:
         _probe_targets = [
             r for r in rows if r.get("url") and r.get("format") in ("?", "ZIP", "BIN")
         ]
@@ -570,23 +592,18 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 ct_fmt = None
             if ct_fmt:
                 row["format"] = ct_fmt
-        # Ricalcola by_format dopo i probe (summary era stato calcolato pre-probe)
-        from collections import Counter
 
-        summary["by_format"] = dict(Counter(r.get("format", "?") for r in rows))
-
-    if "error" in summary:
-        return CollectorResult(
-            rows=[],
-            summary={
-                "type": "csv_magnet_error",
-                "message": summary["error"],
-                "source_id": source_id,
-            },
-        )
+    # Compute summary from rows (formats are already probed)
+    all_data_links = [{"url": r["distribution_url"], "format": r.get("format", "?")} for r in rows]
+    summary = _compute_summary(all_data_links, topic_hint, **scan_params)
 
     summary["type"] = "csv_magnet"
     summary["source_id"] = source_id
+
+    # Homepage branch: _compute_summary senza area_pages_scanned non produce total_links_exact
+    if scan_params.get("method") == "csv_magnet_homepage_only":
+        summary["total_links_exact"] = len(rows)
+
     if probe_ct:
         summary["content_type_probes"] = min(
             len([r for r in rows if r.get("format") not in ("?",)]), 20
