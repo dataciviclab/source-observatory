@@ -16,10 +16,9 @@ from so_mcp._inventory import (
     inventory_status,
     query_inventory,
 )
-from so_mcp._radar import radar_history, radar_status_md, radar_summary
+from so_mcp._radar import radar_history, radar_summary
 from so_mcp._recommend import recommend_sources
 from so_mcp._registry import registry_query
-from so_mcp._sdmx import discover_sdmx
 from so_mcp._signals import query_signals
 
 pytestmark = pytest.mark.contract
@@ -238,82 +237,6 @@ def test_catalog_inventory_search_filters_rows(tmp_path, monkeypatch) -> None:
 
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "a"
-
-
-def test_discover_sdmx_reads_inventory(tmp_path, monkeypatch) -> None:
-    inventory_path = tmp_path / "catalog_inventory_latest.parquet"
-    _write_parquet(
-        inventory_path,
-        [
-            {
-                "source_id": "istat_sdmx",
-                "item_id": "DF_PREZZI",
-                "item_name": "DF_PREZZI",
-                "title": "Indice dei prezzi agricoli",
-                "tags": "prezzi, agricoltura",
-                "api_base_url": "https://example.test/rest",
-                "source_url": "https://example.test/rest/dataflow/IT1",
-            },
-            {
-                "source_id": "openbdap",
-                "item_id": "other",
-                "item_name": "other",
-                "title": "Other",
-                "tags": "",
-                "api_base_url": "https://example.test/api",
-                "source_url": "https://example.test/api/3/action/package_search",
-            },
-        ],
-    )
-    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
-
-    result = discover_sdmx(["prezzi"], limit=5)
-
-    assert result["artifact"].endswith("catalog_inventory_latest.parquet")
-    assert result["returned"] == 1
-    assert result["dataflows"][0]["item_id"] == "DF_PREZZI"
-    assert result["dataflows"][0]["relevance_score"] > 0
-
-
-def test_discover_sdmx_reports_missing_source_from_inventory_report(tmp_path, monkeypatch) -> None:
-    inventory_path = tmp_path / "catalog_inventory_latest.parquet"
-    report_path = tmp_path / "catalog_inventory_report.json"
-    _write_parquet(
-        inventory_path,
-        [
-            {
-                "source_id": "openbdap",
-                "item_id": "other",
-                "item_name": "other",
-                "title": "Other",
-                "tags": "",
-                "api_base_url": "https://example.test/api",
-                "source_url": "https://example.test/api/3/action/package_search",
-            },
-        ],
-    )
-    report_path.write_text(
-        json.dumps(
-            {
-                "sources": {
-                    "istat_sdmx": {
-                        "status": "error",
-                        "protocol": "sdmx",
-                        "error": "HTTP 500",
-                    }
-                }
-            }
-        ),
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
-    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
-
-    result = discover_sdmx(["prezzi"], limit=5)
-
-    assert result["error"] == "source_unavailable"
-    assert result["source_status"]["error"] == "HTTP 500"
-    assert result["dataflows"] == []
 
 
 # ─── Tests for new tools (MCP v2) ───────────────────────────────────────────────
@@ -657,7 +580,7 @@ def test_find_by_url_rejects_empty_url() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Radar edge cases: radar_history, radar_status_md
+# Radar edge cases: radar_history
 # ---------------------------------------------------------------------------
 
 
@@ -710,23 +633,6 @@ def test_radar_history_filter_by_source(tmp_path, monkeypatch) -> None:
     assert result["returned"] == 1
     assert result["sources"][0]["source_id"] == "s1"
     assert result["sources"][0]["recent_red_count"] == 1
-
-
-def test_radar_status_md_file_not_found(tmp_path, monkeypatch) -> None:
-    monkeypatch.setattr(_artifact, "_STATUS_MD", tmp_path / "STATUS.md")
-    result = radar_status_md()
-    assert result["error"] == "artifact_not_found"
-
-
-def test_radar_status_md_reads_content(tmp_path, monkeypatch) -> None:
-    path = tmp_path / "STATUS.md"
-    content = "# Radar State\nOK"
-    path.write_text(content, encoding="utf-8")
-    monkeypatch.setattr(_artifact, "_STATUS_MD", path)
-    result = radar_status_md()
-    assert result["content"] == content
-    assert "modified_at" in result
-    assert "age_hours" in result
 
 
 # ---------------------------------------------------------------------------

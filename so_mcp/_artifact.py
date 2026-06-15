@@ -400,7 +400,7 @@ def _json_not_found(artifact: _JsonArtifact) -> dict[str, Any]:
     return _artifact_not_found(artifact.local_path, artifact.name)
 
 
-# ── Shared report helpers (used by _inventory, _sdmx, _recommend) ────────────
+# ── Shared report helpers (used by _inventory, _recommend) ───────────────────
 
 
 def _load_inventory_report() -> tuple[dict[str, Any], dict[str, Any]] | None:

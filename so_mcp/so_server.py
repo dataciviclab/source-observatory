@@ -22,10 +22,9 @@ from ._inventory import (
     inventory_status,
     query_inventory,
 )
-from ._radar import radar_history, radar_status_md, radar_summary
+from ._radar import radar_history, radar_summary
 from ._recommend import recommend_sources
 from ._registry import registry_query
-from ._sdmx import discover_sdmx
 from ._signals import query_signals
 
 mcp = create_mcp_server(
@@ -72,15 +71,26 @@ def so_catalog_signals(source_id: str | None = None, limit: int | None = None) -
 
 
 @mcp.tool(
-    description="Legge radar_summary.json: health portali e stato GREEN/YELLOW/RED per fonte.",
+    description="Legge radar_summary.json: health portali e stato GREEN/YELLOW/RED per fonte. "
+    "Con include_history=True include anche la cronologia probe recente.",
     structured_output=True,
 )
-def so_radar_summary(source_id: str | None = None) -> dict[str, Any]:
-    return guard_timed(radar_summary, "so_radar_summary", source_id)
+def so_radar_summary(
+    source_id: str | None = None,
+    include_history: bool = False,
+) -> dict[str, Any]:
+    def _exec() -> dict[str, Any]:
+        result = radar_summary(source_id)
+        if include_history:
+            result["history"] = radar_history(source_id, limit=5)
+        return result
+
+    return guard_timed(_exec, "so_radar_summary")
 
 
 @mcp.tool(
-    description="Legge radar_history.json: storia probes per fonte, utile per capire streak RED e fonti persistenti.",
+    description="[DEPRECATO] Usa so_radar_summary con include_history=True. "
+    "Legge radar_history.json: storia probes per fonte.",
     structured_output=True,
 )
 def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, Any]:
@@ -88,19 +98,27 @@ def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, 
 
 
 @mcp.tool(
-    description="Legge STATUS.md: markdown umano con stato radar e sommario per fonte.",
+    description="Legge catalog_inventory_report.json: stato build inventory per fonte. "
+    "Con include_diff=True include anche il delta item count rispetto al baseline "
+    "(richiede source_id esplicito).",
     structured_output=True,
 )
-def so_radar_status_md() -> dict[str, Any]:
-    return guard_timed(radar_status_md, "so_radar_status_md")
+def so_inventory_status(
+    source_id: str | None = None,
+    include_diff: bool = False,
+) -> dict[str, Any]:
+    def _exec() -> dict[str, Any]:
+        if include_diff and not source_id:
+            return {
+                "error": "invalid_params",
+                "message": "include_diff=True richiede source_id esplicito.",
+            }
+        result = inventory_status(source_id)
+        if include_diff and source_id:
+            result["diff"] = inventory_diff(source_id)
+        return result
 
-
-@mcp.tool(
-    description="Legge catalog_inventory_report.json: stato build inventory per fonte.",
-    structured_output=True,
-)
-def so_inventory_status(source_id: str | None = None) -> dict[str, Any]:
-    return guard_timed(inventory_status, "so_inventory_status", source_id)
+    return guard_timed(_exec, "so_inventory_status")
 
 
 @mcp.tool(
@@ -116,14 +134,6 @@ def so_catalog_inventory_search(
     return guard_timed(
         catalog_inventory_search, "so_catalog_inventory_search", query, source_id, protocol, limit
     )
-
-
-@mcp.tool(
-    description="Discovery tematica ISTAT SDMX da artifact locali con relevance score.",
-    structured_output=True,
-)
-def so_discover_sdmx(keywords: list[str], limit: int = 30) -> dict[str, Any]:
-    return guard_timed(discover_sdmx, "so_discover_sdmx", keywords, limit)
 
 
 @mcp.tool(
@@ -161,16 +171,6 @@ def so_recommend_sources(keyword: str, limit: int = 10) -> dict[str, Any]:
 
 
 @mcp.tool(
-    description="Compare current inventory against baseline for a source. "
-    "Shows item count delta, baseline date, and current count. "
-    "Uses catalog_inventory_latest.parquet + catalog_inventory_report.json.",
-    structured_output=True,
-)
-def so_inventory_diff(source_id: str) -> dict[str, Any]:
-    return guard_timed(inventory_diff, "so_inventory_diff", source_id)
-
-
-@mcp.tool(
     description="Elenca gli item (dataset, dataflow, risorsa) di una fonte "
     "dal catalog_inventory_latest.parquet. "
     "Accetta source_id (richiesto), limit, offset e query testuale opzionale "
@@ -189,8 +189,8 @@ def so_list_source_items(
 @mcp.tool(
     description=(
         "Overview completo di una fonte: stato radar, stato inventory, "
-        "delta item count, signals recenti. Compone so_radar_summary + "
-        "so_inventory_status + so_inventory_diff + so_catalog_signals "
+        "delta item count, signals recenti. Compone radar_summary + "
+        "inventory_status + inventory_diff + catalog_signals "
         "in una singola chiamata."
     ),
     structured_output=True,
