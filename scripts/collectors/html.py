@@ -497,14 +497,16 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     Returns:
         CollectorResult with rows (data link URLs) and summary (stats).
     """
-    base_url = source_cfg.get("base_url", "")
+    html_portal_cfg = source_cfg.get("html_portal", {})
+
+    # base_url da config, con fallback a html_portal.homepage
+    # (entrambi i campi sono usati nel registry, homepage è più specifico)
+    base_url = source_cfg.get("base_url") or html_portal_cfg.get("homepage") or ""
     if not base_url:
         return CollectorResult(
             rows=[],
             summary={"error": "no base_url configured"},
         )
-
-    html_portal_cfg = source_cfg.get("html_portal", {})
     sitemap_url = html_portal_cfg.get("sitemap_url")
     area_pages = html_portal_cfg.get("area_pages", [])
     topic_hint = html_portal_cfg.get("topic_hint")
