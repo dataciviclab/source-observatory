@@ -1520,4 +1520,88 @@ class TestSdmxPaqaFlow:
         )
 
 
+class TestSparqlPaqaFlow:
+    """SPARQL distribution_url (da DCAT) → _fetch_data_preview → paqa_score."""
+
+    def test_sparql_distribution_url_paqa(self, monkeypatch):
+        import numpy as np
+        import pandas as pd
+        import yaml
+        from bulk_source_check import _check_row
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+        import bulk_source_check as bsc
+
+        captured_urls: list[str] = []
+
+        def _mock_preview(url, *a, **kw):
+            captured_urls.append(url)
+            return {
+                "enrich_method": "csv_preview",
+                "paqa_score": 85,
+                "paqa_verdict": "accettabile",
+                "paqa_flags": None,
+                "paqa_ontologies": None,
+                "paqa_sampled": False,
+                "granularity": "non_determinato",
+                "year_min": None,
+                "year_max": None,
+                "columns": '["a"]',
+                "col_types": '{"a":"VARCHAR"}',
+                "file_size": 200,
+                "preview_row_count": 5,
+                "encoding_suggested": "utf-8",
+                "delim_suggested": ",",
+                "decimal_suggested": None,
+                "skip_suggested": 0,
+                "robust_read_suggested": False,
+                "mapping_suggestions": "{}",
+            }
+
+        monkeypatch.setattr(bsc, "_fetch_data_preview", _mock_preview)
+        monkeypatch.setattr(bsc, "_http_head_with_retry", lambda *a, **kw: (200, True, None, None))
+
+        row = pd.Series(
+            {
+                "source_id": "ispra_linked_data",
+                "item_id": "https://dati.isprambiente.it/id/dataset/test",
+                "item_name": "test_dataset",
+                "title": "Test SPARQL dataset with CSV distribution",
+                "organization": np.nan,
+                "tags": np.nan,
+                "notes_excerpt": np.nan,
+                "url": np.nan,
+                "landing_page": np.nan,
+                "distribution_url": "https://example.test/data/dataset.csv",
+                "format": "CSV",
+                "protocol": "sparql",
+                "source_url": "https://dati.isprambiente.it/sparql",
+                "api_base_url": np.nan,
+                "granularity": np.nan,
+                "year_signal": np.nan,
+                "encoding_suggested": np.nan,
+                "delim_suggested": np.nan,
+                "decimal_suggested": np.nan,
+                "skip_suggested": np.nan,
+                "source_status": "active",
+            }
+        )
+        result = _check_row(row, "2026-06-15T12:00:00", registry)
+
+        # Verifica che distribution_url SPARQL sia stato usato per la preview
+        assert len(captured_urls) == 1, "preview_url non chiamata per SPARQL"
+        assert "dataset.csv" in captured_urls[0], (
+            f"distribution_url SPARQL non usata: {captured_urls[0]}"
+        )
+        # Verifica PAQA score propagato
+        assert result.get("paqa_score") == 85, f"paqa_score: {result.get('paqa_score')}"
+        assert result.get("paqa_verdict") == "accettabile"
+        assert result.get("paqa_sampled") is False
+        # Verifica che distribution_url sia propagato nel risultato
+        assert result.get("distribution_url") == row.get("distribution_url"), (
+            f"distribution_url non propagato: {result.get('distribution_url')}"
+        )
+
+
 pytestmark = pytest.mark.contract
