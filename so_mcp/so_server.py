@@ -99,7 +99,8 @@ def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, 
 
 @mcp.tool(
     description="Legge catalog_inventory_report.json: stato build inventory per fonte. "
-    "Con include_diff=True include anche il delta item count rispetto al baseline.",
+    "Con include_diff=True include anche il delta item count rispetto al baseline "
+    "(richiede source_id esplicito).",
     structured_output=True,
 )
 def so_inventory_status(
@@ -107,6 +108,11 @@ def so_inventory_status(
     include_diff: bool = False,
 ) -> dict[str, Any]:
     def _exec() -> dict[str, Any]:
+        if include_diff and not source_id:
+            return {
+                "error": "invalid_params",
+                "message": "include_diff=True richiede source_id esplicito.",
+            }
         result = inventory_status(source_id)
         if include_diff and source_id:
             result["diff"] = inventory_diff(source_id)

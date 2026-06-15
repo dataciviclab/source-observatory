@@ -69,7 +69,7 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 | `so_recommend_sources` | trova source_id per keyword tema |
 | — | Topic inference: usa **`toolkit_infer_topic`** del toolkit MCP |
 
-> **Nota**: `so_infer_topic`, `so_inventory_diff` sono stati rimossi. Usa `so_inventory_status` con `include_diff=True` per il delta item.
+> **Nota**: `so_infer_topic`, `so_inventory_diff` sono stati rimossi. Usa `so_inventory_status` con `include_diff=True` per il delta item (richiede `source_id`).
 
 ### SO_03 — source-check
 
@@ -90,7 +90,10 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 | `so_catalog_signals` | drift catalogo (weekly CI) |
 | — | SPARQL: usa **`toolkit_sparql_query`** del toolkit MCP |
 
-> **Nota**: `so_sparql_query`, `so_discover_sdmx`, `so_radar_status_md` sono stati rimossi. Usa `toolkit_sparql_query` per SPARQL, `so_list_source_items(source_id=istat_sdmx)` per SDMX, `so_radar_summary` per health portali.
+> **Nota**: `so_sparql_query`, `so_discover_sdmx`, `so_radar_status_md` sono stati rimossi.
+> - SPARQL → `toolkit_sparql_query` del toolkit MCP
+> - SDMX discovery multi-keyword con ranking → **rimosso senza sostituto equivalente**. In alternativa: `so_list_source_items(source_id="istat_sdmx", query="keyword")` per filtro base, oppure `so_inventory_query(protocol="sdmx")` per scored items.
+> - Health radar → `so_radar_summary`
 
 ## Tool detail
 
