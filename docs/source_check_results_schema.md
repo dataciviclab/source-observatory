@@ -61,15 +61,16 @@ o ereditati dall'inventory sniff (Phase 1). Vedi anche `catalog_inventory_latest
 | `delim_suggested` | `str` | inventory/csv_preview | Delimitatore CSV rilevato (es. `;`, `,`, `\t`). `None` per file non CSV. |
 | `decimal_suggested` | `str` | inventory/csv_preview | Separatore decimale rilevato (`,` o `.`). `None` se non determinabile. |
 | `skip_suggested` | `int` | inventory/csv_preview | Righe da saltare all'inizio del file (preamble). `0` se nessuna. |
-| `robust_read_suggested` | `bool` | csv_preview | `True` se il CSV ha righe irregolari (richiede `null_padding`). Penalizza lo score di -10. |
+| `robust_read_suggested` | `bool` | csv_preview | `True` se il CSV ha righe irregolari (richiede `null_padding`). **Non penalizza più lo score** dalla PR #365 — il segnale è informativo (confluito in `signal_flags`). Per qualità CSV, vedi `paqa_score`. |
 | `mapping_suggestions` | `str` (JSON) | csv_preview | Suggerimenti di mapping per ogni colonna: tipo (int/float/str), normalizzazione (trim/title), nullify (NA/n.d.), parse (number_it/percent_it). Pronto per scaffold in dataset-incubator. |
 
 ### Score e metadati
 
 | Campo | Tipo | Descrizione |
 |---|---|---|
-| `intake_score` | `int` | Punteggio 0–100 calcolato da `_intake_score()`. Composizione: granularità (0–40) + copertura anni (0–20) + raggiungibilità (0–20) + formato (0–20) + bonus/malus enrichment (0–5, -5). |
+| `intake_score` | `int` | Punteggio 0–100 calcolato da `_intake_score()`. Composizione: granularità (0–40) + copertura anni (0–20) + raggiungibilità (0–20) + formato (0–20) + bonus/malus enrichment (±5). I segnali di qualità CSV (encoding, mapping, robust_read) **non pesano più** sullo score — sono confluiti in `signal_flags` + `paqa_score`. |
 | `intake_candidate` | `bool` | `True` se `intake_score >= 40` **e** `needs_review = False`. Indica che l'item è idoneo per l'intake senza review manuale. |
+| `signal_flags` | `str` (JSON) | Flag binari di readiness: `raggiungibile`, `machine_readable`, `granularita_nota`, `anni_noti`, `freschezza`, `profilato`, `joinabile`. Ogni flag è True/False verificabile. Affianca `intake_score` senza sostituirlo. |
 | `needs_review` | `bool` | `True` se `granularity = "non_determinato"` oppure `year_min is None`. Segnala che il dato richiede valutazione manuale prima dell'intake. |
 | `enrich_method` | `str` | Metodo usato per arricchire i metadata. Valori: `ckan_package_show` (arricchimento pieno CKAN, +5 punti), `sdmx_dataflow_annotations` (arricchimento SDMX, +5 punti), `inventory_only` (solo metadata inventario), `content_type` (formato da HEAD HTTP su URL diretto), `content_type_landing` (formato da HEAD HTTP su landing page), `csv_preview` (profiling DuckDB con toolkit eseguito), `html_scrape` (estrazione link da HTML), `scraping_blocked` (fonte bloccata per scraping, nessun bonus), `html_scrape_failed`, `error`. |
 | `check_timestamp` | `str` | ISO 8601 timestamp in UTC del momento in cui il check è stato eseguito (es. `"2026-04-21T05:00:00+00:00"`). |
@@ -80,30 +81,46 @@ o ereditati dall'inventory sniff (Phase 1). Vedi anche `catalog_inventory_latest
 
 ## Calcolo di `intake_score`
 
-La funzione `_intake_score()` in `source_check_analyze.py` composizione:
+La funzione `_intake_score()` in `source_check_analyze.py` composizione (snellita 2026-06):
 
 ```
 granularità:     comune=40, provincia=30, regione=20, nazionale=10, europeo=5, non_determinato=0
-anni:            span > 0 → min(20, span/20*20); un solo anno noto → +5
+anni:            span > 0 → min(20, span); un solo anno noto → +5
 raggiungibile:   +20 se reachable=True, altrimenti +0
 formato:         CSV=20, JSON=20, XLSX=12, XLS=10, XML=8, SDMX=8, PDF=2, altro=0
 enrichment:      ckan_package_show o sdmx_dataflow_annotations → +5; needs_review → -5
-dati reali:      encoding_suggested → +5 (file leggibile)
-                 delim_suggested → +2 (formato strutturato)
-                 robust_read_suggested → -10 (CSV sporco, attiva needs_review)
-                 mapping_suggestions con 2+ colonne → +5 (dati ben strutturati)
+stale:           -10 + forza needs_review=True
 
 score finale:    max(0, min(100, somma))
 ```
 
+**Rimossi** (giugno 2026): encoding bonus (+5, premiava file non-UTF-8), delim bonus (+2, rumore),
+robust_read malus (-10, ora è solo segnale informativo), mapping bonus (+3/+5, duplicava paqa_score).
+Questi segnali vivono in `signal_flags` (flag binari) e nei campi grezzi (encoding_suggested,
+mapping_suggestions, robust_read_suggested, delim_suggested) che restano nel parquet.
+
 **Soglia**: `intake_candidate = True` quando `score >= 40` e `needs_review == False`.
+
+## Segnali binari (`signal_flags`)
+
+I flag sono calcolati da `_readiness_flags()` in `source_check_analyze.py`:
+
+| Flag | True quando | Falso quando |
+|------|-------------|--------------|
+| `raggiungibile` | `reachable == True` | URL non raggiungibile |
+| `machine_readable` | formato in (CSV, JSON, XML, PARQUET, SDMX) | PDF, XLS, ZIP, nessun formato |
+| `granularita_nota` | granularità determinata | `non_determinato` |
+| `anni_noti` | `year_min` o `year_max` presenti | nessun anno |
+| `freschezza` | `year_max >= 2024` | dati vecchi o assenti |
+| `profilato` | `encoding_suggested` presente | file non profilato |
+| `joinabile` | `join_keys` presenti | nessuna chiave di join |
 
 ---
 
 ## Note per consumer
 
 - **Un item può avere `intake_score` alto ma `intake_candidate = False`** se `needs_review = True` (granularità o anni non determinati). Il check lo segnala per dare priorità alla review.
-- **HTTP status e raggiungibilità non influenzano lo score** — un URL irraggiungibile non abbassa direttamente il punteggio, ma l'assenza di `resource_format` e `year_min` produrrà `needs_review = True`, che applica il -5 e potrebbe far scendere sotto soglia.
+- **Raggiungibilità influenza lo score** (+20 se `reachable=True`). Un URL irraggiungibile perde 20 punti e spesso non ha `resource_format` né `year_min`, producendo `needs_review=True` (ulteriore -5).
 - **`enrich_method = error`** indica un'eccezione non gestita durante l'enrichment. La riga è presente ma con dati incompleti.
 - Il parquet viene sovrascritto ad ogni run — non è incrementale. Per segnali longitudinali, consultare gli snapshot in GCS (`source-check/snapshots/source_check_{stamp}.parquet`).
 - Il file locale sotto `data/catalog_inventory/generated/` è una cache operativa. La fonte corrente è il path GCS pubblicato dal workflow `source-check.yml`; l'artifact GitHub Actions resta un canale di recupero/debug.

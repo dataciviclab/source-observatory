@@ -300,8 +300,16 @@ detect_join_keys = detect_join_keys
 compute_joinability_score = compute_joinability_score
 
 
-# ── intake scoring ────────────────────────────────────────────────────────────
+# ── readiness scoring ─────────────────────────────────────────────────────────
+# Score leggero 0-100 basato solo su fattori oggettivi:
+# granularità + copertura anni + raggiungibilità + formato.
+# I segnali di qualità (encoding, mapping, robust_read) sono informativi
+# e vivono in signal_flags JSON — non pesano sullo score.
+# La qualità strutturale del CSV è demandata a paqa_score.
+# Vedi: source_check_results_schema.md
 
+
+_VALID_FORMATS = ["CSV", "JSON", "XLSX", "XLS", "XML", "SDMX", "PDF", "ZIP", "PARQUET"]
 
 _GRAN_SCORE = {
     "comune": 40,
@@ -312,17 +320,15 @@ _GRAN_SCORE = {
     "non_determinato": 0,
 }
 _FORMAT_SCORE = {"CSV": 20, "JSON": 20, "XLSX": 12, "XLS": 10, "XML": 8, "SDMX": 8, "PDF": 2}
-_YEAR_SPAN_MAX = 20
 
 
-def _normalize_format(raw: str) -> str:
-    if not isinstance(raw, str):
+def _normalize_format(raw: str | None) -> str:
+    if not isinstance(raw, str) or not raw.strip():
         return ""
-    valid_priority = ["CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"]
-    up = raw.upper()
-    for v in valid_priority:
-        if v in up:
-            return v
+    up = raw.strip().upper()
+    for fmt in _VALID_FORMATS:
+        if fmt in up:
+            return fmt
     return ""
 
 
@@ -335,36 +341,28 @@ def _intake_score(
     enrich_method: str,
     needs_review: bool,
     source_status: Optional[str] = None,
-    encoding_suggested: Optional[str] = None,
-    mapping_suggestions: Optional[str] = None,
-    robust_read_suggested: Optional[bool] = None,
-    delim_suggested: Optional[str] = None,
 ) -> tuple[int, bool]:
+    """Readiness score 0-100: quanto un item è tecnicamente pronto per intake.
+
+    Solo fattori oggettivi e verificabili. I segnali di qualità CSV (encoding,
+    mapping, robust_read) sono esclusi perché:
+    - encoding bonus premiava file non-UTF-8 (concettualmente sbagliato)
+    - mapping bonus duplicava paqa_score
+    - robust_read/delim bonus erano rumore (2-3 punti)
+    Questi segnali restano come dati informativi nel parquet e in signal_flags.
+    """
     score = 0
     score += _GRAN_SCORE.get(granularity or "non_determinato", 0)
 
     if year_min is not None and year_max is not None:
         span = max(0, year_max - year_min)
-        score += min(20, int(span / _YEAR_SPAN_MAX * 20))
+        score += min(20, span)
     elif year_min is not None or year_max is not None:
         score += 5
 
     score += 20 if reachable else 0
 
-    fmt_raw = ("" if not isinstance(resource_format, str) else resource_format).strip()
-    fmt = ""
-    if fmt_raw:
-        valid = ["CSV", "JSON", "XLSX", "XLS", "XML", "PDF", "SDMX", "ZIP", "PARQUET"]
-        if "." in fmt_raw and len(fmt_raw) > 6:
-            fmt_ext = fmt_raw.rsplit(".", 1)[-1].upper()
-            if fmt_ext in valid:
-                fmt = fmt_ext
-        else:
-            up = fmt_raw.upper()
-            for v in valid:
-                if v in up:
-                    fmt = v
-                    break
+    fmt = _normalize_format(resource_format)
     score += _FORMAT_SCORE.get(fmt, 0)
 
     enrich_str = enrich_method if isinstance(enrich_method, str) else ""
@@ -377,33 +375,36 @@ def _intake_score(
         score -= 10
         needs_review = True
 
-    # Segnali di qualita' reali dal toolkit profiler
-    if encoding_suggested:
-        score += 5  # file esiste, encoding rilevato == leggibile e parsabile
-    if delim_suggested:
-        score += 2  # delimitatore rilevato (formato strutturato)
-    if robust_read_suggested:
-        score -= 10  # CSV sporco (righe irregolari, padding necessario)
-        needs_review = True
-
-    # mapping_suggestions: JSON con colonne → dati ben strutturati
-    if mapping_suggestions:
-        try:
-            ms = (
-                json.loads(mapping_suggestions)
-                if isinstance(mapping_suggestions, str)
-                else mapping_suggestions
-            )
-            if isinstance(ms, dict) and len(ms) >= 2:
-                score += 5  # almeno 2 colonne con tipo inferito
-            elif isinstance(ms, dict) and len(ms) >= 1:
-                score += 3  # almeno 1 colonna
-        except Exception:
-            pass
-
     score = max(0, min(100, score))
     candidate = score >= 40 and not needs_review
     return score, candidate
+
+
+# ── readiness flags ───────────────────────────────────────────────────────────
+
+_MACHINE_READABLE_FORMATS = {"CSV", "JSON", "XML", "PARQUET", "SDMX"}
+
+
+def _readiness_flags(result: dict) -> dict:
+    """Arricchisce result con signal_flags: flag binari di readiness.
+
+    Ogni flag è True/False e corrisponde a un segnale verificabile.
+    Non sostituisce paqa_score né joinability_score — li affianca.
+    """
+    fmt = (result.get("resource_format") or "").upper()
+    machine_readable = any(f in fmt for f in _MACHINE_READABLE_FORMATS) if fmt else False
+
+    flags = {
+        "raggiungibile": bool(result.get("reachable")),
+        "machine_readable": machine_readable,
+        "granularita_nota": result.get("granularity") not in (None, "non_determinato"),
+        "anni_noti": result.get("year_min") is not None or result.get("year_max") is not None,
+        "freschezza": (result.get("year_max") or 0) >= 2024,
+        "profilato": bool(result.get("encoding_suggested")),
+        "joinabile": bool(result.get("join_keys")),
+    }
+    result["signal_flags"] = json.dumps(flags)
+    return result
 
 
 def _infer_sdmx_join_keys(result: dict) -> dict[str, list[str]]:
@@ -484,10 +485,6 @@ def _finalize_scores(result: dict) -> dict:
         enrich_method=result.get("enrich_method", "none"),
         needs_review=result.get("needs_review", True),
         source_status=result.get("source_status"),
-        encoding_suggested=result.get("encoding_suggested"),
-        mapping_suggestions=result.get("mapping_suggestions"),
-        robust_read_suggested=result.get("robust_read_suggested"),
-        delim_suggested=result.get("delim_suggested"),
     )
     result["intake_score"] = score
     result["intake_candidate"] = candidate
@@ -504,5 +501,10 @@ def _finalize_scores(result: dict) -> dict:
 
     result["join_keys"] = json.dumps(found_keys) if found_keys else None
     result["joinability_score"] = compute_joinability_score(found_keys)
+
+    # ── Readiness flags (segnali binari, affiancano lo score) ──────────────
+    # Deve essere DOPO join_keys e joinability_score per popolare
+    # correttamente signal_flags.joinabile.
+    _readiness_flags(result)
 
     return result
