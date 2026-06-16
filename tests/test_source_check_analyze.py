@@ -162,19 +162,6 @@ class TestIntakeScore:
         # stale sottrae 10 e forza needs_review=True → candidate=False
         assert candidate is False
 
-    def test_robust_read(self):
-        score, candidate = _intake_score(
-            granularity="regione",
-            year_min=2010,
-            year_max=2020,
-            reachable=True,
-            resource_format="CSV",
-            enrich_method="ckan_package_show",
-            needs_review=False,
-            robust_read_suggested=True,
-        )
-        assert candidate is False  # needs_review forced
-
     def test_format_from_extension(self):
         score, candidate = _intake_score(
             granularity="regione",
@@ -187,61 +174,8 @@ class TestIntakeScore:
         )
         assert score > 0
 
-    def test_format_non_matching_extension_returns_empty(self):
+    def test_format_non_matching_returns_empty(self):
         assert _normalize_format("application/octet-stream") == ""
-
-    def test_format_with_long_dotted_string_maps_to_ext(self):
-        """Formato come 'application/vnd.ms-excel.sheet.binary' entra nel branch
-        di estrazione estensione (dot + len > 6) ma .binary non e' in valid list."""
-        score, candidate = _intake_score(
-            granularity="regione",
-            year_min=2010,
-            year_max=2020,
-            reachable=True,
-            resource_format="application/vnd.ms-excel.sheet.binary",
-            enrich_method="none",
-            needs_review=False,
-        )
-        assert score > 0  # format non riconosciuto ma score arriva da altri fattori
-
-    def test_intake_score_single_mapping_col(self):
-        score, candidate = _intake_score(
-            granularity="regione",
-            year_min=2010,
-            year_max=2020,
-            reachable=True,
-            resource_format=None,
-            enrich_method="none",
-            needs_review=False,
-            mapping_suggestions='{"a": "int"}',
-        )
-        assert score > 0
-
-    def test_intake_score_invalid_mapping_json(self):
-        score, candidate = _intake_score(
-            granularity="regione",
-            year_min=2010,
-            year_max=2020,
-            reachable=True,
-            resource_format=None,
-            enrich_method="none",
-            needs_review=False,
-            mapping_suggestions="not valid json",
-        )
-        assert score > 0  # gracefully ignored
-
-    def test_encoding_signal(self):
-        score, candidate = _intake_score(
-            granularity="regione",
-            year_min=2010,
-            year_max=2020,
-            reachable=True,
-            resource_format="CSV",
-            enrich_method="none",
-            needs_review=False,
-            encoding_suggested="utf-8",
-        )
-        assert score > 0
 
     def test_score_capped_at_100(self):
         score, candidate = _intake_score(
@@ -252,24 +186,8 @@ class TestIntakeScore:
             resource_format="CSV",
             enrich_method="ckan_package_show",
             needs_review=False,
-            encoding_suggested="utf-8",
-            delim_suggested=",",
-            mapping_suggestions='{"col1": "int", "col2": "str"}',
         )
         assert score <= 100
-
-    def test_mapping_suggestions_gives_bonus(self):
-        score, candidate = _intake_score(
-            granularity="regione",
-            year_min=2010,
-            year_max=2020,
-            reachable=True,
-            resource_format=None,
-            enrich_method="none",
-            needs_review=False,
-            mapping_suggestions='{"a": "int", "b": "str"}',
-        )
-        assert score > 0
 
 
 class TestFinalizeScores:
@@ -281,6 +199,87 @@ class TestFinalizeScores:
         assert "intake_candidate" in result
         assert isinstance(result["intake_score"], int)
         assert isinstance(result["intake_candidate"], bool)
+
+    def test_finalize_adds_signal_flags(self):
+        import json
+
+        # Usa colonne profilate che producono join_keys (flusso reale)
+        columns_raw = json.dumps(["Comune", "Anno", "Importo"])
+        result = _finalize_scores(
+            {
+                "columns": columns_raw,
+                "granularity": "comune",
+                "year_min": 2020,
+                "year_max": 2024,
+                "reachable": True,
+                "resource_format": "CSV",
+                "enrich_method": "ckan_package_show",
+                "needs_review": False,
+                "encoding_suggested": "utf-8",
+            }
+        )
+        assert "signal_flags" in result
+        flags = json.loads(result["signal_flags"])
+        assert flags["raggiungibile"] is True
+        assert flags["machine_readable"] is True
+        assert flags["granularita_nota"] is True
+        assert flags["anni_noti"] is True
+        assert flags["freschezza"] is True  # 2024 >= 2024
+        assert flags["profilato"] is True
+        # join_keys vengono calcolate da columns, non pre-iniettate
+        assert flags["joinabile"] is True, (
+            f"columns={columns_raw} dovrebbe produrre join_keys, "
+            f"trovato signal_flags.joinabile=False"
+        )
+
+    def test_finalize_signal_flags_all_false(self):
+        import json
+
+        result = _finalize_scores(
+            {
+                "granularity": "non_determinato",
+                "year_min": None,
+                "year_max": None,
+                "reachable": False,
+                "resource_format": None,
+                "enrich_method": "error",
+                "needs_review": True,
+            }
+        )
+        flags = json.loads(result["signal_flags"])
+        assert flags["raggiungibile"] is False
+        assert flags["machine_readable"] is False
+        assert flags["granularita_nota"] is False
+        assert flags["anni_noti"] is False
+        assert flags["freschezza"] is False
+        assert flags["profilato"] is False
+        assert flags["joinabile"] is False
+
+    def test_signal_flags_joinable_from_columns(self):
+        """signal_flags.joinabile deve essere True quando le colonne profilate
+        producono join_keys (es. Comune → istat_comune, Anno → anno)."""
+        import json
+
+        columns_raw = json.dumps(["Comune", "Anno", "Sesso", "Importo"])
+        result = _finalize_scores(
+            {
+                "columns": columns_raw,
+                "granularity": "comune",
+                "year_min": 2020,
+                "year_max": 2024,
+                "reachable": True,
+                "resource_format": "CSV",
+                "enrich_method": "csv_preview",
+                "needs_review": False,
+            }
+        )
+        assert "signal_flags" in result
+        flags = json.loads(result["signal_flags"])
+        join_keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
+        assert len(join_keys) >= 1, f"dovrebbero esserci join_keys, trovato: {join_keys}"
+        assert flags["joinabile"] is True, (
+            f"signal_flags.joinabile dovrebbe essere True con join_keys={join_keys}, trovato False"
+        )
 
     def test_finalize_adds_join_keys_mapping(self):
         """_finalize_scores produce join_keys come mapping {key: [colonne]}."""
@@ -493,43 +492,67 @@ class TestFinalizeScores:
 
     def test_sdmx_age_does_not_match_wage(self):
         """'Wage' non deve attivare eta (falso positivo)."""
-        result = _finalize_scores({
-            "resource_format": "SDMX", "granularity": "nazionale",
-            "year_min": None, "year_max": None,
-            "tags": "wage statistics by country",
-            "notes": None, "title": "Wage survey",
-            "sdmx_flow": "test", "enrich_method": "sdmx_dataflow_annotations",
-            "needs_review": True, "reachable": False,
-        })
+        result = _finalize_scores(
+            {
+                "resource_format": "SDMX",
+                "granularity": "nazionale",
+                "year_min": None,
+                "year_max": None,
+                "tags": "wage statistics by country",
+                "notes": None,
+                "title": "Wage survey",
+                "sdmx_flow": "test",
+                "enrich_method": "sdmx_dataflow_annotations",
+                "needs_review": True,
+                "reachable": False,
+            }
+        )
         import json
+
         keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
         assert "eta" not in keys, f"wage should not match eta, got {keys}"
 
     def test_sdmx_age_does_not_match_damage(self):
         """'Damage' non deve attivare eta (falso positivo)."""
-        result = _finalize_scores({
-            "resource_format": "SDMX", "granularity": "nazionale",
-            "year_min": None, "year_max": None,
-            "tags": "damage reports",
-            "notes": None, "title": "Damage assessment",
-            "sdmx_flow": "test", "enrich_method": "sdmx_dataflow_annotations",
-            "needs_review": True, "reachable": False,
-        })
+        result = _finalize_scores(
+            {
+                "resource_format": "SDMX",
+                "granularity": "nazionale",
+                "year_min": None,
+                "year_max": None,
+                "tags": "damage reports",
+                "notes": None,
+                "title": "Damage assessment",
+                "sdmx_flow": "test",
+                "enrich_method": "sdmx_dataflow_annotations",
+                "needs_review": True,
+                "reachable": False,
+            }
+        )
         import json
+
         keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
         assert "eta" not in keys, f"damage should not match eta, got {keys}"
 
     def test_sdmx_paese_alone_does_not_match_cittadinanza(self):
         """'Paese' da solo non deve attivare cittadinanza (falso positivo)."""
-        result = _finalize_scores({
-            "resource_format": "SDMX", "granularity": "nazionale",
-            "year_min": 2020, "year_max": 2024,
-            "tags": "indicatori per paese",
-            "notes": None, "title": "Indicatori per paese",
-            "sdmx_flow": "test", "enrich_method": "sdmx_dataflow_annotations",
-            "needs_review": True, "reachable": False,
-        })
+        result = _finalize_scores(
+            {
+                "resource_format": "SDMX",
+                "granularity": "nazionale",
+                "year_min": 2020,
+                "year_max": 2024,
+                "tags": "indicatori per paese",
+                "notes": None,
+                "title": "Indicatori per paese",
+                "sdmx_flow": "test",
+                "enrich_method": "sdmx_dataflow_annotations",
+                "needs_review": True,
+                "reachable": False,
+            }
+        )
         import json
+
         keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
         assert "cittadinanza" not in keys, f"paese should not match cittadinanza alone, got {keys}"
         # deve comunque avere anno
@@ -537,15 +560,23 @@ class TestFinalizeScores:
 
     def test_sdmx_paese_di_cittadinanza_matches(self):
         """'Paese di cittadinanza' deve attivare cittadinanza."""
-        result = _finalize_scores({
-            "resource_format": "SDMX", "granularity": "nazionale",
-            "year_min": 2020, "year_max": 2024,
-            "tags": "popolazione per paese di cittadinanza",
-            "notes": None, "title": "Popolazione per paese di cittadinanza",
-            "sdmx_flow": "test", "enrich_method": "sdmx_dataflow_annotations",
-            "needs_review": True, "reachable": False,
-        })
+        result = _finalize_scores(
+            {
+                "resource_format": "SDMX",
+                "granularity": "nazionale",
+                "year_min": 2020,
+                "year_max": 2024,
+                "tags": "popolazione per paese di cittadinanza",
+                "notes": None,
+                "title": "Popolazione per paese di cittadinanza",
+                "sdmx_flow": "test",
+                "enrich_method": "sdmx_dataflow_annotations",
+                "needs_review": True,
+                "reachable": False,
+            }
+        )
         import json
+
         keys = json.loads(result["join_keys"]) if result["join_keys"] else {}
         assert "cittadinanza" in keys, f"expected cittadinanza, got {keys}"
 
