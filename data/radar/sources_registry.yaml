@@ -5,7 +5,7 @@ istat_sdmx:
   base_url: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1
   inventory:
     timeout: 600
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: dataflow_count
@@ -36,7 +36,7 @@ anac:
     skip_current_list_reason: package_search con fq=organization:anac 
       restituisce tutti i 70 dataset ANAC con metadata completi. current_list 
       non necessario.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -64,7 +64,7 @@ inps:
     package_show_sample: true
     package_show_timeout: 5
     sample_size: 10000
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -94,7 +94,7 @@ openbdap:
     package_show_sample: true
     package_show_timeout: 5
     sample_size: 2000
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -117,7 +117,7 @@ inail_opendata:
   protocol: aem
   observation_mode: radar-only
   base_url: https://dati.inail.it/
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   verdict: go
   note: Portale AEM con Open API documentate. Superficie operativa reale = 
     catalogo AEM + Open API, non CKAN standard (logo nel footer fuorviante). 
@@ -129,7 +129,7 @@ mim_opendata:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-04-27'
     metric: csv_magnet_total_links
@@ -162,7 +162,7 @@ dati_camera:
   base_url: https://dati.camera.it/sparql
   scraping_blocked: true
   scraping_blocked_reason: reCAPTCHA / WAF blocca richieste HTTP non-browser
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -199,7 +199,7 @@ dati_senato:
     timeout: 600
     timeout_reason: 99 query SPARQL (1 discover + 98 schema enrich × 15 pred). 
       stimate 5s/query su Virtuoso. 99 × 5 × 1.2 = 594s
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-05-31'
     metric: named_graph_count
@@ -239,7 +239,7 @@ dati_cultura:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.cultura.gov.it/sparql
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -264,7 +264,7 @@ ispra_linked_data:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.isprambiente.it/sparql
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -291,7 +291,7 @@ consip_open_data:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.consip.it/api/3/action/package_list?limit=1
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: package_count
@@ -318,7 +318,7 @@ lavoro_opendata:
     skip_current_list_reason: package_search con 
       fq=organization:ministero-del-lavoro restituisce 83 dataset con metadata 
       completi. current_list non necessario.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -345,7 +345,7 @@ mur_ustat:
     skip_current_list_reason: package_search con 
       fq=organization:ministero-universita-e-ricerca restituisce 69 dataset con 
       metadata completi. current_list non necessario.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -373,7 +373,7 @@ opencoesione:
     skip_current_list_reason: 'package_search con fq=organization:pcm-opencoesione
       restituisce 561 dataset (3 core: progetti, soggetti, pagamenti). current_list
       non necessario.'
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   verdict: go
   note: "Fonte via dati.gov.it (harvesting PCM-OpenCoesione). Sostituisce accesso
     diretto a opencoesione.gov.it (API REST instabile: 403/timeout). 561 dataset totali
@@ -396,7 +396,7 @@ mef_irpef:
   observation_mode: catalog-watch
   base_url: 
     https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-05-03'
     metric: csv_magnet_homepage_links
@@ -424,7 +424,7 @@ opencivitas:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.opencivitas.it/it/open-data
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-05-07'
     metric: csv_magnet_total_links
@@ -469,24 +469,25 @@ aifa:
     probe_content_type: true
   datasets_in_use:
     - aifa_spesa_consumo
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
 dait:
   source_kind: catalog
   protocol: html
   observation_mode: radar-only
   base_url: https://dait.interno.gov.it/contenuti/tipo/open_data
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   verdict: go
   note: "DAIT — Anagrafe Amministratori locali. CSV snapshot annuali 1991-2026 + \
     \ corrente. 41 su 42 entry sono snapshot dello stesso dataset. radar-only iniziale
     per evitare rumore catalog inventory sui 41 snapshot.\n"
-  datasets_in_use: []
+  datasets_in_use:
+    - dait_amministratori_locali
 mit_opendata:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.mit.gov.it/catalog/api/3/action/package_list?limit=1
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   verdict: go
   note: "Portale CKAN MIT — 67 dataset su trasporti, infrastrutture, incidentalità,
     veicoli, opere pubbliche. Include dataset già in uso dal Lab (mit_incidentalita_mensile,
@@ -500,7 +501,7 @@ openga:
   observation_mode: catalog-watch
   base_url: 
     https://openga.giustizia-amministrativa.it/api/3/action/package_list?limit=1
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   verdict: go
   note: "Portale CKAN Giustizia Amministrativa — ~270 dataset su ricorsi TAR+CDS,
     sentenze, ordinanze, pareri. CC-BY 4.0. Aggiornamento mensile. Si incastra con
@@ -513,7 +514,7 @@ giustizia_statistiche:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://datiestatistiche.giustizia.it/
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   verdict: go
   note: "Portale statistico Ministero Giustizia — XLSX scaricabili su flussi civili/penali,
     clearance rate, disposition time, sorveglianza, intercettazioni, monitoraggio
@@ -538,7 +539,7 @@ cortecostituzionale:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   verdict: go
   note: "Portale Open Data Corte Costituzionale — Pronunce (1956-oggi), Massime, Anagrafica
     Giudici, Atti di promovimento. CSV/XML/JSON in ZIP. Agg. giornaliero. Endpoint
@@ -554,7 +555,7 @@ terna_opendata:
   protocol: rest
   observation_mode: radar-only
   base_url: https://dati.terna.it/
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   verdict: go
   note: "Portale Dati Terna — API Sitecore REST. 31+ dataset su energia (fabbisogno,
     generazione, trasmissione, mercato, adeguatezza). API pubblica ritorna XLSX. Già
@@ -606,7 +607,7 @@ ministero_interno:
     skip_current_list_reason: package_search con 
       fq=organization:ministero-dell-interno restituisce 38 dataset con metadata
       completi.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -634,7 +635,7 @@ agid:
     skip_current_list_reason: package_search con 
       fq=organization:agenzia-per-l-italia-digitale restituisce 40 dataset con 
       metadata completi.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -648,13 +649,14 @@ agid:
   note: 'Fonte via dati.gov.it. IPA — Indice delle PA: enti, unita organizzative,
     PEC, domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione
     elettronica, cloud. Codice_IPA chiave di join con ANAC.'
-  datasets_in_use: []
+  datasets_in_use:
+    - ipa_istat_mapping
 noipa_sparql:
   source_kind: catalog
   protocol: sparql
   observation_mode: radar-only
   base_url: https://sparql-noipa.mef.gov.it/sparql
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   verdict: hold
   note: NoiPA SPARQL — MEF/RGS. Dati mensili personale PA (entries-{YYYYMM}, 
     2019-2026) + pensioni PA (entriesPensioni-{YYYYMM}, 2017-oggi). ~490k 
@@ -675,7 +677,7 @@ mimit_rna:
     skip_current_list_reason: package_search con 
       fq=organization:ministero-delle-imprese-e-del-made-in-italy restituisce 
       370 dataset (RNA Aiuti + RNA Misure) con metadata.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -704,7 +706,7 @@ ministero_salute:
     skip_current_list_reason: package_search con 
       fq=organization:ministero-della-salute restituisce 51 dataset con 
       metadata.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -737,7 +739,7 @@ agcm:
     skip_current_list_reason: package_search con fq=organization:agcm 
       restituisce 53 dataset (rating legalita', concentrazioni). current_list 
       non necessario.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-06-04'
     metric: package_count
@@ -765,7 +767,7 @@ unioncamere:
       fq=organization:unione-italiana-delle-camere-di-commercio-industria-artigianato-e-agricoltura
       restituisce 352 dataset (imprese per provincia). current_list non 
       necessario.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-06-04'
     metric: package_count
@@ -794,7 +796,7 @@ pagopa:
     skip_current_list: true
     skip_current_list_reason: package_search con fq=organization:pagopa-s-p-a 
       restituisce 8 dataset con metadata completi.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-06-11'
     metric: package_count
@@ -820,7 +822,7 @@ aci:
     skip_current_list: true
     skip_current_list_reason: package_search con fq=organization:aci restituisce
       35 dataset con metadata completi.
-  last_probed: '2026-06-16'
+  last_probed: '2026-06-17'
   catalog_baseline:
     captured_at: '2026-06-11'
     metric: package_count
