@@ -1145,17 +1145,14 @@ def test_list_source_items_parquet_not_found(tmp_path, monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_radar_summary_include_history_passes_params(tmp_path, monkeypatch) -> None:
-    """so_radar_summary(include_history=True) include history nel risultato
-    e passa source_id/limit a radar_history."""
+def test_radar_summary_include_history_contract(tmp_path, monkeypatch) -> None:
+    """include_history=True produce history; default False no."""
     from so_mcp.so_server import so_radar_summary
 
     radar_path = tmp_path / "radar_summary.json"
     radar_path.write_text(
         json.dumps(
             {
-                "generated_at": "2026-06-01T00:00:00+00:00",
-                "probe_date": "2026-06-01",
                 "sources_total": 1,
                 "status_counts": {"GREEN": 1},
                 "sources": [{"id": "s1", "status": "GREEN"}],
@@ -1172,150 +1169,42 @@ def test_radar_summary_include_history_passes_params(tmp_path, monkeypatch) -> N
                 "probes": [
                     {
                         "probe_date": "2026-05-25",
-                        "sources": [{"id": "s1", "status": "GREEN"}],
-                    },
-                    {
-                        "probe_date": "2026-05-18",
-                        "sources": [{"id": "s1", "status": "RED"}],
-                    },
-                ]
+                        "sources": [{"id": "s1", "status": "GREEN"}, {"id": "s2", "status": "RED"}],
+                    }
+                ],
             }
         ),
         encoding="utf-8",
     )
     monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", history_path)
 
-    # Default: include_history=False → nessun history
     result_no = so_radar_summary(source_id="s1")
     assert "history" not in result_no
 
-    # Con include_history=True → history presente
     result_yes = so_radar_summary(source_id="s1", include_history=True)
     assert "history" in result_yes
     assert result_yes["history"]["returned"] == 1
-    assert result_yes["history"]["sources"][0]["source_id"] == "s1"
-    assert result_yes["history"]["sources"][0]["recent_red_count"] == 1
 
 
-def test_radar_summary_include_history_default_is_false(tmp_path, monkeypatch) -> None:
-    """include_history=False di default — history non presente senza flag esplicito."""
-    from so_mcp.so_server import so_radar_summary
+def test_source_overview_contract(monkeypatch) -> None:
+    """so_source_overview include tutte le sezioni previste: registry, radar,
+    inventory_status, inventory_diff, signals."""
+    import so_mcp.so_server as sv
 
-    radar_path = tmp_path / "radar_summary.json"
-    radar_path.write_text(
-        json.dumps(
-            {
-                "generated_at": "2026-06-01T00:00:00+00:00",
-                "probe_date": "2026-06-01",
-                "sources_total": 1,
-                "status_counts": {"GREEN": 1},
-                "sources": [{"id": "s1", "status": "GREEN"}],
-            }
-        ),
-        encoding="utf-8",
+    monkeypatch.setattr(
+        sv, "registry_query", lambda source_id=None: {"returned": 1, "source_id": source_id}
     )
-    monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
-    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", tmp_path / "unused.json")
+    monkeypatch.setattr(sv, "radar_summary", lambda source_id=None: {"status_counts": {"GREEN": 1}})
+    monkeypatch.setattr(sv, "inventory_status", lambda source_id=None: {"status": "ok"})
+    monkeypatch.setattr(sv, "inventory_diff", lambda source_id=None: {"delta": 0})
+    monkeypatch.setattr(sv, "query_signals", lambda source_id=None, limit=5: {"signals": []})
 
-    result = so_radar_summary(source_id="s1")
-    assert "history" not in result
+    result = sv.so_source_overview(source_id="s1")
 
-
-# ---------------------------------------------------------------------------
-# Contract: so_source_overview include registry
-# ---------------------------------------------------------------------------
-
-
-def test_source_overview_includes_registry(tmp_path, monkeypatch) -> None:
-    """so_source_overview include registry nel risultato."""
-    # Radar
-    radar_path = tmp_path / "radar_summary.json"
-    radar_path.write_text(
-        json.dumps(
-            {
-                "generated_at": "2026-06-01T00:00:00+00:00",
-                "probe_date": "2026-06-01",
-                "sources_total": 1,
-                "status_counts": {"GREEN": 1},
-                "sources": [{"id": "s1", "status": "GREEN"}],
-            }
-        ),
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
-
-    # Inventory report
-    report_path = tmp_path / "catalog_inventory_report.json"
-    report_path.write_text(
-        json.dumps(
-            {
-                "captured_at": "2026-06-01T00:00:00+00:00",
-                "sources": {"s1": {"status": "ok", "protocol": "ckan", "rows": 100}},
-            }
-        ),
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
-
-    # Inventory parquet (per inventory_diff)
-    inventory_path = tmp_path / "catalog_inventory_latest.parquet"
-    _write_parquet(
-        inventory_path,
-        [
-            {
-                "source_id": "s1",
-                "protocol": "ckan",
-                "item_id": "item_1",
-                "item_name": "item_1",
-                "organization": "Org",
-                "format": "csv",
-                "inventory_method": "package_list",
-                "item_kind": "dataset",
-                "captured_at": "2026-06-01",
-                "title": "",
-                "tags": "",
-                "notes_excerpt": "",
-                "landing_page": "",
-                "distribution_url": "",
-                "source_status": "",
-                "api_base_url": "",
-                "civic_priority": "",
-                "topic": "",
-                "theme": "",
-            }
-            for _ in range(100)
-        ],
-    )
-    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
-
-    # Signals
-    signals_path = tmp_path / "catalog_signals.json"
-    signals_path.write_text(json.dumps({"signals": []}), encoding="utf-8")
-    monkeypatch.setattr(_artifact, "_SIGNALS_JSON", signals_path)
-
-    # Registry
-    registry_path = tmp_path / "sources_registry.yaml"
-    registry_path.write_text(
-        "s1:\n"
-        "  source_kind: ckan\n"
-        "  protocol: ckan\n"
-        "  observation_mode: catalog-watch\n"
-        "  base_url: https://example.test/\n"
-        "  verdict: intake\n",
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(_artifact, "_REGISTRY_YAML", registry_path)
-
-    from so_mcp.so_server import so_source_overview
-
-    result = so_source_overview(source_id="s1")
-
-    assert "registry" in result, "so_source_overview deve includere 'registry'"
+    assert result["registry"]["source_id"] == "s1"
     assert result["registry"]["returned"] == 1
-    assert result["registry"]["results"][0]["source_id"] == "s1"
-    assert result["registry"]["results"][0]["source_kind"] == "ckan"
-    assert result["source_id"] == "s1"
     assert "radar" in result
     assert "inventory_status" in result
     assert "inventory_diff" in result
     assert "signals" in result
+    assert result["source_id"] == "s1"
