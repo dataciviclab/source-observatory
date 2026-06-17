@@ -89,15 +89,6 @@ def so_radar_summary(
 
 
 @mcp.tool(
-    description="[DEPRECATO] Usa so_radar_summary con include_history=True. "
-    "Legge radar_history.json: storia probes per fonte.",
-    structured_output=True,
-)
-def so_radar_history(source_id: str | None = None, limit: int = 5) -> dict[str, Any]:
-    return guard_timed(radar_history, "so_radar_history", source_id, limit)
-
-
-@mcp.tool(
     description="Legge catalog_inventory_report.json: stato build inventory per fonte. "
     "Con include_diff=True include anche il delta item count rispetto al baseline "
     "(richiede source_id esplicito).",
@@ -188,10 +179,10 @@ def so_list_source_items(
 
 @mcp.tool(
     description=(
-        "Overview completo di una fonte: stato radar, stato inventory, "
-        "delta item count, signals recenti. Compone radar_summary + "
-        "inventory_status + inventory_diff + catalog_signals "
-        "in una singola chiamata."
+        "Overview completo di una fonte: registry, radar, inventory, "
+        "delta item count, signals recenti. Compone registry_query + "
+        "radar_summary + inventory_status + inventory_diff + "
+        "catalog_signals in una singola chiamata."
     ),
     structured_output=True,
 )
@@ -201,6 +192,7 @@ def so_source_overview(source_id: str) -> dict[str, Any]:
     def _exec() -> dict[str, Any]:
         result: dict[str, Any] = {
             "source_id": source_id,
+            "registry": registry_query(source_id=source_id),
             "radar": radar_summary(source_id),
             "inventory_status": inventory_status(source_id),
             "inventory_diff": inventory_diff(source_id),
