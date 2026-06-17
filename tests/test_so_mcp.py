@@ -1138,3 +1138,73 @@ def test_list_source_items_parquet_not_found(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", tmp_path / "nonexistent.parquet")
     result = list_source_items("inps")
     assert result["error"] == "artifact_not_found"
+
+
+# ---------------------------------------------------------------------------
+# Contract: so_radar_summary include_history
+# ---------------------------------------------------------------------------
+
+
+def test_radar_summary_include_history_contract(tmp_path, monkeypatch) -> None:
+    """include_history=True produce history; default False no."""
+    from so_mcp.so_server import so_radar_summary
+
+    radar_path = tmp_path / "radar_summary.json"
+    radar_path.write_text(
+        json.dumps(
+            {
+                "sources_total": 1,
+                "status_counts": {"GREEN": 1},
+                "sources": [{"id": "s1", "status": "GREEN"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(_artifact, "_RADAR_JSON", radar_path)
+
+    history_path = tmp_path / "radar_history.json"
+    history_path.write_text(
+        json.dumps(
+            {
+                "probes": [
+                    {
+                        "probe_date": "2026-05-25",
+                        "sources": [{"id": "s1", "status": "GREEN"}, {"id": "s2", "status": "RED"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(_artifact, "_RADAR_HISTORY_JSON", history_path)
+
+    result_no = so_radar_summary(source_id="s1")
+    assert "history" not in result_no
+
+    result_yes = so_radar_summary(source_id="s1", include_history=True)
+    assert "history" in result_yes
+    assert result_yes["history"]["returned"] == 1
+
+
+def test_source_overview_contract(monkeypatch) -> None:
+    """so_source_overview include tutte le sezioni previste: registry, radar,
+    inventory_status, inventory_diff, signals."""
+    import so_mcp.so_server as sv
+
+    monkeypatch.setattr(
+        sv, "registry_query", lambda source_id=None: {"returned": 1, "source_id": source_id}
+    )
+    monkeypatch.setattr(sv, "radar_summary", lambda source_id=None: {"status_counts": {"GREEN": 1}})
+    monkeypatch.setattr(sv, "inventory_status", lambda source_id=None: {"status": "ok"})
+    monkeypatch.setattr(sv, "inventory_diff", lambda source_id=None: {"delta": 0})
+    monkeypatch.setattr(sv, "query_signals", lambda source_id=None, limit=5: {"signals": []})
+
+    result = sv.so_source_overview(source_id="s1")
+
+    assert result["registry"]["source_id"] == "s1"
+    assert result["registry"]["returned"] == 1
+    assert "radar" in result
+    assert "inventory_status" in result
+    assert "inventory_diff" in result
+    assert "signals" in result
+    assert result["source_id"] == "s1"

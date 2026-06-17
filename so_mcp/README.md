@@ -67,7 +67,6 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 | `so_inventory_status` | stato build inventory per fonte (con `include_diff=True` per delta item) |
 | `so_catalog_inventory_search` | cerca item per keyword/testo |
 | `so_recommend_sources` | trova source_id per keyword tema |
-| — | Topic inference: usa **`toolkit_infer_topic`** del toolkit MCP |
 
 > **Nota**: `so_infer_topic`, `so_inventory_diff` sono stati rimossi. Usa `so_inventory_status` con `include_diff=True` per il delta item (richiede `source_id`).
 
@@ -79,14 +78,13 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 | `so_inventory_query` | score esistente per questa fonte |
 | — | Probe, CKAN, Topic: usa i tool **`toolkit_*`** del toolkit MCP |
 
-> **Nota**: `so_probe_url`, `so_ckan_package_show`, `so_infer_topic` sono stati rimossi. Usa `toolkit_probe_url`, `toolkit_ckan_package_show`, `toolkit_infer_topic` del toolkit MCP.
+> **Nota**: `so_probe_url`, `so_ckan_package_show`, `so_infer_topic` sono stati rimossi. Usa `toolkit_probe_url`, `toolkit_ckan_package_show` del toolkit MCP.
 
 ### Extra (non legati a skill specifica)
 
 | Tool | Uso |
 |---|---|
 | `so_radar_summary` | health portali (con `include_history=True` per cronologia probe) |
-| `so_radar_history` | **[deprecato]** usa `so_radar_summary include_history=True` |
 | `so_catalog_signals` | drift catalogo (weekly CI) |
 | — | SPARQL: usa **`toolkit_sparql_query`** del toolkit MCP |
 
@@ -110,9 +108,6 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
   - legge `radar_summary.json`
   - stato GREEN/YELLOW/RED per fonte
   - con `include_history=True` include anche `radar_history.json`
-
-- `so_radar_history` **[deprecato]**
-  - usa `so_radar_summary` con `include_history=True`
 
 - `so_find_by_url`
   - cerca URL in source_check_results e catalog_inventory

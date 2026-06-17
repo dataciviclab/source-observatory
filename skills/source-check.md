@@ -56,6 +56,10 @@ duplicati e orientarti:
 4. toolkit_probe_url(<URL>)     → reachability rapida (toolkit MCP)
 ```
 
+**Se la fonte è già nota (source_id conosciuto)**: sostituisci i passaggi
+2-3 con `so_source_overview(<source_id>)` che dà radar + inventory_status +
+signals + registry in una chiamata.
+
 **Se `so_find_by_url` trova risultati**: la fonte è già catalogata — consulta
 i risultati prima di proseguire e possibilmente riutilizza evidenze esistenti.
 

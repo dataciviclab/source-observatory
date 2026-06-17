@@ -25,7 +25,10 @@ Prima di qualsiasi probe, verifica che il portale non sia già nel sistema:
 2. so_registry_query(source_id=?) → già nel registry?
 ```
 
-**Se già catalogato**: stop, restituisci `already_known` con riferimento all'entry registry.
+**Se già catalogato (source_id noto)**: invece dei passaggi separati, puoi usare
+`so_source_overview(<source_id>)` per un quadro completo (registry + radar +
+inventory + signals) in una chiamata sola. Poi restituisci `already_known` con
+riferimento all'entry registry.
 
 ## Steps
 

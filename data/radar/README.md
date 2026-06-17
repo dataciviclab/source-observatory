@@ -33,6 +33,5 @@ Non e' un inventario di resource e non decide se una fonte merita un candidate.
 
 I tool MCP SO forniscono accesso programmatico a questi artifact:
 - `so_radar_summary` — legge `radar_summary.json` (status compatto per fonte; con `include_history=True` include anche la cronologia probe)
-- `so_radar_history` — **[deprecato]** usa `so_radar_summary include_history=True`
 
 GCS latest: `gs://dataciviclab-clean/radar/radar_summary.json`

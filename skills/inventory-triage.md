@@ -44,6 +44,10 @@ Prima di toccare l'inventory parquet, consulta gli artifact SO via MCP per orien
 4. so_radar_summary               → stato radar delle fonti monitorate
 ```
 
+**Alternativa compatta**: se conosci già lo `source_id`, puoi usare
+`so_source_overview(<source_id>)` che combina inventory_status + signals +
+radar_summary + registry in una chiamata sola.
+
 **Se `so_inventory_status` mostra error per una fonte**: l'inventory di quella fonte è inaffidabile — salta il triage per quella fonte o interpreta i risultati con cautela.
 
 **Se `so_catalog_signals` mostra `no signal`**: il catalogo è stabile, nessun bisogno urgente di re-inventory.
