@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-06-17
+Ultimo run: 2026-06-18
 
 ## Sommario
 
 - Fonti controllate: 32
-- GREEN: 32
-- YELLOW: 0
+- GREEN: 31
+- YELLOW: 1
 - RED: 0
 
 ## Tipi sorgente
@@ -31,7 +31,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
+| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_entrate_stato, bdap_lea, bdap_spese_stato, dipendenti_pubblici |
@@ -48,14 +48,14 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso |
 | aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
-| dait | catalog | html | radar-only | GREEN | 200 | - |
+| dait | catalog | html | radar-only | GREEN | 200 | dait_amministratori_locali |
 | mit_opendata | catalog | ckan | catalog-watch | GREEN | 200 | mit_incidentalita_mensile, mit_opere_incompiute_2020 |
 | openga | catalog | ckan | catalog-watch | GREEN | 200 | openga_ricorsi_appalto, openga_ricorsi_cds |
 | giustizia_statistiche | catalog | html | catalog-watch | GREEN | 200 | civile_flussi, giustizia_penale_indicatori |
 | cortecostituzionale | catalog | html | catalog-watch | GREEN | 200 | - |
 | terna_opendata | catalog | rest | radar-only | GREEN | 200 | terna_electricity_by_source |
 | ministero_interno | catalog | ckan | catalog-watch | GREEN | 200 | - |
-| agid | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| agid | catalog | ckan | catalog-watch | GREEN | 200 | ipa_istat_mapping |
 | noipa_sparql | catalog | sparql | radar-only | GREEN | 200 | - |
 | mimit_rna | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | ministero_salute | catalog | ckan | catalog-watch | GREEN | 200 | reparti_ricovero, strutture_asl, strutture_ricovero_asl |
@@ -66,6 +66,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
+- `istat_sdmx`: Timeout (ReadTimeout)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
 - `aifa`: HTTP 200 | content-type: text/html;charset=UTF-8 | url finale: https://www.aifa.gov.it/dati-aifa | SSL verify failed; fallback verify=False used (SSLError)
 - `openga`: HTTP 200 | content-type: application/json;charset=utf-8 | url finale: https://openga.giustizia-amministrativa.it/api/3/action/package_list?limit=1 | SSL verify failed; fallback verify=False used (SSLError)
