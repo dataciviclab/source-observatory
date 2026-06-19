@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-06-18T08:18:06.145338+00:00",
-  "probe_date": "2026-06-18",
+  "generated_at": "2026-06-19T08:39:39.501442+00:00",
+  "probe_date": "2026-06-19",
   "sources_total": 32,
   "status_counts": {
-    "GREEN": 31,
+    "GREEN": 30,
     "YELLOW": 1,
-    "RED": 0
+    "RED": 1
   },
   "persistent_red": 0,
   "sources": [
@@ -137,9 +137,9 @@
     },
     {
       "id": "mit_opendata",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "ckan",
-      "http_code": "200",
+      "http_code": "500",
       "note": null
     },
     {
