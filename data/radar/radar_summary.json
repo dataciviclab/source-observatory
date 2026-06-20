@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-06-19T08:39:39.501442+00:00",
-  "probe_date": "2026-06-19",
+  "generated_at": "2026-06-20T07:07:56.453974+00:00",
+  "probe_date": "2026-06-20",
   "sources_total": 32,
   "status_counts": {
     "GREEN": 30,
     "YELLOW": 1,
     "RED": 1
   },
-  "persistent_red": 0,
+  "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
@@ -140,7 +140,8 @@
       "status": "RED",
       "protocol": "ckan",
       "http_code": "500",
-      "note": null
+      "note": null,
+      "red_streak": 2
     },
     {
       "id": "openga",
