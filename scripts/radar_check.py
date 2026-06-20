@@ -149,7 +149,7 @@ def _probe_once(base_url: str) -> ProbeResult:
     if result.is_ok and result.response is not None:
         return _build_probe_result(
             base_url,
-            result.response,
+            result.response,  # type: ignore[arg-type]
             ssl_failure=result.ssl_fallback_used if result.ssl_fallback_used else None,
         )
     # Both failed — result.err carries the final error
