@@ -22,6 +22,7 @@ from _constants import (
     validate_schema,
 )
 from lab_connectors.http import HttpClient, HttpFallbackError
+from lab_connectors.http.types import ResponseLike
 from toolkit.scout.http import is_sdmx_url
 
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
@@ -46,9 +47,7 @@ def classify_response(status_code: int) -> str:
     return "RED"
 
 
-def validate_ckan_action_response(
-    base_url: str, response: requests.Response
-) -> tuple[str, str | None]:
+def validate_ckan_action_response(base_url: str, response: ResponseLike) -> tuple[str, str | None]:
     if "/api/3/action/" not in base_url:
         return classify_response(response.status_code), None
 
@@ -74,7 +73,7 @@ def validate_ckan_action_response(
 
 
 def _make_error_result(
-    exc: requests.exceptions.RequestException,
+    exc: Exception,
     *,
     ssl_fallback_used: bool = False,
     ssl_failure: requests.exceptions.SSLError | None = None,
@@ -113,7 +112,7 @@ def _make_error_result(
 
 def _build_probe_result(
     base_url: str,
-    response: requests.Response,
+    response: ResponseLike,
     *,
     ssl_failure: requests.exceptions.SSLError | Literal[True] | None = None,
 ) -> ProbeResult:
@@ -161,7 +160,7 @@ def _probe_once(base_url: str) -> ProbeResult:
             note="Unexpected: response=None without exception from HttpClient.get",
         )
     ssl_failure_err: requests.exceptions.SSLError | None = None
-    error_exc: requests.exceptions.RequestException
+    error_exc: Exception
     if isinstance(result.err, HttpFallbackError):
         ssl_failure_err = (
             result.err.primary_error
@@ -171,7 +170,7 @@ def _probe_once(base_url: str) -> ProbeResult:
         if isinstance(result.err.fallback_error, requests.exceptions.RequestException):
             error_exc = result.err.fallback_error
         else:
-            error_exc = result.err.fallback_error  # type: ignore[assignment]
+            error_exc = result.err.fallback_error
     elif isinstance(result.err, requests.exceptions.SSLError):
         ssl_failure_err = result.err
         error_exc = result.err
