@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-06-20T07:07:56.453974+00:00",
-  "probe_date": "2026-06-20",
-  "sources_total": 32,
+  "generated_at": "2026-06-21T08:08:55.032407+00:00",
+  "probe_date": "2026-06-21",
+  "sources_total": 33,
   "status_counts": {
-    "GREEN": 30,
-    "YELLOW": 1,
+    "GREEN": 28,
+    "YELLOW": 4,
     "RED": 1
   },
   "persistent_red": 1,
@@ -14,7 +14,7 @@
       "status": "YELLOW",
       "protocol": "sdmx",
       "http_code": "-",
-      "note": "Timeout (ReadTimeout)"
+      "note": "Timeout (ConnectTimeout)"
     },
     {
       "id": "anac",
@@ -32,10 +32,10 @@
     },
     {
       "id": "openbdap",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "ckan",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
     },
     {
       "id": "inail_opendata",
@@ -81,10 +81,10 @@
     },
     {
       "id": "consip_open_data",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "ckan",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
     },
     {
       "id": "lavoro_opendata",
@@ -109,10 +109,10 @@
     },
     {
       "id": "mef_irpef",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "html",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
     },
     {
       "id": "opencivitas",
@@ -136,12 +136,19 @@
       "note": null
     },
     {
+      "id": "eligendo",
+      "status": "GREEN",
+      "protocol": "html",
+      "http_code": "200",
+      "note": null
+    },
+    {
       "id": "mit_opendata",
       "status": "RED",
       "protocol": "ckan",
       "http_code": "500",
       "note": null,
-      "red_streak": 2
+      "red_streak": 3
     },
     {
       "id": "openga",

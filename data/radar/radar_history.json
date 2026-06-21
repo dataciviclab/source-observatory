@@ -1,222 +1,6 @@
 {
   "probes": [
     {
-      "probe_date": "2026-06-07",
-      "captured_at": "2026-06-07T07:12:50.149918+00:00",
-      "sources": [
-        {
-          "id": "istat_sdmx",
-          "status": "YELLOW",
-          "protocol": "sdmx",
-          "http_code": "-",
-          "note": "Timeout (ReadTimeout)"
-        },
-        {
-          "id": "anac",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "inps",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "openbdap",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "inail_opendata",
-          "status": "GREEN",
-          "protocol": "aem",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "mim_opendata",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "dati_camera",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "dati_senato",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "dati_cultura",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "ispra_linked_data",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "consip_open_data",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "lavoro_opendata",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "mur_ustat",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "opencoesione",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "mef_irpef",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "opencivitas",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": "SSL verify failed; fallback verify=False used (SSLError)"
-        },
-        {
-          "id": "aifa",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": "SSL verify failed; fallback verify=False used (SSLError)"
-        },
-        {
-          "id": "dait",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "mit_opendata",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "openga",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "giustizia_statistiche",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "cortecostituzionale",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "terna_opendata",
-          "status": "GREEN",
-          "protocol": "rest",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "ministero_interno",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "agid",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "noipa_sparql",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "mimit_rna",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "ministero_salute",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "agcm",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        },
-        {
-          "id": "unioncamere",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null
-        }
-      ]
-    },
-    {
       "probe_date": "2026-06-08",
       "captured_at": "2026-06-08T08:21:00.162464+00:00",
       "sources": [
@@ -3049,6 +2833,244 @@
           "protocol": "ckan",
           "http_code": "500",
           "note": null
+        },
+        {
+          "id": "openga",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": "SSL verify failed; fallback verify=False used (SSLError)"
+        },
+        {
+          "id": "giustizia_statistiche",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "cortecostituzionale",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "terna_opendata",
+          "status": "GREEN",
+          "protocol": "rest",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "ministero_interno",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "agid",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "noipa_sparql",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "mimit_rna",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "ministero_salute",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "agcm",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "unioncamere",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "pagopa",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "aci",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        }
+      ]
+    },
+    {
+      "probe_date": "2026-06-21",
+      "captured_at": "2026-06-21T08:08:55.032397+00:00",
+      "sources": [
+        {
+          "id": "istat_sdmx",
+          "status": "YELLOW",
+          "protocol": "sdmx",
+          "http_code": "-",
+          "note": "Timeout (ConnectTimeout)"
+        },
+        {
+          "id": "anac",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "inps",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "openbdap",
+          "status": "YELLOW",
+          "protocol": "ckan",
+          "http_code": "-",
+          "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
+        },
+        {
+          "id": "inail_opendata",
+          "status": "GREEN",
+          "protocol": "aem",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "mim_opendata",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "dati_camera",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "dati_senato",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "dati_cultura",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "ispra_linked_data",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "consip_open_data",
+          "status": "YELLOW",
+          "protocol": "ckan",
+          "http_code": "-",
+          "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
+        },
+        {
+          "id": "lavoro_opendata",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "mur_ustat",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "opencoesione",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "mef_irpef",
+          "status": "YELLOW",
+          "protocol": "html",
+          "http_code": "-",
+          "note": "Retry timeout/connection: Timeout (ConnectTimeout)"
+        },
+        {
+          "id": "opencivitas",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": "SSL verify failed; fallback verify=False used (SSLError)"
+        },
+        {
+          "id": "aifa",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": "SSL verify failed; fallback verify=False used (SSLError)"
+        },
+        {
+          "id": "dait",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "eligendo",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null
+        },
+        {
+          "id": "mit_opendata",
+          "status": "RED",
+          "protocol": "ckan",
+          "http_code": "500",
+          "note": null,
+          "red_streak": 2
         },
         {
           "id": "openga",
