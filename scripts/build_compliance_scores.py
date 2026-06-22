@@ -124,7 +124,7 @@ def _load_inventory_license_stats(path: Path) -> dict[str, dict]:
             f"""
             SELECT source_id,
                    COUNT(*) as total,
-                   SUM(CASE WHEN LOWER(license_id) LIKE '%cc-by%' OR LOWER(license_id) LIKE '%cc-zero%' OR LOWER(license_id) LIKE '%cc0%' OR LOWER(license_id) LIKE '%odbl%' OR LOWER(license_id) LIKE '%iodl%' OR LOWER(license_title) LIKE '%creative commons%' OR LOWER(license_title) LIKE '%iodl%' THEN 1 ELSE 0 END) as licenze_aperte,
+                   SUM(CASE WHEN LOWER(license_id) LIKE '%cc-by%' OR LOWER(license_id) LIKE '%cc-zero%' OR LOWER(license_id) LIKE '%cc0%' OR LOWER(license_id) LIKE '%odbl%' OR LOWER(license_id) LIKE '%iodl%' OR LOWER(license_id) = 'other-open' OR LOWER(license_title) LIKE '%creative commons%' OR LOWER(license_title) LIKE '%iodl%' THEN 1 ELSE 0 END) as licenze_aperte,
                    SUM(CASE WHEN hvd_category IS NOT NULL AND hvd_category != '' THEN 1 ELSE 0 END) as con_hvd
             FROM '{path}'
             WHERE protocol = 'ckan'

@@ -13,7 +13,12 @@ from pathlib import Path
 import pytest
 from _constants import CATALOG_SIGNALS_PATH, RADAR_SUMMARY_PATH, REGISTRY_PATH
 
-from scripts.build_compliance_scores import build_scores
+from scripts.build_compliance_scores import (
+    _formato_score,
+    _hvd_score,
+    _licenza_score,
+    build_scores,
+)
 
 
 class TestBuildComplianceScores:
@@ -63,6 +68,74 @@ class TestBuildComplianceScores:
         assert "medio" in dist
         assert "debole" in dist
         assert "carente" in dist
+
+    @pytest.mark.contract
+    def test_formato_score_da_inventory(self):
+        """Asse A: inventory stats con case misto e formati reali."""
+        inv = {"test_fonte": {"total": 10, "aperti": 7, "perc_aperto": 70.0}}
+        score, fonte = _formato_score("ckan", [], inv, "test_fonte")
+        assert score == 55.0
+        assert fonte == "computed"
+        # 100% aperti
+        inv2 = {"test_fonte2": {"total": 5, "aperti": 5, "perc_aperto": 100.0}}
+        s2, f2 = _formato_score("ckan", [], inv2, "test_fonte2")
+        assert s2 == 90.0
+        assert f2 == "computed"
+
+    @pytest.mark.contract
+    def test_formato_score_senza_inventory(self):
+        """Asse A: senza inventory, usa fallback protocol."""
+        score, fonte = _formato_score("ckan", [], None, "ignota")
+        assert score == 75.0  # fallback CKAN
+        assert fonte == "computed"
+        score2, fonte2 = _formato_score("html", [], None, "ignota")
+        assert score2 == 50.0  # fallback HTML
+
+    @pytest.mark.contract
+    def test_licenza_score_da_inventory(self):
+        """Asse C: licenze aperte, other-open, nessuna licenza."""
+        # CC-BY
+        inv = {
+            "f1": {
+                "total": 10,
+                "licenze_aperte": 10,
+                "perc_licenza_aperta": 100.0,
+                "has_hvd": False,
+            }
+        }
+        s, f = _licenza_score("ckan", inv, "f1")
+        assert s == 85.0 and f == "computed"
+        # other-open (deve essere riconosciuto come aperto)
+        inv2 = {
+            "f2": {"total": 5, "licenze_aperte": 5, "perc_licenza_aperta": 100.0, "has_hvd": False}
+        }
+        s2, f2 = _licenza_score("ckan", inv2, "f2")
+        assert s2 == 85.0 and f2 == "computed"
+        # 0 licenze (nessun dato)
+        inv3 = {
+            "f3": {"total": 10, "licenze_aperte": 0, "perc_licenza_aperta": 0.0, "has_hvd": False}
+        }
+        s3, f3 = _licenza_score("ckan", inv3, "f3")
+        assert s3 == 50.0 and f3 == "estimated"
+
+    @pytest.mark.contract
+    def test_hvd_score_da_inventory(self):
+        """Asse E: HVD presente, assente, colonna mancante."""
+        # HVD presente
+        inv = {
+            "f1": {"total": 10, "licenze_aperte": 10, "perc_licenza_aperta": 100.0, "has_hvd": True}
+        }
+        s, f = _hvd_score(inv, "f1")
+        assert s == 80.0 and f == "computed"
+        # Colonna presente ma nessun HVD
+        inv2 = {
+            "f2": {"total": 10, "licenze_aperte": 0, "perc_licenza_aperta": 0.0, "has_hvd": False}
+        }
+        s2, f2 = _hvd_score(inv2, "f2")
+        assert s2 == 50.0 and f2 == "computed"
+        # Colonna mancante (license_stats=None)
+        s3, f3 = _hvd_score(None, "f3")
+        assert s3 == 50.0 and f3 == "missing"
 
     @staticmethod
     def _load_yaml(path: Path) -> dict:
