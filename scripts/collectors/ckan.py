@@ -572,13 +572,16 @@ def _ckan_standard_path(
                 merged_rows.append(row)
             else:
                 merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
-        return merged_rows, {
+        warn: dict[str, Any] = {
             "type": "package_list_with_package_show_sample",
             "message": f"Enrichment via package_show_sample per {source_id}.",
             "rows_enriched": len(enriched_by_id),
             "rows_missing_metadata": missing_metadata,
             "package_search_error": str(search_exc) if search_exc is not None else None,
         }
+        if sample_warning:
+            warn["package_show_sample_warning"] = sample_warning
+        return merged_rows, warn
 
     return package_list_rows, {
         "type": "fallback_package_list",

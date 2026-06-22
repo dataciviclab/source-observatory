@@ -133,7 +133,12 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
                     "ordinal": 99,
                 }
             ],
-            None,
+            {
+                "type": "partial_package_show_sample",
+                "errors_preview": 1,
+                "enriched_count": 1,
+                "total_requests": 2,
+            },
         )
 
     monkeypatch.setattr(build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search)
@@ -161,6 +166,10 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
     assert warning["type"] == "package_list_with_package_show_sample"
     assert warning["rows_enriched"] == 1
     assert warning["rows_missing_metadata"] == 1
+    # Verifica che il sample_warning sia propagato
+    assert warning["package_show_sample_warning"]["type"] == "partial_package_show_sample"
+    assert warning["package_show_sample_warning"]["errors_preview"] == 1
+    assert warning["package_show_sample_warning"]["enriched_count"] == 1
 
 
 def test_ckan_get_json_reports_non_json_response(monkeypatch) -> None:
