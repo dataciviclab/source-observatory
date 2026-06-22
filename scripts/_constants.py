@@ -30,6 +30,9 @@ from so_mcp._paths import (
     INVENTORY_PARQUET_PATH as INVENTORY_PARQUET_PATH,  # noqa: F401
 )
 from so_mcp._paths import (
+    OPEN_DATA_HEALTH_SCORES_PATH as OPEN_DATA_HEALTH_SCORES_PATH,  # noqa: F401
+)
+from so_mcp._paths import (
     RADAR_HISTORY_PATH as RADAR_HISTORY_PATH,  # noqa: F401
 )
 from so_mcp._paths import (

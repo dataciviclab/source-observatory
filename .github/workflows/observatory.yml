@@ -122,7 +122,31 @@ jobs:
           fi
 
       # ═══════════════════════════════════════════════════════════════════
-      # STEP 2 — SOURCE-CHECK (sempre, merge semplice con risultati precedenti)
+      # STEP 2 — OPEN DATA HEALTH SCORES (bridge verso data-advocacy)
+      # ═══════════════════════════════════════════════════════════════════
+      - name: Build open data health scores
+        run: |
+          python scripts/build_compliance_scores.py \
+            --radar data/radar/radar_summary.json \
+            --signals data/catalog/catalog_signals.json \
+            --out data/health/open_data_health_scores.json
+
+      - name: Commit health scores
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f data/health/open_data_health_scores.json
+          if git diff --cached --quiet; then
+            echo "Nessuna variazione negli health scores."
+          else
+            git commit -m "chore(so): aggiorna open_data_health_scores [ci skip]"
+            git push
+          fi
+
+      # ═══════════════════════════════════════════════════════════════════
+      # STEP 3 — SOURCE-CHECK (sempre)
       # ═══════════════════════════════════════════════════════════════════
       - name: Download source-check results from GCS (for merge)
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
@@ -144,7 +168,7 @@ jobs:
             --workers 16
 
       # ═══════════════════════════════════════════════════════════════════
-      # STEP 3 — UPLOAD GCS
+      # STEP 4 — UPLOAD GCS
       # ═══════════════════════════════════════════════════════════════════
       - name: Upload source-check results to GCS
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
@@ -183,7 +207,7 @@ jobs:
             "$prefix/snapshots/catalog_inventory_report_${stamp}.json"
 
       # ═══════════════════════════════════════════════════════════════════
-      # STEP 4 — ARTIFACTS + SUMMARIES
+      # STEP 5 — ARTIFACTS + SUMMARIES
       # ═══════════════════════════════════════════════════════════════════
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v7
