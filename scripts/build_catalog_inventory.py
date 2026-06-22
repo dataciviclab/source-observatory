@@ -25,7 +25,6 @@ from collectors.ckan import (
     collect as _collect_ckan_inventory,
 )
 from collectors.ckan import (
-    collect_ckan_inventory_via_current_list,
     collect_ckan_inventory_via_package_list,
     collect_ckan_inventory_via_package_show_sample,
     collect_ckan_inventory_via_search,
@@ -47,7 +46,6 @@ def collect_ckan_inventory(source_id: str, source_cfg: dict[str, Any], captured_
         source_cfg,
         captured_at,
         search_fn=collect_ckan_inventory_via_search,
-        current_list_fn=collect_ckan_inventory_via_current_list,
         package_list_fn=collect_ckan_inventory_via_package_list,
         package_show_sample_fn=collect_ckan_inventory_via_package_show_sample,
     )
