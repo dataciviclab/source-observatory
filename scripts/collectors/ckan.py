@@ -180,6 +180,14 @@ def extract_ckan_inventory_row(
         if tag_value:
             tags.append(tag_value)
     notes = (item.get("notes") or "").strip()
+
+    # Estrae extras (hvd_category, ecc.)
+    extras_raw = item.get("extras") or []
+    extras: dict[str, str] = {}
+    for e in extras_raw:
+        if isinstance(e, dict) and "key" in e and "value" in e:
+            extras[e["key"]] = str(e["value"])
+
     return {
         "captured_at": captured_at,
         "source_id": source_id,
@@ -205,6 +213,11 @@ def extract_ckan_inventory_row(
         # Data di creazione/modifica lato fonte (CKAN metadata_created/modified)
         "issued": item.get("metadata_created") or None,
         "modified": item.get("metadata_modified") or None,
+        # Licenza (es. cc-by-4.0, cc-zero, other-open)
+        "license_id": item.get("license_id"),
+        "license_title": item.get("license_title"),
+        # HVD category (es. http://data.europa.eu/bna/c_ac64a52d)
+        "hvd_category": extras.get("hvd_category", ""),
     }
 
 
@@ -526,9 +539,11 @@ def collect_ckan_inventory_via_package_show_sample(
     # Timeout ereditato dal registry (inventory.package_show_timeout)
     inv = inventory_cfg(source_cfg)
     pkg_timeout = int(inv.get("package_show_timeout", 10))
+    # Workers ereditato dal registry; default 16 se non specificato
+    actual_workers = int(inv.get("package_show_max_workers", max_workers))
 
     # Parallel fetch — saturare la rete, non la CPU
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+    with ThreadPoolExecutor(max_workers=actual_workers) as pool:
         futures = {
             pool.submit(
                 _fetch_package_show,

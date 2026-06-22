@@ -26,6 +26,7 @@ from pathlib import Path
 
 from _constants import (
     CATALOG_SIGNALS_PATH,
+    INVENTORY_PARQUET_PATH,
     OPEN_DATA_HEALTH_SCORES_PATH,
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
@@ -35,6 +36,7 @@ from _constants import (
 DEFAULT_RADAR = RADAR_SUMMARY_PATH
 DEFAULT_SIGNALS = CATALOG_SIGNALS_PATH
 DEFAULT_REGISTRY = REGISTRY_PATH
+DEFAULT_INVENTORY = INVENTORY_PARQUET_PATH
 DEFAULT_OUT = OPEN_DATA_HEALTH_SCORES_PATH
 
 # Pesi per ogni asse
@@ -57,8 +59,129 @@ ASSI = {
 }
 
 
-def _formato_score(protocol: str, signals: list[dict]) -> tuple[float, str]:
-    """A — Formato aperto. Computed da protocol + segnali."""
+def _load_inventory_format_stats(path: Path) -> dict[str, dict]:
+    """Legge inventory parquet e calcola % formato aperto per fonte CKAN.
+
+    Restituisce dict: source_id → {"total": N, "aperti": N, "perc_aperto": 0-100}.
+    Per fonti non CKAN o senza dati, il source_id non e' presente.
+    """
+    if not path.exists():
+        return {}
+
+    try:
+        import duckdb
+
+        con = duckdb.connect()
+        rows = con.execute(
+            """
+            SELECT source_id,
+                   COUNT(*) as total,
+                   COUNT(CASE WHEN format IS NOT NULL AND format != '' THEN 1 END) as con_formato,
+                   SUM(CASE WHEN LOWER(format) LIKE '%csv%' OR LOWER(format) LIKE '%json%' OR LOWER(format) LIKE '%xml%' THEN 1 ELSE 0 END) as aperti
+            FROM '"""
+            + str(path)
+            + """'
+            WHERE protocol = 'ckan'
+            GROUP BY source_id
+        """
+        ).fetchall()
+        stats = {}
+        for sid, total, con_formato, aperti in rows:
+            stats[sid] = {
+                "total": int(total),
+                "con_formato": int(con_formato),
+                "aperti": int(aperti),
+                "perc_aperto": round(int(aperti) / int(total) * 100, 1) if int(total) > 0 else 0.0,
+                "copertura": round(int(con_formato) / int(total) * 100, 1)
+                if int(total) > 0
+                else 0.0,
+            }
+        return stats
+    except Exception as exc:
+        print(f"⚠️  Inventory parquet non elaborabile: {exc}")
+        return {}
+
+
+def _load_inventory_license_stats(path: Path) -> dict[str, dict]:
+    """Legge inventory parquet e classifica licenze e HVD per fonte.
+
+    Restituisce dict: source_id → {"license_open_pct": 0-100, "has_hvd": bool}.
+    Se le colonne license_id/hvd_category non esistono ancora nel parquet
+    (generato prima di questo PR), torna vuoto senza errori.
+    """
+    if not path.exists():
+        return {}
+
+    try:
+        import duckdb
+
+        con = duckdb.connect()
+        # Verifica colonne disponibili — backward compat
+        schema = {r[0] for r in con.execute(f"DESCRIBE SELECT * FROM '{path}'").fetchall()}
+        if "license_id" not in schema:
+            return {}
+    except Exception:
+        return {}
+
+    try:
+        con = duckdb.connect()
+        rows = con.execute(
+            f"""
+            SELECT source_id,
+                   COUNT(*) as total,
+                   SUM(CASE WHEN LOWER(license_id) LIKE '%cc-by%' OR LOWER(license_id) LIKE '%cc-zero%' OR LOWER(license_id) LIKE '%cc0%' OR LOWER(license_id) LIKE '%odbl%' OR LOWER(license_id) LIKE '%iodl%' OR LOWER(license_id) = 'other-open' OR LOWER(license_title) LIKE '%creative commons%' OR LOWER(license_title) LIKE '%iodl%' THEN 1 ELSE 0 END) as licenze_aperte,
+                   SUM(CASE WHEN hvd_category IS NOT NULL AND hvd_category != '' THEN 1 ELSE 0 END) as con_hvd
+            FROM '{path}'
+            WHERE protocol = 'ckan'
+            GROUP BY source_id
+        """
+        ).fetchall()
+        stats = {}
+        for sid, total, licenze_aperte, con_hvd in rows:
+            stats[sid] = {
+                "total": int(total),
+                "licenze_aperte": int(licenze_aperte),
+                "perc_licenza_aperta": round(int(licenze_aperte) / int(total) * 100, 1)
+                if int(total) > 0
+                else 0.0,
+                "has_hvd": int(con_hvd) > 0,
+            }
+        return stats
+    except Exception as exc:
+        print(f"⚠️  Inventory licenza non elaborabile: {exc}")
+        return {}
+
+
+def _formato_score(
+    protocol: str,
+    signals: list[dict],
+    inventory_stats: dict | None = None,
+    source_id: str = "",
+) -> tuple[float, str]:
+    """A — Formato aperto.
+
+    Se disponibili, usa i formati reali dall'inventory (CKAN).
+    Altrimenti stima da protocol + segnali HTML.
+    """
+    # 1. Se abbiamo dati reali dall'inventory CKAN, usali
+    if inventory_stats and source_id in inventory_stats:
+        stats = inventory_stats[source_id]
+        perc = stats["perc_aperto"]
+        # Se la copertura e' bassa (<50% dei dataset con formato noto),
+        # il dato e' parziale — non lo marcamo "computed"
+        fonte = "computed" if stats["copertura"] >= 50.0 else "parziale"
+        if perc >= 95.0:
+            return (90.0, fonte)
+        elif perc >= 80.0:
+            return (75.0, fonte)
+        elif perc >= 50.0:
+            return (55.0, fonte)
+        elif perc >= 20.0:
+            return (35.0, fonte)
+        else:
+            return (20.0, fonte)
+
+    # 2. Fallback: segnali HTML (csv_magnet)
     for sig in signals:
         detail = sig.get("detail", "")
         if "CSV" in detail and ("JSON" in detail or "XML" in detail):
@@ -66,6 +189,7 @@ def _formato_score(protocol: str, signals: list[dict]) -> tuple[float, str]:
         if "CSV" in detail:
             return (75.0, "computed")
 
+    # 3. Stima per protocollo
     protocol_scores = {
         "ckan": 75.0,
         "sdmx": 70.0,
@@ -109,8 +233,23 @@ def _raggiungibilita_score(
     return (50.0, "estimated")
 
 
-def _licenza_score(protocol: str) -> tuple[float, str]:
-    """C — Licenza aperta. Stimato: non abbiamo dati certi."""
+def _licenza_score(
+    protocol: str,
+    license_stats: dict | None = None,
+    source_id: str = "",
+) -> tuple[float, str]:
+    """C — Licenza aperta. Computed da inventory se disponibile."""
+    if license_stats and source_id in license_stats:
+        stats = license_stats[source_id]
+        perc = stats["perc_licenza_aperta"]
+        if perc >= 90.0:
+            return (85.0, "computed")
+        elif perc >= 50.0:
+            return (60.0, "computed")
+        elif perc > 0:
+            return (40.0, "computed")
+        else:
+            return (50.0, "estimated")
     return (50.0, "estimated")
 
 
@@ -119,8 +258,16 @@ def _datigovit_score() -> tuple[float, str]:
     return (50.0, "estimated")
 
 
-def _hvd_score() -> tuple[float, str]:
-    """E — HVD compliance. Non ancora computabile."""
+def _hvd_score(
+    license_stats: dict | None = None,
+    source_id: str = "",
+) -> tuple[float, str]:
+    """E — HVD compliance. Computed da inventory se disponibile."""
+    if license_stats and source_id in license_stats:
+        if license_stats[source_id]["has_hvd"]:
+            return (80.0, "computed")
+        # Sappiamo che non ha HVD (inventory ha la colonna, e' vuota)
+        return (50.0, "computed")
     return (50.0, "missing")
 
 
@@ -133,6 +280,8 @@ def build_scores(
     registry: dict,
     radar_sources: list[dict],
     signals_data: dict | None,
+    inventory_stats: dict | None = None,
+    license_stats: dict | None = None,
 ) -> dict:
     """Calcola health score per ogni fonte nel registry."""
     radar_by_id: dict[str, dict] = {s["id"]: s for s in radar_sources}
@@ -153,11 +302,11 @@ def build_scores(
         radar_entry = radar_by_id.get(source_id)
         signals = signals_by_source.get(source_id, [])
 
-        formato, f_src = _formato_score(protocol, signals)
+        formato, f_src = _formato_score(protocol, signals, inventory_stats, source_id)
         raggiung, r_src = _raggiungibilita_score(radar_entry)
-        lic, l_src = _licenza_score(protocol)
+        lic, l_src = _licenza_score(protocol, license_stats, source_id)
         dgov, d_src = _datigovit_score()
-        hvd, h_src = _hvd_score()
+        hvd, h_src = _hvd_score(license_stats, source_id)
         foia, fo_src = _foia_access_score()
 
         # Punteggio ponderato — assi "missing" esclusi dal denominatore
@@ -255,6 +404,12 @@ def main() -> None:
         help="Path a sources_registry.yaml",
     )
     parser.add_argument(
+        "--inventory",
+        default=DEFAULT_INVENTORY,
+        type=Path,
+        help="Path a catalog_inventory_latest.parquet",
+    )
+    parser.add_argument(
         "--out",
         default=DEFAULT_OUT,
         type=Path,
@@ -273,7 +428,10 @@ def main() -> None:
     if args.signals.exists():
         signals_data = json.loads(args.signals.read_text(encoding="utf-8"))
 
-    scores = build_scores(registry, radar_sources, signals_data)
+    inventory_stats = _load_inventory_format_stats(args.inventory)
+    license_stats = _load_inventory_license_stats(args.inventory)
+
+    scores = build_scores(registry, radar_sources, signals_data, inventory_stats, license_stats)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
