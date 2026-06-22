@@ -329,7 +329,7 @@ def main() -> None:
         try:
             existing_df = pd.read_parquet(out_parquet)
             # Drop colonne morte (mai popolate) — https://github.com/dataciviclab/source-observatory/issues/372
-            _COLONNE_MORTE = {"civic_priority", "distribution_count"}
+            _COLONNE_MORTE = {"civic_priority"}
             da_droppare = _COLONNE_MORTE & set(existing_df.columns)
             if da_droppare:
                 existing_df = existing_df.drop(columns=da_droppare)

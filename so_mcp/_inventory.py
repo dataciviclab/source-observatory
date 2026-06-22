@@ -289,7 +289,6 @@ def catalog_inventory_search(
                     "item_kind",
                     "api_base_url",
                     "captured_at",
-                    "civic_priority",
                 ]
                 select_sql = ", ".join(
                     _artifact._select_expr(column, columns) for column in select_columns
