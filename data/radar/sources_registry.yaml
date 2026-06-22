@@ -479,17 +479,26 @@ mit_opendata:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
-  base_url: https://dati.mit.gov.it/catalog/api/3/action/package_list?limit=1
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
   last_probed: '2026-06-22'
   verdict: go
-  note: 'Portale CKAN MIT — 67 dataset su trasporti, infrastrutture, incidentalità,
-    veicoli, opere pubbliche. Include dataset già in uso dal Lab (mit_incidentalita_mensile,
-    mit_opere_incompiute).
-
-    '
+  note: 'Dataset del Ministero Infrastrutture e Trasporti via dati.gov.it (portale
+    MIT dati.mit.gov.it non raggiungibile da 2026-05). 70 dataset: contratti pubblici,
+    incidentalità, trasporti, opere pubbliche. CC-BY-4.0.'
   datasets_in_use:
   - mit_incidentalita_mensile
   - mit_opere_incompiute_2020
+  inventory:
+    fq: organization:ministero-infrastrutture-e-trasporti
+    timeout: 180
+  catalog_baseline:
+    captured_at: '2026-06-22'
+    metric: dataset_count
+    value: 70
+    method: package_search
+    reliability: high
+    note: Conteggio via package_search con fq=organization:ministero-infrastrutture-e-trasporti
+      su dati.gov.it.
 openga:
   source_kind: catalog
   protocol: ckan
