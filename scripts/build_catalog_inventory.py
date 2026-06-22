@@ -328,6 +328,12 @@ def main() -> None:
     if out_parquet.exists():
         try:
             existing_df = pd.read_parquet(out_parquet)
+            # Drop colonne morte (mai popolate) — https://github.com/dataciviclab/source-observatory/issues/372
+            _COLONNE_MORTE = {"civic_priority"}
+            da_droppare = _COLONNE_MORTE & set(existing_df.columns)
+            if da_droppare:
+                existing_df = existing_df.drop(columns=da_droppare)
+                print(f"🧹 Droppate colonne morte: {da_droppare}", file=sys.stderr)
         except Exception:
             existing_df = None
 
