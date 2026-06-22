@@ -196,12 +196,28 @@ def add_dataset_group_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _parse_ckan_package(pkg: dict) -> dict:
-    """Estrae i campi utili da un package CKAN."""
-    tags = [
-        (t.get("display_name") or t.get("name") or "")
-        for t in (pkg.get("tags") or [])
-        if isinstance(t, dict)
-    ]
+    """Estrae i campi utili da un package CKAN.
+
+    Usa extract_ckan_inventory_row per i dati grezzi (formato, licenza, HVD,
+    organization, tags, dates) e aggiunge campi computazionali
+    (granularità, anni, resource_url).
+
+    Contratto: l'output e' un dict che viene UPSERTATO nell'inventory row
+    da bulk_source_check. I campi estratti da extract_ckan_inventory_row
+    arricchiscono l'inventory con license_id e hvd_category.
+    """
+    # 1. Dati grezzi via extract_ckan_inventory_row (canonico)
+    from collectors.ckan import extract_ckan_inventory_row
+
+    base_row = extract_ckan_inventory_row(
+        source_id="",
+        source_cfg={},
+        captured_at="",
+        item=pkg,
+        endpoint="",
+        ordinal=0,
+        inventory_method="ckan_package_show",
+    )
 
     groups = [
         (g.get("display_name") or g.get("name") or "")
@@ -209,10 +225,10 @@ def _parse_ckan_package(pkg: dict) -> dict:
         if isinstance(g, dict)
     ]
 
+    # 2. URL diretto risorsa (logica diversa da extract)
     resources = pkg.get("resources") or []
     resource_url = None
     resource_format = None
-    # Preferisci risorse con URL diretto a file (CSV/XLSX/XLS/JSON/ZIP)
     _FILE_EXTS = (".csv", ".xlsx", ".xls", ".json", ".zip", ".parquet", ".xml")
     direct_url = None
     direct_fmt = None
@@ -228,11 +244,11 @@ def _parse_ckan_package(pkg: dict) -> dict:
         if resource_url is None:
             resource_url = u
             resource_format = res.get("format") or None
-    # Se trovato URL diretto, usalo; altrimenti usa il primo URL HTTP
     if direct_url:
         resource_url = direct_url
         resource_format = direct_fmt
 
+    # 3. Estrazione temporale da extras (standard CKAN)
     extras = {e["key"]: e["value"] for e in (pkg.get("extras") or []) if isinstance(e, dict)}
     temporal_start = extras.get("temporal_coverage_from") or extras.get("issued")
     temporal_end = extras.get("temporal_coverage_to") or extras.get("modified")
@@ -244,10 +260,15 @@ def _parse_ckan_package(pkg: dict) -> dict:
             if ymin is not None and ymax is not None:
                 temporal_start, temporal_end = str(ymin), str(ymax)
 
+    # 4. Computazione granularità e anni
+    title = pkg.get("title") or ""
     notes = (pkg.get("notes") or "").strip()
-    title = pkg.get("title") or None
-
-    combined = " ".join(filter(None, [title, ", ".join(groups), ", ".join(tags), notes[:500]]))
+    tags_list = [
+        (t.get("display_name") or t.get("name") or "")
+        for t in (pkg.get("tags") or [])
+        if isinstance(t, dict)
+    ]
+    combined = " ".join(filter(None, [title, ", ".join(groups), ", ".join(tags_list), notes[:500]]))
     granularity = _infer_granularity(combined)
 
     year_min, year_max = None, None
@@ -262,10 +283,13 @@ def _parse_ckan_package(pkg: dict) -> dict:
         year_min = year_min or yt_min
         year_max = year_max or yt_max
 
+    # 5. Merge: extract ha già formato, licenza, HVD, dates
+    #    Aggiungiamo enriched_* (usati da bulk_source_check) + campi computazionali
     return {
-        "enriched_title": title,
-        "enriched_tags": ", ".join(tags) if tags else None,
-        "enriched_notes": notes[:300] if notes else None,
+        **base_row,
+        "enriched_title": base_row.get("title"),
+        "enriched_tags": base_row.get("tags"),
+        "enriched_notes": base_row.get("notes_excerpt"),
         "resource_url": resource_url,
         "resource_format": resource_format,
         "granularity": granularity,
