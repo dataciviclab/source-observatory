@@ -93,6 +93,7 @@ openbdap:
     skip_package_search_reason: timeout sistematico a 60s
     skip_current_list: true
     package_show_sample: true
+    package_show_max_workers: 4
     package_show_timeout: 10
     sample_size: 5000
   last_probed: '2026-06-22'

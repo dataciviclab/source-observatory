@@ -76,6 +76,7 @@ def _load_inventory_format_stats(path: Path) -> dict[str, dict]:
             """
             SELECT source_id,
                    COUNT(*) as total,
+                   COUNT(CASE WHEN format IS NOT NULL AND format != '' THEN 1 END) as con_formato,
                    SUM(CASE WHEN LOWER(format) LIKE '%csv%' OR LOWER(format) LIKE '%json%' OR LOWER(format) LIKE '%xml%' THEN 1 ELSE 0 END) as aperti
             FROM '"""
             + str(path)
@@ -85,11 +86,15 @@ def _load_inventory_format_stats(path: Path) -> dict[str, dict]:
         """
         ).fetchall()
         stats = {}
-        for sid, total, aperti in rows:
+        for sid, total, con_formato, aperti in rows:
             stats[sid] = {
                 "total": int(total),
+                "con_formato": int(con_formato),
                 "aperti": int(aperti),
                 "perc_aperto": round(int(aperti) / int(total) * 100, 1) if int(total) > 0 else 0.0,
+                "copertura": round(int(con_formato) / int(total) * 100, 1)
+                if int(total) > 0
+                else 0.0,
             }
         return stats
     except Exception as exc:
@@ -162,16 +167,19 @@ def _formato_score(
     if inventory_stats and source_id in inventory_stats:
         stats = inventory_stats[source_id]
         perc = stats["perc_aperto"]
+        # Se la copertura e' bassa (<50% dei dataset con formato noto),
+        # il dato e' parziale — non lo marcamo "computed"
+        fonte = "computed" if stats["copertura"] >= 50.0 else "parziale"
         if perc >= 95.0:
-            return (90.0, "computed")
+            return (90.0, fonte)
         elif perc >= 80.0:
-            return (75.0, "computed")
+            return (75.0, fonte)
         elif perc >= 50.0:
-            return (55.0, "computed")
+            return (55.0, fonte)
         elif perc >= 20.0:
-            return (35.0, "computed")
+            return (35.0, fonte)
         else:
-            return (20.0, "computed")
+            return (20.0, fonte)
 
     # 2. Fallback: segnali HTML (csv_magnet)
     for sig in signals:

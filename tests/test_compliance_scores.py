@@ -72,15 +72,47 @@ class TestBuildComplianceScores:
     @pytest.mark.contract
     def test_formato_score_da_inventory(self):
         """Asse A: inventory stats con case misto e formati reali."""
-        inv = {"test_fonte": {"total": 10, "aperti": 7, "perc_aperto": 70.0}}
+        inv = {
+            "test_fonte": {
+                "total": 10,
+                "con_formato": 10,
+                "aperti": 7,
+                "perc_aperto": 70.0,
+                "copertura": 100.0,
+            }
+        }
         score, fonte = _formato_score("ckan", [], inv, "test_fonte")
         assert score == 55.0
         assert fonte == "computed"
         # 100% aperti
-        inv2 = {"test_fonte2": {"total": 5, "aperti": 5, "perc_aperto": 100.0}}
+        inv2 = {
+            "test_fonte2": {
+                "total": 5,
+                "con_formato": 5,
+                "aperti": 5,
+                "perc_aperto": 100.0,
+                "copertura": 100.0,
+            }
+        }
         s2, f2 = _formato_score("ckan", [], inv2, "test_fonte2")
         assert s2 == 90.0
         assert f2 == "computed"
+
+    @pytest.mark.contract
+    def test_formato_score_copertura_parziale(self):
+        """Asse A: copertura < 50% → parziale, non computed."""
+        inv = {
+            "openbdap": {
+                "total": 3825,
+                "con_formato": 940,
+                "aperti": 900,
+                "perc_aperto": 95.7,
+                "copertura": 24.6,
+            }
+        }
+        score, fonte = _formato_score("ckan", [], inv, "openbdap")
+        assert score == 90.0
+        assert fonte == "parziale"  # non "computed" perche' copertura < 50%
 
     @pytest.mark.contract
     def test_formato_score_senza_inventory(self):

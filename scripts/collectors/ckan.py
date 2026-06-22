@@ -539,9 +539,11 @@ def collect_ckan_inventory_via_package_show_sample(
     # Timeout ereditato dal registry (inventory.package_show_timeout)
     inv = inventory_cfg(source_cfg)
     pkg_timeout = int(inv.get("package_show_timeout", 10))
+    # Workers ereditato dal registry; default 16 se non specificato
+    actual_workers = int(inv.get("package_show_max_workers", max_workers))
 
     # Parallel fetch — saturare la rete, non la CPU
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+    with ThreadPoolExecutor(max_workers=actual_workers) as pool:
         futures = {
             pool.submit(
                 _fetch_package_show,
