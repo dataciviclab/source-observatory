@@ -337,89 +337,6 @@ def _fetch_ckan_chunk_with_fallback(
         current_limit = next_limit
 
 
-def collect_ckan_inventory_via_current_list(
-    source_id: str,
-    source_cfg: dict[str, Any],
-    captured_at: str,
-    *,
-    client: Any | None = None,
-) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-    from lab_connectors.http import HttpClient
-
-    if client is None:
-        client = HttpClient(timeout=15, user_agent=USER_AGENT)
-    endpoint = ckan_action_endpoint(source_cfg["base_url"], "current_package_list_with_resources")
-    page_size = 100
-    fallback_page_sizes = (50, 10)
-    request_timeout = 15
-    max_retries = 2
-    retry_delay = 1.0
-    offset = 0
-    ordinal = 1
-    rows: list[dict[str, Any]] = []
-
-    while True:
-        payload, failure_reason, current_limit = _fetch_ckan_chunk_with_fallback(
-            endpoint,
-            {"offset": offset},
-            page_size,
-            client=client,
-            fallback_page_sizes=fallback_page_sizes,
-            request_timeout=request_timeout,
-            max_retries=max_retries,
-            retry_delay=retry_delay,
-        )
-        if payload is None:
-            if rows:
-                return rows, {
-                    "type": "partial_current_package_list_with_resources",
-                    "message": "Arricchimento parziale da current_package_list_with_resources; ultimi chunk in timeout dopo retry.",
-                    "failed_offset": offset,
-                    "failed_limit": current_limit,
-                    "rows_collected": len(rows),
-                    "failure": failure_reason,
-                }
-            raise requests.Timeout(
-                f"CKAN current_package_list_with_resources timed out for {source_id}: {failure_reason}"
-            )
-
-        if not payload.get("success"):
-            raise ValueError(f"CKAN current_package_list_with_resources failed for {source_id}")
-
-        result = payload.get("result")
-        if not isinstance(result, list):
-            raise ValueError(
-                f"Unexpected CKAN payload for {source_id}: current_package_list_with_resources result is not a list"
-            )
-        if not result:
-            break
-
-        for item in result:
-            rows.append(
-                extract_ckan_inventory_row(
-                    source_id=source_id,
-                    source_cfg=source_cfg,
-                    captured_at=captured_at,
-                    item=item,
-                    endpoint=endpoint,
-                    ordinal=ordinal,
-                    inventory_method="current_package_list_with_resources",
-                )
-            )
-            ordinal += 1
-
-        if len(result) < current_limit:
-            break
-        offset += len(result)
-        time.sleep(1.0)
-
-    if not rows:
-        raise ValueError(
-            f"CKAN current_package_list_with_resources returned no rows for {source_id}"
-        )
-    return rows, None
-
-
 def collect_ckan_inventory_via_package_list(
     source_id: str,
     source_cfg: dict[str, Any],
@@ -583,7 +500,6 @@ def collect(
     *,
     client: Any | None = None,
     search_fn=collect_ckan_inventory_via_search,
-    current_list_fn=collect_ckan_inventory_via_current_list,
     package_list_fn=collect_ckan_inventory_via_package_list,
     package_show_sample_fn=collect_ckan_inventory_via_package_show_sample,
 ) -> CollectorResult:
@@ -599,7 +515,6 @@ def collect(
         inv=inv,
         client=client,
         search_fn=search_fn,
-        current_list_fn=current_list_fn,
         package_list_fn=package_list_fn,
         package_show_sample_fn=package_show_sample_fn,
     )
@@ -614,13 +529,15 @@ def _ckan_standard_path(
     *,
     client: Any | None = None,
     search_fn,
-    current_list_fn,
     package_list_fn,
     package_show_sample_fn,
 ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
-    """Ramo standard: package_search -> fallback package_list -> current_list.
+    """Ramo standard: package_search -> fallback package_list (+ package_show_sample).
 
-    Tutte le funzioni di inventory ricevono il client condiviso per connection pooling.
+    1. Prova package_search (se non skip_package_search)
+    2. Fallback: package_list (ID nudi)
+    3. Se package_show_sample configurato: arricchisce con package_show
+    4. Altrimenti: usa package_list così com'è
     """
     search_exc: Exception | None = None
 
@@ -629,80 +546,47 @@ def _ckan_standard_path(
             rows = search_fn(source_id, source_cfg, captured_at, client=client)
             return rows, None
         except Exception as exc:
-            search_exc = exc  # per debug
+            search_exc = exc
     else:
         search_exc = ValueError(
             f"CKAN package_search disabled for {source_id} ({inv.get('skip_package_search_reason', 'disabled by registry config')})."
         )
 
     package_list_rows = package_list_fn(source_id, source_cfg, captured_at, client=client)
-    if inv.get("skip_current_list"):
-        if inv.get("package_show_sample"):
-            enriched_rows, sample_warning = package_show_sample_fn(
-                source_id=source_id,
-                source_cfg=source_cfg,
-                captured_at=captured_at,
-                package_list_rows=package_list_rows,
-                sample_size=inv.get("sample_size", 25),
-            )
-            enriched_by_id = {row["item_id"]: row for row in enriched_rows}
-            merged_rows: list[dict[str, Any]] = []
-            missing_metadata = 0
-            for row in package_list_rows:
-                enriched = enriched_by_id.get(row["item_id"])
-                if enriched is None:
-                    missing_metadata += 1
-                    merged_rows.append(row)
-                else:
-                    merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
-            warn: dict[str, Any] = {
-                "type": "skip_current_package_list_with_package_show_sample",
-                "message": f"current_package_list_with_resources disabilitato per {source_id}; applicato enrich sample via package_show.",
-                "rows_enriched": len(enriched_by_id),
-                "rows_missing_metadata": missing_metadata,
-            }
-            if sample_warning:
-                warn["package_show_sample_warning"] = sample_warning
-            return merged_rows, warn
-        return package_list_rows, {
-            "type": "skip_current_package_list",
-            "message": f"Enrichment current_package_list_with_resources disabilitato per {source_id} (instabilita SSL/GIL in ambiente locale).",
-        }
 
-    time.sleep(1.0)
-    try:
-        # current_list ha timeout 15s proprio — non passare il client condiviso
-        # (creato con timeout 60s) per non alterare il comportamento di retry
-        current_rows, current_warning = current_list_fn(source_id, source_cfg, captured_at)
-        enriched_by_id = {row["item_id"]: row for row in current_rows}
-        fallback_merged_rows: list[dict[str, Any]] = []
+    if inv.get("package_show_sample"):
+        enriched_rows, sample_warning = package_show_sample_fn(
+            source_id=source_id,
+            source_cfg=source_cfg,
+            captured_at=captured_at,
+            package_list_rows=package_list_rows,
+            sample_size=inv.get("sample_size", 25),
+        )
+        enriched_by_id = {row["item_id"]: row for row in enriched_rows}
+        merged_rows: list[dict[str, Any]] = []
         missing_metadata = 0
         for row in package_list_rows:
             enriched = enriched_by_id.get(row["item_id"])
             if enriched is None:
                 missing_metadata += 1
-                fallback_merged_rows.append(row)
+                merged_rows.append(row)
             else:
-                fallback_merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
-
-        fallback_warning: dict[str, Any] = {
-            "type": "fallback_current_package_list_with_resources",
-            "message": "Fallback da package_search a current_package_list_with_resources.",
-            "package_search_error": str(search_exc)
-            if search_exc is not None
-            else "package_search skipped",
+                merged_rows.append({**row, **enriched, "ordinal": row["ordinal"]})
+        warn: dict[str, Any] = {
+            "type": "package_list_with_package_show_sample",
+            "message": f"Enrichment via package_show_sample per {source_id}.",
             "rows_enriched": len(enriched_by_id),
             "rows_missing_metadata": missing_metadata,
+            "package_search_error": str(search_exc) if search_exc is not None else None,
         }
-        if current_warning:
-            fallback_warning["current_list_warning"] = current_warning
-        return fallback_merged_rows, fallback_warning
-    except Exception as current_list_exc:
-        return package_list_rows, {
-            "type": "fallback_package_list",
-            "message": "Fallback finale a package_list dopo fallimento di package_search e current_package_list_with_resources.",
-            "package_search_error": str(search_exc)
-            if search_exc is not None
-            else "package_search skipped",
-            "current_list_error": str(current_list_exc),
-        }
+        if sample_warning:
+            warn["package_show_sample_warning"] = sample_warning
+        return merged_rows, warn
+
+    return package_list_rows, {
+        "type": "fallback_package_list",
+        "message": "Fallback a package_list dopo fallimento di package_search.",
+        "package_search_error": str(search_exc)
+        if search_exc is not None
+        else "package_search skipped",
+    }

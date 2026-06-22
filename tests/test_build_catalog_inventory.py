@@ -11,113 +11,13 @@ from lab_connectors.testing import FakeHttpClient, fake_response
 pytestmark = pytest.mark.contract
 
 
-def test_collect_ckan_inventory_merges_current_list_metadata(monkeypatch) -> None:
-    source_cfg = {
-        "base_url": "https://example.test/api/3/action/package_search",
-        "source_kind": "catalog",
-        "protocol": "ckan",
-        "catalog_baseline": {"method": "package_list"},
-    }
-
-    def fake_search(*_args, **_kwargs):
-        raise ValueError("package_search rotto")
-
-    def fake_package_list(source_id, source_cfg, captured_at, **kwargs):
-        return [
-            {
-                "captured_at": captured_at,
-                "source_id": source_id,
-                "source_kind": source_cfg.get("source_kind"),
-                "protocol": source_cfg.get("protocol"),
-                "inventory_method": "package_list",
-                "item_kind": "dataset",
-                "item_id": "1",
-                "item_name": "1",
-                "title": None,
-                "organization": None,
-                "tags": None,
-                "notes_excerpt": None,
-                "source_url": "https://example.test/api/3/action/package_list",
-                "ordinal": 1,
-            },
-            {
-                "captured_at": captured_at,
-                "source_id": source_id,
-                "source_kind": source_cfg.get("source_kind"),
-                "protocol": source_cfg.get("protocol"),
-                "inventory_method": "package_list",
-                "item_kind": "dataset",
-                "item_id": "2",
-                "item_name": "2",
-                "title": None,
-                "organization": None,
-                "tags": None,
-                "notes_excerpt": None,
-                "source_url": "https://example.test/api/3/action/package_list",
-                "ordinal": 2,
-            },
-        ]
-
-    def fake_current_list(source_id, source_cfg, captured_at, **kwargs):
-        return (
-            [
-                {
-                    "captured_at": captured_at,
-                    "source_id": source_id,
-                    "source_kind": source_cfg.get("source_kind"),
-                    "protocol": source_cfg.get("protocol"),
-                    "inventory_method": "current_package_list_with_resources",
-                    "item_kind": "dataset",
-                    "item_id": "1",
-                    "item_name": "pkg-one",
-                    "title": "Package One",
-                    "organization": "Demo Org",
-                    "tags": "alpha, beta",
-                    "notes_excerpt": "note",
-                    "source_url": "https://example.test/api/3/action/current_package_list_with_resources",
-                    "ordinal": 99,
-                }
-            ],
-            None,
-        )
-
-    monkeypatch.setattr(build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search)
-    monkeypatch.setattr(
-        build_catalog_inventory,
-        "collect_ckan_inventory_via_package_list",
-        fake_package_list,
-    )
-    monkeypatch.setattr(
-        build_catalog_inventory,
-        "collect_ckan_inventory_via_current_list",
-        fake_current_list,
-    )
-    monkeypatch.setattr(collectors.ckan.time, "sleep", lambda _seconds: None)
-
-    rows, warning = build_catalog_inventory.collect_ckan_inventory(
-        "demo", source_cfg, "2026-04-09T12:00:00+00:00"
-    )
-
-    assert [row["ordinal"] for row in rows] == [1, 2]
-    assert rows[0]["item_id"] == "1"
-    assert rows[0]["title"] == "Package One"
-    assert rows[0]["organization"] == "Demo Org"
-    assert rows[1]["item_id"] == "2"
-    assert rows[1]["title"] is None
-
-    assert warning is not None
-    assert warning["type"] == "fallback_current_package_list_with_resources"
-    assert warning["rows_enriched"] == 1
-    assert warning["rows_missing_metadata"] == 1
-
-
-def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None:
+def test_collect_ckan_inventory_via_package_show_sample(monkeypatch) -> None:
     source_cfg = {
         "base_url": "https://www.inps.it/odapi/api/3/action/package_search",
         "source_kind": "catalog",
         "protocol": "ckan",
         "catalog_baseline": {"method": "package_list"},
-        "inventory": {"skip_current_list": True, "package_show_sample": True, "sample_size": 25},
+        "inventory": {"package_show_sample": True, "sample_size": 25},
     }
 
     def fake_search(*_args, **_kwargs):
@@ -143,9 +43,6 @@ def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None
             }
         ]
 
-    def fail_if_called(*_args, **_kwargs):
-        raise AssertionError("current list non dovrebbe essere chiamato per INPS")
-
     def fake_package_show_sample(*_args, **_kwargs):
         return ([], None)
 
@@ -154,11 +51,6 @@ def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None
         build_catalog_inventory,
         "collect_ckan_inventory_via_package_list",
         fake_package_list,
-    )
-    monkeypatch.setattr(
-        build_catalog_inventory,
-        "collect_ckan_inventory_via_current_list",
-        fail_if_called,
     )
     monkeypatch.setattr(
         build_catalog_inventory,
@@ -174,7 +66,7 @@ def test_collect_ckan_inventory_skips_current_list_for_inps(monkeypatch) -> None
     assert rows[0]["item_id"] == "544"
     assert rows[0]["title"] is None
     assert warning is not None
-    assert warning["type"] == "skip_current_package_list_with_package_show_sample"
+    assert warning["type"] == "package_list_with_package_show_sample"
     assert warning["rows_enriched"] == 0
 
 
@@ -241,11 +133,13 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
                     "ordinal": 99,
                 }
             ],
-            None,
+            {
+                "type": "partial_package_show_sample",
+                "errors_preview": 1,
+                "enriched_count": 1,
+                "total_requests": 2,
+            },
         )
-
-    def fail_if_called(*_args, **_kwargs):
-        raise AssertionError("current list non dovrebbe essere chiamato per INPS")
 
     monkeypatch.setattr(build_catalog_inventory, "collect_ckan_inventory_via_search", fake_search)
     monkeypatch.setattr(
@@ -258,11 +152,6 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
         "collect_ckan_inventory_via_package_show_sample",
         fake_package_show_sample,
     )
-    monkeypatch.setattr(
-        build_catalog_inventory,
-        "collect_ckan_inventory_via_current_list",
-        fail_if_called,
-    )
 
     rows, warning = build_catalog_inventory.collect_ckan_inventory(
         "inps", source_cfg, "2026-04-09T12:00:00+00:00"
@@ -274,9 +163,13 @@ def test_collect_ckan_inventory_inps_enriches_with_package_show_sample(monkeypat
     assert rows[1]["item_id"] == "545"
     assert rows[1]["title"] is None
     assert warning is not None
-    assert warning["type"] == "skip_current_package_list_with_package_show_sample"
+    assert warning["type"] == "package_list_with_package_show_sample"
     assert warning["rows_enriched"] == 1
     assert warning["rows_missing_metadata"] == 1
+    # Verifica che il sample_warning sia propagato
+    assert warning["package_show_sample_warning"]["type"] == "partial_package_show_sample"
+    assert warning["package_show_sample_warning"]["errors_preview"] == 1
+    assert warning["package_show_sample_warning"]["enriched_count"] == 1
 
 
 def test_ckan_get_json_reports_non_json_response(monkeypatch) -> None:
