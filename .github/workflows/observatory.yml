@@ -137,7 +137,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/health/open_data_health_scores.json
+          git add -f data/health/open_data_health_scores.json
           if git diff --cached --quiet; then
             echo "Nessuna variazione negli health scores."
           else

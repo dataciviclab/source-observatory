@@ -189,10 +189,10 @@ def build_scores(
             livello = "carente"
 
         # Azione raccomandata (richiede verifica umana)
-        if totale < 25:
+        if livello == "carente":
             azione = "FOIA + verifica DCD"
-        elif totale < 50:
-            azione = "FOIA"
+        elif livello == "debole":
+            azione = "verifica umana"
         elif totale < 70 and formato < 40:
             azione = "segnalazione DCD (formato chiuso — verificare)"
         elif totale < 70 and raggiung < 30:

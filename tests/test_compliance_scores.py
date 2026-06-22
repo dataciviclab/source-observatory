@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from _constants import CATALOG_SIGNALS_PATH, RADAR_SUMMARY_PATH, REGISTRY_PATH
 
 from scripts.build_compliance_scores import build_scores
@@ -18,6 +19,7 @@ from scripts.build_compliance_scores import build_scores
 class TestBuildComplianceScores:
     """Smoke: lo script produce output valido con dati reali."""
 
+    @pytest.mark.contract
     def test_build_scores_produce_output_valido(self):
         registry = self._load_yaml(REGISTRY_PATH)
         radar = self._load_json(RADAR_SUMMARY_PATH)
