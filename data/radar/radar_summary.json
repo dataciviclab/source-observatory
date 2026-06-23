@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-06-22T09:20:17.121930+00:00",
-  "probe_date": "2026-06-22",
+  "generated_at": "2026-06-23T06:58:33.683509+00:00",
+  "probe_date": "2026-06-23",
   "sources_total": 33,
   "status_counts": {
     "GREEN": 32,
-    "YELLOW": 0,
-    "RED": 1
+    "YELLOW": 1,
+    "RED": 0
   },
-  "persistent_red": 1,
+  "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)"
     },
     {
       "id": "anac",
@@ -144,11 +144,10 @@
     },
     {
       "id": "mit_opendata",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
-      "note": null,
-      "red_streak": 4
+      "http_code": "200",
+      "note": null
     },
     {
       "id": "openga",
