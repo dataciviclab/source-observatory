@@ -115,7 +115,7 @@ def test_collect(monkeypatch, fake_http):
     assert row1["api_base_url"] == "https://example.test"
     assert row1["organization"] == "IT1"
     assert row1["distribution_url"] == "https://example.test/data/EX1/ALL/?format=csv"
-    assert row1["format"] == "CSV"
+    assert row1["format"] == "SDMX"
 
     # Secondo flow: EX2
     row2 = result.rows[1]
