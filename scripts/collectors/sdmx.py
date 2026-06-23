@@ -89,7 +89,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 "source_url": source_cfg["base_url"],
                 "api_base_url": api_base,
                 "distribution_url": dist_url,
-                "format": "CSV",
+                "format": "SDMX",
                 "ordinal": idx,
             }
         )
