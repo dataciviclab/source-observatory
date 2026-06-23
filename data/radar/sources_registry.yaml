@@ -81,11 +81,11 @@ openbdap:
   base_url: 
     https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
   inventory:
-    timeout: 600
+    timeout: 1200
     skip_package_search: true
     skip_package_search_reason: timeout sistematico a 60s
     package_show_sample: true
-    package_show_max_workers: 4
+    package_show_max_workers: 8
     package_show_timeout: 10
     sample_size: 5000
   last_probed: '2026-06-23'
