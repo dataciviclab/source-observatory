@@ -1,21 +1,14 @@
 # Catalog Watch Report
 
-_Generato: 2026-06-22T09:25:27+00:00 — 27 fonti controllate_
+_Generato: 2026-06-23T09:10:57+00:00 — 28 fonti controllate_
 
 ## Segnali attivi
-
-### 📦 `istat_sdmx` — inventory change
-
-- **Protocollo**: sdmx
-- **Dettaglio**: 4876 item (dataflow_count), delta +2 rispetto al run precedente (4874).
-- **Item**: 4876
-- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
 
 ### 📦 `openbdap` — inventory change
 
 - **Protocollo**: ckan
-- **Dettaglio**: 3825 item (package_list), delta +8 rispetto al run precedente (3817).
-- **Item**: 3825
+- **Dettaglio**: 3831 item (package_list), delta +6 rispetto al run precedente (3825).
+- **Item**: 3831
 - **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
 
 ### • `mim_opendata` — csv_magnet
@@ -24,13 +17,6 @@ _Generato: 2026-06-22T09:25:27+00:00 — 27 fonti controllate_
 - **Dettaglio**: 1128 link data (CSV 376, JSON 376, XML 376), years 2015-2026 — top prefixes: INFANZIA=192, ALUCORSO=120, SCUANAGR=72, SCUANAAU=72, ALUITAST=60
 - **Item**: 1128
 - **Azione**: catalog-watch-ready
-
-### 📦 `ispra_linked_data` — inventory change
-
-- **Protocollo**: sparql
-- **Dettaglio**: 70 item (sparql_query), delta +1 rispetto al run precedente (69).
-- **Item**: 70
-- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
 
 ### • `mef_irpef` — csv_magnet
 
@@ -67,22 +53,8 @@ _Generato: 2026-06-22T09:25:27+00:00 — 27 fonti controllate_
 - **Item**: 33
 - **Azione**: catalog-watch-ready
 
-### 📦 `agcm` — inventory change
-
-- **Protocollo**: ckan
-- **Dettaglio**: 54 item (package_search), delta +1 rispetto al run precedente (53).
-- **Item**: 54
-- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
-
-### 📦 `pagopa` — inventory change
-
-- **Protocollo**: ckan
-- **Dettaglio**: 11 item (package_search), delta +3 rispetto al run precedente (8).
-- **Item**: 11
-- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
-
 ## Fonti stabili / skipped
 
-_16 fonti senza segnali inventariali in questo run._
+_21 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
