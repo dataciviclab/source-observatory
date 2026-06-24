@@ -116,12 +116,38 @@ class TestBuildComplianceScores:
 
     @pytest.mark.contract
     def test_formato_score_senza_inventory(self):
-        """Asse A: senza inventory, usa fallback protocol."""
+        """Asse A: senza inventory, usa fallback protocol (pessimista)."""
         score, fonte = _formato_score("ckan", [], None, "ignota")
-        assert score == 75.0  # fallback CKAN
-        assert fonte == "computed"
+        assert score == 30.0  # fallback CKAN pessimistico
+        assert fonte == "estimated"
         score2, fonte2 = _formato_score("html", [], None, "ignota")
-        assert score2 == 50.0  # fallback HTML
+        assert score2 == 35.0  # fallback HTML pessimistico
+        assert fonte2 == "estimated"
+        # SDMX resta affidabile (sempre XML)
+        score3, fonte3 = _formato_score("sdmx", [], None, "ignota")
+        assert score3 == 70.0
+        assert fonte3 == "estimated"
+
+    @pytest.mark.contract
+    def test_formato_score_da_source_check(self):
+        """Asse A: source_check primario — formato reale dai probe."""
+        # 100% formati aperti, 100% raggiungibili
+        sc = {"fonte_aperta": {"perc_aperto": 100.0, "perc_reachable": 100.0}}
+        score, fonte = _formato_score("ckan", [], None, "fonte_aperta", sc)
+        assert score == 90.0
+        assert fonte == "computed"
+
+        # 0% formati aperti (tutto XLSX), 100% raggiungibili
+        sc = {"fonte_chiusa": {"perc_aperto": 0.0, "perc_reachable": 100.0}}
+        score, fonte = _formato_score("ckan", [], None, "fonte_chiusa", sc)
+        assert score == 5.0
+        assert fonte == "computed"
+
+        # <30% raggiungibili → penalità forte
+        sc = {"fonte_morta": {"perc_aperto": 80.0, "perc_reachable": 20.0}}
+        score, fonte = _formato_score("ckan", [], None, "fonte_morta", sc)
+        assert score == 10.0  # penalizzato per irraggiungibilità
+        assert fonte == "computed"
 
     @pytest.mark.contract
     def test_licenza_score_da_inventory(self):

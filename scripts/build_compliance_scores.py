@@ -216,18 +216,44 @@ def _formato_score(
     signals: list[dict],
     inventory_stats: dict | None = None,
     source_id: str = "",
+    source_check_stats: dict | None = None,
 ) -> tuple[float, str]:
     """A — Formato aperto.
 
-    Se disponibili, usa i formati reali dall'inventory (CKAN).
-    Altrimenti stima da protocol + segnali HTML.
+    Priorità: source_check (formato reale) > inventory (metadato) > segnali > protocollo.
     """
-    # 1. Se abbiamo dati reali dall'inventory CKAN, usali
+    # ── 1. Source-check: formato reale da probe HTTP ─────────────────
+    if source_check_stats and source_id in source_check_stats:
+        sc = source_check_stats[source_id]
+        perc_aperto = sc["perc_aperto"]
+        perc_reachable = sc["perc_reachable"]
+
+        # Penalità forte se la maggior parte dei file e' irraggiungibile
+        if perc_reachable < 30.0:
+            return (10.0, "computed")
+        if perc_reachable < 50.0:
+            return (15.0, "computed")
+
+        # Formato reale dei file raggiungibili
+        if perc_aperto >= 95.0:
+            return (90.0, "computed")
+        elif perc_aperto >= 80.0:
+            return (75.0, "computed")
+        elif perc_aperto >= 50.0:
+            return (55.0, "computed")
+        elif perc_aperto >= 20.0:
+            return (35.0, "computed")
+        elif perc_aperto > 0:
+            # Qualche formato aperto, ma pochissimo
+            return (20.0, "computed")
+        else:
+            # Zero formati aperti — tutto chiuso (XLSX/PDF/ZIP) o ignoto
+            return (5.0, "computed")
+
+    # ── 2. Inventory CKAN (metadati) ──────────────────────────────────
     if inventory_stats and source_id in inventory_stats:
         stats = inventory_stats[source_id]
         perc = stats["perc_aperto"]
-        # Se la copertura e' bassa (<50% dei dataset con formato noto),
-        # il dato e' parziale — non lo marcamo "computed"
         fonte = "computed" if stats["copertura"] >= 50.0 else "parziale"
         if perc >= 95.0:
             return (90.0, fonte)
@@ -240,7 +266,7 @@ def _formato_score(
         else:
             return (20.0, fonte)
 
-    # 2. Fallback: segnali HTML (csv_magnet)
+    # ── 3. Segnali HTML (csv_magnet) ──────────────────────────────────
     for sig in signals:
         detail = sig.get("detail", "")
         if "CSV" in detail and ("JSON" in detail or "XML" in detail):
@@ -248,17 +274,17 @@ def _formato_score(
         if "CSV" in detail:
             return (75.0, "computed")
 
-    # 3. Stima per protocollo
-    protocol_scores = {
-        "ckan": 75.0,
-        "sdmx": 70.0,
-        "sparql": 65.0,
-        "aem": 55.0,
-        "rest": 55.0,
-        "html": 50.0,
+    # ── 4. Stima per protocollo (pessimista) ──────────────────────────
+    protocol_scores_pessimista = {
+        "sdmx": 70.0,  # SDMX e' sempre XML strutturato
+        "sparql": 65.0,  # SPARQL REST — presumibilmente RDF
+        "ckan": 30.0,  # CKAN non dice nulla sul formato reale
+        "aem": 45.0,
+        "rest": 45.0,
+        "html": 35.0,
     }
-    score = protocol_scores.get(protocol, 50.0)
-    source_type = "computed" if protocol in protocol_scores else "estimated"
+    score = protocol_scores_pessimista.get(protocol, 25.0)
+    source_type = "estimated"
     return (score, source_type)
 
 
@@ -366,7 +392,9 @@ def build_scores(
         radar_entry = radar_by_id.get(source_id)
         signals = signals_by_source.get(source_id, [])
 
-        formato, f_src = _formato_score(protocol, signals, inventory_stats, source_id)
+        formato, f_src = _formato_score(
+            protocol, signals, inventory_stats, source_id, source_check_stats
+        )
         raggiung, r_src = _raggiungibilita_score(radar_entry)
         lic, l_src = _licenza_score(protocol, license_stats, source_id)
         dgov, d_src = _datigovit_score()
