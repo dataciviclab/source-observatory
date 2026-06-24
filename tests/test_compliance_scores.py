@@ -14,9 +14,11 @@ import pytest
 from _constants import CATALOG_SIGNALS_PATH, RADAR_SUMMARY_PATH, REGISTRY_PATH
 
 from scripts.build_compliance_scores import (
+    _flag_urgenza,
     _formato_score,
     _hvd_score,
     _licenza_score,
+    _raggiungibilita_score,
     build_scores,
 )
 
@@ -116,12 +118,105 @@ class TestBuildComplianceScores:
 
     @pytest.mark.contract
     def test_formato_score_senza_inventory(self):
-        """Asse A: senza inventory, usa fallback protocol."""
+        """Asse A: senza inventory, usa fallback protocol (pessimista)."""
         score, fonte = _formato_score("ckan", [], None, "ignota")
-        assert score == 75.0  # fallback CKAN
-        assert fonte == "computed"
+        assert score == 30.0  # fallback CKAN pessimistico
+        assert fonte == "estimated"
         score2, fonte2 = _formato_score("html", [], None, "ignota")
-        assert score2 == 50.0  # fallback HTML
+        assert score2 == 35.0  # fallback HTML pessimistico
+        assert fonte2 == "estimated"
+        # SDMX resta affidabile (sempre XML)
+        score3, fonte3 = _formato_score("sdmx", [], None, "ignota")
+        assert score3 == 70.0
+        assert fonte3 == "estimated"
+
+    @pytest.mark.contract
+    def test_formato_score_da_source_check(self):
+        """Asse A: source_check primario — formato reale dai probe."""
+        # 100% formati aperti, 100% raggiungibili
+        sc = {"fonte_aperta": {"perc_aperto": 100.0, "perc_reachable": 100.0}}
+        score, fonte = _formato_score("ckan", [], None, "fonte_aperta", sc)
+        assert score == 90.0
+        assert fonte == "computed"
+
+        # 0% formati aperti (tutto XLSX), 100% raggiungibili
+        sc = {"fonte_chiusa": {"perc_aperto": 0.0, "perc_reachable": 100.0}}
+        score, fonte = _formato_score("ckan", [], None, "fonte_chiusa", sc)
+        assert score == 5.0
+        assert fonte == "computed"
+
+        # <30% raggiungibili → penalità forte
+        sc = {"fonte_morta": {"perc_aperto": 80.0, "perc_reachable": 20.0}}
+        score, fonte = _formato_score("ckan", [], None, "fonte_morta", sc)
+        assert score == 10.0  # penalizzato per irraggiungibilità
+        assert fonte == "computed"
+
+    @pytest.mark.contract
+    def test_raggiungibilita_score_da_source_check(self):
+        """Asse B: source_check ha priorita sul radar per file-level reachability."""
+        # <20% raggiungibili → score 5
+        s, f = _raggiungibilita_score(
+            {"status": "GREEN", "http_code": "200"},
+            {"f1": {"perc_reachable": 15.0}},
+            "f1",
+        )
+        assert s == 5.0 and f == "computed"
+        # <40% → 15
+        s, f = _raggiungibilita_score(None, {"f1": {"perc_reachable": 30.0}}, "f1")
+        assert s == 15.0 and f == "computed"
+        # >=80% → radar normale
+        s, f = _raggiungibilita_score(
+            {"status": "GREEN", "http_code": "200"},
+            {"f1": {"perc_reachable": 90.0}},
+            "f1",
+        )
+        assert s == 70.0 and f == "computed"
+
+    @pytest.mark.contract
+    def test_flag_urgenza(self):
+        """Flag da source_check e radar."""
+        sc = {"mit": {"total": 10, "circuit_open": 7, "formato_aperto": 0, "formato_chiuso": 10}}
+        flags = _flag_urgenza("mit", sc, {"red_streak": 5})
+        assert "circuit_open_massivo" in flags
+        assert "formato_chiuso_completo" in flags
+        assert "portale_irraggiungibile" in flags
+        # Nessun flag se tutto ok
+        sc2 = {"ok": {"total": 10, "circuit_open": 1, "formato_aperto": 8, "formato_chiuso": 2}}
+        flags2 = _flag_urgenza("ok", sc2, {"red_streak": 0})
+        assert flags2 == []
+
+    @pytest.mark.contract
+    def test_build_scores_min_axis(self):
+        """Il livello deriva dal minimo degli assi computed, non dalla media."""
+        registry = {"fonte_test": {"protocol": "ckan"}}
+        # fonte con formato_aperto=5 (carente) ma altri assi OK
+        sc = {
+            "fonte_test": {
+                "total": 10,
+                "reachable": 10,
+                "circuit_open": 0,
+                "formato_aperto": 0,
+                "formato_chiuso": 10,
+                "formato_ignoto": 0,
+                "perc_reachable": 100.0,
+                "perc_aperto": 0.0,
+            }
+        }
+        result = build_scores(registry, [], None, {}, {}, sc)
+        entry = result["scores"][0]
+        # formato_aperto e' 5.0 (computed, carente) → livello deve essere carente
+        assert entry["livello"] == "carente", f"livello={entry['livello']}, atteso carente"
+        assert "FOIA" in entry["azione_raccomandata"]
+
+    @pytest.mark.contract
+    def test_build_scores_estimated_non_tira_giu(self):
+        """Assi estimated non possono portare il livello sotto 'medio'."""
+        registry = {"fonte_test": {"protocol": "html"}}
+        result = build_scores(registry, [], None, {}, {}, {})
+        entry = result["scores"][0]
+        # Presenza_datigovit e' 50 estimated (soglia debole), ma non deve tirare giu
+        # Il livello dovrebbe essere almeno medio perche' estimated e' cap a medio
+        assert entry["livello"] in ("medio",), f"livello={entry['livello']}, atteso medio"
 
     @pytest.mark.contract
     def test_licenza_score_da_inventory(self):

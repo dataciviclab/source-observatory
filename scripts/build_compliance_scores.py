@@ -26,6 +26,7 @@ from pathlib import Path
 
 from _constants import (
     CATALOG_SIGNALS_PATH,
+    CHECK_PARQUET_PATH,
     INVENTORY_PARQUET_PATH,
     OPEN_DATA_HEALTH_SCORES_PATH,
     RADAR_SUMMARY_PATH,
@@ -37,6 +38,7 @@ DEFAULT_RADAR = RADAR_SUMMARY_PATH
 DEFAULT_SIGNALS = CATALOG_SIGNALS_PATH
 DEFAULT_REGISTRY = REGISTRY_PATH
 DEFAULT_INVENTORY = INVENTORY_PARQUET_PATH
+DEFAULT_SOURCE_CHECK = CHECK_PARQUET_PATH
 DEFAULT_OUT = OPEN_DATA_HEALTH_SCORES_PATH
 
 # Pesi per ogni asse
@@ -152,23 +154,140 @@ def _load_inventory_license_stats(path: Path) -> dict[str, dict]:
         return {}
 
 
+def _load_source_check_stats(path: Path) -> dict[str, dict]:
+    """Legge source_check_results.parquet e aggrega per fonte.
+
+    Restituisce dict: source_id → {
+        "total": N,
+        "reachable": N,
+        "circuit_open": N,
+        "formato_aperto": N,   # CSV/JSON/XML
+        "formato_chiuso": N,   # XLSX/XLS/PDF/ZIP
+        "formato_ignoto": N,
+        "perc_reachable": 0-100,
+        "perc_aperto": 0-100,  # su total (formato_chiuso conta come non aperto)
+    }.
+
+    Per fonti senza source-check, il source_id non e' presente.
+    """
+    if not path.exists():
+        return {}
+
+    try:
+        import duckdb
+
+        con = duckdb.connect()
+        rows = con.execute(
+            """
+            SELECT source_id,
+                   COUNT(*) as total,
+                   SUM(CASE WHEN reachable THEN 1 ELSE 0 END) as reachable,
+                   SUM(CASE WHEN check_notes = 'circuit_open' THEN 1 ELSE 0 END) as circuit_open,
+                   SUM(CASE WHEN resource_format IN ('CSV', 'JSON', 'XML') THEN 1 ELSE 0 END) as formato_aperto,
+                   SUM(CASE WHEN resource_format IN ('XLSX', 'XLS', 'PDF', 'ZIP') THEN 1 ELSE 0 END) as formato_chiuso,
+                   SUM(CASE WHEN resource_format IS NULL OR resource_format = '' THEN 1 ELSE 0 END) as formato_ignoto
+            FROM '"""
+            + str(path)
+            + """'
+            GROUP BY source_id
+        """
+        ).fetchall()
+        stats = {}
+        for sid, total, reachable, copen, fap, fchiuso, fignoto in rows:
+            t = int(total)
+            stats[sid] = {
+                "total": t,
+                "reachable": int(reachable),
+                "circuit_open": int(copen),
+                "formato_aperto": int(fap),
+                "formato_chiuso": int(fchiuso),
+                "formato_ignoto": int(fignoto),
+                "perc_reachable": round(int(reachable) / t * 100, 1) if t > 0 else 0.0,
+                "perc_aperto": round(int(fap) / t * 100, 1) if t > 0 else 0.0,
+            }
+        return stats
+    except Exception as exc:
+        print(f"⚠️  Source-check parquet non elaborabile: {exc}")
+        return {}
+
+
+def _source_check_affidabile(
+    source_id: str,
+    protocol: str,
+    sc_stats: dict | None,
+) -> bool:
+    """Il source_check e' affidabile per questa fonte?
+
+    Per SDMX e SPARQL, se il source_check ha prodotto solo URL vuoti/invalidi
+    (nessun reachable, nessun circuit_open), il problema e' del probe HTTP
+    su singoli file — non della fonte. Questi protocolli si interrogano via
+    API/REST, non si scaricano come file.
+
+    Per CKAN, HTML, REST, AEM il source_check funziona bene.
+    """
+    if not sc_stats or source_id not in sc_stats:
+        return False
+    if protocol not in ("sdmx", "sparql"):
+        return True
+    sc = sc_stats[source_id]
+    # Tutti gli URL vuoti/invalidi + 0 circuit_open → source_check non probeabile
+    if sc["total"] > 0 and sc["reachable"] == 0 and sc["circuit_open"] == 0:
+        return False
+    return True
+
+
 def _formato_score(
     protocol: str,
     signals: list[dict],
     inventory_stats: dict | None = None,
     source_id: str = "",
+    source_check_stats: dict | None = None,
 ) -> tuple[float, str]:
     """A — Formato aperto.
 
-    Se disponibili, usa i formati reali dall'inventory (CKAN).
-    Altrimenti stima da protocol + segnali HTML.
+    Priorità: source_check (formato reale) > inventory (metadato) > segnali > protocollo.
     """
-    # 1. Se abbiamo dati reali dall'inventory CKAN, usali
+    # ── 1. Source-check: formato reale da probe HTTP ─────────────────
+    if (
+        source_check_stats
+        and source_id in source_check_stats
+        and _source_check_affidabile(source_id, protocol, source_check_stats)
+    ):
+        sc = source_check_stats[source_id]
+        perc_aperto = sc["perc_aperto"]
+        perc_reachable = sc["perc_reachable"]
+
+        # Se tutti i formati sono ignoti, source_check non ha probeato il
+        # formato — salta a inventory/protocollo
+        if sc.get("total", 0) > 0 and sc.get("formato_ignoto", 0) == sc.get("total", 0):
+            pass  # casca a inventory
+        else:
+            # Penalità forte se la maggior parte dei file e' irraggiungibile
+            if perc_reachable < 30.0:
+                return (10.0, "computed")
+            if perc_reachable < 50.0:
+                return (15.0, "computed")
+
+            # Formato reale dei file raggiungibili
+            if perc_aperto >= 95.0:
+                return (90.0, "computed")
+            elif perc_aperto >= 80.0:
+                return (75.0, "computed")
+            elif perc_aperto >= 50.0:
+                return (55.0, "computed")
+            elif perc_aperto >= 20.0:
+                return (35.0, "computed")
+            elif perc_aperto > 0:
+                # Qualche formato aperto, ma pochissimo
+                return (20.0, "computed")
+            else:
+                # Zero formati aperti — tutto chiuso (XLSX/PDF/ZIP)
+                return (5.0, "computed")
+
+    # ── 2. Inventory CKAN (metadati) ──────────────────────────────────
     if inventory_stats and source_id in inventory_stats:
         stats = inventory_stats[source_id]
         perc = stats["perc_aperto"]
-        # Se la copertura e' bassa (<50% dei dataset con formato noto),
-        # il dato e' parziale — non lo marcamo "computed"
         fonte = "computed" if stats["copertura"] >= 50.0 else "parziale"
         if perc >= 95.0:
             return (90.0, fonte)
@@ -181,7 +300,7 @@ def _formato_score(
         else:
             return (20.0, fonte)
 
-    # 2. Fallback: segnali HTML (csv_magnet)
+    # ── 3. Segnali HTML (csv_magnet) ──────────────────────────────────
     for sig in signals:
         detail = sig.get("detail", "")
         if "CSV" in detail and ("JSON" in detail or "XML" in detail):
@@ -189,27 +308,49 @@ def _formato_score(
         if "CSV" in detail:
             return (75.0, "computed")
 
-    # 3. Stima per protocollo
-    protocol_scores = {
-        "ckan": 75.0,
-        "sdmx": 70.0,
-        "sparql": 65.0,
-        "aem": 55.0,
-        "rest": 55.0,
-        "html": 50.0,
+    # ── 4. Stima per protocollo (pessimista) ──────────────────────────
+    protocol_scores_pessimista = {
+        "sdmx": 70.0,  # SDMX e' sempre XML strutturato
+        "sparql": 65.0,  # SPARQL REST — presumibilmente RDF
+        "ckan": 30.0,  # CKAN non dice nulla sul formato reale
+        "aem": 45.0,
+        "rest": 45.0,
+        "html": 35.0,
     }
-    score = protocol_scores.get(protocol, 50.0)
-    source_type = "computed" if protocol in protocol_scores else "estimated"
+    score = protocol_scores_pessimista.get(protocol, 25.0)
+    source_type = "estimated"
     return (score, source_type)
 
 
 def _raggiungibilita_score(
     radar_entry: dict | None,
+    source_check_stats: dict | None = None,
+    source_id: str = "",
+    protocol: str = "",
 ) -> tuple[float, str]:
-    """B — Raggiungibilita'. Computed da radar_summary.
+    """B — Raggiungibilita'. Combina radar (portale) e source_check (file).
 
-    Misura se il server e' raggiungibile, NON la freschezza dei dati.
+    Source_check ha priorità: se i file non sono raggiungibili, il portale
+    che risponde HTTP 200 e' irrilevante.
     """
+    # ── 1. Source-check: file-level reachability ──────────────────────────
+    if (
+        source_check_stats
+        and source_id in source_check_stats
+        and _source_check_affidabile(source_id, protocol, source_check_stats)
+    ):
+        sc = source_check_stats[source_id]
+        perc_reachable = sc["perc_reachable"]
+        if perc_reachable < 20.0:
+            return (5.0, "computed")
+        elif perc_reachable < 40.0:
+            return (15.0, "computed")
+        elif perc_reachable < 60.0:
+            return (30.0, "computed")
+        elif perc_reachable < 80.0:
+            return (50.0, "computed")
+
+    # ── 2. Radar: portale reachability ──────────────────────────────────
     if radar_entry is None:
         return (50.0, "estimated")
 
@@ -218,10 +359,8 @@ def _raggiungibilita_score(
     streak = radar_entry.get("red_streak", 0)
 
     if status == "GREEN":
-        # SSL issue strutturato (ssl_issue field) — più affidabile della nota testuale
         if radar_entry and radar_entry.get("ssl_issue"):
             return (55.0, "computed")
-        # Fallback: nota testuale per history precedente all'introduzione di ssl_issue
         if "SSL" in note or "ssl" in note.lower():
             return (55.0, "computed")
         return (70.0, "computed")
@@ -280,12 +419,43 @@ def _foia_access_score() -> tuple[float, str]:
     return (50.0, "missing")
 
 
+def _flag_urgenza(
+    source_id: str,
+    source_check_stats: dict | None = None,
+    radar_entry: dict | None = None,
+) -> list[str]:
+    """Calcola flag di urgenza per una fonte.
+
+    I flag non modificano lo score ma possono overrideare l'azione raccomandata.
+    """
+    flags: list[str] = []
+
+    # circuit_open_massivo: >50% URL irraggiungibili
+    if source_check_stats and source_id in source_check_stats:
+        sc = source_check_stats[source_id]
+        if sc["total"] > 0 and (sc["circuit_open"] / sc["total"]) > 0.5:
+            flags.append("circuit_open_massivo")
+
+        # formato_chiuso_completo: 0% formato_aperto
+        if sc["total"] > 0 and sc["formato_aperto"] == 0 and sc["formato_chiuso"] > 0:
+            flags.append("formato_chiuso_completo")
+
+    # portale_irraggiungibile: radar RED streak >= 3
+    if radar_entry:
+        streak = radar_entry.get("red_streak", 0)
+        if isinstance(streak, (int, float)) and streak >= 3:
+            flags.append("portale_irraggiungibile")
+
+    return flags
+
+
 def build_scores(
     registry: dict,
     radar_sources: list[dict],
     signals_data: dict | None,
     inventory_stats: dict | None = None,
     license_stats: dict | None = None,
+    source_check_stats: dict | None = None,
 ) -> dict:
     """Calcola health score per ogni fonte nel registry."""
     radar_by_id: dict[str, dict] = {s["id"]: s for s in radar_sources}
@@ -306,8 +476,12 @@ def build_scores(
         radar_entry = radar_by_id.get(source_id)
         signals = signals_by_source.get(source_id, [])
 
-        formato, f_src = _formato_score(protocol, signals, inventory_stats, source_id)
-        raggiung, r_src = _raggiungibilita_score(radar_entry)
+        formato, f_src = _formato_score(
+            protocol, signals, inventory_stats, source_id, source_check_stats
+        )
+        raggiung, r_src = _raggiungibilita_score(
+            radar_entry, source_check_stats, source_id, protocol
+        )
         lic, l_src = _licenza_score(protocol, license_stats, source_id)
         dgov, d_src = _datigovit_score()
         hvd, h_src = _hvd_score(license_stats, source_id)
@@ -331,21 +505,65 @@ def build_scores(
 
         totale = round(numeratore / denominatore, 1) if denominatore > 0 else 0.0
 
-        # Label qualitativo (prudenziale)
-        if totale >= 80:
-            livello = "buono"
-        elif totale >= 55:
-            livello = "medio"
-        elif totale >= 25:
-            livello = "debole"
-        else:
-            livello = "carente"
+        # Livello dal minimo degli assi (non-missing).
+        # Gli assi "estimated" (stime prudenziali) non possono tirare giu'
+        # il livello sotto "medio" — solo gli assi "computed"/"parziale"
+        # (dati reali) possono determinare "debole" o "carente".
+        _ORDINE_LIVELLI = {"buono": 0, "medio": 1, "debole": 2, "carente": 3}
 
-        # Azione raccomandata (richiede verifica umana)
+        def _livello_asse(score: float) -> str:
+            if score >= 80:
+                return "buono"
+            elif score >= 55:
+                return "medio"
+            elif score >= 25:
+                return "debole"
+            return "carente"
+
+        livelli_assi: list[str] = []
+        for val, src, _key in assi_info:
+            if src == "missing":
+                continue
+            livello_asse = _livello_asse(val)
+            if src in ("estimated",):
+                # Le stime non tirano giu' il livello
+                livello_asse = min(livello_asse, "medio", key=lambda x: _ORDINE_LIVELLI.get(x, 0))
+            livelli_assi.append(livello_asse)
+
+        livello = (
+            max(livelli_assi, key=lambda x: _ORDINE_LIVELLI.get(x, 0)) if livelli_assi else "medio"
+        )
+
+        # Flag urgenza
+        flags = _flag_urgenza(source_id, source_check_stats, radar_entry)
+
+        # I flag possono elevare il livello
+        if (
+            "circuit_open_massivo" in flags
+            and _ORDINE_LIVELLI.get(livello, 0) < _ORDINE_LIVELLI["debole"]
+        ):
+            livello = "debole"
+        if (
+            "formato_chiuso_completo" in flags
+            and _ORDINE_LIVELLI.get(livello, 0) < _ORDINE_LIVELLI["debole"]
+        ):
+            livello = "debole"
+        if (
+            "portale_irraggiungibile" in flags
+            and _ORDINE_LIVELLI.get(livello, 0) < _ORDINE_LIVELLI["debole"]
+        ):
+            livello = "debole"
+
+        # Azione raccomandata
         if livello == "carente":
             azione = "FOIA + verifica DCD"
         elif livello == "debole":
-            azione = "verifica umana"
+            if "formato_chiuso_completo" in flags:
+                azione = "segnalazione DCD (formato chiuso)"
+            elif "circuit_open_massivo" in flags:
+                azione = "verifica raggiungibilita' (FOIA se persiste)"
+            else:
+                azione = "verifica umana"
         elif totale < 70 and formato < 40:
             azione = "segnalazione DCD (formato chiuso — verificare)"
         elif totale < 70 and raggiung < 30:
@@ -359,6 +577,7 @@ def build_scores(
             "totale": totale,
             "livello": livello,
             "azione_raccomandata": azione,
+            "flag_urgenza": flags,
             "assi": {
                 "formato_aperto": {"score": formato, "fonte": f_src},
                 "raggiungibilita": {"score": raggiung, "fonte": r_src},
@@ -414,6 +633,12 @@ def main() -> None:
         help="Path a catalog_inventory_latest.parquet",
     )
     parser.add_argument(
+        "--source-check",
+        default=DEFAULT_SOURCE_CHECK,
+        type=Path,
+        help="Path a source_check_results.parquet",
+    )
+    parser.add_argument(
         "--out",
         default=DEFAULT_OUT,
         type=Path,
@@ -434,8 +659,16 @@ def main() -> None:
 
     inventory_stats = _load_inventory_format_stats(args.inventory)
     license_stats = _load_inventory_license_stats(args.inventory)
+    source_check_stats = _load_source_check_stats(args.source_check)
 
-    scores = build_scores(registry, radar_sources, signals_data, inventory_stats, license_stats)
+    scores = build_scores(
+        registry,
+        radar_sources,
+        signals_data,
+        inventory_stats,
+        license_stats,
+        source_check_stats,
+    )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
