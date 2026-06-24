@@ -638,7 +638,11 @@ def _check_row(
     )
     # per SDMX la metadata_url non è un dato, usiamo la base_url per il check
     if enrich["enrich_method"] in ("sdmx_dataflow_annotations", "inventory_only"):
-        url_to_check = row.get("landing_page") or row.get("distribution_url") or url_to_check
+        url_to_check = (
+            _safe_str(row.get("landing_page"))
+            or _safe_str(row.get("distribution_url"))
+            or url_to_check
+        )
 
     # Se l'enrich ha già fatto un HEAD con successo (content_type/content_type_landing/html_scrape),
     # evitiamo un secondo HEAD ridondante sullo stesso URL.
