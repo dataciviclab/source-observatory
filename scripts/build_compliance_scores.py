@@ -26,6 +26,7 @@ from pathlib import Path
 
 from _constants import (
     CATALOG_SIGNALS_PATH,
+    CHECK_PARQUET_PATH,
     INVENTORY_PARQUET_PATH,
     OPEN_DATA_HEALTH_SCORES_PATH,
     RADAR_SUMMARY_PATH,
@@ -37,6 +38,7 @@ DEFAULT_RADAR = RADAR_SUMMARY_PATH
 DEFAULT_SIGNALS = CATALOG_SIGNALS_PATH
 DEFAULT_REGISTRY = REGISTRY_PATH
 DEFAULT_INVENTORY = INVENTORY_PARQUET_PATH
+DEFAULT_SOURCE_CHECK = CHECK_PARQUET_PATH
 DEFAULT_OUT = OPEN_DATA_HEALTH_SCORES_PATH
 
 # Pesi per ogni asse
@@ -149,6 +151,63 @@ def _load_inventory_license_stats(path: Path) -> dict[str, dict]:
         return stats
     except Exception as exc:
         print(f"⚠️  Inventory licenza non elaborabile: {exc}")
+        return {}
+
+
+def _load_source_check_stats(path: Path) -> dict[str, dict]:
+    """Legge source_check_results.parquet e aggrega per fonte.
+
+    Restituisce dict: source_id → {
+        "total": N,
+        "reachable": N,
+        "circuit_open": N,
+        "formato_aperto": N,   # CSV/JSON/XML
+        "formato_chiuso": N,   # XLSX/XLS/PDF/ZIP
+        "formato_ignoto": N,
+        "perc_reachable": 0-100,
+        "perc_aperto": 0-100,  # su total (formato_chiuso conta come non aperto)
+    }.
+
+    Per fonti senza source-check, il source_id non e' presente.
+    """
+    if not path.exists():
+        return {}
+
+    try:
+        import duckdb
+
+        con = duckdb.connect()
+        rows = con.execute(
+            """
+            SELECT source_id,
+                   COUNT(*) as total,
+                   SUM(CASE WHEN reachable THEN 1 ELSE 0 END) as reachable,
+                   SUM(CASE WHEN check_notes = 'circuit_open' THEN 1 ELSE 0 END) as circuit_open,
+                   SUM(CASE WHEN resource_format IN ('CSV', 'JSON', 'XML') THEN 1 ELSE 0 END) as formato_aperto,
+                   SUM(CASE WHEN resource_format IN ('XLSX', 'XLS', 'PDF', 'ZIP') THEN 1 ELSE 0 END) as formato_chiuso,
+                   SUM(CASE WHEN resource_format IS NULL OR resource_format = '' THEN 1 ELSE 0 END) as formato_ignoto
+            FROM '"""
+            + str(path)
+            + """'
+            GROUP BY source_id
+        """
+        ).fetchall()
+        stats = {}
+        for sid, total, reachable, copen, fap, fchiuso, fignoto in rows:
+            t = int(total)
+            stats[sid] = {
+                "total": t,
+                "reachable": int(reachable),
+                "circuit_open": int(copen),
+                "formato_aperto": int(fap),
+                "formato_chiuso": int(fchiuso),
+                "formato_ignoto": int(fignoto),
+                "perc_reachable": round(int(reachable) / t * 100, 1) if t > 0 else 0.0,
+                "perc_aperto": round(int(fap) / t * 100, 1) if t > 0 else 0.0,
+            }
+        return stats
+    except Exception as exc:
+        print(f"⚠️  Source-check parquet non elaborabile: {exc}")
         return {}
 
 
@@ -286,6 +345,7 @@ def build_scores(
     signals_data: dict | None,
     inventory_stats: dict | None = None,
     license_stats: dict | None = None,
+    source_check_stats: dict | None = None,
 ) -> dict:
     """Calcola health score per ogni fonte nel registry."""
     radar_by_id: dict[str, dict] = {s["id"]: s for s in radar_sources}
@@ -414,6 +474,12 @@ def main() -> None:
         help="Path a catalog_inventory_latest.parquet",
     )
     parser.add_argument(
+        "--source-check",
+        default=DEFAULT_SOURCE_CHECK,
+        type=Path,
+        help="Path a source_check_results.parquet",
+    )
+    parser.add_argument(
         "--out",
         default=DEFAULT_OUT,
         type=Path,
@@ -434,8 +500,16 @@ def main() -> None:
 
     inventory_stats = _load_inventory_format_stats(args.inventory)
     license_stats = _load_inventory_license_stats(args.inventory)
+    source_check_stats = _load_source_check_stats(args.source_check)
 
-    scores = build_scores(registry, radar_sources, signals_data, inventory_stats, license_stats)
+    scores = build_scores(
+        registry,
+        radar_sources,
+        signals_data,
+        inventory_stats,
+        license_stats,
+        source_check_stats,
+    )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
