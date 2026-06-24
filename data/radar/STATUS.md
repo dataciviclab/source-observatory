@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-06-23
+Ultimo run: 2026-06-24
 
 ## Sommario
 
@@ -70,4 +70,3 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 - `istat_sdmx`: Timeout (ReadTimeout)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
 - `aifa`: HTTP 200 | content-type: text/html;charset=UTF-8 | url finale: https://www.aifa.gov.it/dati-aifa | SSL verify failed; fallback verify=False used (SSLError)
-- `openga`: HTTP 200 | content-type: application/json;charset=utf-8 | url finale: https://openga.giustizia-amministrativa.it/api/3/action/package_list?limit=1 | SSL verify failed; fallback verify=False used (SSLError)

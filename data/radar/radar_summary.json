@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-23T06:58:33.683509+00:00",
-  "probe_date": "2026-06-23",
+  "generated_at": "2026-06-24T06:56:05.334530+00:00",
+  "probe_date": "2026-06-24",
   "sources_total": 33,
   "status_counts": {
     "GREEN": 32,
@@ -154,7 +154,7 @@
       "status": "GREEN",
       "protocol": "ckan",
       "http_code": "200",
-      "note": "SSL verify failed; fallback verify=False used (SSLError)"
+      "note": null
     },
     {
       "id": "giustizia_statistiche",
