@@ -335,6 +335,7 @@ def build_radar_summary(
 
     for source_id, meta in registry.items():
         result = results.get(source_id) or _missing
+        ssl_fallback_used = result.ssl_fallback_used
 
         # Compute RED streak
         streak = 0
@@ -343,6 +344,15 @@ def build_radar_summary(
             src = next((s for s in probe.get("sources", []) if s["id"] == source_id), None)
             if src and src.get("status") == "RED":
                 streak += 1
+            else:
+                break
+
+        # Compute SSL streak (consecutive probes with SSL issue, including current)
+        ssl_streak = 1 if ssl_fallback_used else 0
+        for probe in recent_probes:
+            src = next((s for s in probe.get("sources", []) if s["id"] == source_id), None)
+            if src and src.get("ssl_fallback_used"):
+                ssl_streak += 1
             else:
                 break
 
@@ -356,9 +366,14 @@ def build_radar_summary(
             "protocol": meta.get("protocol", "-"),
             "http_code": result.http_code,
             "note": result.note,
+            "ssl_fallback_used": ssl_fallback_used,
         }
         if streak >= 2:
             entry["red_streak"] = streak
+        if ssl_fallback_used:
+            entry["ssl_issue"] = True
+        if ssl_streak >= 2:
+            entry["ssl_streak"] = ssl_streak
         sources_list.append(entry)
 
     summary = {

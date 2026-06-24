@@ -218,6 +218,10 @@ def _raggiungibilita_score(
     streak = radar_entry.get("red_streak", 0)
 
     if status == "GREEN":
+        # SSL issue strutturato (ssl_issue field) — più affidabile della nota testuale
+        if radar_entry and radar_entry.get("ssl_issue"):
+            return (55.0, "computed")
+        # Fallback: nota testuale per history precedente all'introduzione di ssl_issue
         if "SSL" in note or "ssl" in note.lower():
             return (55.0, "computed")
         return (70.0, "computed")
