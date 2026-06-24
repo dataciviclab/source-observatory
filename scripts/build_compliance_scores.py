@@ -464,26 +464,56 @@ def build_scores(
 
         totale = round(numeratore / denominatore, 1) if denominatore > 0 else 0.0
 
-        # Label qualitativo (prudenziale)
-        if totale >= 80:
-            livello = "buono"
-        elif totale >= 55:
-            livello = "medio"
-        elif totale >= 25:
-            livello = "debole"
-        else:
-            livello = "carente"
+        # Livello dal minimo degli assi (non-missing).
+        # Gli assi "estimated" (stime prudenziali) non possono tirare giu'
+        # il livello sotto "medio" — solo gli assi "computed"/"parziale"
+        # (dati reali) possono determinare "debole" o "carente".
+        _ORDINE_LIVELLI = {"buono": 0, "medio": 1, "debole": 2, "carente": 3}
+
+        def _livello_asse(score: float) -> str:
+            if score >= 80:
+                return "buono"
+            elif score >= 55:
+                return "medio"
+            elif score >= 25:
+                return "debole"
+            return "carente"
+
+        livelli_assi: list[str] = []
+        for val, src, _key in assi_info:
+            if src == "missing":
+                continue
+            livello_asse = _livello_asse(val)
+            if src in ("estimated",):
+                # Le stime non tirano giu' il livello
+                livello_asse = min(livello_asse, "medio", key=lambda x: _ORDINE_LIVELLI.get(x, 0))
+            livelli_assi.append(livello_asse)
+
+        livello = (
+            max(livelli_assi, key=lambda x: _ORDINE_LIVELLI.get(x, 0)) if livelli_assi else "medio"
+        )
 
         # Flag urgenza
         flags = _flag_urgenza(source_id, source_check_stats, radar_entry)
 
-        # Azione raccomandata — i flag possono elevare
-        if "circuit_open_massivo" in flags and livello in ("medio", "buono"):
-            # override: se i file non sono raggiungibili, livello minimo debole
+        # I flag possono elevare il livello
+        if (
+            "circuit_open_massivo" in flags
+            and _ORDINE_LIVELLI.get(livello, 0) < _ORDINE_LIVELLI["debole"]
+        ):
             livello = "debole"
-        if "formato_chiuso_completo" in flags and livello in ("medio", "buono"):
+        if (
+            "formato_chiuso_completo" in flags
+            and _ORDINE_LIVELLI.get(livello, 0) < _ORDINE_LIVELLI["debole"]
+        ):
+            livello = "debole"
+        if (
+            "portale_irraggiungibile" in flags
+            and _ORDINE_LIVELLI.get(livello, 0) < _ORDINE_LIVELLI["debole"]
+        ):
             livello = "debole"
 
+        # Azione raccomandata
         if livello == "carente":
             azione = "FOIA + verifica DCD"
         elif livello == "debole":
