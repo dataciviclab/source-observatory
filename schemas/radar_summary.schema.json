@@ -79,10 +79,23 @@
           "type": ["string", "null"],
           "description": "Nota opzionale sul probe (errore, dettaglio SSL, timeout, ...)."
         },
+        "ssl_fallback_used": {
+          "type": "boolean",
+          "description": "Indica se il probe primario ha fallito per SSL (presente sempre)."
+        },
+        "ssl_issue": {
+          "type": "boolean",
+          "description": "Flag SSL: true se la fonte ha un problema di certificato (presente solo se true)."
+        },
         "red_streak": {
           "type": "integer",
           "minimum": 2,
           "description": "Streak di probe RED consecutivi (presente solo se >= 2)."
+        },
+        "ssl_streak": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Streak di probe consecutivi con SSL issue dalla history (presente solo se >= 2). Il probe corrente e' catturato da ssl_issue."
         }
       },
       "additionalProperties": false

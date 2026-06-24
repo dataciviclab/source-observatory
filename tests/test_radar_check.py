@@ -212,15 +212,120 @@ class TestBuildReport:
                 "observation_mode": "radar-only",
                 "datasets_in_use": [],
             },
+            "ssl_fonte": {
+                "base_url": "https://ssl-broken.test/",
+                "source_kind": "source",
+                "protocol": "html",
+                "observation_mode": "radar-only",
+            },
         }
         results = {
             "demo_ckan": radar_check.ProbeResult(
                 status="GREEN", http_code="200", content_type="application/json"
             ),
             "istat_sdmx": radar_check.ProbeResult(status="YELLOW", http_code="-", note="Timeout"),
+            "ssl_fonte": radar_check.ProbeResult(
+                status="GREEN",
+                http_code="200",
+                note="SSL verify failed; fallback verify=False used (SSLError)",
+                ssl_fallback_used=True,
+            ),
         }
         summary, sources_list = radar_check.build_radar_summary(registry, results, "2026-04-18")
         schema = _load_schema("radar_summary.schema.json")
         jsonschema.validate(instance=summary, schema=schema)
         # Verify sources_list mirrors summary.sources
         assert len(sources_list) == summary["sources_total"]
+        # Verify SSL issue is captured
+        ssl_src = next(s for s in summary["sources"] if s["id"] == "ssl_fonte")
+        assert ssl_src.get("ssl_issue") is True
+        assert ssl_src.get("ssl_fallback_used") is True
+        # Verify non-SSL source does NOT have ssl_issue
+        clean_src = next(s for s in summary["sources"] if s["id"] == "demo_ckan")
+        assert clean_src.get("ssl_issue") is None or clean_src.get("ssl_issue") is False
+        assert clean_src.get("ssl_fallback_used") is False
+
+    def test_build_radar_summary_ssl_streak(self) -> None:
+        """SSL streak counts consecutive probes with ssl_fallback_used."""
+        registry = {
+            "ssl_fonte": {
+                "base_url": "https://ssl-broken.test/",
+                "source_kind": "source",
+                "protocol": "html",
+                "observation_mode": "radar-only",
+            },
+        }
+        # History: last 3 probes all had SSL issue
+        history = {
+            "probes": [
+                {
+                    "probe_date": "2026-04-15",
+                    "sources": [{"id": "ssl_fonte", "ssl_fallback_used": True}],
+                },
+                {
+                    "probe_date": "2026-04-16",
+                    "sources": [{"id": "ssl_fonte", "ssl_fallback_used": True}],
+                },
+                {
+                    "probe_date": "2026-04-17",
+                    "sources": [{"id": "ssl_fonte", "ssl_fallback_used": True}],
+                },
+            ]
+        }
+        results = {
+            "ssl_fonte": radar_check.ProbeResult(
+                status="GREEN",
+                http_code="200",
+                note="SSL verify failed; fallback verify=False used (SSLError)",
+                ssl_fallback_used=True,
+            ),
+        }
+        summary, sources_list = radar_check.build_radar_summary(
+            registry, results, "2026-04-18", history
+        )
+        ssl_src = next(s for s in summary["sources"] if s["id"] == "ssl_fonte")
+        # 3 history consecutive SSL probe (current non contato in streak, ma segnalato da ssl_issue)
+        assert ssl_src.get("ssl_streak") == 3
+        assert ssl_src.get("ssl_issue") is True
+
+    def test_build_radar_summary_ssl_streak_break(self) -> None:
+        """SSL streak resets after a probe without SSL issue."""
+        registry = {
+            "ssl_fonte": {
+                "base_url": "https://ssl-ok-now.test/",
+                "source_kind": "source",
+                "protocol": "html",
+                "observation_mode": "radar-only",
+            },
+        }
+        # History: first 2 had SSL, probe 3 did NOT → streak should reset
+        history = {
+            "probes": [
+                {
+                    "probe_date": "2026-04-15",
+                    "sources": [{"id": "ssl_fonte", "ssl_fallback_used": True}],
+                },
+                {
+                    "probe_date": "2026-04-16",
+                    "sources": [{"id": "ssl_fonte", "ssl_fallback_used": True}],
+                },
+                {
+                    "probe_date": "2026-04-17",
+                    "sources": [{"id": "ssl_fonte", "ssl_fallback_used": False}],
+                },
+            ]
+        }
+        results = {
+            "ssl_fonte": radar_check.ProbeResult(
+                status="GREEN",
+                http_code="200",
+                ssl_fallback_used=False,
+            ),
+        }
+        summary, sources_list = radar_check.build_radar_summary(
+            registry, results, "2026-04-18", history
+        )
+        ssl_src = next(s for s in summary["sources"] if s["id"] == "ssl_fonte")
+        # Current has no SSL → streak = 0 → no ssl_streak field
+        assert ssl_src.get("ssl_streak") is None
+        assert ssl_src.get("ssl_issue") is None or ssl_src.get("ssl_issue") is False
