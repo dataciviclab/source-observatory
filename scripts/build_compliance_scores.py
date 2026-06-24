@@ -211,6 +211,31 @@ def _load_source_check_stats(path: Path) -> dict[str, dict]:
         return {}
 
 
+def _source_check_affidabile(
+    source_id: str,
+    protocol: str,
+    sc_stats: dict | None,
+) -> bool:
+    """Il source_check e' affidabile per questa fonte?
+
+    Per SDMX e SPARQL, se il source_check ha prodotto solo URL vuoti/invalidi
+    (nessun reachable, nessun circuit_open), il problema e' del probe HTTP
+    su singoli file — non della fonte. Questi protocolli si interrogano via
+    API/REST, non si scaricano come file.
+
+    Per CKAN, HTML, REST, AEM il source_check funziona bene.
+    """
+    if not sc_stats or source_id not in sc_stats:
+        return False
+    if protocol not in ("sdmx", "sparql"):
+        return True
+    sc = sc_stats[source_id]
+    # Tutti gli URL vuoti/invalidi + 0 circuit_open → source_check non probeabile
+    if sc["total"] > 0 and sc["reachable"] == 0 and sc["circuit_open"] == 0:
+        return False
+    return True
+
+
 def _formato_score(
     protocol: str,
     signals: list[dict],
@@ -223,32 +248,41 @@ def _formato_score(
     Priorità: source_check (formato reale) > inventory (metadato) > segnali > protocollo.
     """
     # ── 1. Source-check: formato reale da probe HTTP ─────────────────
-    if source_check_stats and source_id in source_check_stats:
+    if (
+        source_check_stats
+        and source_id in source_check_stats
+        and _source_check_affidabile(source_id, protocol, source_check_stats)
+    ):
         sc = source_check_stats[source_id]
         perc_aperto = sc["perc_aperto"]
         perc_reachable = sc["perc_reachable"]
 
-        # Penalità forte se la maggior parte dei file e' irraggiungibile
-        if perc_reachable < 30.0:
-            return (10.0, "computed")
-        if perc_reachable < 50.0:
-            return (15.0, "computed")
-
-        # Formato reale dei file raggiungibili
-        if perc_aperto >= 95.0:
-            return (90.0, "computed")
-        elif perc_aperto >= 80.0:
-            return (75.0, "computed")
-        elif perc_aperto >= 50.0:
-            return (55.0, "computed")
-        elif perc_aperto >= 20.0:
-            return (35.0, "computed")
-        elif perc_aperto > 0:
-            # Qualche formato aperto, ma pochissimo
-            return (20.0, "computed")
+        # Se tutti i formati sono ignoti, source_check non ha probeato il
+        # formato — salta a inventory/protocollo
+        if sc.get("total", 0) > 0 and sc.get("formato_ignoto", 0) == sc.get("total", 0):
+            pass  # casca a inventory
         else:
-            # Zero formati aperti — tutto chiuso (XLSX/PDF/ZIP) o ignoto
-            return (5.0, "computed")
+            # Penalità forte se la maggior parte dei file e' irraggiungibile
+            if perc_reachable < 30.0:
+                return (10.0, "computed")
+            if perc_reachable < 50.0:
+                return (15.0, "computed")
+
+            # Formato reale dei file raggiungibili
+            if perc_aperto >= 95.0:
+                return (90.0, "computed")
+            elif perc_aperto >= 80.0:
+                return (75.0, "computed")
+            elif perc_aperto >= 50.0:
+                return (55.0, "computed")
+            elif perc_aperto >= 20.0:
+                return (35.0, "computed")
+            elif perc_aperto > 0:
+                # Qualche formato aperto, ma pochissimo
+                return (20.0, "computed")
+            else:
+                # Zero formati aperti — tutto chiuso (XLSX/PDF/ZIP)
+                return (5.0, "computed")
 
     # ── 2. Inventory CKAN (metadati) ──────────────────────────────────
     if inventory_stats and source_id in inventory_stats:
@@ -292,6 +326,7 @@ def _raggiungibilita_score(
     radar_entry: dict | None,
     source_check_stats: dict | None = None,
     source_id: str = "",
+    protocol: str = "",
 ) -> tuple[float, str]:
     """B — Raggiungibilita'. Combina radar (portale) e source_check (file).
 
@@ -299,7 +334,11 @@ def _raggiungibilita_score(
     che risponde HTTP 200 e' irrilevante.
     """
     # ── 1. Source-check: file-level reachability ──────────────────────────
-    if source_check_stats and source_id in source_check_stats:
+    if (
+        source_check_stats
+        and source_id in source_check_stats
+        and _source_check_affidabile(source_id, protocol, source_check_stats)
+    ):
         sc = source_check_stats[source_id]
         perc_reachable = sc["perc_reachable"]
         if perc_reachable < 20.0:
@@ -440,7 +479,9 @@ def build_scores(
         formato, f_src = _formato_score(
             protocol, signals, inventory_stats, source_id, source_check_stats
         )
-        raggiung, r_src = _raggiungibilita_score(radar_entry, source_check_stats, source_id)
+        raggiung, r_src = _raggiungibilita_score(
+            radar_entry, source_check_stats, source_id, protocol
+        )
         lic, l_src = _licenza_score(protocol, license_stats, source_id)
         dgov, d_src = _datigovit_score()
         hvd, h_src = _hvd_score(license_stats, source_id)
