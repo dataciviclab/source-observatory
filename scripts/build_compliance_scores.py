@@ -290,11 +290,28 @@ def _formato_score(
 
 def _raggiungibilita_score(
     radar_entry: dict | None,
+    source_check_stats: dict | None = None,
+    source_id: str = "",
 ) -> tuple[float, str]:
-    """B — Raggiungibilita'. Computed da radar_summary.
+    """B — Raggiungibilita'. Combina radar (portale) e source_check (file).
 
-    Misura se il server e' raggiungibile, NON la freschezza dei dati.
+    Source_check ha priorità: se i file non sono raggiungibili, il portale
+    che risponde HTTP 200 e' irrilevante.
     """
+    # ── 1. Source-check: file-level reachability ──────────────────────────
+    if source_check_stats and source_id in source_check_stats:
+        sc = source_check_stats[source_id]
+        perc_reachable = sc["perc_reachable"]
+        if perc_reachable < 20.0:
+            return (5.0, "computed")
+        elif perc_reachable < 40.0:
+            return (15.0, "computed")
+        elif perc_reachable < 60.0:
+            return (30.0, "computed")
+        elif perc_reachable < 80.0:
+            return (50.0, "computed")
+
+    # ── 2. Radar: portale reachability ──────────────────────────────────
     if radar_entry is None:
         return (50.0, "estimated")
 
@@ -303,10 +320,8 @@ def _raggiungibilita_score(
     streak = radar_entry.get("red_streak", 0)
 
     if status == "GREEN":
-        # SSL issue strutturato (ssl_issue field) — più affidabile della nota testuale
         if radar_entry and radar_entry.get("ssl_issue"):
             return (55.0, "computed")
-        # Fallback: nota testuale per history precedente all'introduzione di ssl_issue
         if "SSL" in note or "ssl" in note.lower():
             return (55.0, "computed")
         return (70.0, "computed")
@@ -395,7 +410,7 @@ def build_scores(
         formato, f_src = _formato_score(
             protocol, signals, inventory_stats, source_id, source_check_stats
         )
-        raggiung, r_src = _raggiungibilita_score(radar_entry)
+        raggiung, r_src = _raggiungibilita_score(radar_entry, source_check_stats, source_id)
         lic, l_src = _licenza_score(protocol, license_stats, source_id)
         dgov, d_src = _datigovit_score()
         hvd, h_src = _hvd_score(license_stats, source_id)
