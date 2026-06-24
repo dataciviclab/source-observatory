@@ -380,6 +380,36 @@ def _foia_access_score() -> tuple[float, str]:
     return (50.0, "missing")
 
 
+def _flag_urgenza(
+    source_id: str,
+    source_check_stats: dict | None = None,
+    radar_entry: dict | None = None,
+) -> list[str]:
+    """Calcola flag di urgenza per una fonte.
+
+    I flag non modificano lo score ma possono overrideare l'azione raccomandata.
+    """
+    flags: list[str] = []
+
+    # circuit_open_massivo: >50% URL irraggiungibili
+    if source_check_stats and source_id in source_check_stats:
+        sc = source_check_stats[source_id]
+        if sc["total"] > 0 and (sc["circuit_open"] / sc["total"]) > 0.5:
+            flags.append("circuit_open_massivo")
+
+        # formato_chiuso_completo: 0% formato_aperto
+        if sc["total"] > 0 and sc["formato_aperto"] == 0 and sc["formato_chiuso"] > 0:
+            flags.append("formato_chiuso_completo")
+
+    # portale_irraggiungibile: radar RED streak >= 3
+    if radar_entry:
+        streak = radar_entry.get("red_streak", 0)
+        if isinstance(streak, (int, float)) and streak >= 3:
+            flags.append("portale_irraggiungibile")
+
+    return flags
+
+
 def build_scores(
     registry: dict,
     radar_sources: list[dict],
@@ -444,11 +474,25 @@ def build_scores(
         else:
             livello = "carente"
 
-        # Azione raccomandata (richiede verifica umana)
+        # Flag urgenza
+        flags = _flag_urgenza(source_id, source_check_stats, radar_entry)
+
+        # Azione raccomandata — i flag possono elevare
+        if "circuit_open_massivo" in flags and livello in ("medio", "buono"):
+            # override: se i file non sono raggiungibili, livello minimo debole
+            livello = "debole"
+        if "formato_chiuso_completo" in flags and livello in ("medio", "buono"):
+            livello = "debole"
+
         if livello == "carente":
             azione = "FOIA + verifica DCD"
         elif livello == "debole":
-            azione = "verifica umana"
+            if "formato_chiuso_completo" in flags:
+                azione = "segnalazione DCD (formato chiuso)"
+            elif "circuit_open_massivo" in flags:
+                azione = "verifica raggiungibilita' (FOIA se persiste)"
+            else:
+                azione = "verifica umana"
         elif totale < 70 and formato < 40:
             azione = "segnalazione DCD (formato chiuso — verificare)"
         elif totale < 70 and raggiung < 30:
@@ -462,6 +506,7 @@ def build_scores(
             "totale": totale,
             "livello": livello,
             "azione_raccomandata": azione,
+            "flag_urgenza": flags,
             "assi": {
                 "formato_aperto": {"score": formato, "fonte": f_src},
                 "raggiungibilita": {"score": raggiung, "fonte": r_src},
