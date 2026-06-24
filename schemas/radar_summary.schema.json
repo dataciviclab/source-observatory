@@ -95,7 +95,7 @@
         "ssl_streak": {
           "type": "integer",
           "minimum": 2,
-          "description": "Streak di probe consecutivi con SSL issue, incluso il corrente (presente solo se >= 2)."
+          "description": "Streak di probe consecutivi con SSL issue dalla history (presente solo se >= 2). Il probe corrente e' catturato da ssl_issue."
         }
       },
       "additionalProperties": false

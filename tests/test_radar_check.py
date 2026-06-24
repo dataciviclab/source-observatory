@@ -284,8 +284,8 @@ class TestBuildReport:
             registry, results, "2026-04-18", history
         )
         ssl_src = next(s for s in summary["sources"] if s["id"] == "ssl_fonte")
-        # Current (1) + 3 history = 4 consecutive SSL probes
-        assert ssl_src.get("ssl_streak") == 4
+        # 3 history consecutive SSL probe (current non contato in streak, ma segnalato da ssl_issue)
+        assert ssl_src.get("ssl_streak") == 3
         assert ssl_src.get("ssl_issue") is True
 
     def test_build_radar_summary_ssl_streak_break(self) -> None:

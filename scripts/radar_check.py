@@ -347,8 +347,11 @@ def build_radar_summary(
             else:
                 break
 
-        # Compute SSL streak (consecutive probes with SSL issue, including current)
-        ssl_streak = 1 if ssl_fallback_used else 0
+        # Compute SSL streak (consecutive probes with SSL issue).
+        # Come per red_streak: conta dalla history, che include il probe
+        # corrente solo nella seconda build (dopo append_radar_probe).
+        # Lo stato corrente è catturato da ssl_issue.
+        ssl_streak = 0
         for probe in recent_probes:
             src = next((s for s in probe.get("sources", []) if s["id"] == source_id), None)
             if src and src.get("ssl_fallback_used"):
