@@ -57,8 +57,8 @@ from source_check_analyze import (
     add_dataset_group_columns,
 )
 from source_check_fetch import (
-    _EMPTY_ENRICH,
     SDMX_NS,
+    _empty_enrich,
     _fetch_data_preview,
     _fetch_html_metadata,
     _fetch_sdmx_dataflow,
@@ -318,7 +318,7 @@ def _enrich_html(row: pd.Series, base: dict, client: HttpClient | None = None) -
     if isinstance(landing, str) and landing.startswith("http"):
         # scraping_blocked: ritorna sentinel
         if base["source_cfg"].get("scraping_blocked"):
-            result = _EMPTY_ENRICH.copy()
+            result = _empty_enrich()
             result["enrich_method"] = "scraping_blocked"
             return result
         return _fetch_html_metadata(landing, client=client)
@@ -580,17 +580,18 @@ def _check_row(
     # su resource_url che punta all'endpoint SPARQL.
     # inventory_only / content_type_landing: distribution_url dal catalogo
     # è più probabile sia un URL diretto a file CSV/XLSX.
-    # CKAN/HTML: resource_url è già il file dati corretto.
+    # Risoluzione URL: preview (download dati) e reachability (HEAD probe)
+    # hanno priorità diverse. Documentate esplicitamente.
     protocol = str(row.get("protocol", "")).lower()
     is_sdmx = protocol == "sdmx"
     is_sparql = protocol == "sparql"
-    if is_sdmx or is_sparql:
-        preview_url = (
-            _safe_str(row.get("distribution_url"))
-            or enrich.get("resource_url")
-            or _safe_str(row.get("url"))
-        )
-    elif enrich["enrich_method"] in ("inventory_only", "content_type_landing"):
+    is_inventory_only = enrich["enrich_method"] in ("inventory_only", "content_type_landing")
+
+    # preview_url: deve puntare a un file scaricabile (CSV/XLSX/XML).
+    # Per SDMX/SPARQL/inventory_only: distribution_url (CSV costruito dal collector)
+    # prevale su resource_url (endpoint, non scaricabile).
+    # Per CKAN/HTML: resource_url è già il file dati.
+    if is_sdmx or is_sparql or is_inventory_only:
         preview_url = (
             _safe_str(row.get("distribution_url"))
             or enrich.get("resource_url")
@@ -601,6 +602,21 @@ def _check_row(
             enrich.get("resource_url")
             or _safe_str(row.get("distribution_url"))
             or _safe_str(row.get("url"))
+        )
+
+    # url_to_check: per la reachability HEAD. landing_page entra in gioco
+    # quando resource_url/distribution_url non sono disponibili.
+    # Per SDMX/SPARQL: landing_page dà l'URL del portale, non del file.
+    url_to_check = (
+        enrich.get("resource_url")
+        or _safe_str(row.get("landing_page"))
+        or _safe_str(row.get("distribution_url"))
+    )
+    if is_sdmx or is_sparql:
+        url_to_check = (
+            _safe_str(row.get("landing_page"))
+            or _safe_str(row.get("distribution_url"))
+            or url_to_check
         )
     if isinstance(preview_url, str) and preview_url.startswith("http"):
         # Se l'inventory ha già sniffato encoding, passa i parametri noti
@@ -648,20 +664,6 @@ def _check_row(
     # propaga comunque i campi preview dall'enrich.
     if not preview_meta and enrich.get("enrich_method") == "csv_preview":
         preview_meta = _preview_meta_from_enrich(enrich)
-
-    # URL da controllare: enrichment resource > catalogo landing_page > distribution_url
-    url_to_check = (
-        enrich.get("resource_url")
-        or _safe_str(row.get("landing_page"))
-        or _safe_str(row.get("distribution_url"))
-    )
-    # per SDMX la metadata_url non è un dato, usiamo la base_url per il check
-    if enrich["enrich_method"] in ("sdmx_dataflow_annotations", "inventory_only"):
-        url_to_check = (
-            _safe_str(row.get("landing_page"))
-            or _safe_str(row.get("distribution_url"))
-            or url_to_check
-        )
 
     # SDMX e SPARQL: l'inventory collector ha già probeato l'endpoint
     # e determinato formato, raggiungibilità, anni. Il probe HTTP per-item
@@ -719,8 +721,9 @@ def _check_row(
         "granularity": granularity,
         "year_min": year_min,
         "year_max": year_max,
+        # Formato: 1) dal content-type del probe, 2) dall'enrichment, 3) dal catalogo
         "resource_format": fmt_from_content
-        or _normalize_format(enrich["resource_format"] or "")
+        or _normalize_format(enrich.get("resource_format") or "")
         or _normalize_format(row.get("format") or ""),
         "enrich_method": enrich["enrich_method"],
         "file_size": preview_meta.get("file_size"),
