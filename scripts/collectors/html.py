@@ -31,6 +31,7 @@ from typing import Any
 from lab_connectors.http import HttpClient
 from toolkit.scout.http import probe_url_headers, resolve_preview_kind
 from toolkit.scout.link_extractor import DataLink, extract_data_links, group_links
+from toolkit.scout.probe import fetch_sitemap_pages, probe_html_portal
 
 from .base import CollectorResult
 
@@ -80,37 +81,9 @@ def _guess_topic(url: str, topic_hint: str | None) -> str:
     return topic_hint or "unknown"
 
 
-# ─── Sitemap Helper ───────────────────────────────────────────────────────────
-
-
-def _fetch_sitemap(sitemap_url: str, timeout: int = 15) -> tuple[list[str] | None, str | None]:
-    """Fetch e parse sitemap XML, ritorna lista di <loc> URL."""
-    import xml.etree.ElementTree as ET
-
-    try:
-        client = HttpClient(timeout=timeout)
-        result = client.get(sitemap_url)
-        if not result.is_ok or result.response is None:
-            err_str = str(result.err) if result.err else "unknown"
-            return None, err_str
-        response = result.response
-        if response.status_code >= 400:
-            return None, f"HTTP {response.status_code}"
-        root = ET.fromstring(response.text)
-        ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-        urls = []
-        for url_elem in root.findall("sm:url", ns):
-            loc = url_elem.find("sm:loc", ns)
-            if loc is not None and loc.text:
-                urls.append(loc.text.strip())
-        if not urls:
-            for url_elem in root.findall(".//url"):
-                loc = url_elem.find("loc")
-                if loc is not None and loc.text:
-                    urls.append(loc.text.strip())
-        return urls, None
-    except Exception as e:
-        return None, str(e)
+# ─── Sitemap Helper (delega a toolkit) ────────────────────────────────────────
+# La funzione fetch_sitemap_pages() è in toolkit.scout.probe — la usiamo
+# direttamente invece di duplicare la logica XML qui.
 
 
 # ─── Shared row building & stats ─────────────────────────────────────────────
@@ -245,8 +218,8 @@ def _compute_summary(
 # ─── Core Scan ───────────────────────────────────────────────────────────────
 
 
-def _scan_sitemap(
-    sitemap_url: str,
+def _scan_sitemap_pages(
+    page_urls: list[str],
     topic_hint: str | None,
     source_id: str,
     base_url: str,
@@ -254,10 +227,10 @@ def _scan_sitemap(
     sample_pages: int = 30,
     page_delay: float = 0.2,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Scan un portale HTML via sitemap con quick sample.
+    """Scan un portale HTML via lista di URL pagine (es. da sitemap).
 
-    1. Parse sitemap → dataset page URLs
-    2. Campiona N pagine direttamente dal sitemap
+    1. Filtra pagine con segnali di dataset
+    2. Campiona N pagine
     3. Fetch sample → estrae data link pattern
     4. Stima total links dal sample
 
@@ -265,10 +238,6 @@ def _scan_sitemap(
         (rows list, scan_params dict with method / total_pages / pages_probed / pages_sampled)
         On error: ([], {"error": "reason"})
     """
-    sitemap_urls, sitemap_err = _fetch_sitemap(sitemap_url)
-    if sitemap_err or sitemap_urls is None:
-        return [], {"error": f"sitemap failed: {sitemap_err}"}
-
     dataset_signals = (
         "/it/dataset/",
         "/dataset/",
@@ -277,7 +246,7 @@ def _scan_sitemap(
         "/opendata/",
         "/catalogo/",
     )
-    dataset_page_urls = [u for u in sitemap_urls if any(s in u.lower() for s in dataset_signals)]
+    dataset_page_urls = [u for u in page_urls if any(s in u.lower() for s in dataset_signals)]
 
     if not dataset_page_urls:
         return [], {"error": "no dataset pages found in sitemap"}
@@ -448,9 +417,13 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     """Collect HTML portal stats via CSV magnet quick survey.
 
     Strategia:
-      - sitemap_url → _scan_sitemap (sample pages, estimate)
+      - sitemap_url → fetch_sitemap_pages (toolkit) + sample
+      - discovery: auto → probe_html_portal (toolkit) + sample
       - area_pages → _scan_area_pages (full fetch, exact count)
       - homepage only → quick probe only
+
+    Il motore di estrazione e raggruppamento è in toolkit.scout.link_extractor.
+    Questo modulo orchestra: fetch pagine, costruisce righe SO, calcola summary.
 
     Returns:
         CollectorResult with rows (data link URLs) and summary (stats).
@@ -466,6 +439,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             summary={"error": "no base_url configured"},
         )
     sitemap_url = html_portal_cfg.get("sitemap_url")
+    discovery_mode = html_portal_cfg.get("discovery")  # None | "auto"
     area_pages = html_portal_cfg.get("area_pages", [])
     topic_hint = html_portal_cfg.get("topic_hint")
     delay = html_portal_cfg.get("delay_seconds", 0.2)
@@ -474,20 +448,42 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     page_max = html_portal_cfg.get("page_max", 200)
     page_stop_on_empty = html_portal_cfg.get("page_stop_on_empty", True)
     probe_ct = html_portal_cfg.get("probe_content_type", False)
+    sample = html_portal_cfg.get("sample_pages", 30)
 
     rows: list[dict[str, Any]] = []
     scan_params: dict[str, Any] = {}
 
+    # ── Sitemap esplicita configurata nel registry ──
     if sitemap_url:
-        sample = html_portal_cfg.get("sample_pages", 30)
-        rows, scan_params = _scan_sitemap(
-            sitemap_url,
-            topic_hint,
-            source_id,
-            base_url,
-            sample_pages=sample,
-            page_delay=delay,
-        )
+        pages = fetch_sitemap_pages(sitemap_url, timeout=15)
+        if pages:
+            rows, scan_params = _scan_sitemap_pages(
+                pages,
+                topic_hint,
+                source_id,
+                base_url,
+                sample_pages=sample,
+                page_delay=delay,
+            )
+        else:
+            scan_params = {"error": "sitemap unreachable"}
+
+    # ── Discovery automatico (robots.txt → sitemap → pagine) ──
+    elif discovery_mode == "auto":
+        profile = probe_html_portal(base_url, timeout=10)
+        if profile.sitemap_pages:
+            rows, scan_params = _scan_sitemap_pages(
+                profile.sitemap_pages,
+                topic_hint,
+                source_id,
+                base_url,
+                sample_pages=sample,
+                page_delay=delay,
+            )
+        else:
+            scan_params = {"error": "auto-discovery: no sitemap found"}
+
+    # ── Area pages esplicite o paginazione ──
     elif area_pages or page_url_template:
         rows, scan_params = _scan_area_pages(
             area_pages,
