@@ -131,6 +131,11 @@ def _http_head_with_retry(
         return None, False, "url_missing_or_invalid", None
 
     try:
+        # Check circuit breaker prima di delegare a toolkit:
+        # http://host e https://host condividono lo stesso netloc,
+        # quindi il circuito HTTP blocca anche HTTPS.
+        if client is not None and client._circuit_should_block(url):
+            return None, False, "circuit_open", None
         result = _toolkit_probe(url, client=client)
         status: int = result["status_code"]
         ct: str | None = result.get("content_type")

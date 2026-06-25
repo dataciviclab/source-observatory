@@ -472,6 +472,9 @@ def test_http_circuit_breaker_blocks_host_after_failures(monkeypatch) -> None:
         )
 
 
+# ── SPARQL format override ──────────────────────────────────────────────────
+
+
 # ── _extract_year_values_from_sample ──────────────────────────────────────────
 
 
