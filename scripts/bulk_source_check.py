@@ -65,6 +65,7 @@ from source_check_fetch import (
     _fetch_sdmx_years,
     _fetch_sparql_count,
     _http_head_with_retry,
+    _infer_granularity_from_columns,
     configure_source_check_http,
 )
 from toolkit.scout.http import (
@@ -626,6 +627,21 @@ def _check_row(
                 year_max = preview["year_max"]
             # Campi profiling: SEMPRE popolati (encoding, delim, mapping, ecc.)
             preview_meta = _preview_meta_from_enrich(preview)
+
+            # Inferenza granularità dalle colonne del CSV (più affidabile del titolo)
+            if granularity in (None, "non_determinato"):
+                raw_cols = preview.get("columns") or preview_meta.get("columns")
+                if isinstance(raw_cols, str):
+                    try:
+                        import json as _json
+
+                        raw_cols = _json.loads(raw_cols)
+                    except Exception:
+                        raw_cols = None
+                if isinstance(raw_cols, list) and len(raw_cols) > 0:
+                    from_cols = _infer_granularity_from_columns(raw_cols)
+                    if from_cols and from_cols != "non_determinato":
+                        granularity = from_cols
 
     # Se l'enrich ha gia' chiamato _fetch_data_preview ma non siamo rientrati
     # nel blocco sopra (perche' granularita' era gia' determinata),

@@ -134,6 +134,8 @@ def _source_check(source_id: str, cfg: dict, rows: list[dict]) -> list[dict]:
         print("  SKIP: nessun item da controllare")
         return []
 
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     from scripts.bulk_source_check import _check_row
     from scripts.source_check_fetch import configure_source_check_http
 
@@ -142,11 +144,17 @@ def _source_check(source_id: str, cfg: dict, rows: list[dict]) -> list[dict]:
     reg = load_registry()
     client = configure_source_check_http()  # client condiviso — circuit breaker unico
 
-    results = []
-    for row in rows:
-        r = _check_row(row, check_ts, reg, client)  # type: ignore[arg-type]
-        if r is not None:
-            results.append(r)
+    # Workers: rispetta max_concurrency dalla registry (es. MIMIT RNA = 2)
+    sc_cfg = cfg.get("source_check", {}) or {}
+    max_workers = max(1, int(sc_cfg.get("max_concurrency", 10)))
+    max_workers = min(max_workers, len(rows)) if rows else max_workers
+    results: list[dict] = []
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(_check_row, row, check_ts, reg, client): row for row in rows}  # type: ignore[arg-type]
+        for future in as_completed(futures):
+            r = future.result()
+            if r is not None:
+                results.append(r)
 
     total = len(results)
     reachable = sum(1 for r in results if r.get("reachable"))
@@ -199,6 +207,12 @@ def _source_check(source_id: str, cfg: dict, rows: list[dict]) -> list[dict]:
         if no_year:
             flags.append(f"anni:{no_year}/{total}")
         print(f"  ⚠️  Needs review: {', '.join(flags)}")
+
+    # Metriche probe: media per item (con workers attivi)
+    has_no_url = sum(1 for r in results if not r.get("url_checked"))
+    if has_no_url:
+        print(f"  ℹ️  Senza URL: {has_no_url}/{total}")
+    print(f"  Worker: {max_workers}")
 
     problematic = [r for r in results if not r.get("reachable")]
     if problematic:
@@ -281,6 +295,7 @@ def _health_score(
 
 def main() -> int:
     import argparse
+    import time as _time
 
     parser = argparse.ArgumentParser(description="End-to-end per una fonte")
     parser.add_argument("source", help="source_id dalla registry")
@@ -301,24 +316,58 @@ def main() -> int:
     print(f"  {args.source}  ({cfg.get('protocol', '?')})")
     print(f"{'=' * 55}\n")
 
+    timing: dict[str, float | str] = {}
+    t_start = _time.time()
+
     # 1. RADAR
     if not args.no_radar:
+        t0 = _time.time()
         _radar(args.source, cfg)
+        timing["RADAR"] = round(_time.time() - t0, 1)
+    else:
+        timing["RADAR"] = "skip"
 
     # 2. INVENTORY
     rows = []
     if not args.no_inventory:
+        t0 = _time.time()
         rows = _inventory(args.source, cfg)
+        timing["INVENTORY"] = round(_time.time() - t0, 1)
+    else:
+        timing["INVENTORY"] = "skip"
 
     # 3. SOURCE-CHECK
     results = []
     if not args.no_sourcecheck:
+        t0 = _time.time()
         results = _source_check(args.source, cfg, rows)
+        timing["SOURCE-CHECK"] = round(_time.time() - t0, 1)
+    else:
+        timing["SOURCE-CHECK"] = "skip"
 
-    # 4. HEALTH SCORE (riceve rows e results in memoria → niente fake signals)
+    # 4. HEALTH SCORE
     if not args.no_health:
+        t0 = _time.time()
         _health_score(args.source, cfg, rows=rows, results=results)
+        timing["HEALTH"] = round(_time.time() - t0, 1)
+    else:
+        timing["HEALTH"] = "skip"
 
+    timing["TOTALE"] = round(_time.time() - t_start, 1)
+
+    # Riepilogo tempi
+    print(f"\n{'─' * 50}")
+    print("  ⏱  RIEPILOGO TEMPI")
+    print(f"{'─' * 50}")
+    for fase in ("RADAR", "INVENTORY", "SOURCE-CHECK", "HEALTH"):
+        v = timing[fase]
+        if isinstance(v, str):
+            print(f"    {fase:<15} {v}")
+        else:
+            c = "🟢" if v < 10 else "🟡" if v < 60 else "🔴"
+            print(f"    {fase:<15} {v:>6.1f}s  {c}")
+    print(f"    {'─' * 15}")
+    print(f"    {'TOTALE':<15} {timing['TOTALE']:>6.1f}s")
     print(f"\n✔  Fine — {args.source}")
     return 0
 
