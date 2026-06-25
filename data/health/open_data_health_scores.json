@@ -1,20 +1,56 @@
 {
-  "captured_at": "2026-06-25T08:49:05.763141+00:00",
+  "captured_at": "2026-06-25T16:43:35.583008+00:00",
   "sources_scored": 33,
   "distribuzione": {
     "buono": 0,
     "medio": 16,
-    "debole": 17,
-    "carente": 0
+    "debole": 16,
+    "carente": 1
   },
   "scores": [
     {
+      "source_id": "mim_opendata",
+      "protocol": "html",
+      "totale": 76.0,
+      "livello": "medio",
+      "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
+      "assi_computed": 2,
+      "assi": {
+        "formato_aperto": {
+          "score": 80.0,
+          "fonte": "computed"
+        },
+        "raggiungibilita": {
+          "score": 70.0,
+          "fonte": "computed"
+        },
+        "licenza_aperta": {
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "presenza_datigovit": {
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "hvd_compliance": {
+          "score": 50.0,
+          "fonte": "missing"
+        },
+        "accessibilita_foia": {
+          "score": 50.0,
+          "fonte": "missing"
+        }
+      }
+    },
+    {
       "source_id": "anac",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -29,8 +65,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -45,10 +81,11 @@
     {
       "source_id": "inps",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -63,42 +100,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "hvd_compliance": {
-          "score": 50.0,
+          "score": 80.0,
           "fonte": "computed"
-        },
-        "accessibilita_foia": {
-          "score": 50.0,
-          "fonte": "missing"
-        }
-      }
-    },
-    {
-      "source_id": "openbdap",
-      "protocol": "ckan",
-      "totale": 67.7,
-      "livello": "debole",
-      "azione_raccomandata": "verifica umana",
-      "flag_urgenza": [],
-      "assi": {
-        "formato_aperto": {
-          "score": 90.0,
-          "fonte": "computed"
-        },
-        "raggiungibilita": {
-          "score": 70.0,
-          "fonte": "computed"
-        },
-        "licenza_aperta": {
-          "score": 85.0,
-          "fonte": "computed"
-        },
-        "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -113,10 +116,11 @@
     {
       "source_id": "consip_open_data",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -131,8 +135,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -147,10 +151,11 @@
     {
       "source_id": "lavoro_opendata",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -165,8 +170,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -181,10 +186,11 @@
     {
       "source_id": "mur_ustat",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -199,8 +205,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -215,10 +221,11 @@
     {
       "source_id": "opencoesione",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -233,8 +240,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -249,10 +256,11 @@
     {
       "source_id": "agid",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -267,8 +275,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -283,10 +291,11 @@
     {
       "source_id": "mimit_rna",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -301,8 +310,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -317,10 +326,11 @@
     {
       "source_id": "agcm",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -335,8 +345,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -351,10 +361,11 @@
     {
       "source_id": "unioncamere",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -369,8 +380,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -385,10 +396,11 @@
     {
       "source_id": "pagopa",
       "protocol": "ckan",
-      "totale": 67.7,
+      "totale": 73.2,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -403,110 +415,8 @@
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "hvd_compliance": {
-          "score": 50.0,
-          "fonte": "computed"
-        },
-        "accessibilita_foia": {
-          "score": 50.0,
-          "fonte": "missing"
-        }
-      }
-    },
-    {
-      "source_id": "mim_opendata",
-      "protocol": "html",
-      "totale": 66.2,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
-      "flag_urgenza": [],
-      "assi": {
-        "formato_aperto": {
           "score": 80.0,
           "fonte": "computed"
-        },
-        "raggiungibilita": {
-          "score": 70.0,
-          "fonte": "computed"
-        },
-        "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "hvd_compliance": {
-          "score": 50.0,
-          "fonte": "missing"
-        },
-        "accessibilita_foia": {
-          "score": 50.0,
-          "fonte": "missing"
-        }
-      }
-    },
-    {
-      "source_id": "ministero_interno",
-      "protocol": "ckan",
-      "totale": 65.5,
-      "livello": "debole",
-      "azione_raccomandata": "verifica umana",
-      "flag_urgenza": [],
-      "assi": {
-        "formato_aperto": {
-          "score": 90.0,
-          "fonte": "computed"
-        },
-        "raggiungibilita": {
-          "score": 70.0,
-          "fonte": "computed"
-        },
-        "licenza_aperta": {
-          "score": 60.0,
-          "fonte": "computed"
-        },
-        "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "hvd_compliance": {
-          "score": 50.0,
-          "fonte": "computed"
-        },
-        "accessibilita_foia": {
-          "score": 50.0,
-          "fonte": "missing"
-        }
-      }
-    },
-    {
-      "source_id": "openga",
-      "protocol": "ckan",
-      "totale": 64.5,
-      "livello": "debole",
-      "azione_raccomandata": "verifica umana",
-      "flag_urgenza": [],
-      "assi": {
-        "formato_aperto": {
-          "score": 90.0,
-          "fonte": "computed"
-        },
-        "raggiungibilita": {
-          "score": 70.0,
-          "fonte": "computed"
-        },
-        "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -521,10 +431,11 @@
     {
       "source_id": "mef_irpef",
       "protocol": "html",
-      "totale": 64.4,
+      "totale": 73.0,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 2,
       "assi": {
         "formato_aperto": {
           "score": 75.0,
@@ -535,12 +446,12 @@
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -553,15 +464,16 @@
       }
     },
     {
-      "source_id": "mit_opendata",
+      "source_id": "openga",
       "protocol": "ckan",
-      "totale": 63.6,
+      "totale": 72.0,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 4,
       "assi": {
         "formato_aperto": {
-          "score": 75.0,
+          "score": 90.0,
           "fonte": "computed"
         },
         "raggiungibilita": {
@@ -569,12 +481,12 @@
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 85.0,
-          "fonte": "computed"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -587,15 +499,16 @@
       }
     },
     {
-      "source_id": "ministero_salute",
+      "source_id": "ministero_interno",
       "protocol": "ckan",
-      "totale": 63.6,
+      "totale": 70.9,
       "livello": "debole",
       "azione_raccomandata": "verifica umana",
       "flag_urgenza": [],
+      "assi_computed": 5,
       "assi": {
         "formato_aperto": {
-          "score": 75.0,
+          "score": 90.0,
           "fonte": "computed"
         },
         "raggiungibilita": {
@@ -603,12 +516,12 @@
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 85.0,
+          "score": 60.0,
           "fonte": "computed"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 80.0,
+          "fonte": "computed"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -623,26 +536,27 @@
     {
       "source_id": "istat_sdmx",
       "protocol": "sdmx",
-      "totale": 62.5,
+      "totale": 70.0,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 70.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
           "score": 70.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -655,28 +569,29 @@
       }
     },
     {
-      "source_id": "aifa",
-      "protocol": "html",
-      "totale": 62.5,
+      "source_id": "inail_opendata",
+      "protocol": "aem",
+      "totale": 70.0,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 80.0,
-          "fonte": "computed"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
-          "score": 55.0,
+          "score": 70.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -691,26 +606,27 @@
     {
       "source_id": "dati_camera",
       "protocol": "sparql",
-      "totale": 60.6,
+      "totale": 70.0,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 65.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
           "score": 70.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -725,26 +641,27 @@
     {
       "source_id": "dati_senato",
       "protocol": "sparql",
-      "totale": 60.6,
+      "totale": 70.0,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 65.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
           "score": 70.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -759,26 +676,27 @@
     {
       "source_id": "dati_cultura",
       "protocol": "sparql",
-      "totale": 60.6,
+      "totale": 70.0,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 65.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
           "score": 70.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -793,26 +711,27 @@
     {
       "source_id": "ispra_linked_data",
       "protocol": "sparql",
-      "totale": 60.6,
+      "totale": 70.0,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 65.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
           "score": 70.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -825,130 +744,29 @@
       }
     },
     {
-      "source_id": "noipa_sparql",
-      "protocol": "sparql",
-      "totale": 60.6,
+      "source_id": "aifa",
+      "protocol": "html",
+      "totale": 70.0,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 2,
       "assi": {
         "formato_aperto": {
-          "score": 65.0,
-          "fonte": "estimated"
-        },
-        "raggiungibilita": {
-          "score": 70.0,
-          "fonte": "computed"
-        },
-        "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "hvd_compliance": {
-          "score": 50.0,
-          "fonte": "missing"
-        },
-        "accessibilita_foia": {
-          "score": 50.0,
-          "fonte": "missing"
-        }
-      }
-    },
-    {
-      "source_id": "aci",
-      "protocol": "ckan",
-      "totale": 60.5,
-      "livello": "debole",
-      "azione_raccomandata": "verifica umana",
-      "flag_urgenza": [],
-      "assi": {
-        "formato_aperto": {
-          "score": 75.0,
+          "score": 80.0,
           "fonte": "computed"
         },
         "raggiungibilita": {
-          "score": 70.0,
+          "score": 55.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "hvd_compliance": {
-          "score": 50.0,
-          "fonte": "computed"
-        },
-        "accessibilita_foia": {
-          "score": 50.0,
-          "fonte": "missing"
-        }
-      }
-    },
-    {
-      "source_id": "inail_opendata",
-      "protocol": "aem",
-      "totale": 53.1,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
-      "flag_urgenza": [],
-      "assi": {
-        "formato_aperto": {
-          "score": 45.0,
-          "fonte": "estimated"
-        },
-        "raggiungibilita": {
-          "score": 70.0,
-          "fonte": "computed"
-        },
-        "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "hvd_compliance": {
-          "score": 50.0,
+          "score": 0.0,
           "fonte": "missing"
         },
-        "accessibilita_foia": {
-          "score": 50.0,
-          "fonte": "missing"
-        }
-      }
-    },
-    {
-      "source_id": "terna_opendata",
-      "protocol": "rest",
-      "totale": 53.1,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
-      "flag_urgenza": [],
-      "assi": {
-        "formato_aperto": {
-          "score": 45.0,
-          "fonte": "estimated"
-        },
-        "raggiungibilita": {
-          "score": 70.0,
-          "fonte": "computed"
-        },
-        "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -963,26 +781,27 @@
     {
       "source_id": "dait",
       "protocol": "html",
-      "totale": 49.4,
+      "totale": 70.0,
       "livello": "medio",
-      "azione_raccomandata": "segnalazione DCD (formato chiuso — verificare)",
+      "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 35.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
           "score": 70.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -997,26 +816,27 @@
     {
       "source_id": "eligendo",
       "protocol": "html",
-      "totale": 49.4,
+      "totale": 70.0,
       "livello": "medio",
-      "azione_raccomandata": "segnalazione DCD (formato chiuso — verificare)",
+      "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 35.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
           "score": 70.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -1031,26 +851,27 @@
     {
       "source_id": "giustizia_statistiche",
       "protocol": "html",
-      "totale": 49.4,
+      "totale": 70.0,
       "livello": "medio",
-      "azione_raccomandata": "segnalazione DCD (formato chiuso — verificare)",
+      "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 35.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
           "score": 70.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -1065,26 +886,27 @@
     {
       "source_id": "cortecostituzionale",
       "protocol": "html",
-      "totale": 49.4,
+      "totale": 70.0,
       "livello": "medio",
-      "azione_raccomandata": "segnalazione DCD (formato chiuso — verificare)",
+      "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 35.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
           "score": 70.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
@@ -1097,32 +919,243 @@
       }
     },
     {
-      "source_id": "opencivitas",
-      "protocol": "html",
-      "totale": 45.6,
+      "source_id": "terna_opendata",
+      "protocol": "rest",
+      "totale": 70.0,
       "livello": "medio",
-      "azione_raccomandata": "segnalazione DCD (formato chiuso — verificare)",
+      "azione_raccomandata": "monitoraggio",
       "flag_urgenza": [],
+      "assi_computed": 1,
       "assi": {
         "formato_aperto": {
-          "score": 35.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "raggiungibilita": {
+          "score": 70.0,
+          "fonte": "computed"
+        },
+        "licenza_aperta": {
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "presenza_datigovit": {
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "hvd_compliance": {
+          "score": 50.0,
+          "fonte": "missing"
+        },
+        "accessibilita_foia": {
+          "score": 50.0,
+          "fonte": "missing"
+        }
+      }
+    },
+    {
+      "source_id": "noipa_sparql",
+      "protocol": "sparql",
+      "totale": 70.0,
+      "livello": "medio",
+      "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
+      "assi_computed": 1,
+      "assi": {
+        "formato_aperto": {
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "raggiungibilita": {
+          "score": 70.0,
+          "fonte": "computed"
+        },
+        "licenza_aperta": {
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "presenza_datigovit": {
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "hvd_compliance": {
+          "score": 50.0,
+          "fonte": "missing"
+        },
+        "accessibilita_foia": {
+          "score": 50.0,
+          "fonte": "missing"
+        }
+      }
+    },
+    {
+      "source_id": "mit_opendata",
+      "protocol": "ckan",
+      "totale": 69.1,
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
+      "assi_computed": 5,
+      "assi": {
+        "formato_aperto": {
+          "score": 75.0,
+          "fonte": "computed"
+        },
+        "raggiungibilita": {
+          "score": 70.0,
+          "fonte": "computed"
+        },
+        "licenza_aperta": {
+          "score": 85.0,
+          "fonte": "computed"
+        },
+        "presenza_datigovit": {
+          "score": 80.0,
+          "fonte": "computed"
+        },
+        "hvd_compliance": {
+          "score": 50.0,
+          "fonte": "computed"
+        },
+        "accessibilita_foia": {
+          "score": 50.0,
+          "fonte": "missing"
+        }
+      }
+    },
+    {
+      "source_id": "ministero_salute",
+      "protocol": "ckan",
+      "totale": 69.1,
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
+      "assi_computed": 5,
+      "assi": {
+        "formato_aperto": {
+          "score": 75.0,
+          "fonte": "computed"
+        },
+        "raggiungibilita": {
+          "score": 70.0,
+          "fonte": "computed"
+        },
+        "licenza_aperta": {
+          "score": 85.0,
+          "fonte": "computed"
+        },
+        "presenza_datigovit": {
+          "score": 80.0,
+          "fonte": "computed"
+        },
+        "hvd_compliance": {
+          "score": 50.0,
+          "fonte": "computed"
+        },
+        "accessibilita_foia": {
+          "score": 50.0,
+          "fonte": "missing"
+        }
+      }
+    },
+    {
+      "source_id": "aci",
+      "protocol": "ckan",
+      "totale": 67.5,
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
+      "assi_computed": 4,
+      "assi": {
+        "formato_aperto": {
+          "score": 75.0,
+          "fonte": "computed"
+        },
+        "raggiungibilita": {
+          "score": 70.0,
+          "fonte": "computed"
+        },
+        "licenza_aperta": {
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "presenza_datigovit": {
+          "score": 80.0,
+          "fonte": "computed"
+        },
+        "hvd_compliance": {
+          "score": 50.0,
+          "fonte": "computed"
+        },
+        "accessibilita_foia": {
+          "score": 50.0,
+          "fonte": "missing"
+        }
+      }
+    },
+    {
+      "source_id": "opencivitas",
+      "protocol": "html",
+      "totale": 55.0,
+      "livello": "medio",
+      "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
+      "assi_computed": 1,
+      "assi": {
+        "formato_aperto": {
+          "score": 0.0,
+          "fonte": "missing"
         },
         "raggiungibilita": {
           "score": 55.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
+          "score": 0.0,
+          "fonte": "missing"
         },
         "hvd_compliance": {
           "score": 50.0,
           "fonte": "missing"
+        },
+        "accessibilita_foia": {
+          "score": 50.0,
+          "fonte": "missing"
+        }
+      }
+    },
+    {
+      "source_id": "openbdap",
+      "protocol": "ckan",
+      "totale": 50.0,
+      "livello": "carente",
+      "azione_raccomandata": "FOIA + verifica DCD",
+      "flag_urgenza": [],
+      "assi_computed": 5,
+      "assi": {
+        "formato_aperto": {
+          "score": 20.0,
+          "fonte": "computed"
+        },
+        "raggiungibilita": {
+          "score": 70.0,
+          "fonte": "computed"
+        },
+        "licenza_aperta": {
+          "score": 40.0,
+          "fonte": "computed"
+        },
+        "presenza_datigovit": {
+          "score": 80.0,
+          "fonte": "computed"
+        },
+        "hvd_compliance": {
+          "score": 50.0,
+          "fonte": "computed"
         },
         "accessibilita_foia": {
           "score": 50.0,
