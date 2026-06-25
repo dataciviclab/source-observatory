@@ -647,19 +647,27 @@ def _check_row(
             or url_to_check
         )
 
-    # Se preview ha già provato reachability (csv_preview) o l'enrich ha già
-    # fatto HEAD (content_type/html_scrape), evita HEAD ridondante.
-    # preview_meta non-empty = preview ha scaricato e profilato con successo
-    # il file → reachability è dimostrata.
-    if preview_meta or enrich["enrich_method"] in (
+    # SDMX e SPARQL: l'inventory collector ha già probeato l'endpoint
+    # e determinato formato, raggiungibilità, anni. Il probe HTTP per-item
+    # è ridondante (SDMX risponde 405 a HEAD, SPARQL restituisce HTML spurio).
+    # Salta il probe, usa i metadati dall'enrich.
+    _protocol_raw = str(row.get("protocol", ""))
+    http_status: int = 0
+    reachable = False
+    note: str | None = None
+    content_type: str | None = None
+
+    if _protocol_raw in ("sdmx", "sparql"):
+        http_status = 200
+        reachable = True
+        note = "skip: metadati da inventory (probe HTTP non applicabile)"
+    elif preview_meta or enrich["enrich_method"] in (
         "content_type",
         "content_type_landing",
         "html_scrape",
     ):
-        http_status: int = 200
+        http_status = 200
         reachable = True
-        note = None
-        content_type = None
     else:
         http_status_raw, reachable, note, content_type = _http_head_with_retry(
             url_to_check or "", client=client
