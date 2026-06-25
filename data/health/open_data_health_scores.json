@@ -1,10 +1,10 @@
 {
-  "captured_at": "2026-06-23T09:25:44.680848+00:00",
+  "captured_at": "2026-06-25T08:49:05.763141+00:00",
   "sources_scored": 33,
   "distribuzione": {
     "buono": 0,
-    "medio": 31,
-    "debole": 2,
+    "medio": 16,
+    "debole": 17,
     "carente": 0
   },
   "scores": [
@@ -12,8 +12,9 @@
       "source_id": "anac",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -45,8 +46,9 @@
       "source_id": "inps",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -78,8 +80,9 @@
       "source_id": "openbdap",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -111,8 +114,9 @@
       "source_id": "consip_open_data",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -144,8 +148,9 @@
       "source_id": "lavoro_opendata",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -177,8 +182,9 @@
       "source_id": "mur_ustat",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -210,8 +216,9 @@
       "source_id": "opencoesione",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -243,8 +250,9 @@
       "source_id": "agid",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -276,8 +284,9 @@
       "source_id": "mimit_rna",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -309,8 +318,9 @@
       "source_id": "agcm",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -342,8 +352,9 @@
       "source_id": "unioncamere",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -375,8 +386,9 @@
       "source_id": "pagopa",
       "protocol": "ckan",
       "totale": 67.7,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -410,6 +422,7 @@
       "totale": 66.2,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 80.0,
@@ -441,8 +454,9 @@
       "source_id": "ministero_interno",
       "protocol": "ckan",
       "totale": 65.5,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 90.0,
@@ -471,11 +485,46 @@
       }
     },
     {
+      "source_id": "openga",
+      "protocol": "ckan",
+      "totale": 64.5,
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
+      "assi": {
+        "formato_aperto": {
+          "score": 90.0,
+          "fonte": "computed"
+        },
+        "raggiungibilita": {
+          "score": 70.0,
+          "fonte": "computed"
+        },
+        "licenza_aperta": {
+          "score": 50.0,
+          "fonte": "estimated"
+        },
+        "presenza_datigovit": {
+          "score": 50.0,
+          "fonte": "estimated"
+        },
+        "hvd_compliance": {
+          "score": 50.0,
+          "fonte": "computed"
+        },
+        "accessibilita_foia": {
+          "score": 50.0,
+          "fonte": "missing"
+        }
+      }
+    },
+    {
       "source_id": "mef_irpef",
       "protocol": "html",
       "totale": 64.4,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 75.0,
@@ -507,8 +556,9 @@
       "source_id": "mit_opendata",
       "protocol": "ckan",
       "totale": 63.6,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 75.0,
@@ -540,8 +590,9 @@
       "source_id": "ministero_salute",
       "protocol": "ckan",
       "totale": 63.6,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 75.0,
@@ -570,11 +621,46 @@
       }
     },
     {
+      "source_id": "istat_sdmx",
+      "protocol": "sdmx",
+      "totale": 62.5,
+      "livello": "medio",
+      "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
+      "assi": {
+        "formato_aperto": {
+          "score": 70.0,
+          "fonte": "estimated"
+        },
+        "raggiungibilita": {
+          "score": 70.0,
+          "fonte": "computed"
+        },
+        "licenza_aperta": {
+          "score": 50.0,
+          "fonte": "estimated"
+        },
+        "presenza_datigovit": {
+          "score": 50.0,
+          "fonte": "estimated"
+        },
+        "hvd_compliance": {
+          "score": 50.0,
+          "fonte": "missing"
+        },
+        "accessibilita_foia": {
+          "score": 50.0,
+          "fonte": "missing"
+        }
+      }
+    },
+    {
       "source_id": "aifa",
       "protocol": "html",
       "totale": 62.5,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 80.0,
@@ -603,48 +689,16 @@
       }
     },
     {
-      "source_id": "openga",
-      "protocol": "ckan",
-      "totale": 61.8,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
-      "assi": {
-        "formato_aperto": {
-          "score": 90.0,
-          "fonte": "computed"
-        },
-        "raggiungibilita": {
-          "score": 55.0,
-          "fonte": "computed"
-        },
-        "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "hvd_compliance": {
-          "score": 50.0,
-          "fonte": "computed"
-        },
-        "accessibilita_foia": {
-          "score": 50.0,
-          "fonte": "missing"
-        }
-      }
-    },
-    {
       "source_id": "dati_camera",
       "protocol": "sparql",
       "totale": 60.6,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 65.0,
-          "fonte": "computed"
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
@@ -674,10 +728,11 @@
       "totale": 60.6,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 65.0,
-          "fonte": "computed"
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
@@ -707,10 +762,11 @@
       "totale": 60.6,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 65.0,
-          "fonte": "computed"
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
@@ -740,10 +796,11 @@
       "totale": 60.6,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 65.0,
-          "fonte": "computed"
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
@@ -773,10 +830,11 @@
       "totale": 60.6,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 65.0,
-          "fonte": "computed"
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
@@ -804,8 +862,9 @@
       "source_id": "aci",
       "protocol": "ckan",
       "totale": 60.5,
-      "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "livello": "debole",
+      "azione_raccomandata": "verifica umana",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
           "score": 75.0,
@@ -836,13 +895,14 @@
     {
       "source_id": "inail_opendata",
       "protocol": "aem",
-      "totale": 56.9,
+      "totale": 53.1,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
-          "score": 55.0,
-          "fonte": "computed"
+          "score": 45.0,
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
@@ -869,13 +929,14 @@
     {
       "source_id": "terna_opendata",
       "protocol": "rest",
-      "totale": 56.9,
+      "totale": 53.1,
       "livello": "medio",
       "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
-          "score": 55.0,
-          "fonte": "computed"
+          "score": 45.0,
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
@@ -902,13 +963,14 @@
     {
       "source_id": "dait",
       "protocol": "html",
-      "totale": 55.0,
+      "totale": 49.4,
       "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "azione_raccomandata": "segnalazione DCD (formato chiuso — verificare)",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
-          "score": 50.0,
-          "fonte": "computed"
+          "score": 35.0,
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
@@ -935,13 +997,14 @@
     {
       "source_id": "eligendo",
       "protocol": "html",
-      "totale": 55.0,
+      "totale": 49.4,
       "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "azione_raccomandata": "segnalazione DCD (formato chiuso — verificare)",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
-          "score": 50.0,
-          "fonte": "computed"
+          "score": 35.0,
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
@@ -968,13 +1031,14 @@
     {
       "source_id": "giustizia_statistiche",
       "protocol": "html",
-      "totale": 55.0,
+      "totale": 49.4,
       "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "azione_raccomandata": "segnalazione DCD (formato chiuso — verificare)",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
-          "score": 50.0,
-          "fonte": "computed"
+          "score": 35.0,
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
@@ -1001,49 +1065,17 @@
     {
       "source_id": "cortecostituzionale",
       "protocol": "html",
-      "totale": 55.0,
+      "totale": 49.4,
       "livello": "medio",
-      "azione_raccomandata": "monitoraggio",
+      "azione_raccomandata": "segnalazione DCD (formato chiuso — verificare)",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
-          "score": 50.0,
-          "fonte": "computed"
+          "score": 35.0,
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 70.0,
-          "fonte": "computed"
-        },
-        "licenza_aperta": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "presenza_datigovit": {
-          "score": 50.0,
-          "fonte": "estimated"
-        },
-        "hvd_compliance": {
-          "score": 50.0,
-          "fonte": "missing"
-        },
-        "accessibilita_foia": {
-          "score": 50.0,
-          "fonte": "missing"
-        }
-      }
-    },
-    {
-      "source_id": "istat_sdmx",
-      "protocol": "sdmx",
-      "totale": 52.5,
-      "livello": "debole",
-      "azione_raccomandata": "verifica umana",
-      "assi": {
-        "formato_aperto": {
-          "score": 70.0,
-          "fonte": "computed"
-        },
-        "raggiungibilita": {
-          "score": 30.0,
           "fonte": "computed"
         },
         "licenza_aperta": {
@@ -1067,13 +1099,14 @@
     {
       "source_id": "opencivitas",
       "protocol": "html",
-      "totale": 51.2,
-      "livello": "debole",
-      "azione_raccomandata": "verifica umana",
+      "totale": 45.6,
+      "livello": "medio",
+      "azione_raccomandata": "segnalazione DCD (formato chiuso — verificare)",
+      "flag_urgenza": [],
       "assi": {
         "formato_aperto": {
-          "score": 50.0,
-          "fonte": "computed"
+          "score": 35.0,
+          "fonte": "estimated"
         },
         "raggiungibilita": {
           "score": 55.0,
