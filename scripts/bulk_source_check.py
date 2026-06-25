@@ -647,9 +647,15 @@ def _check_row(
             or url_to_check
         )
 
-    # Se l'enrich ha già fatto un HEAD con successo (content_type/content_type_landing/html_scrape),
-    # evitiamo un secondo HEAD ridondante sullo stesso URL.
-    if enrich["enrich_method"] in ("content_type", "content_type_landing", "html_scrape"):
+    # Se preview ha già provato reachability (csv_preview) o l'enrich ha già
+    # fatto HEAD (content_type/html_scrape), evita HEAD ridondante.
+    # preview_meta non-empty = preview ha scaricato e profilato con successo
+    # il file → reachability è dimostrata.
+    if preview_meta or enrich["enrich_method"] in (
+        "content_type",
+        "content_type_landing",
+        "html_scrape",
+    ):
         http_status: int = 200
         reachable = True
         note = None

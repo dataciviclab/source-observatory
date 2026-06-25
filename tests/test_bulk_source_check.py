@@ -1015,6 +1015,127 @@ class TestSdmxCheckRowPassthrough:
         assert result["enrich_method"] == "sdmx_dataflow_annotations"
 
 
+class TestPreviewSkipsRedundantHead:
+    """policy: quando preview ha successo (csv_preview), il secondo HEAD e' saltato."""
+
+    def _make_csv_row(self, **overrides) -> dict:
+        import numpy as np
+
+        base = {
+            "source_id": "test_source",
+            "item_id": "test-item-001",
+            "item_name": "test-item",
+            "item_slug": np.nan,
+            "title": "Test CSV Dataset",
+            "organization": np.nan,
+            "tags": np.nan,
+            "notes_excerpt": np.nan,
+            "format": "CSV",
+            "protocol": "http",
+            "source_url": np.nan,
+            "api_base_url": np.nan,
+            "landing_page": np.nan,
+            "distribution_url": np.nan,
+            "url": "https://example.test/data.csv",
+            "granularity": np.nan,
+            "year_signal": np.nan,
+            "encoding_suggested": np.nan,
+            "delim_suggested": np.nan,
+            "decimal_suggested": np.nan,
+            "skip_suggested": np.nan,
+            "source_status": "active",
+        }
+        base.update(overrides)
+        return base
+
+    def test_preview_success_skips_head(self, monkeypatch) -> None:
+        """Con csv_preview, _http_head_with_retry non deve essere chiamato."""
+        import pandas as pd
+        import yaml
+        from bulk_source_check import _check_row
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        head_call_count = [0]
+
+        def _mock_preview(*args, **kwargs):
+            return {
+                "enrich_method": "csv_preview",
+                "columns": '["a","b"]',
+                "col_types": '{"a":"BIGINT","b":"VARCHAR"}',
+                "file_size": 1024,
+                "preview_row_count": 10,
+                "granularity": "comune",
+                "year_min": 2020,
+                "year_max": 2023,
+                "resource_format": "CSV",
+                "encoding_suggested": "utf-8",
+                "delim_suggested": ",",
+                "decimal_suggested": ".",
+                "skip_suggested": 0,
+                "robust_read_suggested": False,
+                "mapping_suggestions": "{}",
+                "paqa_score": 85,
+                "paqa_verdict": "buona",
+                "paqa_flags": None,
+                "paqa_ontologies": None,
+                "paqa_sampled": False,
+            }
+
+        def _tracking_head(url, **kwargs):
+            head_call_count[0] += 1
+            return 200, True, "", "CSV"
+
+        import bulk_source_check as bsc
+
+        monkeypatch.setattr(bsc, "_fetch_data_preview", _mock_preview)
+        monkeypatch.setattr(bsc, "_http_head_with_retry", _tracking_head)
+
+        row = pd.Series(self._make_csv_row())
+        result = _check_row(row, "2026-06-25T12:00:00", registry)
+
+        # preview ha successo → HEAD non deve essere chiamato
+        assert head_call_count[0] == 0, (
+            f"_http_head_with_retry chiamato {head_call_count[0]} volte (atteso 0)"
+        )
+        # reachability deve venire da preview
+        assert result["reachable"] is True
+        assert result["http_status"] == 200
+        assert result["resource_format"] == "CSV"
+
+    def test_preview_failure_still_calls_head(self, monkeypatch) -> None:
+        """Senza csv_preview, _http_head_with_retry deve essere chiamato."""
+        import pandas as pd
+        import yaml
+        from bulk_source_check import _check_row
+
+        with open("data/radar/sources_registry.yaml") as f:
+            registry = yaml.safe_load(f)
+
+        head_call_count = [0]
+
+        def _mock_preview_fail(*args, **kwargs):
+            return {"enrich_method": "probe_failed"}
+
+        def _tracking_head(url, **kwargs):
+            head_call_count[0] += 1
+            return 200, True, "", "CSV"
+
+        import bulk_source_check as bsc
+
+        monkeypatch.setattr(bsc, "_fetch_data_preview", _mock_preview_fail)
+        monkeypatch.setattr(bsc, "_http_head_with_retry", _tracking_head)
+
+        row = pd.Series(self._make_csv_row())
+        _check_row(row, "2026-06-25T12:00:00", registry)
+
+        # preview fallito → HEAD deve essere chiamato
+        assert head_call_count[0] >= 1, (
+            "_http_head_with_retry non chiamato nonostante preview fallito"
+        )
+
+
 # ── dataset_group: _normalize_title_for_grouping ──────────────────────────────
 
 
