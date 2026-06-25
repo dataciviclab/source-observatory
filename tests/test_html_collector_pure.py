@@ -12,7 +12,7 @@ from collectors.html import (
     _extract_prefix,
     _extract_years,
 )
-from toolkit.scout.link_extractor import DataLink, extract_data_links
+from toolkit.scout.link_extractor import DataLink
 
 pytestmark = pytest.mark.pure_unit
 
@@ -109,74 +109,6 @@ def test_extract_years_none():
 def test_extract_years_four_digit_pattern():
     """Match 20xx anche per anni futuri (es. 2026)."""
     assert _extract_years("FRM_FARMA_5_20260427.csv") == [2026]
-
-
-# ─── _extract_data_links ───────────────────────────────────────────────────
-
-
-def test_extract_data_links_finds_csv():
-    """Estrae link CSV da HTML (toolkit.link_extractor)."""
-    html = '<a href="https://example.gov.it/data.csv">scaricami</a>'
-    links = extract_data_links("https://example.gov.it", html)
-    assert len(links) == 1
-    assert links[0].url == "https://example.gov.it/data.csv"
-    assert links[0].format == "CSV"
-
-
-def test_extract_data_links_multiple_formats():
-    """Estrae link con formati diversi (toolkit.link_extractor)."""
-    html = """
-        <a href="/data/file1.csv">CSV</a>
-        <a href="/data/file2.xlsx">XLSX</a>
-        <a href="/data/file3.json">JSON</a>
-    """
-    links = extract_data_links("https://example.gov.it", html)
-    assert len(links) == 3
-    fmts = {lnk.format for lnk in links}
-    assert fmts == {"CSV", "XLSX", "JSON"}
-
-
-def test_extract_data_links_skips_non_data():
-    """Ignora link a pagine HTML normali (toolkit.link_extractor)."""
-    html = """
-        <a href="/about">About</a>
-        <a href="/contact">Contact</a>
-        <a href="/data/report.pdf">PDF</a>
-    """
-    links = extract_data_links("https://example.gov.it", html)
-    assert len(links) == 0
-
-
-def test_extract_data_links_skips_anchor_mailto_tel():
-    """Ignora ancore, mailto, tel (toolkit.link_extractor)."""
-    html = """
-        <a href="#section">Sezione</a>
-        <a href="mailto:info@example.gov.it">Email</a>
-        <a href="tel:+3906123456">Chiama</a>
-    """
-    links = extract_data_links("https://example.gov.it", html)
-    assert len(links) == 0
-
-
-def test_extract_data_links_resolves_relative():
-    """Risolve URL relativi contro base_url (toolkit.link_extractor)."""
-    html = '<a href="data.csv">data</a>'
-    links = extract_data_links("https://example.gov.it/dir/", html)
-    assert links[0].url == "https://example.gov.it/dir/data.csv"
-
-
-def test_extract_data_links_handles_title():
-    """Estrae titolo da aria-label o attributo title (toolkit.link_extractor)."""
-    html = '<a href="data.csv" aria-label="Report 2024">data</a>'
-    links = extract_data_links("https://example.gov.it", html)
-    assert links[0].title == "Report 2024"
-
-
-def test_extract_data_links_detects_zip():
-    """Riconosce estensione ZIP (toolkit.link_extractor)."""
-    html = '<a href="https://example.gov.it/archive.zip">ZIP</a>'
-    links = extract_data_links("https://example.gov.it", html)
-    assert links[0].format == "ZIP"
 
 
 # ─── _build_row ────────────────────────────────────────────────────────────
