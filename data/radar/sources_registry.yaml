@@ -107,16 +107,17 @@ openbdap:
     - bdap_spese_stato
     - dipendenti_pubblici
 inail_opendata:
-  source_kind: portal
-  protocol: aem
-  observation_mode: radar-only
-  base_url: https://dati.inail.it/
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:inail
+    timeout: 180
   last_probed: '2026-06-25'
   verdict: go
-  note: Portale AEM con Open API documentate. Superficie operativa reale =
-    catalogo AEM + Open API, non CKAN standard (logo nel footer fuorviante).
-    Baseline inventariale non ancora difendibile; tenere in radar-only finche'
-    non definito un metodo stabile.
+  note: Fonte via dati.gov.it. 102 dataset INAIL su infortuni sul lavoro e malattie
+    professionali. Complementare al portale diretto dati.inail.it (protocollo AEM).
   datasets_in_use: []
 mim_opendata:
   source_kind: catalog
