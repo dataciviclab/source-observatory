@@ -472,7 +472,75 @@ def test_http_circuit_breaker_blocks_host_after_failures(monkeypatch) -> None:
         )
 
 
-# ── SPARQL format override ──────────────────────────────────────────────────
+# ── Per-source concurrency limit ──────────────────────────────────────────────
+
+
+@pytest.mark.contract
+def test_run_bulk_check_per_source_concurrency(monkeypatch) -> None:
+    """run_bulk_check rispetta max_concurrency per fonte."""
+    import threading
+
+    import pandas as pd
+    from bulk_source_check import run_bulk_check
+    from lab_connectors.http import HttpClient, HttpResult
+
+    # DataFrame fake con 10 item per 2 fonti
+    df = pd.DataFrame(
+        [{"source_id": "fonte_lenta", "item_id": f"a{i}"} for i in range(10)]
+        + [{"source_id": "fonte_rapida", "item_id": f"b{i}"} for i in range(10)]
+    )
+
+    # Registry fake: fonte_lenta ha max_concurrency=2
+    import yaml
+
+    fake_reg_yaml = """
+fonte_lenta:
+  protocol: html
+  base_url: https://slow.test
+  source_check:
+    max_concurrency: 2
+fonte_rapida:
+  protocol: html
+  base_url: https://fast.test
+"""
+    fake_reg = yaml.safe_load(fake_reg_yaml)
+
+    # Istanti concorrenti per fonte
+    in_flight: dict[str, int] = {}
+    lock = threading.Lock()
+    max_seen: dict[str, int] = {}
+
+    class _OkResp:
+        headers = {"Content-Type": "text/plain"}
+        url = "https://test.test/file"
+        status_code = 200
+
+    def _tracked_head(self, url, **kwargs):
+        sid = "fonte_lenta" if "slow" in url else "fonte_rapida"
+        with lock:
+            in_flight[sid] = in_flight.get(sid, 0) + 1
+            max_seen[sid] = max(max_seen.get(sid, 0), in_flight[sid])
+        import time
+
+        time.sleep(0.05)  # simula lavoro
+        with lock:
+            in_flight[sid] -= 1
+        return HttpResult(response=_OkResp(), err=None)
+
+    monkeypatch.setattr(HttpClient, "head", _tracked_head)
+    monkeypatch.setattr("bulk_source_check._load_registry", lambda: fake_reg)
+
+    results = run_bulk_check(df, workers=4)
+    assert len(results) == 20, f"expected 20, got {len(results)}"
+
+    # fonte_lenta: massimo 2 concorrenti
+    assert max_seen.get("fonte_lenta", 0) <= 2, (
+        f"fonte_lenta ha avuto {max_seen.get('fonte_lenta')} concorrenti (max 2)"
+    )
+    # fonte_rapida: nessun limite esplicito, usa workers=4
+    assert max_seen.get("fonte_rapida", 0) <= 4, (
+        f"fonte_rapida ha avuto {max_seen.get('fonte_rapida')} concorrenti (max 4)"
+    )
 
 
 # ── _extract_year_values_from_sample ──────────────────────────────────────────

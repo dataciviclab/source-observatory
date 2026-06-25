@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+import threading
 import time
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -754,13 +755,41 @@ def run_bulk_check(
 
     _BULK_CHECK_TIMEOUT = 900  # 15 minuti per batch source-check (safety net)
     pool = ThreadPoolExecutor(max_workers=workers)
+
+    # Per-source concurrency limit: registry puo' specificare
+    # source_check.max_concurrency (es. MIMIT RNA = 2).
+    # Default = workers globali (nessun limite aggiuntivo).
+    # Valori < 1 vengono bloccati a 1 per evitare deadlock.
+    source_concurrency: dict[str, int] = {}
+    for sid, meta in registry.items():
+        sc_cfg = meta.get("source_check", {})
+        if isinstance(sc_cfg, dict):
+            val = int(sc_cfg.get("max_concurrency", workers))
+            source_concurrency[sid] = max(1, val)
+        else:
+            source_concurrency[sid] = workers
+    source_semaphores: dict[str, threading.Semaphore] = {}
+
+    def _check_row_limited(
+        row: Any,
+        check_ts: str,
+        registry: dict,
+        client: HttpClient,
+    ) -> dict:
+        sid = str(row.get("source_id", ""))
+        sem = source_semaphores.setdefault(
+            sid, threading.Semaphore(source_concurrency.get(sid, workers))
+        )
+        with sem:
+            return _check_row(row, check_ts, registry, client)
+
     try:
         # Usa enumerate per avere un indice posizionale garantito come int.
         # df.iterrows() restituisce un indice generico (Hashable) che mypy
         # non accetta per df.loc/df.iloc — con enumerate pos abbiamo int certo.
         future_to_idx = {}
         for pos, (_idx, row) in enumerate(df.iterrows()):
-            f = pool.submit(_check_row, row, check_ts, registry, client)
+            f = pool.submit(_check_row_limited, row, check_ts, registry, client)
             future_to_idx[f] = pos
             sid = str(row.get("source_id", ""))
             source_first_submit.setdefault(sid, time.time())
