@@ -56,27 +56,34 @@ SDMX_NS = {
     "generic": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic",
 }
 
-_EMPTY_ENRICH: dict[str, Any] = {
-    "enriched_title": None,
-    "enriched_tags": None,
-    "enriched_notes": None,
-    "resource_url": None,
-    "resource_format": None,
-    "granularity": None,
-    "year_min": None,
-    "year_max": None,
-    "enrich_method": None,
-    "sdmx_flow": None,
-    "sdmx_version": None,
-    "sdmx_agency": None,
-    "sparql_responding": None,
-    "sparql_triple_count": None,
-    "paqa_score": None,
-    "paqa_verdict": None,
-    "paqa_flags": None,
-    "paqa_ontologies": None,
-    "paqa_sampled": None,  # bool: True = campione, False/None = file completo
-}
+
+def _empty_enrich() -> dict[str, Any]:
+    """Crea un nuovo dict enrich con tutti i campi a None.
+
+    Factory function invece di dict condiviso: evita il rischio di mutazione
+    accidentale (ogni chiamata restituisce un dict fresco).
+    """
+    return {
+        "enriched_title": None,
+        "enriched_tags": None,
+        "enriched_notes": None,
+        "resource_url": None,
+        "resource_format": None,
+        "granularity": None,
+        "year_min": None,
+        "year_max": None,
+        "enrich_method": None,
+        "sdmx_flow": None,
+        "sdmx_version": None,
+        "sdmx_agency": None,
+        "sparql_responding": None,
+        "sparql_triple_count": None,
+        "paqa_score": None,
+        "paqa_verdict": None,
+        "paqa_flags": None,
+        "paqa_ontologies": None,
+        "paqa_sampled": None,  # bool: True = campione, False/None = file completo
+    }
 
 
 # ── Client HTTP condiviso ──────────────────────────────────────────────────────
@@ -230,13 +237,13 @@ def _fetch_sparql_count(
 def _fetch_html_metadata(url: str, client: HttpClient | None = None) -> dict:
     """Scarica HTML e cerca formato dati. Usa toolkit.scout.fetch_html_body."""
     if not url.startswith("http"):
-        result = _EMPTY_ENRICH.copy()
+        result = _empty_enrich()
         result["enrich_method"] = "html_scrape_invalid_url"
         return result
     try:
         body = _toolkit_html_body(url, client=client)
         if not body or not body.get("html_text"):
-            err = _EMPTY_ENRICH.copy()
+            err = _empty_enrich()
             err["enrich_method"] = "html_scrape_fetch_failed"
             return err
         html = body["html_text"]
@@ -267,7 +274,7 @@ def _fetch_html_metadata(url: str, client: HttpClient | None = None) -> dict:
             "enrich_method": "html_scrape",
         }
     except Exception:
-        result = _EMPTY_ENRICH.copy()
+        result = _empty_enrich()
         result["enrich_method"] = "html_scrape_failed"
         return result
 
@@ -298,7 +305,7 @@ def _fetch_data_preview(
     import json as _json
 
     if not isinstance(url, str) or not url.startswith("http"):
-        result = _EMPTY_ENRICH.copy()
+        result = _empty_enrich()
         result["enrich_method"] = "csv_preview_failed"
         return result
 
@@ -314,11 +321,11 @@ def _fetch_data_preview(
     )
 
     if p.status != "success":
-        result = _EMPTY_ENRICH.copy()
+        result = _empty_enrich()
         result["enrich_method"] = p.status
         return result
 
-    result = _EMPTY_ENRICH.copy()
+    result = _empty_enrich()
     result.update(
         {
             "columns": _json.dumps(p.columns) if p.columns else None,
