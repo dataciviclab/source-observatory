@@ -1,14 +1,18 @@
-"""Test delle funzioni pure di collectors.html (nessun HTTP)."""
+"""Test delle funzioni pure per collector HTML (nessun HTTP).
+
+Il motore di estrazione link è in ``toolkit.scout.link_extractor``.
+Qui testiamo l'orchestrazione SO e le deleghe.
+"""
 
 import pytest
 from collectors.html import (
     _build_row,
     _compute_summary,
-    _extract_data_links,
     _extract_page_meta,
     _extract_prefix,
     _extract_years,
 )
+from toolkit.scout.link_extractor import DataLink, extract_data_links
 
 pytestmark = pytest.mark.pure_unit
 
@@ -111,80 +115,82 @@ def test_extract_years_four_digit_pattern():
 
 
 def test_extract_data_links_finds_csv():
-    """Estrae link CSV da HTML."""
+    """Estrae link CSV da HTML (toolkit.link_extractor)."""
     html = '<a href="https://example.gov.it/data.csv">scaricami</a>'
-    links = _extract_data_links("https://example.gov.it", html)
+    links = extract_data_links("https://example.gov.it", html)
     assert len(links) == 1
-    assert links[0]["url"] == "https://example.gov.it/data.csv"
-    assert links[0]["format"] == "CSV"
+    assert links[0].url == "https://example.gov.it/data.csv"
+    assert links[0].format == "CSV"
 
 
 def test_extract_data_links_multiple_formats():
-    """Estrae link con formati diversi."""
+    """Estrae link con formati diversi (toolkit.link_extractor)."""
     html = """
         <a href="/data/file1.csv">CSV</a>
         <a href="/data/file2.xlsx">XLSX</a>
         <a href="/data/file3.json">JSON</a>
     """
-    links = _extract_data_links("https://example.gov.it", html)
+    links = extract_data_links("https://example.gov.it", html)
     assert len(links) == 3
-    fmts = {lnk["format"] for lnk in links}
+    fmts = {lnk.format for lnk in links}
     assert fmts == {"CSV", "XLSX", "JSON"}
 
 
 def test_extract_data_links_skips_non_data():
-    """Ignora link a pagine HTML normali."""
+    """Ignora link a pagine HTML normali (toolkit.link_extractor)."""
     html = """
         <a href="/about">About</a>
         <a href="/contact">Contact</a>
         <a href="/data/report.pdf">PDF</a>
     """
-    links = _extract_data_links("https://example.gov.it", html)
+    links = extract_data_links("https://example.gov.it", html)
     assert len(links) == 0
 
 
 def test_extract_data_links_skips_anchor_mailto_tel():
-    """Ignora ancore, mailto, tel."""
+    """Ignora ancore, mailto, tel (toolkit.link_extractor)."""
     html = """
         <a href="#section">Sezione</a>
         <a href="mailto:info@example.gov.it">Email</a>
         <a href="tel:+3906123456">Chiama</a>
     """
-    links = _extract_data_links("https://example.gov.it", html)
+    links = extract_data_links("https://example.gov.it", html)
     assert len(links) == 0
 
 
 def test_extract_data_links_resolves_relative():
-    """Risolve URL relativi contro base_url."""
+    """Risolve URL relativi contro base_url (toolkit.link_extractor)."""
     html = '<a href="data.csv">data</a>'
-    links = _extract_data_links("https://example.gov.it/dir/", html)
-    assert links[0]["url"] == "https://example.gov.it/dir/data.csv"
+    links = extract_data_links("https://example.gov.it/dir/", html)
+    assert links[0].url == "https://example.gov.it/dir/data.csv"
 
 
 def test_extract_data_links_handles_title():
-    """Estrae titolo da aria-label o attributo title."""
+    """Estrae titolo da aria-label o attributo title (toolkit.link_extractor)."""
     html = '<a href="data.csv" aria-label="Report 2024">data</a>'
-    links = _extract_data_links("https://example.gov.it", html)
-    assert links[0]["title"] == "Report 2024"
+    links = extract_data_links("https://example.gov.it", html)
+    assert links[0].title == "Report 2024"
 
 
 def test_extract_data_links_detects_zip():
-    """Riconosce estensione ZIP."""
+    """Riconosce estensione ZIP (toolkit.link_extractor)."""
     html = '<a href="https://example.gov.it/archive.zip">ZIP</a>'
-    links = _extract_data_links("https://example.gov.it", html)
-    assert links[0]["format"] == "ZIP"
+    links = extract_data_links("https://example.gov.it", html)
+    assert links[0].format == "ZIP"
 
 
 # ─── _build_row ────────────────────────────────────────────────────────────
 
 
 def test_build_row_minimal():
-    """_build_row con solo link minimo."""
-    link = {
-        "url": "https://example.gov.it/data/FRM_FARMA_5_20260427.csv",
-        "format": "CSV",
-        "title": "",
-    }
+    """_build_row con solo link minimo (DataLink)."""
+    link = DataLink(
+        url="https://example.gov.it/data/FRM_FARMA_5_20260427.csv",
+        format="CSV",
+        title="",
+        prefix="FRM",
+        years=[2026],
+    )
     row = _build_row(link, "test_source", "https://example.gov.it", "sanita")
     assert row["source_id"] == "test_source"
     assert row["protocol"] == "html"
@@ -198,8 +204,14 @@ def test_build_row_minimal():
 
 
 def test_build_row_with_page_meta():
-    """_build_row arricchisce title e notes_excerpt da page_meta."""
-    link = {"url": "https://example.gov.it/data/file.csv", "format": "CSV", "title": ""}
+    """_build_row arricchisce title e notes_excerpt da page_meta (DataLink)."""
+    link = DataLink(
+        url="https://example.gov.it/data/file.csv",
+        format="CSV",
+        title="",
+        prefix="file",
+        years=[],
+    )
     page_meta = {
         "https://example.gov.it/data/file.csv": {
             "title": "Report Sanitario",
@@ -220,15 +232,27 @@ def test_build_row_with_page_meta():
 
 
 def test_build_row_no_topic_hint():
-    """_build_row senza topic_hint → topic unknown."""
-    link = {"url": "https://example.gov.it/data/file.csv", "format": "CSV", "title": ""}
+    """_build_row senza topic_hint → topic unknown (DataLink)."""
+    link = DataLink(
+        url="https://example.gov.it/data/file.csv",
+        format="CSV",
+        title="",
+        prefix="file",
+        years=[],
+    )
     row = _build_row(link, "test_source", "https://example.gov.it", None)
     assert row["topic"] == "unknown"
 
 
 def test_build_row_no_years():
-    """_build_row senza anno nel filename → year_signal None."""
-    link = {"url": "https://example.gov.it/data/noyears.csv", "format": "CSV", "title": ""}
+    """_build_row senza anno nel filename → year_signal None (DataLink)."""
+    link = DataLink(
+        url="https://example.gov.it/data/noyears.csv",
+        format="CSV",
+        title="",
+        prefix="noyears",
+        years=[],
+    )
     row = _build_row(link, "test_source", "https://example.gov.it", None)
     assert row["year_signal"] is None
 
@@ -236,15 +260,30 @@ def test_build_row_no_years():
 # ─── _compute_summary ──────────────────────────────────────────────────────
 
 
+def _dl(url: str, fmt: str = "CSV") -> DataLink:
+    """Helper: DataLink veloce per test."""
+    from urllib.parse import urlparse
+
+    filename = urlparse(url).path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    from toolkit.scout.link_extractor import _extract_prefix, _extract_years
+
+    return DataLink(
+        url=url,
+        format=fmt,
+        prefix=_extract_prefix(filename),
+        years=_extract_years(filename),
+    )
+
+
 def test_compute_summary_basic():
     """_compute_summary con link semplici."""
     links = [
-        {"url": "https://ex.it/data/FRM_2024.csv", "format": "CSV"},
-        {"url": "https://ex.it/data/FRM_2025.xlsx", "format": "XLSX"},
-        {"url": "https://ex.it/data/SCU_2024.csv", "format": "CSV"},
+        _dl("https://ex.it/data/FRM_2024.csv"),
+        _dl("https://ex.it/data/FRM_2025.xlsx", "XLSX"),
+        _dl("https://ex.it/data/SCU_2024.csv"),
     ]
     summary = _compute_summary(
-        links, "istruzione", method="csv_magnet_area_pages_direct", area_pages_scanned=2
+        links, [], "istruzione", method="csv_magnet_area_pages_direct", area_pages_scanned=2
     )
     assert summary["method"] == "csv_magnet_area_pages_direct"
     assert summary["by_format"] == {"CSV": 2, "XLSX": 1}
@@ -258,7 +297,7 @@ def test_compute_summary_basic():
 
 def test_compute_summary_empty():
     """_compute_summary con lista vuota."""
-    summary = _compute_summary([], None, method="csv_magnet_homepage_only")
+    summary = _compute_summary([], [], None, method="csv_magnet_homepage_only")
     assert summary["by_format"] == {}
     assert summary["years_range"] == []
     assert summary["topics"] == {}
@@ -268,11 +307,12 @@ def test_compute_summary_empty():
 def test_compute_summary_sitemap_estimate():
     """_compute_summary con parametri di stima sitemap."""
     links = [
-        {"url": "https://ex.it/data/FRM_2024.csv", "format": "CSV"},
-        {"url": "https://ex.it/data/SCU_2024.csv", "format": "CSV"},
+        _dl("https://ex.it/data/FRM_2024.csv"),
+        _dl("https://ex.it/data/SCU_2024.csv"),
     ]
     summary = _compute_summary(
         links,
+        [],
         "istruzione",
         method="csv_magnet_sitemap_sample",
         total_pages=100,
@@ -289,8 +329,8 @@ def test_compute_summary_sitemap_estimate():
 def test_compute_summary_years_set_correct():
     """_compute_summary: years_range da filename con anni."""
     links = [
-        {"url": "https://ex.it/data/FRM_2021_2022.csv", "format": "CSV"},
-        {"url": "https://ex.it/data/FRM_2023.csv", "format": "CSV"},
+        _dl("https://ex.it/data/FRM_2021_2022.csv"),
+        _dl("https://ex.it/data/FRM_2023.csv"),
     ]
-    summary = _compute_summary(links, None, method="test", area_pages_scanned=1)
+    summary = _compute_summary(links, [], None, method="test", area_pages_scanned=1)
     assert summary["years_range"] == [2021, 2023]

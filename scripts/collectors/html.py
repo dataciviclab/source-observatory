@@ -12,6 +12,9 @@ Output:
 
 Non fa full crawl (191 pagine). Campiona per stimare.
 
+Il motore di estrazione link e raggruppamento è in ``toolkit.scout.link_extractor``.
+Questo modulo è solo orchestratore: fetch pagine, costruisce righe SO, calcola summary.
+
 Uso:
     from collectors.html import collect
     result = collect("dati_salute", source_cfg, captured_at)
@@ -23,16 +26,13 @@ import random
 import re
 import time
 from collections import Counter
-from html.parser import HTMLParser
 from typing import Any
-from urllib.parse import urljoin
 
 from lab_connectors.http import HttpClient
 from toolkit.scout.http import probe_url_headers, resolve_preview_kind
+from toolkit.scout.link_extractor import DataLink, extract_data_links, group_links
 
 from .base import CollectorResult
-
-DATA_EXTENSIONS = {".csv", ".json", ".xlsx", ".xls", ".ods", ".zip", ".xml", ".geojson"}
 
 # ─── HTML Parsing ──────────────────────────────────────────────────────────────
 
@@ -59,68 +59,21 @@ def _extract_page_meta(html: str) -> dict[str, str]:
     return meta
 
 
-def _extract_data_links(base_url: str, html: str) -> list[dict[str, str]]:
-    """Estrae link a file data da HTML già scaricato.
-
-    Returns:
-        list of {url, format, title}
-    """
-
-    class _Parser(HTMLParser):
-        def __init__(self):
-            super().__init__()
-            self.links: list[dict[str, str]] = []
-
-        def handle_starttag(self, tag, attrs):
-            if tag not in ("a", "area"):
-                return
-            attrs_dict = dict(attrs)
-            href = attrs_dict.get("href", "") or attrs_dict.get("xlink:href", "")
-            if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
-                return
-            full_url = urljoin(base_url, href)
-            lower = full_url.lower()
-            fmt = None
-            # Ordina per lunghezza decrescente: .xlsx prima di .xls, .geojson prima di .json
-            for ext in sorted(DATA_EXTENSIONS, key=len, reverse=True):
-                if ext in lower:
-                    fmt = ext.lstrip(".").upper()
-                    break
-            if not fmt:
-                return
-            title = (attrs_dict.get("aria-label") or attrs_dict.get("title") or "").strip()
-            self.links.append({"url": full_url, "format": fmt, "title": title})
-
-    parser = _Parser()
-    try:
-        parser.feed(html)
-    except Exception:
-        pass
-    return parser.links
-
-
-# ─── URL Analysis ─────────────────────────────────────────────────────────────
-
-
-_PREFIX_RE = re.compile(r"^([A-Z0-9]{2,8})")
-_YEAR_RE = re.compile(r"(20[12]\d)")
+# ─── URL Analysis (mantenuto per backward compat nei test SO) ─────────────────
 
 
 def _extract_prefix(filename: str) -> str:
-    """Estrae prefisso categoriale dal filename (prima underscore o run di maiuscole)."""
-    # FRM_FARMA_5_20260427.csv → FRM
-    # SCUANAGRAFESTAT202526 → SCUANAGRAFESTAT
-    if "_" in filename:
-        return filename.split("_")[0]
-    m = _PREFIX_RE.match(filename)
-    if m:
-        return m.group(1)
-    return filename[:6]
+    """Delega a toolkit.scout.link_extractor."""
+    from toolkit.scout.link_extractor import _extract_prefix as _tk_prefix
+
+    return _tk_prefix(filename)
 
 
 def _extract_years(filename: str) -> list[int]:
-    """Estrae tutti i year signal (20xx) presenti nel filename."""
-    return [int(y) for y in _YEAR_RE.findall(filename)]
+    """Delega a toolkit.scout.link_extractor."""
+    from toolkit.scout.link_extractor import _extract_years as _tk_years
+
+    return _tk_years(filename)
 
 
 def _guess_topic(url: str, topic_hint: str | None) -> str:
@@ -164,7 +117,7 @@ def _fetch_sitemap(sitemap_url: str, timeout: int = 15) -> tuple[list[str] | Non
 
 
 def _build_row(
-    link: dict[str, str],
+    link: DataLink,
     source_id: str,
     base_url: str,
     topic_hint: str | None,
@@ -172,12 +125,12 @@ def _build_row(
     page_meta: dict[str, dict[str, str]] | None = None,
     data_page_url: str | None = None,
 ) -> dict[str, Any]:
-    """Costruisce una riga per source-check da un data link."""
-    url = link["url"]
-    filename = url.split("/")[-1].rsplit(".", 1)[0]
-    prefix = _extract_prefix(filename)
-    years = _extract_years(filename)
+    """Costruisce una riga per source-check da un DataLink."""
+    url = link.url
+    prefix = link.prefix
+    years = link.years
     topic = _guess_topic(url, topic_hint)
+    filename = url.split("/")[-1].rsplit(".", 1)[0]
 
     page_title: str | None = None
     page_desc: str | None = None
@@ -199,14 +152,14 @@ def _build_row(
         "organization": None,
         "tags": None,
         "notes_excerpt": page_desc,
-        "landing_page": data_page_url,
+        "landing_page": data_page_url or link.page_url or base_url,
         "distribution_url": url,
         "datastore_active": False,
         "resource_count": 1,
         "issued": None,
         "modified": None,
         "url": url,
-        "format": link.get("format", "?"),
+        "format": link.format,
         "prefix": prefix,
         "year_signal": years[0] if years else None,
         "topic": topic,
@@ -214,7 +167,8 @@ def _build_row(
 
 
 def _compute_summary(
-    all_data_links: list[dict[str, str]],
+    all_data_links: list[DataLink],
+    rows: list[dict[str, Any]],
     topic_hint: str | None,
     *,
     method: str,
@@ -223,46 +177,52 @@ def _compute_summary(
     pages_sampled: int | None = None,
     area_pages_scanned: int | None = None,
 ) -> dict[str, Any]:
-    """Calcola le statistiche aggregate da una lista di data link."""
-    prefix_matrix: dict[str, int] = {}
+    """Calcola le statistiche aggregate da una lista di DataLink.
+
+    Usa ``group_links`` dal toolkit per raggruppamento intelligente.
+    """
+    # Statistiche base
     by_format: dict[str, int] = {}
     years_set: set[int] = set()
-    series: dict[str, dict[str, Any]] = {}
-
     for link in all_data_links:
-        url = link["url"]
-        filename = url.split("/")[-1].rsplit(".", 1)[0]
-        prefix = _extract_prefix(filename)
-        prefix_matrix[prefix] = prefix_matrix.get(prefix, 0) + 1
-
-        fmt = link.get("format", "?")
+        fmt = link.format
         by_format[fmt] = by_format.get(fmt, 0) + 1
-
-        years = _extract_years(filename)
-        for y in years:
+        for y in link.years:
             years_set.add(y)
 
-        if prefix not in series:
-            series[prefix] = {"years": set(), "count": 0, "sample": filename}
-        series[prefix]["count"] += 1
-        for y in years:
-            series[prefix]["years"].add(y)
+    # Raggruppamento intelligente via toolkit
+    groups = group_links(all_data_links)
+
+    prefix_matrix: dict[str, int] = {}
+    for g in groups:
+        prefix_matrix[g.prefix or g.group_id] = g.count
 
     series_serializable = {
-        prefix: {
-            "years": sorted(list(info["years"])),
-            "count": info["count"],
-            "sample": info["sample"],
+        g.prefix or g.group_id: {
+            "years": g.year_range,
+            "count": g.count,
+            "formats": sorted(g.formats),
+            "sample": g.links[0].url.split("/")[-1] if g.links else "",
         }
-        for prefix, info in series.items()
+        for g in groups
     }
 
     summary: dict[str, Any] = {
         "by_format": by_format,
         "prefix_matrix": prefix_matrix,
         "series": series_serializable,
+        "groups": [
+            {
+                "group_id": g.group_id,
+                "prefix": g.prefix,
+                "count": g.count,
+                "year_range": g.year_range,
+                "formats": sorted(g.formats),
+            }
+            for g in groups
+        ],
         "years_range": [min(years_set), max(years_set)] if years_set else [],
-        "topics": dict(Counter(_guess_topic(link["url"], topic_hint) for link in all_data_links)),
+        "topics": dict(Counter(_guess_topic(link.url, topic_hint) for link in all_data_links)),
         "method": method,
     }
 
@@ -330,8 +290,8 @@ def _scan_sitemap(
     sample_size = min(sample_pages, len(sampled))
     sampled = sampled[:sample_size]
 
-    all_data_links: list[dict[str, str]] = []
-    seen_dedup_keys: set[tuple[str, str]] = set()
+    all_data_links: list[DataLink] = []
+    seen_urls: set[str] = set()
     pages_probed = 0
     page_meta: dict[str, dict[str, str]] = {}  # page_url → {title, description}
 
@@ -347,12 +307,11 @@ def _scan_sitemap(
         # Extract page metadata (title, description) for enrichment
         page_meta[page_url] = _extract_page_meta(result.response.text)
 
-        links = _extract_data_links(page_url, result.response.text)
+        links = extract_data_links(page_url, result.response.text)
         for link in links:
-            dk = (link["url"], link.get("format") or "")
-            if dk not in seen_dedup_keys:
-                seen_dedup_keys.add(dk)
-                link["_page_url"] = page_url  # track provenance for metadata enrichment
+            if link.url not in seen_urls:
+                seen_urls.add(link.url)
+                link.page_url = page_url  # track provenance for metadata enrichment
                 all_data_links.append(link)
 
     rows = [
@@ -362,7 +321,7 @@ def _scan_sitemap(
             base_url,
             topic_hint,
             page_meta=page_meta,
-            data_page_url=link.get("_page_url"),
+            data_page_url=link.page_url or None,
         )
         for link in all_data_links
     ]
@@ -406,8 +365,8 @@ def _scan_area_pages(
     Returns:
         (rows list, scan_params dict with method / area_pages_scanned)
     """
-    all_data_links: list[dict[str, str]] = []
-    seen_dedup_keys: set[tuple[str, str]] = set()
+    all_data_links: list[DataLink] = []
+    seen_urls: set[str] = set()
     pages_scanned = 0
     page_meta: dict[str, dict[str, str]] = {}
 
@@ -429,13 +388,12 @@ def _scan_area_pages(
             if not result.is_ok or result.response is None:
                 break
             page_meta[area_url] = _extract_page_meta(result.response.text)
-            links = _extract_data_links(area_url, result.response.text)
+            links = extract_data_links(area_url, result.response.text)
             links_this_page = []
             for link in links:
-                dk = (link["url"], link.get("format") or "")
-                if dk not in seen_dedup_keys:
-                    seen_dedup_keys.add(dk)
-                    link["_page_url"] = area_url
+                if link.url not in seen_urls:
+                    seen_urls.add(link.url)
+                    link.page_url = area_url
                     links_this_page.append(link)
                     all_data_links.append(link)
             if not links and page_stop_on_empty:
@@ -452,12 +410,11 @@ def _scan_area_pages(
             if not result.is_ok or result.response is None:
                 continue
             page_meta[area_url] = _extract_page_meta(result.response.text)
-            links = _extract_data_links(area_url, result.response.text)
+            links = extract_data_links(area_url, result.response.text)
             for link in links:
-                dk = (link["url"], link.get("format") or "")
-                if dk not in seen_dedup_keys:
-                    seen_dedup_keys.add(dk)
-                    link["_page_url"] = area_url
+                if link.url not in seen_urls:
+                    seen_urls.add(link.url)
+                    link.page_url = area_url
                     all_data_links.append(link)
         area_pages_scanned = len(area_pages)
 
@@ -468,7 +425,7 @@ def _scan_area_pages(
             base_url,
             topic_hint,
             page_meta=page_meta,
-            data_page_url=link.get("_page_url") or None,
+            data_page_url=link.page_url or None,
         )
         for link in all_data_links
     ]
@@ -554,7 +511,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 summary={"type": "csv_magnet_error", "message": err_msg},
             )
         page_meta = {base_url: _extract_page_meta(result.response.text)}
-        links = _extract_data_links(base_url, result.response.text)
+        links = extract_data_links(base_url, result.response.text)
         rows = [
             _build_row(
                 link, source_id, base_url, topic_hint, page_meta=page_meta, data_page_url=base_url
@@ -593,9 +550,18 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             if ct_fmt:
                 row["format"] = ct_fmt
 
-    # Compute summary from rows (formats are already probed)
-    all_data_links = [{"url": r["distribution_url"], "format": r.get("format", "?")} for r in rows]
-    summary = _compute_summary(all_data_links, topic_hint, **scan_params)
+    # Compute summary (groups e statistiche)
+    # Ricostruisce DataLink da rows per group_links dopo eventuali probe CT
+    _summary_links = [
+        DataLink(
+            url=r["distribution_url"],
+            format=r.get("format", "?"),
+            prefix=r.get("prefix", ""),
+            years=[r["year_signal"]] if r.get("year_signal") else [],
+        )
+        for r in rows
+    ]
+    summary = _compute_summary(_summary_links, rows, topic_hint, **scan_params)
 
     summary["type"] = "csv_magnet"
     summary["source_id"] = source_id
