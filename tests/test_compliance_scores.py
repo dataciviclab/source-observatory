@@ -8,8 +8,10 @@ che protegge il contratto verso data-advocacy.
 from __future__ import annotations
 
 import json
+import tempfile
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from _constants import CATALOG_SIGNALS_PATH, RADAR_SUMMARY_PATH, REGISTRY_PATH
 
@@ -22,6 +24,7 @@ from scripts.build_compliance_scores import (
     _formato_score,
     _hvd_score,
     _licenza_score,
+    _load_source_check_stats,
     _raggiungibilita_score,
     build_scores,
 )
@@ -288,6 +291,7 @@ class TestBuilderFunctions:
 
     # ── _build_source_check_stats ──────────────────────────────────────
 
+    @pytest.mark.pure_unit
     def test_source_check_stats_misto(self):
         """Formati aperti e chiusi, alcuni irraggiungibili."""
         results = [
@@ -308,6 +312,7 @@ class TestBuilderFunctions:
         assert s["perc_reachable"] == 50.0
         assert s["perc_aperto"] == 50.0
 
+    @pytest.mark.pure_unit
     def test_source_check_stats_tutti_raggiungibili(self):
         """100% raggiungibili, tutti formati aperti."""
         results = [
@@ -321,6 +326,7 @@ class TestBuilderFunctions:
         assert s["perc_reachable"] == 100.0
         assert s["perc_aperto"] == 100.0
 
+    @pytest.mark.pure_unit
     def test_source_check_stats_vuoto(self):
         """Lista vuota → total 0, nessun errore."""
         stats = _build_source_check_stats("vuota", [])
@@ -332,6 +338,7 @@ class TestBuilderFunctions:
 
     # ── _build_inventory_stats ─────────────────────────────────────────
 
+    @pytest.mark.pure_unit
     def test_inventory_stats_ckan_only(self):
         """Solo row CKAN contano."""
         rows = [
@@ -350,6 +357,7 @@ class TestBuilderFunctions:
         assert s["perc_aperto"] == 50.0
         assert s["copertura"] == 75.0
 
+    @pytest.mark.pure_unit
     def test_inventory_stats_vuoto(self):
         """Nessuna row → stats vuoto."""
         stats = _build_inventory_stats("vuota", [])
@@ -357,6 +365,7 @@ class TestBuilderFunctions:
 
     # ── _build_license_stats ───────────────────────────────────────────
 
+    @pytest.mark.pure_unit
     def test_license_stats_misto(self):
         """Licenze aperte, HVD, misto."""
         rows = [
@@ -389,6 +398,7 @@ class TestBuilderFunctions:
         assert s["perc_licenza_aperta"] == 75.0
         assert s["has_hvd"] is True  # almeno una row con HVD
 
+    @pytest.mark.pure_unit
     def test_license_stats_nessuna_licenza(self):
         """Nessuna licenza aperta, nessun HVD."""
         rows = [
@@ -400,6 +410,7 @@ class TestBuilderFunctions:
         assert s["perc_licenza_aperta"] == 0.0
         assert s["has_hvd"] is False
 
+    @pytest.mark.pure_unit
     def test_license_stats_vuoto(self):
         """Nessuna row → stats vuoto."""
         stats = _build_license_stats("vuota", [])
@@ -407,12 +418,14 @@ class TestBuilderFunctions:
 
     # ── _datigovit_score ───────────────────────────────────────────────
 
+    @pytest.mark.contract
     def test_datigovit_dati_gov_it(self):
         """Fonte su dati.gov.it → computed."""
         score, fonte = _datigovit_score({"base_url": "https://dati.gov.it/opendata/api/3/action/"})
         assert score == 80.0
         assert fonte == "computed"
 
+    @pytest.mark.contract
     def test_datigovit_api_action(self):
         """Fonte con /api/3/action/ (aggregatore CKAN) → computed."""
         score, fonte = _datigovit_score(
@@ -421,6 +434,7 @@ class TestBuilderFunctions:
         assert score == 80.0
         assert fonte == "computed"
 
+    @pytest.mark.contract
     def test_datigovit_odapi(self):
         """Fonte con /odapi/ (INPS) → computed."""
         score, fonte = _datigovit_score(
@@ -429,14 +443,65 @@ class TestBuilderFunctions:
         assert score == 80.0
         assert fonte == "computed"
 
+    @pytest.mark.contract
     def test_datigovit_portale_diretto(self):
         """Fonte su portale dedicato → estimated."""
         score, fonte = _datigovit_score({"base_url": "https://dati.terna.it/"})
         assert score == 50.0
         assert fonte == "estimated"
 
+    @pytest.mark.contract
     def test_datigovit_sparql(self):
         """Endpoint SPARQL → estimated."""
         score, fonte = _datigovit_score({"base_url": "https://dati.camera.it/sparql"})
         assert score == 50.0
         assert fonte == "estimated"
+
+
+class TestLoadSourceCheckStats:
+    """Test _load_source_check_stats() con parquet misto (backward compat probe_applicable)."""
+
+    @pytest.mark.pure_unit
+    def test_load_source_check_stats_misto(self):
+        """NULL legacy trattato come probeabile, False escluso, True incluso."""
+        df = pd.DataFrame(
+            {
+                "source_id": ["fonte"] * 4,
+                "reachable": [True, True, True, True],
+                "resource_format": ["CSV", "CSV", "JSON", "JSON"],
+                "check_notes": [None, None, "probe_skipped", None],
+                "probe_applicable": [True, None, False, True],
+            }
+        )
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=True) as tmp:
+            df.to_parquet(tmp.name, index=False)
+            stats = _load_source_check_stats(Path(tmp.name))
+        s = stats["fonte"]
+        # Row 0: True → incluso
+        # Row 1: NULL → COALESCE True → incluso (legacy)
+        # Row 2: False → escluso
+        # Row 3: True → incluso
+        assert s["total"] == 3, f"atteso 3, ottenuto {s['total']}"
+        assert s["reachable"] == 3
+        assert s["formato_aperto"] == 3
+        assert s["perc_aperto"] == 100.0
+
+    @pytest.mark.pure_unit
+    def test_load_source_check_stats_senza_colonna(self):
+        """Parquet senza probe_applicable → backward compat: tutti inclusi."""
+        df = pd.DataFrame(
+            {
+                "source_id": ["fonte"] * 2,
+                "reachable": [True, True],
+                "resource_format": ["CSV", "XLSX"],
+                "check_notes": [None, None],
+            }
+        )
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=True) as tmp:
+            df.to_parquet(tmp.name, index=False)
+            stats = _load_source_check_stats(Path(tmp.name))
+        s = stats["fonte"]
+        assert s["total"] == 2
+        assert s["reachable"] == 2
+        assert s["formato_aperto"] == 1
+        assert s["formato_chiuso"] == 1

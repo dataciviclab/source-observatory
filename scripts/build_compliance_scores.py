@@ -158,15 +158,18 @@ def _build_source_check_stats(source_id: str, results: list[dict]) -> dict[str, 
     """Aggrega source-check results in memoria → same shape di _load_source_check_stats.
 
     Usato da run_source.py per passare dati a build_scores() senza passare dal parquet.
+    Esclude item SDMX/SPARQL (probe_applicable=False) — non sono probeabili,
+    i loro metadati vengono dall'inventory/enrichment, non dal source-check.
     """
-    total = len(results)
-    reachable = sum(1 for r in results if r.get("reachable"))
-    circuit_open = sum(1 for r in results if r.get("check_notes") == "circuit_open")
+    probeable = [r for r in results if r.get("probe_applicable", True)]
+    total = len(probeable)
+    reachable = sum(1 for r in probeable if r.get("reachable"))
+    circuit_open = sum(1 for r in probeable if r.get("check_notes") == "circuit_open")
 
     formato_aperto = 0
     formato_chiuso = 0
     formato_ignoto = 0
-    for r in results:
+    for r in probeable:
         fmt = (r.get("resource_format") or "").upper().strip()
         if fmt in ("CSV", "JSON", "XML"):
             formato_aperto += 1
@@ -277,7 +280,9 @@ def _load_source_check_stats(path: Path) -> dict[str, dict]:
         "perc_aperto": 0-100,  # su total (formato_chiuso conta come non aperto)
     }.
 
-    Per fonti senza source-check, il source_id non e' presente.
+    Esclude item SDMX/SPARQL (probe_applicable=False) — non sono probeabili.
+    Backward compat: se la colonna probe_applicable non esiste (parquet vecchio),
+    include tutti gli item (comportamento precedente).
     """
     if not path.exists():
         return {}
@@ -286,8 +291,16 @@ def _load_source_check_stats(path: Path) -> dict[str, dict]:
         import duckdb
 
         con = duckdb.connect()
+        schema = {r[0] for r in con.execute(f"DESCRIBE SELECT * FROM '{path}'").fetchall()}
+        has_probe_applicable = "probe_applicable" in schema
+        # COALESCE: le righe storiche (pre-colonna) hanno probe_applicable=NULL
+        # e vanno trattate come probeabili (legacy).
+        probe_filter = (
+            "WHERE COALESCE(probe_applicable, true) = true" if has_probe_applicable else ""
+        )
+
         rows = con.execute(
-            """
+            f"""
             SELECT source_id,
                    COUNT(*) as total,
                    SUM(CASE WHEN reachable THEN 1 ELSE 0 END) as reachable,
@@ -295,9 +308,8 @@ def _load_source_check_stats(path: Path) -> dict[str, dict]:
                    SUM(CASE WHEN resource_format IN ('CSV', 'JSON', 'XML') THEN 1 ELSE 0 END) as formato_aperto,
                    SUM(CASE WHEN resource_format IN ('XLSX', 'XLS', 'PDF', 'ZIP') THEN 1 ELSE 0 END) as formato_chiuso,
                    SUM(CASE WHEN resource_format IS NULL OR resource_format = '' THEN 1 ELSE 0 END) as formato_ignoto
-            FROM '"""
-            + str(path)
-            + """'
+            FROM '{path}'
+            {probe_filter}
             GROUP BY source_id
         """
         ).fetchall()
@@ -327,21 +339,23 @@ def _source_check_affidabile(
 ) -> bool:
     """Il source_check e' affidabile per questa fonte?
 
-    Per SDMX e SPARQL, se il source_check ha prodotto solo URL vuoti/invalidi
-    (nessun reachable, nessun circuit_open), il problema e' del probe HTTP
-    su singoli file — non della fonte. Questi protocolli si interrogano via
-    API/REST, non si scaricano come file.
+    Per SDMX e SPARQL, gli item vengono esclusi dalle stats (probe_applicable=False).
+    Se total==0, il source-check non ha probeato nulla di reale — non affidabile.
 
     Per CKAN, HTML, REST, AEM il source_check funziona bene.
     """
     if not sc_stats or source_id not in sc_stats:
         return False
-    if protocol not in ("sdmx", "sparql"):
-        return True
     sc = sc_stats[source_id]
-    # Tutti gli URL vuoti/invalidi + 0 circuit_open → source_check non probeabile
-    if sc["total"] > 0 and sc["reachable"] == 0 and sc["circuit_open"] == 0:
-        return False
+    # Per SDMX/SPARQL: se total==0 (tutti gli item esclusi da probe_applicable),
+    # o se nessun item probeabile ha prodotto dati, il source-check non è affidabile.
+    if protocol in ("sdmx", "sparql"):
+        if sc.get("total", 0) == 0:
+            return False
+        if sc["reachable"] == 0 and sc["circuit_open"] == 0:
+            return False
+        return True
+    # Per CKAN/HTML/REST: il source-check è affidabile se ha prodotto dati
     return True
 
 

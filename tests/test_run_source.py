@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -26,18 +28,21 @@ def _run(*args: str) -> subprocess.CompletedProcess:
 class TestRunSourceSmoke:
     """Test minimi che lo script non crasha su input base."""
 
+    @pytest.mark.smoke
     def test_help(self):
         """--help deve funzionare."""
         r = _run("--help")
         assert r.returncode == 0
         assert "End-to-end per una fonte" in r.stdout
 
+    @pytest.mark.smoke
     def test_fonte_inesistente(self):
         """Fonte sconosciuta → exit 1."""
         r = _run("fonte_che_non_esiste")
         assert r.returncode == 1
         assert "non trovata" in r.stderr or "non trovata" in r.stdout
 
+    @pytest.mark.smoke
     def test_fonte_noop(self):
         """Fonte valida con tutti i --no-* deve fare zero probe e uscire con 0."""
         r = _run("anac", "--no-radar", "--no-inventory", "--no-sourcecheck", "--no-health")

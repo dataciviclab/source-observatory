@@ -656,11 +656,10 @@ def _check_row(
     reachable = False
     note: str | None = None
     content_type: str | None = None
+    probe_applicable = _protocol_raw not in ("sdmx", "sparql")
 
-    if _protocol_raw in ("sdmx", "sparql"):
-        http_status = 200
-        reachable = True
-        note = "skip: metadati da inventory (probe HTTP non applicabile)"
+    if not probe_applicable:
+        note = "probe_skipped"
     elif preview_meta or enrich["enrich_method"] in (
         "content_type",
         "content_type_landing",
@@ -745,6 +744,9 @@ def _check_row(
         "protocol": row.get("protocol"),
         # Distribution URL — usata internamente per preview/HEAD, propagata per tracciabilità
         "distribution_url": row.get("distribution_url"),
+        # False per SDMX/SPARQL — il probe HTTP non è applicabile, i metadati
+        # vengono dall'inventory/enrichment. Escludere dalle stats.
+        "probe_applicable": probe_applicable,
     }
 
 
