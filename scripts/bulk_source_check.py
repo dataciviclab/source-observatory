@@ -376,7 +376,9 @@ def _enrich_sparql(row: pd.Series, base: dict, client: HttpClient | None = None)
             landing, client=client
         )
         if content_type:
-            fmt = _normalize_format(content_type)
+            inferred = _normalize_format(content_type)
+            if inferred:  # solo se il HEAD produce un formato valido
+                fmt = inferred
 
     return _apply_encoding_to_enrich(
         {
@@ -656,6 +658,15 @@ def _check_row(
             url_to_check or "", client=client
         )
         http_status = http_status_raw if http_status_raw is not None else 0
+
+        # Validazione: se HTTP 200-399 ma content-type non matcha il formato atteso
+        # (es. atteso CSV, ricevuto HTML = pagina d'errore mascherata),
+        # la risorsa non e' veramente raggiungibile.
+        if reachable and content_type == "html":
+            expected = _normalize_format(enrich.get("resource_format") or "")
+            if expected and expected != "html":
+                reachable = False
+                note = f"content_mismatch: atteso {expected}, ricevuto HTML"
 
         # Content-type format as primary detection (now unified in _http_head_with_retry)
     fmt_from_content = content_type

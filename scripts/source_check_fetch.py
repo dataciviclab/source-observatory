@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import logging
 import re
-import time
 import xml.etree.ElementTree as ET
 from typing import Any, Optional
 
@@ -119,55 +118,36 @@ def _http_head_with_retry(
     client: HttpClient | None = None,
     max_retries: int = 1,
 ) -> tuple[Optional[int], bool, str, Optional[str]]:
-    """HTTP HEAD con retry e circuit breaker via HttpClient.
+    """HEAD probe via toolkit, con backward compat per caller SO.
 
-    Usa ``client.head(url)`` che internamente gestisce circuit breaker,
-    retry su 5xx e connection error.  La format detection usa
-    ``toolkit.scout.http.resolve_preview_kind``.
-
-    Se *client* non e' fornito, ne crea uno di default (senza circuit breaker).
+    Delega a ``toolkit.scout.http.probe_url_headers`` che fa:
+      HEAD → retry → GET+Range fallback → HTTPS fallback
 
     Returns: (status_code, reachable, error, content_type_format).
     """
+    from toolkit.scout.http import probe_url_headers as _toolkit_probe
+
     if not isinstance(url, str) or not url.startswith("http"):
         return None, False, "url_missing_or_invalid", None
 
-    if client is None:
-        client = HttpClient(timeout=(5, 10))
-
-    last_error = ""
-
-    for attempt in range(max_retries + 1):
-        result = client.head(url)
-        if result is None:
+    try:
+        # Check circuit breaker prima di delegare a toolkit:
+        # http://host e https://host condividono lo stesso netloc,
+        # quindi il circuito HTTP blocca anche HTTPS.
+        if client is not None and client._circuit_should_block(url):
             return None, False, "circuit_open", None
-
-        if result.is_ok and result.response is not None:
-            resp = result.response
-            if resp.status_code >= 500 and attempt < max_retries:
-                last_error = f"server_error_{resp.status_code}"
-                time.sleep(0.5 * (attempt + 1))
-                continue
-            ct = resp.headers.get("Content-Type", "") or ""
-            cd = resp.headers.get("Content-Disposition")
-            # Format detection via toolkit (pure, no HTTP)
-            fmt = _toolkit_preview_kind(url, ct, cd)
-            reachable = resp.status_code < 400
-            return resp.status_code, reachable, "", fmt
-
-        if result.err is not None:
-            if isinstance(result.err, CircuitOpenError):
-                return None, False, "circuit_open", None
-            err_name = type(result.err).__name__
-            if "Timeout" in err_name and attempt < max_retries:
-                last_error = "timeout"
-                time.sleep(0.5 * (attempt + 1))
-                continue
-            return None, False, err_name.lower(), None
-
-        return None, False, last_error or "transient_error", None
-
-    return None, False, last_error or "transient_error", None
+        result = _toolkit_probe(url, client=client)
+        status: int = result["status_code"]
+        ct: str | None = result.get("content_type")
+        cd: str | None = result.get("content_disposition")
+        fmt = _toolkit_preview_kind(url, ct, cd)
+        reachable = status < 400
+        return status, reachable, "", fmt
+    except CircuitOpenError:
+        return None, False, "circuit_open", None
+    except RuntimeError as exc:
+        err_msg = str(exc) or "probe_failed"
+        return None, False, err_msg, None
 
 
 # ── CKAN fetch (wrapper: adatta base_api SO a portal_url toolkit) ─────────────
