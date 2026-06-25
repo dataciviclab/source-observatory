@@ -1,6 +1,6 @@
 # Catalog Watch Report
 
-_Generato: 2026-06-25T08:32:42+00:00 — 28 fonti controllate_
+_Generato: 2026-06-25T16:39:23+00:00 — 28 fonti controllate_
 
 ## Segnali attivi
 
