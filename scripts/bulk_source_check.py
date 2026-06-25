@@ -83,14 +83,6 @@ DEFAULT_IN = INVENTORY_PARQUET_PATH
 DEFAULT_OUT = CHECK_PARQUET_PATH
 
 MAX_WORKERS = 16
-
-# Richieste concorrenti massime per fonte.
-# Se un server risponde lentamente o blocca richieste multiple
-# (es. MIMIT RNA: 85 XML circuit_open per eccesso di concorrenza),
-# questo limite evita di sovraccaricarlo.
-# Il pool globale MAX_WORKERS resta 16 — il semaforo per fonte
-# garantisce che nessuna fonte usi piu' di N worker alla volta.
-MAX_CONCURRENT_PER_SOURCE = 3
 _NO_SDMX_YEARS = False  # set via --no-sdmx-years flag
 
 
@@ -767,11 +759,13 @@ def run_bulk_check(
     # Per-source concurrency limit: registry puo' specificare
     # source_check.max_concurrency (es. MIMIT RNA = 2).
     # Default = workers globali (nessun limite aggiuntivo).
+    # Valori < 1 vengono bloccati a 1 per evitare deadlock.
     source_concurrency: dict[str, int] = {}
     for sid, meta in registry.items():
         sc_cfg = meta.get("source_check", {})
         if isinstance(sc_cfg, dict):
-            source_concurrency[sid] = int(sc_cfg.get("max_concurrency", workers))
+            val = int(sc_cfg.get("max_concurrency", workers))
+            source_concurrency[sid] = max(1, val)
         else:
             source_concurrency[sid] = workers
     source_semaphores: dict[str, threading.Semaphore] = {}
