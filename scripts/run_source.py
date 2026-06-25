@@ -293,6 +293,80 @@ def _health_score(
 # ── MAIN ─────────────────────────────────────────────────────────────────────
 
 
+def _report_markdown(
+    source_id: str,
+    cfg: dict,
+    radar: str,
+    rows: list[dict],
+    results: list[dict],
+    health_entry: dict | None,
+    timing: dict,
+) -> None:
+    """Stampa report Markdown della fonte (per allegati FOIA)."""
+    protocol = cfg.get("protocol", "?")
+    print(f"\n## Report fonte: {source_id}")
+    print(f"- **Protocollo**: {protocol}")
+    print(f"- **RADAR**: {radar}")
+
+    if rows:
+        print(f"- **Inventory**: {len(rows)} dataset")
+        from collections import Counter
+
+        fmt_dist = Counter((r.get("format") or "?").upper() for r in rows)
+        fmt_str = ", ".join(f"{k}:{v}" for k, v in sorted(fmt_dist.items()) if k != "?")
+        if fmt_str:
+            print(f"- **Formati (inventory)**: {fmt_str}")
+
+    if results:
+        total = len(results)
+        reachable = sum(1 for r in results if r.get("reachable"))
+        circuit = sum(1 for r in results if r.get("check_notes") == "circuit_open")
+        with_preview = [r for r in results if r.get("paqa_score") is not None]
+        formats = Counter(r.get("resource_format") or "?" for r in results)
+        no_gran = sum(1 for r in results if r.get("granularity") in (None, "", "non_determinato"))
+
+        print(f"- **Source-check**: {reachable}/{total} raggiungibili", end="")
+        if circuit:
+            print(f" ({circuit} circuit open)", end="")
+        print()
+        print(f"  - Formati: {', '.join(f'{k}:{v}' for k, v in formats.most_common(4))}")
+        if with_preview:
+            avg = sum(r["paqa_score"] for r in with_preview if r["paqa_score"] is not None) / len(
+                with_preview
+            )
+            print(f"  - Preview CSV: {len(with_preview)}/{total}, PAQA medio: {avg:.0f}/100")
+        if no_gran:
+            print(f"  - Needs review (granularità): {no_gran}/{total}")
+        if circuit:
+            print(f"  - Circuit open: {circuit}")
+
+    if health_entry:
+        print(f"\n### Health score: {health_entry['totale']}/100 ({health_entry['livello']})")
+        print(f"- **Azione**: {health_entry['azione_raccomandata']}")
+        print(f"- **Assi computed**: {health_entry.get('assi_computed', 0)}/5")
+        print()
+        print("| Asse | Score | Fonte |")
+        print("|---|---|---|")
+        for k, v in health_entry.get("assi", {}).items():
+            print(f"| {k} | {v['score']:.0f} | {v['fonte']} |")
+
+    # Tempi
+    print("\n### Tempi di esecuzione")
+    for fase in ("RADAR", "INVENTORY", "SOURCE-CHECK", "HEALTH"):
+        v = timing.get(fase, "?")
+        if not isinstance(v, str):
+            print(f"- **{fase}**: {v:.1f}s")
+    if isinstance(timing.get("TOTALE"), float):
+        print(f"- **Totale**: {timing['TOTALE']:.1f}s")
+
+    if health_entry and health_entry.get("flag_urgenza"):
+        print(f"\n⚠️ **Flag urgenza**: {', '.join(health_entry['flag_urgenza'])}")
+
+    print(
+        f"\n_Report generato da DataCivicLab — run_source.py il {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}_"
+    )
+
+
 def main() -> int:
     import argparse
     import time as _time
@@ -304,6 +378,9 @@ def main() -> int:
     parser.add_argument("--no-inventory", action="store_true")
     parser.add_argument("--no-sourcecheck", action="store_true")
     parser.add_argument("--no-health", action="store_true")
+    parser.add_argument(
+        "--markdown", action="store_true", help="Output in Markdown (per allegati FOIA)"
+    )
     args = parser.parse_args()
 
     reg = load_registry()
@@ -320,10 +397,14 @@ def main() -> int:
     t_start = _time.time()
 
     # 1. RADAR
+    radar_str = "?"
     if not args.no_radar:
         t0 = _time.time()
-        _radar(args.source, cfg)
+        radar_result = _radar(args.source, cfg)
         timing["RADAR"] = round(_time.time() - t0, 1)
+        radar_str = f"{radar_result['status']} (HTTP {radar_result['http_code']})"
+        if radar_result.get("note"):
+            radar_str += f" — {radar_result['note']}"
     else:
         timing["RADAR"] = "skip"
 
@@ -346,29 +427,33 @@ def main() -> int:
         timing["SOURCE-CHECK"] = "skip"
 
     # 4. HEALTH SCORE
+    health_entry = None
     if not args.no_health:
         t0 = _time.time()
-        _health_score(args.source, cfg, rows=rows, results=results)
+        health_entry = _health_score(args.source, cfg, rows=rows, results=results)
         timing["HEALTH"] = round(_time.time() - t0, 1)
     else:
         timing["HEALTH"] = "skip"
 
     timing["TOTALE"] = round(_time.time() - t_start, 1)
 
-    # Riepilogo tempi
-    print(f"\n{'─' * 50}")
-    print("  ⏱  RIEPILOGO TEMPI")
-    print(f"{'─' * 50}")
-    for fase in ("RADAR", "INVENTORY", "SOURCE-CHECK", "HEALTH"):
-        v = timing[fase]
-        if isinstance(v, str):
-            print(f"    {fase:<15} {v}")
-        else:
-            c = "🟢" if v < 10 else "🟡" if v < 60 else "🔴"
-            print(f"    {fase:<15} {v:>6.1f}s  {c}")
-    print(f"    {'─' * 15}")
-    print(f"    {'TOTALE':<15} {timing['TOTALE']:>6.1f}s")
-    print(f"\n✔  Fine — {args.source}")
+    if args.markdown:
+        _report_markdown(args.source, cfg, radar_str, rows, results, health_entry, timing)
+    else:
+        # Riepilogo tempi
+        print(f"\n{'─' * 50}")
+        print("  ⏱  RIEPILOGO TEMPI")
+        print(f"{'─' * 50}")
+        for fase in ("RADAR", "INVENTORY", "SOURCE-CHECK", "HEALTH"):
+            v = timing[fase]
+            if isinstance(v, str):
+                print(f"    {fase:<15} {v}")
+            else:
+                c = "🟢" if v < 10 else "🟡" if v < 60 else "🔴"
+                print(f"    {fase:<15} {v:>6.1f}s  {c}")
+        print(f"    {'─' * 15}")
+        print(f"    {'TOTALE':<15} {timing['TOTALE']:>6.1f}s")
+        print(f"\n✔  Fine — {args.source}")
     return 0
 
 
