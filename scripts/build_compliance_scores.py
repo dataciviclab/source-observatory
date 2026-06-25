@@ -3,9 +3,8 @@
 Produce open_data_health_scores.json per ogni fonte monitorata.
 
 Punteggio su 6 assi (0-100) basato su dati gia' disponibili in SO.
-Artifact bridge verso data-advocacy: ogni asse indica se il dato e'
-"computed" (da dati reali), "estimated" (default in assenza di info certa)
-o "missing" (dato non disponibile, escluso dal punteggio).
+Ogni asse e' "computed" (dati reali verificati) o "missing"
+(dato non disponibile, escluso dal punteggio). Niente stime.
 
 Avvertenza: i punteggi sono diagnostici, non certificativi. Un punteggio
 basso significa "abbiamo pochi dati o segnali di criticita'", non
@@ -411,7 +410,7 @@ def _formato_score(
     if inventory_stats and source_id in inventory_stats:
         stats = inventory_stats[source_id]
         perc = stats["perc_aperto"]
-        fonte = "computed" if stats["copertura"] >= 50.0 else "parziale"
+        fonte = "computed"
         if perc >= 95.0:
             return (90.0, fonte)
         elif perc >= 80.0:
@@ -431,18 +430,8 @@ def _formato_score(
         if "CSV" in detail:
             return (75.0, "computed")
 
-    # ── 4. Stima per protocollo (pessimista) ──────────────────────────
-    protocol_scores_pessimista = {
-        "sdmx": 70.0,  # SDMX e' sempre XML strutturato
-        "sparql": 65.0,  # SPARQL REST — presumibilmente RDF
-        "ckan": 30.0,  # CKAN non dice nulla sul formato reale
-        "aem": 45.0,
-        "rest": 45.0,
-        "html": 35.0,
-    }
-    score = protocol_scores_pessimista.get(protocol, 25.0)
-    source_type = "estimated"
-    return (score, source_type)
+    # ── 4. Nessun dato — asse non conteggiato ──────────────────────
+    return (0.0, "missing")
 
 
 def _raggiungibilita_score(
@@ -475,7 +464,7 @@ def _raggiungibilita_score(
 
     # ── 2. Radar: portale reachability ──────────────────────────────────
     if radar_entry is None:
-        return (50.0, "estimated")
+        return (0.0, "missing")
 
     status = radar_entry.get("status", "GREEN")
     note = radar_entry.get("note") or ""
@@ -496,7 +485,7 @@ def _raggiungibilita_score(
             return (15.0, "computed")
         return (20.0, "computed")
 
-    return (50.0, "estimated")
+    return (0.0, "missing")
 
 
 def _licenza_score(
@@ -515,8 +504,8 @@ def _licenza_score(
         elif perc > 0:
             return (40.0, "computed")
         else:
-            return (50.0, "estimated")
-    return (50.0, "estimated")
+            return (0.0, "missing")
+    return (0.0, "missing")
 
 
 def _datigovit_score(source_info: dict) -> tuple[float, str]:
@@ -537,7 +526,7 @@ def _datigovit_score(source_info: dict) -> tuple[float, str]:
         return (80.0, "computed")
     if "/odapi/" in base_url:
         return (80.0, "computed")
-    return (50.0, "estimated")
+    return (0.0, "missing")
 
 
 def _hvd_score(
@@ -644,10 +633,7 @@ def build_scores(
 
         totale = round(numeratore / denominatore, 1) if denominatore > 0 else 0.0
 
-        # Livello dal minimo degli assi (non-missing).
-        # Gli assi "estimated" (stime prudenziali) non possono tirare giu'
-        # il livello sotto "medio" — solo gli assi "computed"/"parziale"
-        # (dati reali) possono determinare "debole" o "carente".
+        # Livello dal minimo degli assi computed (missing esclusi).
         _ORDINE_LIVELLI = {"buono": 0, "medio": 1, "debole": 2, "carente": 3}
 
         def _livello_asse(score: float) -> str:
@@ -663,11 +649,7 @@ def build_scores(
         for val, src, _key in assi_info:
             if src == "missing":
                 continue
-            livello_asse = _livello_asse(val)
-            if src in ("estimated",):
-                # Le stime non tirano giu' il livello
-                livello_asse = min(livello_asse, "medio", key=lambda x: _ORDINE_LIVELLI.get(x, 0))
-            livelli_assi.append(livello_asse)
+            livelli_assi.append(_livello_asse(val))
 
         livello = (
             max(livelli_assi, key=lambda x: _ORDINE_LIVELLI.get(x, 0)) if livelli_assi else "medio"
@@ -703,12 +685,15 @@ def build_scores(
                 azione = "verifica raggiungibilita' (FOIA se persiste)"
             else:
                 azione = "verifica umana"
-        elif totale < 70 and formato < 40:
+        elif totale < 70 and f_src == "computed" and formato < 40:
             azione = "segnalazione DCD (formato chiuso — verificare)"
-        elif totale < 70 and raggiung < 30:
+        elif totale < 70 and r_src == "computed" and raggiung < 30:
             azione = "verifica raggiungibilita'"
         else:
             azione = "monitoraggio"
+
+        # Quanti assi hanno dati reali (trasparenza per l'utente)
+        assi_computed = sum(1 for _, src, _ in assi_info if src == "computed")
 
         entry = {
             "source_id": source_id,
@@ -717,6 +702,7 @@ def build_scores(
             "livello": livello,
             "azione_raccomandata": azione,
             "flag_urgenza": flags,
+            "assi_computed": assi_computed,
             "assi": {
                 "formato_aperto": {"score": formato, "fonte": f_src},
                 "raggiungibilita": {"score": raggiung, "fonte": r_src},

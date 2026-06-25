@@ -68,7 +68,7 @@ class TestBuildComplianceScores:
             for k, v in assi.items():
                 assert "score" in v
                 assert "fonte" in v
-                assert v["fonte"] in ("computed", "estimated", "missing")
+                assert v["fonte"] in ("computed", "missing")
                 assert 0 <= v["score"] <= 100
 
         # Verifica distribuzione
@@ -109,7 +109,7 @@ class TestBuildComplianceScores:
 
     @pytest.mark.contract
     def test_formato_score_copertura_parziale(self):
-        """Asse A: copertura < 50% → parziale, non computed."""
+        """Asse A: copertura bassa ma dati reali → computed."""
         inv = {
             "openbdap": {
                 "total": 3825,
@@ -121,21 +121,20 @@ class TestBuildComplianceScores:
         }
         score, fonte = _formato_score("ckan", [], inv, "openbdap")
         assert score == 90.0
-        assert fonte == "parziale"  # non "computed" perche' copertura < 50%
+        assert fonte == "computed"
 
     @pytest.mark.contract
     def test_formato_score_senza_inventory(self):
-        """Asse A: senza inventory, usa fallback protocol (pessimista)."""
+        """Asse A: nessun dato → missing (non conteggiato)."""
         score, fonte = _formato_score("ckan", [], None, "ignota")
-        assert score == 30.0  # fallback CKAN pessimistico
-        assert fonte == "estimated"
+        assert score == 0.0
+        assert fonte == "missing"
         score2, fonte2 = _formato_score("html", [], None, "ignota")
-        assert score2 == 35.0  # fallback HTML pessimistico
-        assert fonte2 == "estimated"
-        # SDMX resta affidabile (sempre XML)
+        assert score2 == 0.0
+        assert fonte2 == "missing"
         score3, fonte3 = _formato_score("sdmx", [], None, "ignota")
-        assert score3 == 70.0
-        assert fonte3 == "estimated"
+        assert score3 == 0.0
+        assert fonte3 == "missing"
 
     @pytest.mark.contract
     def test_formato_score_da_source_check(self):
@@ -216,14 +215,17 @@ class TestBuildComplianceScores:
         assert "FOIA" in entry["azione_raccomandata"]
 
     @pytest.mark.contract
-    def test_build_scores_estimated_non_tira_giu(self):
-        """Assi estimated non possono portare il livello sotto 'medio'."""
+    def test_build_scores_senza_dati(self):
+        """Nessun dato su nessun asse → tutti missing, livello fallback medio."""
         registry = {"fonte_test": {"protocol": "html"}}
         result = build_scores(registry, [], None, {}, {}, {})
         entry = result["scores"][0]
-        # Presenza_datigovit e' 50 estimated (soglia debole), ma non deve tirare giu
-        # Il livello dovrebbe essere almeno medio perche' estimated e' cap a medio
-        assert entry["livello"] in ("medio",), f"livello={entry['livello']}, atteso medio"
+        # Tutti gli assi sono missing → totale=0, livello=medio (fallback)
+        assert entry["totale"] == 0.0
+        assert entry["livello"] == "medio"
+        assert entry["assi_computed"] == 0
+        for k, v in entry["assi"].items():
+            assert v["fonte"] == "missing", f"{k} dovrebbe essere missing"
 
     @pytest.mark.contract
     def test_licenza_score_da_inventory(self):
@@ -250,7 +252,7 @@ class TestBuildComplianceScores:
             "f3": {"total": 10, "licenze_aperte": 0, "perc_licenza_aperta": 0.0, "has_hvd": False}
         }
         s3, f3 = _licenza_score("ckan", inv3, "f3")
-        assert s3 == 50.0 and f3 == "estimated"
+        assert s3 == 0.0 and f3 == "missing"
 
     @pytest.mark.contract
     def test_hvd_score_da_inventory(self):
@@ -445,17 +447,17 @@ class TestBuilderFunctions:
 
     @pytest.mark.contract
     def test_datigovit_portale_diretto(self):
-        """Fonte su portale dedicato → estimated."""
+        """Fonte su portale dedicato → missing."""
         score, fonte = _datigovit_score({"base_url": "https://dati.terna.it/"})
-        assert score == 50.0
-        assert fonte == "estimated"
+        assert score == 0.0
+        assert fonte == "missing"
 
     @pytest.mark.contract
     def test_datigovit_sparql(self):
-        """Endpoint SPARQL → estimated."""
+        """Endpoint SPARQL → missing."""
         score, fonte = _datigovit_score({"base_url": "https://dati.camera.it/sparql"})
-        assert score == 50.0
-        assert fonte == "estimated"
+        assert score == 0.0
+        assert fonte == "missing"
 
 
 class TestLoadSourceCheckStats:
