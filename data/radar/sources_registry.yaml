@@ -408,16 +408,16 @@ opencivitas:
   base_url: https://www.opencivitas.it/it/open-data
   last_probed: '2026-06-25'
   catalog_baseline:
-    captured_at: '2026-06-25'
+    captured_at: '2026-05-07'
     metric: csv_magnet_total_links
     value: 1084
-    method: csv_magnet_sitemap_sample
+    method: csv_magnet_area_pages_paginated
     reliability: medium
-    note: "Inventory via discovery=auto (sitemap alla root). 575 pagine in sitemap, sample 30 pagine. Baseline precedente: 1084 via page_url_template."
+    note: Sondaggio CSV magnet via page_url_template (page=0..54). SSL fallback
+      necessario per cert invalido.
   verdict: go
-  note: Portale OpenCivitas — csv_magnet scan via sitemap discovery (auto).
-    La sitemap root contiene ~575 pagine di cui ~273 con segnali dataset.
-    ZIP con CSV/XLSX dentro.
+  note: Portale OpenCivitas — csv_magnet scan via discovery=auto (sitemap
+    alla root). ZIP con CSV/XLSX dentro.
   html_portal:
     topic_hint: trasparenza
     discovery: auto
