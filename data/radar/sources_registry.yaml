@@ -416,16 +416,12 @@ opencivitas:
     note: Sondaggio CSV magnet via page_url_template (page=0..54). SSL fallback
       necessario per cert invalido.
   verdict: go
-  note: Portale OpenCivitas — csv_magnet scan via page_url_template. SSL
-    fallback attivo. ZIP con CSV/XLSX dentro.
+  note: Portale OpenCivitas — csv_magnet scan via discovery=auto (sitemap
+    alla root). ZIP con CSV/XLSX dentro.
   html_portal:
     topic_hint: trasparenza
-    page_url_template: https://www.opencivitas.it/it/open-data?page={page}
-    page_start: 0
-    page_max: 100
-    page_stop_on_empty: true
+    discovery: auto
     delay_seconds: 0.3
-    probe_content_type: true
   datasets_in_use:
     - opencivitas_fsc_2025_rso
 aifa:

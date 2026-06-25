@@ -710,21 +710,11 @@ def test_collect_named_graphs_inventory(monkeypatch):
 
 
 class TestScanSitemap:
-    """Tests for _scan_sitemap with mocked HTTP."""
+    """Tests for _scan_sitemap_pages with mocked HTTP."""
 
     def test_basic_sitemap_scan(self, monkeypatch):
-        """_scan_sitemap campiona pagine da sitemap e produce righe."""
+        """_scan_sitemap_pages campiona pagine e produce righe."""
         import collectors.html as html_collector
-
-        # Mock _fetch_sitemap per tornare URL di dataset pages
-        def fake_fetch(url, timeout=15):
-            return [
-                "https://example.gov.it/dataset/1",
-                "https://example.gov.it/dataset/2",
-                "https://example.gov.it/other/3",  # non matcha dataset_signals
-            ], None
-
-        monkeypatch.setattr(html_collector, "_fetch_sitemap", fake_fetch)
 
         # Mock HttpClient per tornare HTML con link CSV
         fake = FakeHttpClient()
@@ -748,8 +738,12 @@ class TestScanSitemap:
         )
         monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
 
-        rows, scan_params = html_collector._scan_sitemap(
-            "https://example.gov.it/sitemap.xml",
+        rows, scan_params = html_collector._scan_sitemap_pages(
+            [
+                "https://example.gov.it/dataset/1",
+                "https://example.gov.it/dataset/2",
+                "https://example.gov.it/other/3",  # non matcha dataset_signals
+            ],
             "test_topic",
             "test_source",
             "https://example.gov.it",
@@ -767,19 +761,14 @@ class TestScanSitemap:
         assert "https://example.gov.it/data/file2.xlsx" in urls
 
     def test_sitemap_empty_dataset_pages(self, monkeypatch):
-        """_scan_sitemap restituisce errore se nessuna dataset page nella sitemap."""
+        """_scan_sitemap_pages restituisce errore se nessuna dataset page."""
         import collectors.html as html_collector
 
-        def fake_fetch(url, timeout=15):
-            return [
+        rows, scan_params = html_collector._scan_sitemap_pages(
+            [
                 "https://example.gov.it/about",
                 "https://example.gov.it/contact",
-            ], None
-
-        monkeypatch.setattr(html_collector, "_fetch_sitemap", fake_fetch)
-
-        rows, scan_params = html_collector._scan_sitemap(
-            "https://example.gov.it/sitemap.xml",
+            ],
             None,
             "test_source",
             "https://example.gov.it",
@@ -791,16 +780,11 @@ class TestScanSitemap:
         assert "no dataset pages found" in scan_params["error"]
 
     def test_sitemap_fetch_failure(self, monkeypatch):
-        """_scan_sitemap restituisce errore se sitemap non raggiungibile."""
+        """_scan_sitemap_pages con lista vuota → errore."""
         import collectors.html as html_collector
 
-        def fake_fetch(url, timeout=15):
-            return None, "HTTP 500"
-
-        monkeypatch.setattr(html_collector, "_fetch_sitemap", fake_fetch)
-
-        rows, scan_params = html_collector._scan_sitemap(
-            "https://example.gov.it/sitemap.xml",
+        rows, scan_params = html_collector._scan_sitemap_pages(
+            [],
             None,
             "test_source",
             "https://example.gov.it",
@@ -809,4 +793,4 @@ class TestScanSitemap:
 
         assert len(rows) == 0
         assert "error" in scan_params
-        assert "sitemap failed" in scan_params["error"]
+        assert "no dataset pages found" in scan_params["error"]
