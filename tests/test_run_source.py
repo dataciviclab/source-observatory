@@ -49,3 +49,13 @@ class TestRunSourceSmoke:
         assert r.returncode == 0
         assert "anac" in r.stdout
         assert "Fine" in r.stdout
+
+    @pytest.mark.smoke
+    def test_markdown(self):
+        """--markdown produce report senza probe e contiene ## Report fonte:."""
+        r = _run(
+            "anac", "--no-radar", "--no-inventory", "--no-sourcecheck", "--no-health", "--markdown"
+        )
+        assert r.returncode == 0
+        assert "## Report fonte: anac" in r.stdout
+        assert "Protocollo" in r.stdout
