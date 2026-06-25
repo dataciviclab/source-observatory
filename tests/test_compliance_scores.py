@@ -14,6 +14,10 @@ import pytest
 from _constants import CATALOG_SIGNALS_PATH, RADAR_SUMMARY_PATH, REGISTRY_PATH
 
 from scripts.build_compliance_scores import (
+    _build_inventory_stats,
+    _build_license_stats,
+    _build_source_check_stats,
+    _datigovit_score,
     _flag_urgenza,
     _formato_score,
     _hvd_score,
@@ -277,3 +281,162 @@ class TestBuildComplianceScores:
         if path.exists():
             return json.loads(path.read_text(encoding="utf-8"))
         return None
+
+
+class TestBuilderFunctions:
+    """Test delle funzioni che aggregano dati in-memory (usate da run_source.py)."""
+
+    # ── _build_source_check_stats ──────────────────────────────────────
+
+    def test_source_check_stats_misto(self):
+        """Formati aperti e chiusi, alcuni irraggiungibili."""
+        results = [
+            {"reachable": True, "resource_format": "CSV", "check_notes": None},
+            {"reachable": True, "resource_format": "JSON", "check_notes": None},
+            {"reachable": False, "resource_format": "XLSX", "check_notes": "timeout"},
+            {"reachable": False, "resource_format": "", "check_notes": "circuit_open"},
+        ]
+        stats = _build_source_check_stats("fonte", results)
+        assert "fonte" in stats
+        s = stats["fonte"]
+        assert s["total"] == 4
+        assert s["reachable"] == 2
+        assert s["circuit_open"] == 1
+        assert s["formato_aperto"] == 2  # CSV + JSON
+        assert s["formato_chiuso"] == 1  # XLSX
+        assert s["formato_ignoto"] == 1  # vuoto
+        assert s["perc_reachable"] == 50.0
+        assert s["perc_aperto"] == 50.0
+
+    def test_source_check_stats_tutti_raggiungibili(self):
+        """100% raggiungibili, tutti formati aperti."""
+        results = [
+            {"reachable": True, "resource_format": "CSV", "check_notes": None},
+            {"reachable": True, "resource_format": "JSON", "check_notes": None},
+        ]
+        stats = _build_source_check_stats("ok", results)
+        s = stats["ok"]
+        assert s["total"] == s["reachable"] == 2
+        assert s["circuit_open"] == 0
+        assert s["perc_reachable"] == 100.0
+        assert s["perc_aperto"] == 100.0
+
+    def test_source_check_stats_vuoto(self):
+        """Lista vuota → total 0, nessun errore."""
+        stats = _build_source_check_stats("vuota", [])
+        s = stats["vuota"]
+        assert s["total"] == 0
+        assert s["reachable"] == 0
+        assert s["perc_reachable"] == 0.0
+        assert s["perc_aperto"] == 0.0
+
+    # ── _build_inventory_stats ─────────────────────────────────────────
+
+    def test_inventory_stats_ckan_only(self):
+        """Solo row CKAN contano."""
+        rows = [
+            {"protocol": "ckan", "format": "CSV"},
+            {"protocol": "ckan", "format": "JSON"},
+            {"protocol": "sparql", "format": "?"},
+            {"protocol": "ckan", "format": "XLSX"},
+            {"protocol": "ckan", "format": ""},
+        ]
+        stats = _build_inventory_stats("fonte", rows)
+        assert "fonte" in stats
+        s = stats["fonte"]
+        assert s["total"] == 4  # solo CKAN
+        assert s["con_formato"] == 3  # CSV, JSON, XLSX
+        assert s["aperti"] == 2  # CSV, JSON
+        assert s["perc_aperto"] == 50.0
+        assert s["copertura"] == 75.0
+
+    def test_inventory_stats_vuoto(self):
+        """Nessuna row → stats vuoto."""
+        stats = _build_inventory_stats("vuota", [])
+        assert stats == {}
+
+    # ── _build_license_stats ───────────────────────────────────────────
+
+    def test_license_stats_misto(self):
+        """Licenze aperte, HVD, misto."""
+        rows = [
+            {
+                "protocol": "ckan",
+                "license_id": "cc-by-4.0",
+                "license_title": "Creative Commons",
+                "hvd_category": "http://data.europa.eu/bna/c_ac64a52d",
+            },
+            {
+                "protocol": "ckan",
+                "license_id": "cc-zero",
+                "license_title": "CC0",
+                "hvd_category": "",
+            },
+            {
+                "protocol": "ckan",
+                "license_id": "other-open",
+                "license_title": "Other Open",
+                "hvd_category": "",
+            },
+            {"protocol": "ckan", "license_id": "", "license_title": "", "hvd_category": ""},
+            {"protocol": "sparql", "license_id": "", "license_title": "", "hvd_category": ""},
+        ]
+        stats = _build_license_stats("fonte", rows)
+        assert "fonte" in stats
+        s = stats["fonte"]
+        assert s["total"] == 4  # solo CKAN
+        assert s["licenze_aperte"] == 3  # cc-by, cc-zero, other-open
+        assert s["perc_licenza_aperta"] == 75.0
+        assert s["has_hvd"] is True  # almeno una row con HVD
+
+    def test_license_stats_nessuna_licenza(self):
+        """Nessuna licenza aperta, nessun HVD."""
+        rows = [
+            {"protocol": "ckan", "license_id": "", "license_title": "", "hvd_category": ""},
+        ]
+        stats = _build_license_stats("fonte", rows)
+        s = stats["fonte"]
+        assert s["licenze_aperte"] == 0
+        assert s["perc_licenza_aperta"] == 0.0
+        assert s["has_hvd"] is False
+
+    def test_license_stats_vuoto(self):
+        """Nessuna row → stats vuoto."""
+        stats = _build_license_stats("vuota", [])
+        assert stats == {}
+
+    # ── _datigovit_score ───────────────────────────────────────────────
+
+    def test_datigovit_dati_gov_it(self):
+        """Fonte su dati.gov.it → computed."""
+        score, fonte = _datigovit_score({"base_url": "https://dati.gov.it/opendata/api/3/action/"})
+        assert score == 80.0
+        assert fonte == "computed"
+
+    def test_datigovit_api_action(self):
+        """Fonte con /api/3/action/ (aggregatore CKAN) → computed."""
+        score, fonte = _datigovit_score(
+            {"base_url": "https://portalecomune.it/api/3/action/package_list"}
+        )
+        assert score == 80.0
+        assert fonte == "computed"
+
+    def test_datigovit_odapi(self):
+        """Fonte con /odapi/ (INPS) → computed."""
+        score, fonte = _datigovit_score(
+            {"base_url": "https://serviziweb2.inps.it/odapi/package_list"}
+        )
+        assert score == 80.0
+        assert fonte == "computed"
+
+    def test_datigovit_portale_diretto(self):
+        """Fonte su portale dedicato → estimated."""
+        score, fonte = _datigovit_score({"base_url": "https://dati.terna.it/"})
+        assert score == 50.0
+        assert fonte == "estimated"
+
+    def test_datigovit_sparql(self):
+        """Endpoint SPARQL → estimated."""
+        score, fonte = _datigovit_score({"base_url": "https://dati.camera.it/sparql"})
+        assert score == 50.0
+        assert fonte == "estimated"

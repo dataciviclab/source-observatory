@@ -154,6 +154,115 @@ def _load_inventory_license_stats(path: Path) -> dict[str, dict]:
         return {}
 
 
+def _build_source_check_stats(source_id: str, results: list[dict]) -> dict[str, dict]:
+    """Aggrega source-check results in memoria → same shape di _load_source_check_stats.
+
+    Usato da run_source.py per passare dati a build_scores() senza passare dal parquet.
+    """
+    total = len(results)
+    reachable = sum(1 for r in results if r.get("reachable"))
+    circuit_open = sum(1 for r in results if r.get("check_notes") == "circuit_open")
+
+    formato_aperto = 0
+    formato_chiuso = 0
+    formato_ignoto = 0
+    for r in results:
+        fmt = (r.get("resource_format") or "").upper().strip()
+        if fmt in ("CSV", "JSON", "XML"):
+            formato_aperto += 1
+        elif fmt in ("XLSX", "XLS", "PDF", "ZIP"):
+            formato_chiuso += 1
+        elif not fmt:
+            formato_ignoto += 1
+        else:
+            formato_ignoto += 1  # formati non classificati → ignoto
+
+    return {
+        source_id: {
+            "total": total,
+            "reachable": reachable,
+            "circuit_open": circuit_open,
+            "formato_aperto": formato_aperto,
+            "formato_chiuso": formato_chiuso,
+            "formato_ignoto": formato_ignoto,
+            "perc_reachable": round(reachable / total * 100, 1) if total > 0 else 0.0,
+            "perc_aperto": round(formato_aperto / total * 100, 1) if total > 0 else 0.0,
+        }
+    }
+
+
+def _build_inventory_stats(source_id: str, rows: list[dict]) -> dict[str, dict]:
+    """Aggrega inventory rows in memoria → same shape di _load_inventory_format_stats.
+
+    Considera solo item CKAN (per allineamento con la versione parquet).
+    """
+    ckan_rows = [r for r in rows if (r.get("protocol") or "").lower() == "ckan"]
+    total = len(ckan_rows)
+    if total == 0:
+        return {}
+
+    con_formato = 0
+    aperti = 0
+    for r in ckan_rows:
+        fmt = (r.get("format") or "").upper().strip()
+        if fmt:
+            con_formato += 1
+        if fmt in ("CSV", "JSON", "XML"):
+            aperti += 1
+
+    return {
+        source_id: {
+            "total": total,
+            "con_formato": con_formato,
+            "aperti": aperti,
+            "perc_aperto": round(aperti / total * 100, 1) if total > 0 else 0.0,
+            "copertura": round(con_formato / total * 100, 1) if total > 0 else 0.0,
+        }
+    }
+
+
+def _build_license_stats(source_id: str, rows: list[dict]) -> dict[str, dict]:
+    """Aggrega inventory rows in memoria → same shape di _load_inventory_license_stats.
+
+    Stessa logica di licenza_aperta e HVD della versione parquet.
+    """
+    ckan_rows = [r for r in rows if (r.get("protocol") or "").lower() == "ckan"]
+    total = len(ckan_rows)
+    if total == 0:
+        return {}
+
+    licenze_aperte = 0
+    con_hvd = 0
+    for r in ckan_rows:
+        lid = (r.get("license_id") or "").lower()
+        ltitle = (r.get("license_title") or "").lower()
+        is_open = (
+            "cc-by" in lid
+            or "cc-zero" in lid
+            or "cc0" in lid
+            or "odbl" in lid
+            or "iodl" in lid
+            or lid == "other-open"
+            or "creative commons" in ltitle
+            or "iodl" in ltitle
+        )
+        if is_open:
+            licenze_aperte += 1
+
+        hvd = str(r.get("hvd_category") or "").strip()
+        if hvd:
+            con_hvd += 1
+
+    return {
+        source_id: {
+            "total": total,
+            "licenze_aperte": licenze_aperte,
+            "perc_licenza_aperta": round(licenze_aperte / total * 100, 1) if total > 0 else 0.0,
+            "has_hvd": con_hvd > 0,
+        }
+    }
+
+
 def _load_source_check_stats(path: Path) -> dict[str, dict]:
     """Legge source_check_results.parquet e aggrega per fonte.
 
@@ -396,8 +505,24 @@ def _licenza_score(
     return (50.0, "estimated")
 
 
-def _datigovit_score() -> tuple[float, str]:
-    """D — Presenza su dati.gov.it. Non ancora verificabile via API."""
+def _datigovit_score(source_info: dict) -> tuple[float, str]:
+    """D — Presenza su dati.gov.it.
+
+    Computed: se la base_url contiene dati.gov.it (o dati.consip.it,
+    bdap-opendata.rgs.mef.gov.it e altri portali aggregatori noti).
+    Estimated: altrimenti.
+    """
+    base_url = (source_info.get("base_url") or "").lower()
+    # Euristica: se la base_url contiene pattern tipici di un portale
+    # aggregatore CKAN (dati.gov.it, API action endpoint), la fonte
+    # e' probabilmente catalogata su un aggregatore nazionale/regionale.
+    # Copre automaticamente nuovi aggregatori senza lista.
+    if "dati.gov.it" in base_url:
+        return (80.0, "computed")
+    if "/api/3/action/" in base_url or "/api/action/" in base_url:
+        return (80.0, "computed")
+    if "/odapi/" in base_url:
+        return (80.0, "computed")
     return (50.0, "estimated")
 
 
@@ -483,7 +608,7 @@ def build_scores(
             radar_entry, source_check_stats, source_id, protocol
         )
         lic, l_src = _licenza_score(protocol, license_stats, source_id)
-        dgov, d_src = _datigovit_score()
+        dgov, d_src = _datigovit_score(info)
         hvd, h_src = _hvd_score(license_stats, source_id)
         foia, fo_src = _foia_access_score()
 
