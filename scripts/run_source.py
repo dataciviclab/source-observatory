@@ -144,7 +144,7 @@ def _source_check(source_id: str, cfg: dict, rows: list[dict]) -> list[dict]:
 
     results = []
     for row in rows:
-        r = _check_row(row, check_ts, reg, client)
+        r = _check_row(row, check_ts, reg, client)  # type: ignore[arg-type]
         if r is not None:
             results.append(r)
 
@@ -188,10 +188,9 @@ def _source_check(source_id: str, cfg: dict, rows: list[dict]) -> list[dict]:
     # Needs review: granularità non determinata e/o anno minimo mancante
     no_gran = sum(1 for r in results if r.get("granularity") in (None, "", "non_determinato"))
     no_year = sum(
-        1
+        r.get("year_min") is None
+        or (isinstance(r.get("year_min"), float) and math.isnan(r.get("year_min")))  # type: ignore[arg-type]
         for r in results
-        if r.get("year_min") is None
-        or (isinstance(r.get("year_min"), float) and math.isnan(r.get("year_min")))
     )
     if no_gran or no_year:
         flags = []
