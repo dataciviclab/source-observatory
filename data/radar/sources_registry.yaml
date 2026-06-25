@@ -649,16 +649,20 @@ agid:
 noipa_sparql:
   source_kind: catalog
   protocol: sparql
-  observation_mode: radar-only
+  observation_mode: catalog-watch
   base_url: https://sparql-noipa.mef.gov.it/sparql
   last_probed: '2026-06-25'
-  verdict: hold
-  note: NoiPA SPARQL — MEF/RGS. Dati mensili personale PA (entries-{YYYYMM},
-    2019-2026) + pensioni PA (entriesPensioni-{YYYYMM}, 2017-oggi). ~490k
-    soggetti/mese. L'endpoint risponde solo in XML
-    (application/sparql-results+xml). Inventory non funzionante finché
-    execute_sparql() in lab-connectors non supporta XML. Radar-only in attesa di
-    parser XML o di endpoint JSON.
+  verdict: go
+  note: |
+    NoiPA SPARQL — MEF/RGS. Dati mensili personale PA
+    (entries-{YYYYMM}, 2019-2026) + pensioni PA (entriesPensioni-{YYYYMM},
+    2017-oggi). ~509k soggetti/mese, 39 predicati (ente, comparto, qualifica,
+    ritenute previdenziali/IRPEF, detrazioni, assenze, genere, eta', residenza).
+    POST bloccato (403), solo GET funziona. XML SPARQL parsato da
+    lab-connectors via _parse_sparql_xml() dal 2026-06-25.
+    I named graph usano URI completi:
+    https://sparql-noipa.mef.gov.it/entries-YYYYMM
+    (usare prefix="https://sparql-noipa.mef.gov.it/entries-" in discover_graphs).
   datasets_in_use: []
 mimit_rna:
   source_kind: catalog
