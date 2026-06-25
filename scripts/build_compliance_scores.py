@@ -695,6 +695,8 @@ def build_scores(
         # Quanti assi hanno dati reali (trasparenza per l'utente)
         assi_computed = sum(1 for _, src, _ in assi_info if src == "computed")
 
+        # Arricchimento da source-check (per template FOIA)
+        sc = (source_check_stats or {}).get(source_id)
         entry = {
             "source_id": source_id,
             "protocol": protocol,
@@ -703,6 +705,10 @@ def build_scores(
             "azione_raccomandata": azione,
             "flag_urgenza": flags,
             "assi_computed": assi_computed,
+            "item_count": sc.get("total") if sc else None,
+            "perc_reachable": sc.get("perc_reachable") if sc else None,
+            "formato_aperto_count": sc.get("formato_aperto") if sc else None,
+            "formato_chiuso_count": sc.get("formato_chiuso") if sc else None,
             "assi": {
                 "formato_aperto": {"score": formato, "fonte": f_src},
                 "raggiungibilita": {"score": raggiung, "fonte": r_src},
