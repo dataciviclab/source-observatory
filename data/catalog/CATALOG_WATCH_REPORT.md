@@ -1,15 +1,8 @@
 # Catalog Watch Report
 
-_Generato: 2026-06-23T09:10:57+00:00 — 28 fonti controllate_
+_Generato: 2026-06-25T08:32:42+00:00 — 28 fonti controllate_
 
 ## Segnali attivi
-
-### 📦 `openbdap` — inventory change
-
-- **Protocollo**: ckan
-- **Dettaglio**: 3831 item (package_list), delta +6 rispetto al run precedente (3825).
-- **Item**: 3831
-- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
 
 ### • `mim_opendata` — csv_magnet
 
@@ -55,6 +48,6 @@ _Generato: 2026-06-23T09:10:57+00:00 — 28 fonti controllate_
 
 ## Fonti stabili / skipped
 
-_21 fonti senza segnali inventariali in questo run._
+_22 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.

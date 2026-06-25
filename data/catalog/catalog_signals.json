@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-06-23T09:10:57+00:00",
+  "captured_at": "2026-06-25T08:32:42+00:00",
   "sources_checked": 28,
   "signals": [
     {
@@ -32,11 +32,11 @@
     {
       "source": "openbdap",
       "protocol": "ckan",
-      "signal_type": "inventory change",
-      "result": "inventory change",
+      "signal_type": "no signal",
+      "result": "stabile",
       "metric_value": 3831,
-      "detail": "3831 item (package_list), delta +6 rispetto al run precedente (3825).",
-      "suggested_action": "verificare se variazione attesa; avviare inventory-triage se nuovi dataset"
+      "detail": "3831 item (package_list), in linea con la baseline.",
+      "suggested_action": "nessuna"
     },
     {
       "source": "mim_opendata",
@@ -1318,7 +1318,7 @@
             2026
           ],
           "count": 2,
-          "sample": "Elenco_Registri_PT_attivi_23.06.2026"
+          "sample": "Elenco_Registri_PT_attivi_24.06.2026"
         },
         "Strutture": {
           "years": [
@@ -1341,7 +1341,7 @@
             2026
           ],
           "count": 2,
-          "sample": "Accordi_pa_privati_2026_al_17.06.2026"
+          "sample": "Accordi_pa_privati_2026_al_23.06.2026"
         },
         "provvedimenti": {
           "years": [
