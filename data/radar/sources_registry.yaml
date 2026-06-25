@@ -408,24 +408,20 @@ opencivitas:
   base_url: https://www.opencivitas.it/it/open-data
   last_probed: '2026-06-25'
   catalog_baseline:
-    captured_at: '2026-05-07'
+    captured_at: '2026-06-25'
     metric: csv_magnet_total_links
     value: 1084
-    method: csv_magnet_area_pages_paginated
+    method: csv_magnet_sitemap_sample
     reliability: medium
-    note: Sondaggio CSV magnet via page_url_template (page=0..54). SSL fallback
-      necessario per cert invalido.
+    note: "Inventory via discovery=auto (sitemap alla root). 575 pagine in sitemap, sample 30 pagine. Baseline precedente: 1084 via page_url_template."
   verdict: go
-  note: Portale OpenCivitas — csv_magnet scan via page_url_template. SSL
-    fallback attivo. ZIP con CSV/XLSX dentro.
+  note: Portale OpenCivitas — csv_magnet scan via sitemap discovery (auto).
+    La sitemap root contiene ~575 pagine di cui ~273 con segnali dataset.
+    ZIP con CSV/XLSX dentro.
   html_portal:
     topic_hint: trasparenza
-    page_url_template: https://www.opencivitas.it/it/open-data?page={page}
-    page_start: 0
-    page_max: 100
-    page_stop_on_empty: true
+    discovery: auto
     delay_seconds: 0.3
-    probe_content_type: true
   datasets_in_use:
     - opencivitas_fsc_2025_rso
 aifa:
