@@ -343,7 +343,8 @@ def _report_markdown(
     if health_entry:
         print(f"\n### Health score: {health_entry['totale']}/100 ({health_entry['livello']})")
         print(f"- **Azione**: {health_entry['azione_raccomandata']}")
-        print(f"- **Assi computed**: {health_entry.get('assi_computed', 0)}/5")
+        max_assi = len(health_entry.get("assi", {}))
+        print(f"- **Assi computed**: {health_entry.get('assi_computed', 0)}/{max_assi}")
         print()
         print("| Asse | Score | Fonte |")
         print("|---|---|---|")
