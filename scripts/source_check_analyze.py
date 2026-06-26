@@ -230,23 +230,35 @@ def _parse_ckan_package(pkg: dict) -> dict:
     resource_url = None
     resource_format = None
     _FILE_EXTS = (".csv", ".xlsx", ".xls", ".json", ".zip", ".parquet", ".xml")
-    direct_url = None
-    direct_fmt = None
+
+    # Priority 1: risorsa dichiarata CSV (format esplicito, anche se URL
+    # non ha estensione .csv — es. dati.inail.it usa path /csv senza punto)
     for res in resources:
+        fmt = (res.get("format") or "").upper()
         u = res.get("url") or ""
-        if not u.startswith("http"):
-            continue
-        low_url = u.lower()
-        if any(ext in low_url for ext in _FILE_EXTS):
-            direct_url = u
-            direct_fmt = res.get("format") or None
-            break
-        if resource_url is None:
+        if fmt == "CSV" and u.startswith("http"):
             resource_url = u
-            resource_format = res.get("format") or None
-    if direct_url:
-        resource_url = direct_url
-        resource_format = direct_fmt
+            resource_format = fmt
+            break
+    else:
+        # Priority 2: URL con estensione file riconoscibile
+        direct_url = None
+        direct_fmt = None
+        for res in resources:
+            u = res.get("url") or ""
+            if not u.startswith("http"):
+                continue
+            low_url = u.lower()
+            if any(ext in low_url for ext in _FILE_EXTS):
+                direct_url = u
+                direct_fmt = res.get("format") or None
+                break
+            if resource_url is None:
+                resource_url = u
+                resource_format = res.get("format") or None
+        if direct_url:
+            resource_url = direct_url
+            resource_format = direct_fmt
 
     # 3. Estrazione temporale da extras (standard CKAN)
     extras = {e["key"]: e["value"] for e in (pkg.get("extras") or []) if isinstance(e, dict)}

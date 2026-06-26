@@ -231,13 +231,24 @@ def _apply_encoding_to_enrich(r: dict, row: pd.Series, base: dict) -> dict:
 
 
 def _enrich_ckan(row: pd.Series, base: dict, client: HttpClient | None = None) -> dict | None:
-    """Re-fetch package_show se inventory non ha format E title."""
+    """Re-fetch package_show se inventory non ha format, title o URL risorsa."""
     if base["protocol"] != "ckan" or not base["base_url"] or not base["item_name"]:
         return None
     if not base["has_valid_slug"]:
         return None
-    if base["inv_format_has_valid"] and base["inv_title"]:
+    # L'inventory può avere format e title ma resource URL vuoto (es. CKAN
+    # via dati.gov.it package_search che non estrae il URL diretto).
+    # In tal caso serve package_show per recuperare il link al file CSV/XLS.
+    # Nota: distribution_url può essere RDF/XML, non il file dati — usiamo
+    # solo row.url (resource URL diretto) per decidere se serve re-fetch.
+    # Skip re-fetch per formati non previewabili (ZIP, PDF, RDF) —
+    # la package_show aggiungerla solo metadata, non URL utili.
+    if base["inv_format_has_valid"] and base["inv_title"] and row.get("url"):
         return None  # inventory già ricco — skip re-fetch
+    _previewable = {"CSV", "TSV", "XLSX", "XLS", "JSON"}
+    _inv_fmt = (base.get("inv_format") or "").upper()
+    if not any(f in _inv_fmt for f in _previewable):
+        return None  # formato non previewabile — skip re-fetch
 
     api_base_url = row.get("api_base_url")
     base_api = (
@@ -245,8 +256,9 @@ def _enrich_ckan(row: pd.Series, base: dict, client: HttpClient | None = None) -
         if isinstance(api_base_url, str) and api_base_url.startswith("http")
         else base["base_url"]
     )
-    parsed = urllib.parse.urlparse(base_api)
-    portal_url = f"{parsed.scheme}://{parsed.netloc}"
+    # Estrai il base path del portale CKAN (es.
+    # https://dati.gov.it/opendata/api/3/action/package_list → https://dati.gov.it/opendata)
+    portal_url = base_api.split("/api/")[0] if "/api/" in base_api else base_api
     pkg = _toolkit_ckan_package(portal_url, base["item_name"], client=client)
     if pkg:
         return _parse_ckan_package(pkg)
