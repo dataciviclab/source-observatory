@@ -22,7 +22,6 @@ from scripts.build_compliance_scores import (
     _datigovit_score,
     _flag_urgenza,
     _formato_score,
-    _hvd_score,
     _licenza_score,
     _load_source_check_stats,
     _raggiungibilita_score,
@@ -62,8 +61,6 @@ class TestBuildComplianceScores:
             assert "raggiungibilita" in assi
             assert "licenza_aperta" in assi
             assert "presenza_datigovit" in assi
-            assert "hvd_compliance" in assi
-            assert "accessibilita_foia" in assi
 
             for k, v in assi.items():
                 assert "score" in v
@@ -236,42 +233,18 @@ class TestBuildComplianceScores:
                 "total": 10,
                 "licenze_aperte": 10,
                 "perc_licenza_aperta": 100.0,
-                "has_hvd": False,
             }
         }
         s, f = _licenza_score("ckan", inv, "f1")
         assert s == 85.0 and f == "computed"
         # other-open (deve essere riconosciuto come aperto)
-        inv2 = {
-            "f2": {"total": 5, "licenze_aperte": 5, "perc_licenza_aperta": 100.0, "has_hvd": False}
-        }
+        inv2 = {"f2": {"total": 5, "licenze_aperte": 5, "perc_licenza_aperta": 100.0}}
         s2, f2 = _licenza_score("ckan", inv2, "f2")
         assert s2 == 85.0 and f2 == "computed"
         # 0 licenze (nessun dato)
-        inv3 = {
-            "f3": {"total": 10, "licenze_aperte": 0, "perc_licenza_aperta": 0.0, "has_hvd": False}
-        }
+        inv3 = {"f3": {"total": 10, "licenze_aperte": 0, "perc_licenza_aperta": 0.0}}
         s3, f3 = _licenza_score("ckan", inv3, "f3")
         assert s3 == 0.0 and f3 == "missing"
-
-    @pytest.mark.contract
-    def test_hvd_score_da_inventory(self):
-        """Asse E: HVD presente, assente, colonna mancante."""
-        # HVD presente
-        inv = {
-            "f1": {"total": 10, "licenze_aperte": 10, "perc_licenza_aperta": 100.0, "has_hvd": True}
-        }
-        s, f = _hvd_score(inv, "f1")
-        assert s == 80.0 and f == "computed"
-        # Colonna presente ma nessun HVD
-        inv2 = {
-            "f2": {"total": 10, "licenze_aperte": 0, "perc_licenza_aperta": 0.0, "has_hvd": False}
-        }
-        s2, f2 = _hvd_score(inv2, "f2")
-        assert s2 == 50.0 and f2 == "computed"
-        # Colonna mancante (license_stats=None)
-        s3, f3 = _hvd_score(None, "f3")
-        assert s3 == 50.0 and f3 == "missing"
 
     @staticmethod
     def _load_yaml(path: Path) -> dict:
@@ -369,28 +342,25 @@ class TestBuilderFunctions:
 
     @pytest.mark.pure_unit
     def test_license_stats_misto(self):
-        """Licenze aperte, HVD, misto."""
+        """Licenze aperte, misto."""
         rows = [
             {
                 "protocol": "ckan",
                 "license_id": "cc-by-4.0",
                 "license_title": "Creative Commons",
-                "hvd_category": "http://data.europa.eu/bna/c_ac64a52d",
             },
             {
                 "protocol": "ckan",
                 "license_id": "cc-zero",
                 "license_title": "CC0",
-                "hvd_category": "",
             },
             {
                 "protocol": "ckan",
                 "license_id": "other-open",
                 "license_title": "Other Open",
-                "hvd_category": "",
             },
-            {"protocol": "ckan", "license_id": "", "license_title": "", "hvd_category": ""},
-            {"protocol": "sparql", "license_id": "", "license_title": "", "hvd_category": ""},
+            {"protocol": "ckan", "license_id": "", "license_title": ""},
+            {"protocol": "sparql", "license_id": "", "license_title": ""},
         ]
         stats = _build_license_stats("fonte", rows)
         assert "fonte" in stats
@@ -398,19 +368,17 @@ class TestBuilderFunctions:
         assert s["total"] == 4  # solo CKAN
         assert s["licenze_aperte"] == 3  # cc-by, cc-zero, other-open
         assert s["perc_licenza_aperta"] == 75.0
-        assert s["has_hvd"] is True  # almeno una row con HVD
 
     @pytest.mark.pure_unit
     def test_license_stats_nessuna_licenza(self):
-        """Nessuna licenza aperta, nessun HVD."""
+        """Nessuna licenza aperta."""
         rows = [
-            {"protocol": "ckan", "license_id": "", "license_title": "", "hvd_category": ""},
+            {"protocol": "ckan", "license_id": "", "license_title": ""},
         ]
         stats = _build_license_stats("fonte", rows)
         s = stats["fonte"]
         assert s["licenze_aperte"] == 0
         assert s["perc_licenza_aperta"] == 0.0
-        assert s["has_hvd"] is False
 
     @pytest.mark.pure_unit
     def test_license_stats_vuoto(self):
