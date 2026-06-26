@@ -299,8 +299,8 @@ def test_parse_ckan_package_prefers_file_url() -> None:
     assert result["resource_format"] == "CSV"
 
 
-def test_parse_ckan_package_fallback_first_http_url() -> None:
-    """Without file extensions, must fallback to first HTTP URL."""
+def test_parse_ckan_package_prefers_declared_csv_over_first_http() -> None:
+    """CSV format esplicito senza .csv nell'URL deve prevalere sul primo HTTP."""
     from source_check_analyze import _parse_ckan_package
 
     pkg = {
@@ -310,7 +310,22 @@ def test_parse_ckan_package_fallback_first_http_url() -> None:
         ]
     }
     result = _parse_ckan_package(pkg)
-    assert result["resource_url"] == "https://portal.it/api/action?id=123"
+    assert result["resource_url"] == "https://portal.it/download/file"
+    assert result["resource_format"] == "CSV"
+
+
+def test_parse_ckan_package_fallback_no_previewable_format() -> None:
+    """Nessun formato previewabile, nessuna estensione → fallback primo HTTP."""
+    from source_check_analyze import _parse_ckan_package
+
+    pkg = {
+        "resources": [
+            {"url": "https://portal.it/api/page", "format": "html"},
+            {"url": "/local/rdf.xml", "format": "RDF"},
+        ]
+    }
+    result = _parse_ckan_package(pkg)
+    assert result["resource_url"] == "https://portal.it/api/page"
 
 
 # ── XLS falso: TSV/Latin-1 fallback ─────────────────────────────────────

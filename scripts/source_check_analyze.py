@@ -231,12 +231,12 @@ def _parse_ckan_package(pkg: dict) -> dict:
     resource_format = None
     _FILE_EXTS = (".csv", ".xlsx", ".xls", ".json", ".zip", ".parquet", ".xml")
 
-    # Priority 1: risorsa dichiarata CSV (format esplicito, anche se URL
-    # non ha estensione .csv — es. dati.inail.it usa path /csv senza punto)
+    # Priority 1: risorsa dichiarata CSV/TSV (format esplicito, anche se URL
+    # non ha estensione .csv/.tsv — es. dati.inail.it usa path /csv senza punto)
     for res in resources:
         fmt = (res.get("format") or "").upper()
         u = res.get("url") or ""
-        if fmt == "CSV" and u.startswith("http"):
+        if fmt in ("CSV", "TSV") and u.startswith("http"):
             resource_url = u
             resource_format = fmt
             break
