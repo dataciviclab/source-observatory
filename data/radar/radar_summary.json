@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-25T06:55:27.088743+00:00",
-  "probe_date": "2026-06-25",
+  "generated_at": "2026-06-26T07:01:44.580707+00:00",
+  "probe_date": "2026-06-26",
   "sources_total": 33,
   "status_counts": {
     "GREEN": 33,
@@ -44,7 +44,7 @@
     {
       "id": "inail_opendata",
       "status": "GREEN",
-      "protocol": "aem",
+      "protocol": "ckan",
       "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
@@ -136,7 +136,8 @@
       "http_code": "200",
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
-      "ssl_issue": true
+      "ssl_issue": true,
+      "ssl_streak": 2
     },
     {
       "id": "aifa",
@@ -145,7 +146,8 @@
       "http_code": "200",
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
-      "ssl_issue": true
+      "ssl_issue": true,
+      "ssl_streak": 2
     },
     {
       "id": "dait",

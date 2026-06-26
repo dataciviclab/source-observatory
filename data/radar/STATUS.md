@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-06-25
+Ultimo run: 2026-06-26
 
 ## Sommario
 
@@ -13,16 +13,16 @@ Ultimo run: 2026-06-25
 
 | Tipo | Conteggio |
 | --- | --- |
-| catalog | 32 |
-| portal | 1 |
+| catalog | 33 |
+| portal | 0 |
 | source | 0 |
 
 ## Modalita' osservazione
 
 | Modalita' | Conteggio | Significato |
 | --- | --- | --- |
-| radar-only | 5 | Salute della fonte senza segnali di inventario |
-| catalog-watch | 28 | Inventario e drift strutturale del catalogo |
+| radar-only | 3 | Salute della fonte senza segnali di inventario |
+| catalog-watch | 30 | Inventario e drift strutturale del catalogo |
 | monitor-active | 0 | Caso ristretto con monitoraggio piu' vicino alla risorsa |
 
 Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornamento del dataset.
@@ -35,7 +35,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | anac | catalog | ckan | catalog-watch | GREEN | 200 | anac_bandi_gara |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_entrate_stato, bdap_lea, bdap_spese_stato, dipendenti_pubblici |
-| inail_opendata | portal | aem | radar-only | GREEN | 200 | - |
+| inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali |
 | dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | camera_deputati_legislature, camera_votazioni_sparql |
 | dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | - |
@@ -57,7 +57,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | terna_opendata | catalog | rest | radar-only | GREEN | 200 | terna_electricity_by_source |
 | ministero_interno | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | agid | catalog | ckan | catalog-watch | GREEN | 200 | ipa_enti, ipa_istat_mapping |
-| noipa_sparql | catalog | sparql | radar-only | GREEN | 200 | - |
+| noipa_sparql | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | mimit_rna | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | ministero_salute | catalog | ckan | catalog-watch | GREEN | 200 | farmacie, reparti_ricovero, strutture_asl, strutture_ricovero_asl |
 | agcm | catalog | ckan | catalog-watch | GREEN | 200 | - |
