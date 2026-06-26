@@ -49,6 +49,11 @@ _DEFAULT_HTTP_TIMEOUT: tuple[int, int] = (5, 10)
 _DEFAULT_HTTP_RETRIES = 2
 _DEFAULT_CIRCUIT_THRESHOLD = 3
 
+# Preview client condiviso: timeout più generoso, SENZA circuit breaker.
+# I timeout su Range GET (file grossi, server lenti) sono normali.
+# Creato al primo uso, riusato per tutte le preview nello stesso processo.
+_preview_client: HttpClient | None = None
+
 SDMX_NS = {
     "message": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message",
     "structure": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure",
@@ -115,6 +120,14 @@ def configure_source_check_http(
 # ``_circuit_after_result``, ``_tracked_http_head`` e ``_tracked_http_get``
 # sono state rimosse — usare ``client.head()`` / ``client.get()`` direttamente.
 # ═══════════════════════════════════════════════════════════════════════════════
+
+
+def close_preview_client() -> None:
+    """Chiude il preview client condiviso, se aperto."""
+    global _preview_client
+    if _preview_client is not None:
+        _preview_client.close()
+        _preview_client = None
 
 
 # ── Probe principale (usato da bulk_source_check) ────────────────────────────
@@ -301,6 +314,13 @@ def _fetch_data_preview(
 
     Delega a ``toolkit.profile.preview.preview_url`` che fa HEAD → Range GET
     → sniff → DuckDB profile → infer in un colpo solo.
+
+    NOTA: Quando ``client`` ha ``circuit_threshold > 0`` (default 3) e viene
+    passato, la preview crea comunque un HttpClient dedicato SENZA circuit
+    breaker. I timeout su Range GET (file grossi, server lenti) sono normali
+    e non indicano host down. Per evitare che il CB blocchi le preview dopo
+    pochi timeout, verifica ``client._circuit_threshold`` e seleziona un
+    client appropriato.
     """
     import json as _json
 
@@ -311,9 +331,28 @@ def _fetch_data_preview(
 
     from toolkit.profile.preview import preview_url
 
+    # Preview client condiviso (modulo): timeout più generoso e SENZA circuit
+    # breaker. I timeout su Range GET (file grossi, server lenti) sono normali
+    # e non indicano host down. Il client è creato una volta e riusato per
+    # tutte le preview nello stesso processo (connection pooling).
+    global _preview_client
+    if _preview_client is None:
+        from lab_connectors.http.client import HttpClient as _HC
+
+        base_timeout = client.timeout if client else (5, 10)
+        if isinstance(base_timeout, (int, float)):
+            preview_timeout = (int(base_timeout), int(base_timeout * 3))
+        else:
+            preview_timeout = (base_timeout[0], max(base_timeout[1], 30))
+        _preview_client = _HC(
+            timeout=preview_timeout,
+            max_retries=1,
+            circuit_threshold=0,
+        )
+
     p = preview_url(
         url,
-        client=client,
+        client=_preview_client,
         known_encoding=known_encoding,
         known_delim=known_delim,
         known_decimal=known_decimal,
