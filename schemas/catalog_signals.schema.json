@@ -125,6 +125,11 @@
           "type": "integer",
           "description": "Numero di link per questo prefisso."
         },
+        "formats": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Formati file disponibili per questo prefisso (es. ['CSV', 'ZIP'])."
+        },
         "sample": {
           "type": "string",
           "description": "Nome di un file di esempio per questo prefisso."

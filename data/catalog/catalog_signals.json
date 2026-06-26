@@ -1,6 +1,6 @@
 {
-  "captured_at": "2026-06-25T16:39:23+00:00",
-  "sources_checked": 28,
+  "captured_at": "2026-06-26T11:00:43+00:00",
+  "sources_checked": 30,
   "signals": [
     {
       "source": "istat_sdmx",
@@ -39,6 +39,15 @@
       "suggested_action": "nessuna"
     },
     {
+      "source": "inail_opendata",
+      "protocol": "ckan",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 102,
+      "detail": "102 item (None), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
       "source": "mim_opendata",
       "protocol": "html",
       "signal_type": "csv_magnet",
@@ -46,34 +55,34 @@
       "metric_value": 1128,
       "detail": "1128 link data (CSV 376, JSON 376, XML 376), years 2015-2026 — top prefixes: INFANZIA=192, ALUCORSO=120, SCUANAGR=72, SCUANAAU=72, ALUITAST=60",
       "prefix_matrix": {
+        "INFANZIA": 192,
+        "ALUCORSO": 120,
         "SCUANAGR": 72,
         "SCUANAAU": 72,
-        "ALUCORSO": 120,
         "ALUITAST": 60,
         "ALUSECGR": 60,
         "ALUTEMPO": 60,
-        "INFANZIA": 192,
+        "EDICONSI": 42,
         "DOCTIT20": 27,
-        "AS1516DO": 6,
         "ATATIT20": 27,
-        "AS1516AT": 6,
-        "DOCSUPXX": 6,
-        "DOCSUP20": 21,
         "ATASUP20": 27,
         "VALUTAZIONE": 24,
-        "RUBRICA": 6,
         "EDIANAGR": 24,
-        "EDIAMBIE": 21,
         "EDICOLLE": 24,
         "EDIVINCO": 24,
-        "EDICONSI": 42,
         "EDIAMBFU": 24,
-        "EDISUPBA": 21,
         "EDIETAOR": 24,
-        "EDIUNITA": 15,
+        "DOCSUP20": 21,
+        "EDIAMBIE": 21,
+        "EDISUPBA": 21,
         "EDITIPOR": 21,
         "EDIRIDUZ": 21,
         "EDIPROTE": 21,
+        "EDIUNITA": 15,
+        "AS1516DO": 6,
+        "AS1516AT": 6,
+        "DOCSUPXX": 6,
+        "RUBRICA": 6,
         "ALTABRUZ": 3,
         "ALTBASIL": 3,
         "ALTCALAB": 3,
@@ -96,6 +105,46 @@
         "ALTVENET": 3
       },
       "series": {
+        "INFANZIA": {
+          "years": [
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024
+          ],
+          "count": 192,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "INFANZIACLASTA20242520250831.csv"
+        },
+        "ALUCORSO": {
+          "years": [
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024
+          ],
+          "count": 120,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALUCORSOETASTA20242520250831.csv"
+        },
         "SCUANAGR": {
           "years": [
             2015,
@@ -112,7 +161,12 @@
             2026
           ],
           "count": 72,
-          "sample": "SCUANAGRAFESTAT20262720260901"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "SCUANAGRAFESTAT20262720260901.csv"
         },
         "SCUANAAU": {
           "years": [
@@ -130,24 +184,12 @@
             2026
           ],
           "count": 72,
-          "sample": "SCUANAAUTSTAT20262720260901"
-        },
-        "ALUCORSO": {
-          "years": [
-            2015,
-            2016,
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
           ],
-          "count": 120,
-          "sample": "ALUCORSOETASTA20242520250831"
+          "sample": "SCUANAAUTSTAT20262720260901.csv"
         },
         "ALUITAST": {
           "years": [
@@ -160,11 +202,15 @@
             2021,
             2022,
             2023,
-            2024,
-            2025
+            2024
           ],
           "count": 60,
-          "sample": "ALUITASTRACITSTA20242520250831"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALUITASTRACITSTA20242520250831.csv"
         },
         "ALUSECGR": {
           "years": [
@@ -177,11 +223,15 @@
             2021,
             2022,
             2023,
-            2024,
-            2025
+            2024
           ],
           "count": 60,
-          "sample": "ALUSECGRADOINDSTA20242520250831"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALUSECGRADOINDSTA20242520250831.csv"
         },
         "ALUTEMPO": {
           "years": [
@@ -194,26 +244,30 @@
             2021,
             2022,
             2023,
-            2024,
-            2025
+            2024
           ],
           "count": 60,
-          "sample": "ALUTEMPOSCUOLASTA20242520250831"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALUTEMPOSCUOLASTA20242520250831.csv"
         },
-        "INFANZIA": {
+        "EDICONSI": {
           "years": [
+            2016,
             2017,
             2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+            2021
           ],
-          "count": 192,
-          "sample": "INFANZIACLASTA20242520250831"
+          "count": 42,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "EDICONSISTENZASTA202120242520250806.csv"
         },
         "DOCTIT20": {
           "years": [
@@ -225,18 +279,15 @@
             2021,
             2022,
             2023,
-            2024,
-            2025
+            2024
           ],
           "count": 27,
-          "sample": "DOCTIT20242520250831"
-        },
-        "AS1516DO": {
-          "years": [
-            2016
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
           ],
-          "count": 6,
-          "sample": "AS1516DOCTIT20160831"
+          "sample": "DOCTIT20242520250831.csv"
         },
         "ATATIT20": {
           "years": [
@@ -248,41 +299,15 @@
             2021,
             2022,
             2023,
-            2024,
-            2025
+            2024
           ],
           "count": 27,
-          "sample": "ATATIT20242520250831"
-        },
-        "AS1516AT": {
-          "years": [
-            2016
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
           ],
-          "count": 6,
-          "sample": "AS1516ATATIT20160831"
-        },
-        "DOCSUPXX": {
-          "years": [
-            2023,
-            2024,
-            2025
-          ],
-          "count": 6,
-          "sample": "DOCSUPXXV20242520250831"
-        },
-        "DOCSUP20": {
-          "years": [
-            2016,
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023
-          ],
-          "count": 21,
-          "sample": "DOCSUP20222320230831"
+          "sample": "ATATIT20242520250831.csv"
         },
         "ATASUP20": {
           "years": [
@@ -294,134 +319,104 @@
             2021,
             2022,
             2023,
-            2024,
-            2025
+            2024
           ],
           "count": 27,
-          "sample": "ATASUP20242520250831"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ATASUP20242520250831.csv"
         },
         "VALUTAZIONE": {
           "years": [
-            2016,
-            2017
+            2016
           ],
           "count": 24,
-          "sample": "VALUTAZIONE_ESITI_STA20161720170831"
-        },
-        "RUBRICA": {
-          "years": [
-            2016,
-            2017
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
           ],
-          "count": 6,
-          "sample": "RUBRICA_VAL20161720170831"
+          "sample": "VALUTAZIONE_ESITI_STA20161720170831.csv"
         },
         "EDIANAGR": {
           "years": [
             2016,
             2017,
             2018,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+            2021
           ],
           "count": 24,
-          "sample": "EDIANAGRAFESTA202120242520250806"
-        },
-        "EDIAMBIE": {
-          "years": [
-            2017,
-            2018,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
           ],
-          "count": 21,
-          "sample": "EDIAMBIENTESTA202120242520250806"
+          "sample": "EDIANAGRAFESTA202120242520250806.csv"
         },
         "EDICOLLE": {
           "years": [
             2016,
             2017,
             2018,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+            2021
           ],
           "count": 24,
-          "sample": "EDICOLLEGAMENTISTA202120242520250806"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "EDICOLLEGAMENTISTA202120242520250806.csv"
         },
         "EDIVINCO": {
           "years": [
             2015,
-            2016,
             2017,
             2018,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+            2021
           ],
           "count": 24,
-          "sample": "EDIVINCOLISTA202120242520250806"
-        },
-        "EDICONSI": {
-          "years": [
-            2016,
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
           ],
-          "count": 42,
-          "sample": "EDICONSISTENZASTA202120242520250806"
+          "sample": "EDIVINCOLISTA202120242520250806.csv"
         },
         "EDIAMBFU": {
           "years": [
             2016,
             2017,
             2018,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+            2021
           ],
           "count": 24,
-          "sample": "EDIAMBFUNZSTA202120242520250806"
-        },
-        "EDISUPBA": {
-          "years": [
-            2017,
-            2018,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
           ],
-          "count": 21,
-          "sample": "EDISUPBARARCSTA202120242520250806"
+          "sample": "EDIAMBFUNZSTA202120242520250806.csv"
         },
         "EDIETAOR": {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2021
+          ],
+          "count": 24,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "EDIETAORIGINESTA202120242520250806.csv"
+        },
+        "DOCSUP20": {
           "years": [
             2016,
             2017,
@@ -429,13 +424,85 @@
             2019,
             2020,
             2021,
-            2022,
-            2023,
-            2024,
-            2025
+            2022
           ],
-          "count": 24,
-          "sample": "EDIETAORIGINESTA202120242520250806"
+          "count": 21,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "DOCSUP20222320230831.csv"
+        },
+        "EDIAMBIE": {
+          "years": [
+            2017,
+            2018,
+            2021
+          ],
+          "count": 21,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "EDIAMBIENTESTA202120242520250806.csv"
+        },
+        "EDISUPBA": {
+          "years": [
+            2017,
+            2018,
+            2021
+          ],
+          "count": 21,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "EDISUPBARARCSTA202120242520250806.csv"
+        },
+        "EDITIPOR": {
+          "years": [
+            2017,
+            2018,
+            2021
+          ],
+          "count": 21,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "EDITIPORISCSTA202120242520250806.csv"
+        },
+        "EDIRIDUZ": {
+          "years": [
+            2017,
+            2018,
+            2021
+          ],
+          "count": 21,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "EDIRIDUZCONSENESTA202120242520250806.csv"
+        },
+        "EDIPROTE": {
+          "years": [
+            2017,
+            2018,
+            2021
+          ],
+          "count": 21,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "EDIPROTEZRUMSTA202120242520250806.csv"
         },
         "EDIUNITA": {
           "years": [
@@ -443,194 +510,304 @@
             2021,
             2022,
             2023,
-            2024,
-            2025
+            2024
           ],
           "count": 15,
-          "sample": "EDIUNITASTRUTSTA20242520250806"
-        },
-        "EDITIPOR": {
-          "years": [
-            2017,
-            2018,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
           ],
-          "count": 21,
-          "sample": "EDITIPORISCSTA202120242520250806"
+          "sample": "EDIUNITASTRUTSTA20242520250806.csv"
         },
-        "EDIRIDUZ": {
+        "AS1516DO": {
           "years": [
-            2017,
-            2018,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+            2016
           ],
-          "count": 21,
-          "sample": "EDIRIDUZCONSENESTA202120242520250806"
+          "count": 6,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "AS1516DOCTIT20160831.csv"
         },
-        "EDIPROTE": {
+        "AS1516AT": {
           "years": [
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
+            2016
           ],
-          "count": 21,
-          "sample": "EDIPROTEZRUMSTA202120242520250806"
+          "count": 6,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "AS1516ATATIT20160831.csv"
+        },
+        "DOCSUPXX": {
+          "years": [
+            2023,
+            2024
+          ],
+          "count": 6,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "DOCSUPXXV20242520250831.csv"
+        },
+        "RUBRICA": {
+          "years": [
+            2016
+          ],
+          "count": 6,
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "RUBRICA_VAL20161720170831.csv"
         },
         "ALTABRUZ": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTABRUZZO000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTABRUZZO000020260622.csv"
         },
         "ALTBASIL": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTBASILICATA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTBASILICATA000020260622.csv"
         },
         "ALTCALAB": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTCALABRIA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTCALABRIA000020260622.csv"
         },
         "ALTCAMPA": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTCAMPANIA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTCAMPANIA000020260622.csv"
         },
         "ALTEMILI": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTEMILIAROMAGNA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTEMILIAROMAGNA000020260622.csv"
         },
         "ALTFRIUL": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTFRIULIVENEZIAGIULIA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTFRIULIVENEZIAGIULIA000020260622.csv"
         },
         "ALTLAZIO": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTLAZIO000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTLAZIO000020260622.csv"
         },
         "ALTLIGUR": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTLIGURIA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTLIGURIA000020260622.csv"
         },
         "ALTLOMBA": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTLOMBARDIA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTLOMBARDIA000020260622.csv"
         },
         "ALTMARCH": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTMARCHE000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTMARCHE000020260622.csv"
         },
         "ALTMOLIS": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTMOLISE000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTMOLISE000020260622.csv"
         },
         "ALTPIEMO": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTPIEMONTE000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTPIEMONTE000020260622.csv"
         },
         "ALTPUGLI": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTPUGLIA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTPUGLIA000020260622.csv"
         },
         "ALTSARDE": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTSARDEGNA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTSARDEGNA000020260622.csv"
         },
         "ALTSICIL": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTSICILIA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTSICILIA000020260622.csv"
         },
         "ALTTOSCA": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTTOSCANA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTTOSCANA000020260622.csv"
         },
         "ALTTRENT": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTTRENTINOALTOADIGE000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTTRENTINOALTOADIGE000020260622.csv"
         },
         "ALTUMBRI": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTUMBRIA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTUMBRIA000020260622.csv"
         },
         "ALTVALLE": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTVALLEDAOSTA000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTVALLEDAOSTA000020260622.csv"
         },
         "ALTVENET": {
           "years": [
             2026
           ],
           "count": 3,
-          "sample": "ALTVENETO000020260622"
+          "formats": [
+            "CSV",
+            "JSON",
+            "XML"
+          ],
+          "sample": "ALTVENETO000020260622.csv"
         }
       },
       "topics": {
@@ -718,61 +895,26 @@
       "signal_type": "csv_magnet",
       "result": "scan_completed",
       "metric_value": 147,
-      "detail": "147 link data (CSV 81, ZIP 66), years 2010-2025 — top prefixes: Redditi=66, REG=27, cla=27, sesso=27",
+      "detail": "147 link data (CSV 81, ZIP 66), years 2000-2025 — top prefixes: Redditi=66, REG=27, cla=27, sesso=27",
       "prefix_matrix": {
+        "Redditi": 66,
         "REG": 27,
         "cla": 27,
-        "sesso": 27,
-        "Redditi": 66
+        "sesso": 27
       },
       "series": {
-        "REG": {
-          "years": [
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
-          ],
-          "count": 27,
-          "sample": "REG_tipo_reddito_2025"
-        },
-        "cla": {
-          "years": [
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
-          ],
-          "count": 27,
-          "sample": "cla_anno_tipo_reddito_2025"
-        },
-        "sesso": {
-          "years": [
-            2017,
-            2018,
-            2019,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
-          ],
-          "count": 27,
-          "sample": "sesso_tipo_reddito_2025"
-        },
         "Redditi": {
           "years": [
+            2000,
+            2001,
+            2002,
+            2003,
+            2004,
+            2005,
+            2006,
+            2007,
+            2008,
+            2009,
             2010,
             2011,
             2012,
@@ -790,14 +932,71 @@
             2024
           ],
           "count": 66,
-          "sample": "Redditi_e_principali_variabili_IRPEF_su_base_comunale_CSV_2024"
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "Redditi_e_principali_variabili_IRPEF_su_base_comunale_CSV_2024.zip?d=1615465800"
+        },
+        "REG": {
+          "years": [
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 27,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "REG_tipo_reddito_2025.csv?d=1615465800"
+        },
+        "cla": {
+          "years": [
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 27,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "cla_anno_tipo_reddito_2025.csv?d=1615465800"
+        },
+        "sesso": {
+          "years": [
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022,
+            2023,
+            2024,
+            2025
+          ],
+          "count": 27,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "sesso_tipo_reddito_2025.csv?d=1615465800"
         }
       },
       "topics": {
         "fisco": 147
       },
       "years_range": [
-        2010,
+        2000,
         2025
       ],
       "suggested_action": "catalog-watch-ready"
@@ -807,403 +1006,256 @@
       "protocol": "html",
       "signal_type": "csv_magnet",
       "result": "scan_completed",
-      "metric_value": 703,
-      "detail": "703 link data (ZIP 703), years 2010-2025 — top prefixes: 2010=90, 2013=72, 2022=63, 2018=59, 2016=55",
+      "metric_value": 831,
+      "detail": "831 link data (XLSX 1, ZIP 91), years 2009-2022 — top prefixes: Metadati=14, 2013=10, 2018=9, 2010=8, 2022=6",
       "prefix_matrix": {
-        "2022": 63,
-        "Metadati": 40,
-        "2025": 6,
-        "FC80B": 5,
-        "FC80A": 5,
-        "2024": 3,
-        "2021": 26,
-        "FC70B": 5,
-        "FC70A": 5,
-        "2019": 21,
-        "FC60B": 5,
-        "FC60A": 5,
-        "2023": 6,
-        "2018": 59,
+        "Metadati": 14,
+        "2013": 10,
+        "2018": 9,
+        "2010": 8,
+        "2022": 6,
+        "2011": 6,
+        "2019": 6,
+        "2009": 4,
+        "2012": 4,
         "FP20U": 3,
-        "2020": 5,
-        "2017": 27,
-        "FC50B": 5,
-        "FC50A": 5,
-        "FC40B": 5,
-        "FC40A": 5,
-        "2016": 55,
-        "FC30B": 9,
-        "FC30A": 9,
-        "Ind": 23,
-        "2015": 10,
-        "FC20B": 5,
-        "FC20A": 5,
-        "CP01U": 3,
-        "RIFIUTI-Determinanti": 2,
-        "2013": 72,
-        "2012": 24,
-        "2011": 24,
-        "FC10E": 1,
-        "FC10D": 1,
-        "FC10C": 1,
+        "FC80A": 3,
+        "2017": 3,
+        "FC30A": 3,
+        "FC60B": 3,
+        "Ind": 2,
         "FC10B": 1,
-        "FC10A": 1,
-        "2010": 90,
-        "2009": 42,
-        "FP07U": 1,
-        "FP05U": 1,
-        "FP04U": 1,
-        "FP03U": 1,
-        "FP02U": 1,
-        "FP06U": 1,
-        "FP01U": 1,
-        "FC06U": 1,
-        "FC05U": 1,
-        "FC04U": 1,
-        "FC03U": 1,
-        "FC02U": 1,
+        "2016": 1,
+        "Variazioni": 1,
         "FC01D": 1,
-        "FC01C": 1,
-        "FC01B": 1,
-        "FC01A": 1
+        "2015": 1,
+        "FC10D": 1,
+        "FC10A": 1,
+        "FC05U": 1
       },
       "series": {
-        "2022": {
-          "years": [
-            2022,
-            2023
-          ],
-          "count": 63,
-          "sample": "2022_Ind_FC80TOT_2_csv"
-        },
         "Metadati": {
           "years": [
             2013,
             2015,
             2016,
-            2017,
             2018,
             2019,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025
-          ],
-          "count": 40,
-          "sample": "Metadati_Enti_2022_xlsx"
-        },
-        "2025": {
-          "years": [
-            2025
-          ],
-          "count": 6,
-          "sample": "2025_VAR_FSC_1_2025_csv"
-        },
-        "FC80B": {
-          "years": [],
-          "count": 5,
-          "sample": "FC80B_UNIONI_1_csv"
-        },
-        "FC80A": {
-          "years": [],
-          "count": 5,
-          "sample": "FC80A_UNIONI_1_csv"
-        },
-        "2024": {
-          "years": [
-            2024
-          ],
-          "count": 3,
-          "sample": "2024_VAR_FSC_1_2024_csv"
-        },
-        "2021": {
-          "years": [
-            2021,
             2022
           ],
-          "count": 26,
-          "sample": "2021_Ind_FC70TOT_1_csv"
-        },
-        "FC70B": {
-          "years": [],
-          "count": 5,
-          "sample": "FC70B_UNIONI_1_csv"
-        },
-        "FC70A": {
-          "years": [],
-          "count": 5,
-          "sample": "FC70A_UNIONI_1_csv"
-        },
-        "2019": {
-          "years": [
-            2019
+          "count": 14,
+          "formats": [
+            "ZIP"
           ],
-          "count": 21,
-          "sample": "2019_Ind_FC60TOT_2_csv"
-        },
-        "FC60B": {
-          "years": [],
-          "count": 5,
-          "sample": "FC60B_UNIONI_1_csv"
-        },
-        "FC60A": {
-          "years": [],
-          "count": 5,
-          "sample": "FC60A_UNIONI_1_csv"
-        },
-        "2023": {
-          "years": [
-            2023
-          ],
-          "count": 6,
-          "sample": "2023_VAR_FSC_1_2023_csv"
-        },
-        "2018": {
-          "years": [
-            2018,
-            2022
-          ],
-          "count": 59,
-          "sample": "2018_Ind_FP20U_TOT_PROV_1_csv"
-        },
-        "FP20U": {
-          "years": [],
-          "count": 3,
-          "sample": "FP20U_1_csv"
-        },
-        "2020": {
-          "years": [
-            2020,
-            2022
-          ],
-          "count": 5,
-          "sample": "2020_VAR_FSC_1_2022_csv"
-        },
-        "2017": {
-          "years": [
-            2017,
-            2022
-          ],
-          "count": 27,
-          "sample": "2017_VAR_FSC_1_2022_csv"
-        },
-        "FC50B": {
-          "years": [],
-          "count": 5,
-          "sample": "FC50B_UNIONI_1_csv"
-        },
-        "FC50A": {
-          "years": [],
-          "count": 5,
-          "sample": "FC50A_UNIONI_1_csv"
-        },
-        "FC40B": {
-          "years": [],
-          "count": 5,
-          "sample": "FC40B_UNIONI_1_csv"
-        },
-        "FC40A": {
-          "years": [],
-          "count": 5,
-          "sample": "FC40A_UNIONI_1_csv"
-        },
-        "2016": {
-          "years": [
-            2016
-          ],
-          "count": 55,
-          "sample": "2016_Ind_FC30TOT_2_csv"
-        },
-        "FC30B": {
-          "years": [],
-          "count": 9,
-          "sample": "FC30B_UNIONI_2_csv"
-        },
-        "FC30A": {
-          "years": [],
-          "count": 9,
-          "sample": "FC30A_UNIONI_2_csv"
-        },
-        "Ind": {
-          "years": [],
-          "count": 23,
-          "sample": "Ind_FC20TOT_3_csv"
-        },
-        "2015": {
-          "years": [
-            2015
-          ],
-          "count": 10,
-          "sample": "2015_FC20TOT_3_rdf"
-        },
-        "FC20B": {
-          "years": [],
-          "count": 5,
-          "sample": "FC20B_UNIONI_csv"
-        },
-        "FC20A": {
-          "years": [],
-          "count": 5,
-          "sample": "FC20A_UNIONI_csv"
-        },
-        "CP01U": {
-          "years": [],
-          "count": 3,
-          "sample": "CP01U_csv"
-        },
-        "RIFIUTI-Determinanti": {
-          "years": [
-            2013
-          ],
-          "count": 2,
-          "sample": "RIFIUTI-Determinanti_FS_2013_csv"
+          "sample": "Metadati_Enti_2013_xlsx.zip"
         },
         "2013": {
           "years": [
             2013
           ],
-          "count": 72,
-          "sample": "2013_Spesa_storica_generale_csv"
-        },
-        "2012": {
-          "years": [
-            2012
+          "count": 10,
+          "formats": [
+            "ZIP"
           ],
-          "count": 24,
-          "sample": "2012_FC06B_Comuni_Spesa_storica_csv"
+          "sample": "2013_FC10B_Comuni_Questionari_csv.zip"
         },
-        "2011": {
+        "2018": {
           "years": [
-            2011
+            2018
           ],
-          "count": 24,
-          "sample": "2011_FC06B_Comuni_Spesa_storica_csv"
-        },
-        "FC10E": {
-          "years": [],
-          "count": 1,
-          "sample": "FC10E_Metadati_Variabili_xlsx"
-        },
-        "FC10D": {
-          "years": [],
-          "count": 1,
-          "sample": "FC10D_Metadati_Variabili_xlsx"
-        },
-        "FC10C": {
-          "years": [],
-          "count": 1,
-          "sample": "FC10C_Metadati_Variabili_xlsx"
-        },
-        "FC10B": {
-          "years": [],
-          "count": 1,
-          "sample": "FC10B_Metadati_Variabili_xlsx"
-        },
-        "FC10A": {
-          "years": [],
-          "count": 1,
-          "sample": "FC10A_Metadati_Variabili_xlsx"
+          "count": 9,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2018_Ind_FP20U_SUA_PROV_1_csv.zip"
         },
         "2010": {
           "years": [
             2010
           ],
-          "count": 90,
-          "sample": "2010_Comuni_Spesa_storica_generale_csv"
+          "count": 8,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2010_FC04B_Comuni_Spesa_storica_csv.zip"
+        },
+        "2022": {
+          "years": [
+            2022
+          ],
+          "count": 6,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2022_Ind_FP20U_GEN_PROV_1_csv.zip"
+        },
+        "2011": {
+          "years": [
+            2011
+          ],
+          "count": 6,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2011_FC04A_Comuni_Spesa_storica_csv.zip"
+        },
+        "2019": {
+          "years": [
+            2019
+          ],
+          "count": 6,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2019_Ind_FC60TERRVIAB_1_csv.zip"
         },
         "2009": {
-          "years": [],
-          "count": 42,
-          "sample": "2009_FP06U_Province_Spesa_storica_csv"
+          "years": [
+            2009
+          ],
+          "count": 4,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2009_FC01D_Comuni_Questionari_csv.zip"
         },
-        "FP07U": {
+        "2012": {
+          "years": [
+            2012
+          ],
+          "count": 4,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2012_FC02U_Comuni_Spesa_storica_csv.zip"
+        },
+        "FP20U": {
+          "years": [],
+          "count": 3,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FP20U_1_csv.zip"
+        },
+        "FC80A": {
+          "years": [],
+          "count": 3,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC80A_1_csv.zip"
+        },
+        "2017": {
+          "years": [
+            2017
+          ],
+          "count": 3,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2017_VAR_FSC_1_2022_csv.zip"
+        },
+        "FC30A": {
+          "years": [],
+          "count": 3,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC30A_2_csv.zip"
+        },
+        "FC60B": {
+          "years": [],
+          "count": 3,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC60B_UNIONI_1_csv.zip"
+        },
+        "Ind": {
+          "years": [],
+          "count": 2,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "Ind_FC20SOCIALE_csv.zip"
+        },
+        "FC10B": {
           "years": [],
           "count": 1,
-          "sample": "FP07U_Metadati_Variabili_xlsx"
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC10B_Metadati_Variabili_xlsx.zip"
         },
-        "FP05U": {
-          "years": [],
+        "2016": {
+          "years": [
+            2016
+          ],
           "count": 1,
-          "sample": "FP05U_Metadati_Variabili_xlsx"
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2016_FC20SOCIALE_rdf.zip"
         },
-        "FP04U": {
-          "years": [],
+        "Variazioni": {
+          "years": [
+            2015
+          ],
           "count": 1,
-          "sample": "FP04U_Metadati_Variabili_xlsx"
-        },
-        "FP03U": {
-          "years": [],
-          "count": 1,
-          "sample": "FP03U_Metadati_Variabili_xlsx"
-        },
-        "FP02U": {
-          "years": [],
-          "count": 1,
-          "sample": "FP02U_Metadati_Variabili_xlsx"
-        },
-        "FP06U": {
-          "years": [],
-          "count": 1,
-          "sample": "FP06U_Metadati_Variabili_xlsx"
-        },
-        "FP01U": {
-          "years": [],
-          "count": 1,
-          "sample": "FP01U_Metadati_Variabili_xlsx"
-        },
-        "FC06U": {
-          "years": [],
-          "count": 1,
-          "sample": "FC06U_Metadati_Variabili_xlsx"
-        },
-        "FC05U": {
-          "years": [],
-          "count": 1,
-          "sample": "FC05U_Metadati_Variabili_xlsx"
-        },
-        "FC04U": {
-          "years": [],
-          "count": 1,
-          "sample": "FC04U_Metadati_Variabili_xlsx"
-        },
-        "FC03U": {
-          "years": [],
-          "count": 1,
-          "sample": "FC03U_Metadati_Variabili_xlsx"
-        },
-        "FC02U": {
-          "years": [],
-          "count": 1,
-          "sample": "FC02U_Metadati_Variabili_xlsx"
+          "formats": [
+            "XLSX"
+          ],
+          "sample": "Variazioni_Metadati_Variabili_08_07_2015.xlsx"
         },
         "FC01D": {
           "years": [],
           "count": 1,
-          "sample": "FC01D_Metadati_Variabili_xlsx"
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC01D_Metadati_Variabili_xlsx.zip"
         },
-        "FC01C": {
+        "2015": {
+          "years": [
+            2015
+          ],
+          "count": 1,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2015_FC20TERRVIAB_3_rdf.zip"
+        },
+        "FC10D": {
           "years": [],
           "count": 1,
-          "sample": "FC01C_Metadati_Variabili_xlsx"
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC10D_Metadati_Variabili_xlsx.zip"
         },
-        "FC01B": {
+        "FC10A": {
           "years": [],
           "count": 1,
-          "sample": "FC01B_Metadati_Variabili_xlsx"
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC10A_Metadati_Variabili_xlsx.zip"
         },
-        "FC01A": {
+        "FC05U": {
           "years": [],
           "count": 1,
-          "sample": "FC01A_Metadati_Variabili_xlsx"
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC05U_Metadati_Variabili_xlsx.zip"
         }
       },
       "topics": {
-        "trasparenza": 703
+        "trasparenza": 92
       },
       "years_range": [
-        2010,
-        2025
+        2009,
+        2022
       ],
       "suggested_action": "catalog-watch-ready"
     },
@@ -1212,31 +1264,27 @@
       "protocol": "html",
       "signal_type": "csv_magnet",
       "result": "scan_completed",
-      "metric_value": 42,
-      "detail": "42 link data (CSV 38, XML 1, ZIP 3), years 2010-2027 — top prefixes: provvedimenti=8, Classe=4, sc=3, elenco=2, Elenco=2",
+      "metric_value": 38,
+      "detail": "38 link data (CSV 34, XML 1, ZIP 3), years 2010-2026 — top prefixes: provvedimenti=8, Classe=4, sc=3, elenco=2, Elenco=2",
       "prefix_matrix": {
+        "provvedimenti": 8,
+        "Classe": 4,
+        "sc": 3,
+        "elenco": 2,
+        "Elenco": 2,
+        "Accordi": 2,
         "Lista": 1,
         "confezioni": 1,
         "PA": 1,
         "atc": 1,
-        "Classe": 4,
         "Liste": 1,
         "lista": 1,
         "elenco-farmaci-MR-l648": 1,
         "lista-farmaci-malattie-rare": 1,
         "programmi": 1,
-        "elenco": 2,
-        "Elenco": 2,
         "Strutture": 1,
         "Lista-": 1,
-        "Accordi": 2,
-        "provvedimenti": 8,
-        "2933": 1,
-        "fdaab4": 1,
-        "54": 1,
-        "fe9616": 1,
         "glossario": 1,
-        "sc": 3,
         "strutture": 1,
         "ElencoConsulenti": 1,
         "collegio": 1,
@@ -1244,189 +1292,233 @@
         "AIFAindice": 1
       },
       "series": {
-        "Lista": {
-          "years": [],
-          "count": 1,
-          "sample": "Lista_farmaci_equivalenti"
-        },
-        "confezioni": {
-          "years": [],
-          "count": 1,
-          "sample": "confezioni_fornitura"
-        },
-        "PA": {
-          "years": [],
-          "count": 1,
-          "sample": "PA_confezioni"
-        },
-        "atc": {
-          "years": [],
-          "count": 1,
-          "sample": "atc"
+        "provvedimenti": {
+          "years": [
+            2019,
+            2021,
+            2022,
+            2023,
+            2025,
+            2026
+          ],
+          "count": 8,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "provvedimenti_ACC_2-Semestre-2025.csv"
         },
         "Classe": {
           "years": [
-            2025
+            2026
           ],
           "count": 4,
-          "sample": "Classe_A_per_principio_attivo_31-12-2025"
-        },
-        "Liste": {
-          "years": [
-            2022
+          "formats": [
+            "CSV"
           ],
-          "count": 1,
-          "sample": "Liste_sostanze_attive_settembre_2022"
+          "sample": "Classe_A_per_principio_attivo_31-01-2026.csv"
         },
-        "lista": {
-          "years": [
-            2026
+        "sc": {
+          "years": [],
+          "count": 3,
+          "formats": [
+            "ZIP"
           ],
-          "count": 1,
-          "sample": "lista_farmaci_valutati_inserimento_classe_Cnn_29.05.2026"
-        },
-        "elenco-farmaci-MR-l648": {
-          "years": [
-            2026
-          ],
-          "count": 1,
-          "sample": "elenco-farmaci-MR-l648_23.06.2026"
-        },
-        "lista-farmaci-malattie-rare": {
-          "years": [
-            2026
-          ],
-          "count": 1,
-          "sample": "lista-farmaci-malattie-rare_23.06.2026"
-        },
-        "programmi": {
-          "years": [
-            2026
-          ],
-          "count": 1,
-          "sample": "programmi_uso_compassionevole_03.06.2026"
+          "sample": "sc_approvate.zip"
         },
         "elenco": {
           "years": [
             2025
           ],
           "count": 2,
-          "sample": "elenco_medicinali_carenti"
+          "formats": [
+            "CSV"
+          ],
+          "sample": "elenco_medicinali_carenti.csv"
         },
         "Elenco": {
           "years": [
             2026
           ],
           "count": 2,
-          "sample": "Elenco_Registri_PT_attivi_24.06.2026"
+          "formats": [
+            "CSV"
+          ],
+          "sample": "Elenco_Registri_PT_attivi_26.06.2026.csv"
+        },
+        "Accordi": {
+          "years": [
+            2010,
+            2026
+          ],
+          "count": 2,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "Accordi_pa_privati_2026_al_23.06.2026.csv"
+        },
+        "Lista": {
+          "years": [],
+          "count": 1,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "Lista_farmaci_equivalenti.csv"
+        },
+        "confezioni": {
+          "years": [],
+          "count": 1,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "confezioni_fornitura.csv"
+        },
+        "PA": {
+          "years": [],
+          "count": 1,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "PA_confezioni.csv"
+        },
+        "atc": {
+          "years": [],
+          "count": 1,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "atc.csv"
+        },
+        "Liste": {
+          "years": [
+            2022
+          ],
+          "count": 1,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "Liste_sostanze_attive_settembre_2022.csv"
+        },
+        "lista": {
+          "years": [
+            2026
+          ],
+          "count": 1,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "lista_farmaci_valutati_inserimento_classe_Cnn_29.05.2026.csv"
+        },
+        "elenco-farmaci-MR-l648": {
+          "years": [
+            2026
+          ],
+          "count": 1,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "elenco-farmaci-MR-l648_23.06.2026.csv"
+        },
+        "lista-farmaci-malattie-rare": {
+          "years": [
+            2026
+          ],
+          "count": 1,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "lista-farmaci-malattie-rare_23.06.2026.csv"
+        },
+        "programmi": {
+          "years": [
+            2026
+          ],
+          "count": 1,
+          "formats": [
+            "CSV"
+          ],
+          "sample": "programmi_uso_compassionevole_03.06.2026.csv"
         },
         "Strutture": {
           "years": [
             2026
           ],
           "count": 1,
-          "sample": "Strutture_registri_regioni_2026-05-20"
+          "formats": [
+            "CSV"
+          ],
+          "sample": "Strutture_registri_regioni_2026-05-20.csv"
         },
         "Lista-": {
           "years": [
             2025
           ],
           "count": 1,
-          "sample": "Lista-farmaci-orfani-2025"
-        },
-        "Accordi": {
-          "years": [
-            2010,
-            2025,
-            2026
+          "formats": [
+            "CSV"
           ],
-          "count": 2,
-          "sample": "Accordi_pa_privati_2026_al_23.06.2026"
-        },
-        "provvedimenti": {
-          "years": [
-            2019,
-            2020,
-            2021,
-            2022,
-            2023,
-            2024,
-            2025,
-            2026
-          ],
-          "count": 8,
-          "sample": "provvedimenti_ACC_2-Semestre-2025"
-        },
-        "2933": {
-          "years": [],
-          "count": 1,
-          "sample": "2933ae24-c9cd-af4a-9aa9-f75592228ae7?t=1611584979402"
-        },
-        "fdaab4": {
-          "years": [],
-          "count": 1,
-          "sample": "fdaab459-3919-98aa-7899-87b07a4647b4"
-        },
-        "54": {
-          "years": [],
-          "count": 1,
-          "sample": "54f80c42-121e-e86d-ed9d-46721ec17c64"
-        },
-        "fe9616": {
-          "years": [],
-          "count": 1,
-          "sample": "fe961636-7fdf-f2c3-7534-161ce641f1d8"
+          "sample": "Lista-farmaci-orfani-2025.csv"
         },
         "glossario": {
           "years": [],
           "count": 1,
-          "sample": "glossario_etichette"
-        },
-        "sc": {
-          "years": [],
-          "count": 3,
-          "sample": "sc_approvate"
+          "formats": [
+            "CSV"
+          ],
+          "sample": "glossario_etichette.csv"
         },
         "strutture": {
           "years": [],
           "count": 1,
-          "sample": "strutture_responsabili_farmacovigilanza"
+          "formats": [
+            "CSV"
+          ],
+          "sample": "strutture_responsabili_farmacovigilanza.csv"
         },
         "ElencoConsulenti": {
           "years": [
             2026
           ],
           "count": 1,
-          "sample": "ElencoConsulenti_2026_09.06.2026"
+          "formats": [
+            "CSV"
+          ],
+          "sample": "ElencoConsulenti_2026_09.06.2026.csv"
         },
         "collegio": {
           "years": [
-            2025,
-            2026
+            2025
           ],
           "count": 1,
-          "sample": "collegio_revisori_conti_2025-2030_26.05.2026"
+          "formats": [
+            "CSV"
+          ],
+          "sample": "collegio_revisori_conti_2025-2030_26.05.2026.csv"
         },
         "componenti": {
           "years": [
-            2024,
-            2027
+            2024
           ],
           "count": 1,
-          "sample": "componenti_cse_2024-2027_26.04.2024"
+          "formats": [
+            "CSV"
+          ],
+          "sample": "componenti_cse_2024-2027_26.04.2024.csv"
         },
         "AIFAindice": {
           "years": [],
           "count": 1,
-          "sample": "AIFAindice_file_AppaltiL190"
+          "formats": [
+            "XML"
+          ],
+          "sample": "AIFAindice_file_AppaltiL190.xml"
         }
       },
       "topics": {
-        "sanita": 42
+        "sanita": 38
       },
       "years_range": [
         2010,
-        2027
+        2026
       ],
       "suggested_action": "catalog-watch-ready"
     },
@@ -1454,60 +1546,78 @@
       "signal_type": "csv_magnet",
       "result": "scan_completed",
       "metric_value": 9,
-      "detail": "9 link data (XLSX 9), years 2014-2025 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Sorveglianza=1",
+      "detail": "9 link data (XLSX 9), years 2014-2015 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Sorveglianza=1",
       "prefix_matrix": {
-        "Civile": 1,
         "Indicatori": 2,
+        "Durata": 2,
+        "Civile": 1,
         "Sorveg": 1,
         "Sorveglianza": 1,
         "Interc": 1,
-        "Durata": 2,
         "Monitoraggio": 1
       },
       "series": {
-        "Civile": {
-          "years": [
-            2014,
-            2025
-          ],
-          "count": 1,
-          "sample": "CivileFlussi20142025"
-        },
         "Indicatori": {
           "years": [],
           "count": 2,
-          "sample": "Indicatori_Civili"
+          "formats": [
+            "XLSX"
+          ],
+          "sample": "Indicatori_Civili.xlsx"
+        },
+        "Durata": {
+          "years": [
+            2014
+          ],
+          "count": 2,
+          "formats": [
+            "XLSX"
+          ],
+          "sample": "Durata_SICID_20142025.xlsx"
+        },
+        "Civile": {
+          "years": [
+            2014
+          ],
+          "count": 1,
+          "formats": [
+            "XLSX"
+          ],
+          "sample": "CivileFlussi20142025.xlsx"
         },
         "Sorveg": {
           "years": [],
           "count": 1,
-          "sample": "Sorveglianza"
+          "formats": [
+            "XLSX"
+          ],
+          "sample": "Sorveglianza.xlsx"
         },
         "Sorveglianza": {
           "years": [
-            2015,
-            2019
+            2015
           ],
           "count": 1,
-          "sample": "Sorveglianza_20152019"
+          "formats": [
+            "XLSX"
+          ],
+          "sample": "Sorveglianza_20152019.xlsx"
         },
         "Interc": {
           "years": [],
           "count": 1,
-          "sample": "Intercettazioni"
-        },
-        "Durata": {
-          "years": [
-            2014,
-            2025
+          "formats": [
+            "XLSX"
           ],
-          "count": 2,
-          "sample": "Durata_SICID_20142025"
+          "sample": "Intercettazioni.xlsx"
         },
         "Monitoraggio": {
           "years": [],
           "count": 1,
-          "sample": "Monitoraggio_mensile"
+          "formats": [
+            "XLSX"
+          ],
+          "sample": "Monitoraggio_mensile.xlsx"
         }
       },
       "topics": {
@@ -1515,7 +1625,7 @@
       },
       "years_range": [
         2014,
-        2025
+        2015
       ],
       "suggested_action": "low signal"
     },
@@ -1525,37 +1635,50 @@
       "signal_type": "csv_magnet",
       "result": "scan_completed",
       "metric_value": 33,
-      "detail": "33 link data (ZIP 33), years 2015-2015 — top prefixes: Cc=15, CC=12, P=6",
+      "detail": "33 link data (ZIP 33), years 2000-2001 — top prefixes: Cc=15, CC=12, P=6",
       "prefix_matrix": {
+        "Cc": 15,
         "CC": 12,
-        "P": 6,
-        "Cc": 15
+        "P": 6
       },
       "series": {
-        "CC": {
-          "years": [
-            2015
-          ],
-          "count": 12,
-          "sample": "CC_OpenPronunce_2001_oggi"
-        },
-        "P": {
-          "years": [],
-          "count": 6,
-          "sample": "P_csv2001_oggi"
-        },
         "Cc": {
           "years": [],
           "count": 15,
-          "sample": "Cc_Opendata_AnagraficaGiudici"
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "Cc_Opendata_AnagraficaGiudici.zip"
+        },
+        "CC": {
+          "years": [
+            2000,
+            2001
+          ],
+          "count": 12,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "CC_OpenPronunce_2001_oggi.zip"
+        },
+        "P": {
+          "years": [
+            2000,
+            2001
+          ],
+          "count": 6,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "P_csv2001_oggi.zip"
         }
       },
       "topics": {
         "giustizia": 33
       },
       "years_range": [
-        2015,
-        2015
+        2000,
+        2001
       ],
       "suggested_action": "catalog-watch-ready"
     },
@@ -1575,6 +1698,15 @@
       "result": "stabile",
       "metric_value": 40,
       "detail": "40 item (package_search), in linea con la baseline.",
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "noipa_sparql",
+      "protocol": "sparql",
+      "signal_type": "no signal",
+      "result": "stabile",
+      "metric_value": 21,
+      "detail": "21 item (None), in linea con la baseline.",
       "suggested_action": "nessuna"
     },
     {
