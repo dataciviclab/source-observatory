@@ -2,7 +2,7 @@
 """
 Produce open_data_health_scores.json per ogni fonte monitorata.
 
-Punteggio su 6 assi (0-100) basato su dati gia' disponibili in SO.
+Punteggio su 4 assi (0-100) basato su dati gia' disponibili in SO.
 Ogni asse e' "computed" (dati reali verificati) o "missing"
 (dato non disponibile, escluso dal punteggio). Niente stime.
 
@@ -42,12 +42,10 @@ DEFAULT_OUT = OPEN_DATA_HEALTH_SCORES_PATH
 
 # Pesi per ogni asse
 PESI: dict[str, int] = {
-    "formato_aperto": 3,
-    "raggiungibilita": 2,
+    "formato_aperto": 4,
+    "raggiungibilita": 3,
     "licenza_aperta": 1,
     "presenza_datigovit": 2,
-    "hvd_compliance": 3,
-    "accessibilita_foia": 1,
 }
 
 ASSI = {
@@ -55,8 +53,6 @@ ASSI = {
     "raggiungibilita": {"label": "B — Raggiungibilita'", "max": 100},
     "licenza_aperta": {"label": "C — Licenza aperta", "max": 100},
     "presenza_datigovit": {"label": "D — Presenza dati.gov.it", "max": 100},
-    "hvd_compliance": {"label": "E — HVD compliance", "max": 100},
-    "accessibilita_foia": {"label": "F — Accessibilita' FOIA", "max": 100},
 }
 
 
@@ -104,11 +100,11 @@ def _load_inventory_format_stats(path: Path) -> dict[str, dict]:
 
 
 def _load_inventory_license_stats(path: Path) -> dict[str, dict]:
-    """Legge inventory parquet e classifica licenze e HVD per fonte.
+    """Legge inventory parquet e classifica licenze per fonte.
 
-    Restituisce dict: source_id → {"license_open_pct": 0-100, "has_hvd": bool}.
-    Se le colonne license_id/hvd_category non esistono ancora nel parquet
-    (generato prima di questo PR), torna vuoto senza errori.
+    Restituisce dict: source_id → {"license_open_pct": 0-100}.
+    Se la colonna license_id non esiste ancora nel parquet
+    (generato prima di questo fix), torna vuoto senza errori.
     """
     if not path.exists():
         return {}
@@ -130,22 +126,20 @@ def _load_inventory_license_stats(path: Path) -> dict[str, dict]:
             f"""
             SELECT source_id,
                    COUNT(*) as total,
-                   SUM(CASE WHEN LOWER(license_id) LIKE '%cc-by%' OR LOWER(license_id) LIKE '%cc-zero%' OR LOWER(license_id) LIKE '%cc0%' OR LOWER(license_id) LIKE '%odbl%' OR LOWER(license_id) LIKE '%iodl%' OR LOWER(license_id) = 'other-open' OR LOWER(license_title) LIKE '%creative commons%' OR LOWER(license_title) LIKE '%iodl%' THEN 1 ELSE 0 END) as licenze_aperte,
-                   SUM(CASE WHEN hvd_category IS NOT NULL AND hvd_category != '' THEN 1 ELSE 0 END) as con_hvd
+                   SUM(CASE WHEN LOWER(license_id) LIKE '%cc-by%' OR LOWER(license_id) LIKE '%cc-zero%' OR LOWER(license_id) LIKE '%cc0%' OR LOWER(license_id) LIKE '%odbl%' OR LOWER(license_id) LIKE '%iodl%' OR LOWER(license_id) = 'other-open' OR LOWER(license_title) LIKE '%creative commons%' OR LOWER(license_title) LIKE '%iodl%' THEN 1 ELSE 0 END) as licenze_aperte
             FROM '{path}'
             WHERE protocol = 'ckan'
             GROUP BY source_id
         """
         ).fetchall()
         stats = {}
-        for sid, total, licenze_aperte, con_hvd in rows:
+        for sid, total, licenze_aperte in rows:
             stats[sid] = {
                 "total": int(total),
                 "licenze_aperte": int(licenze_aperte),
                 "perc_licenza_aperta": round(int(licenze_aperte) / int(total) * 100, 1)
                 if int(total) > 0
                 else 0.0,
-                "has_hvd": int(con_hvd) > 0,
             }
         return stats
     except Exception as exc:
@@ -224,17 +218,13 @@ def _build_inventory_stats(source_id: str, rows: list[dict]) -> dict[str, dict]:
 
 
 def _build_license_stats(source_id: str, rows: list[dict]) -> dict[str, dict]:
-    """Aggrega inventory rows in memoria → same shape di _load_inventory_license_stats.
-
-    Stessa logica di licenza_aperta e HVD della versione parquet.
-    """
+    """Aggrega inventory rows in memoria → same shape di _load_inventory_license_stats."""
     ckan_rows = [r for r in rows if (r.get("protocol") or "").lower() == "ckan"]
     total = len(ckan_rows)
     if total == 0:
         return {}
 
     licenze_aperte = 0
-    con_hvd = 0
     for r in ckan_rows:
         lid = (r.get("license_id") or "").lower()
         ltitle = (r.get("license_title") or "").lower()
@@ -251,16 +241,11 @@ def _build_license_stats(source_id: str, rows: list[dict]) -> dict[str, dict]:
         if is_open:
             licenze_aperte += 1
 
-        hvd = str(r.get("hvd_category") or "").strip()
-        if hvd:
-            con_hvd += 1
-
     return {
         source_id: {
             "total": total,
             "licenze_aperte": licenze_aperte,
             "perc_licenza_aperta": round(licenze_aperte / total * 100, 1) if total > 0 else 0.0,
-            "has_hvd": con_hvd > 0,
         }
     }
 
@@ -529,24 +514,6 @@ def _datigovit_score(source_info: dict) -> tuple[float, str]:
     return (0.0, "missing")
 
 
-def _hvd_score(
-    license_stats: dict | None = None,
-    source_id: str = "",
-) -> tuple[float, str]:
-    """E — HVD compliance. Computed da inventory se disponibile."""
-    if license_stats and source_id in license_stats:
-        if license_stats[source_id]["has_hvd"]:
-            return (80.0, "computed")
-        # Sappiamo che non ha HVD (inventory ha la colonna, e' vuota)
-        return (50.0, "computed")
-    return (50.0, "missing")
-
-
-def _foia_access_score() -> tuple[float, str]:
-    """F — Accessibilita' FOIA. Dipende da anagrafica in data-advocacy."""
-    return (50.0, "missing")
-
-
 def _flag_urgenza(
     source_id: str,
     source_check_stats: dict | None = None,
@@ -612,8 +579,6 @@ def build_scores(
         )
         lic, l_src = _licenza_score(protocol, license_stats, source_id)
         dgov, d_src = _datigovit_score(info)
-        hvd, h_src = _hvd_score(license_stats, source_id)
-        foia, fo_src = _foia_access_score()
 
         # Punteggio ponderato — assi "missing" esclusi dal denominatore
         assi_info = [
@@ -621,8 +586,6 @@ def build_scores(
             (raggiung, r_src, "raggiungibilita"),
             (lic, l_src, "licenza_aperta"),
             (dgov, d_src, "presenza_datigovit"),
-            (hvd, h_src, "hvd_compliance"),
-            (foia, fo_src, "accessibilita_foia"),
         ]
         numeratore = 0.0
         denominatore = 0
@@ -714,8 +677,6 @@ def build_scores(
                 "raggiungibilita": {"score": raggiung, "fonte": r_src},
                 "licenza_aperta": {"score": lic, "fonte": l_src},
                 "presenza_datigovit": {"score": dgov, "fonte": d_src},
-                "hvd_compliance": {"score": hvd, "fonte": h_src},
-                "accessibilita_foia": {"score": foia, "fonte": fo_src},
             },
         }
         scores_list.append(entry)
