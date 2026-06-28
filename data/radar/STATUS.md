@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-06-27
+Ultimo run: 2026-06-28
 
 ## Sommario
 
 - Fonti controllate: 33
-- GREEN: 33
-- YELLOW: 0
+- GREEN: 32
+- YELLOW: 1
 - RED: 0
 
 ## Tipi sorgente
@@ -31,7 +31,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
+| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | catalog-watch | GREEN | 200 | anac_bandi_gara |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_entrate_stato, bdap_lea, bdap_spese_stato, dipendenti_pubblici |
@@ -67,5 +67,6 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
+- `istat_sdmx`: Timeout (ReadTimeout)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
 - `aifa`: HTTP 200 | content-type: text/html;charset=UTF-8 | url finale: https://www.aifa.gov.it/dati-aifa | SSL verify failed; fallback verify=False used (SSLError)
