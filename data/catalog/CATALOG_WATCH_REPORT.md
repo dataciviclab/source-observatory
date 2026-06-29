@@ -1,6 +1,6 @@
 # Catalog Watch Report
 
-_Generato: 2026-06-26T11:00:43+00:00 — 30 fonti controllate_
+_Generato: 2026-06-29T08:29:37+00:00 — 30 fonti controllate_
 
 ## Segnali attivi
 
@@ -21,8 +21,8 @@ _Generato: 2026-06-26T11:00:43+00:00 — 30 fonti controllate_
 ### • `opencivitas` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 831 link data (XLSX 1, ZIP 91), years 2009-2022 — top prefixes: Metadati=14, 2013=10, 2018=9, 2010=8, 2022=6
-- **Item**: 831
+- **Dettaglio**: 903 link data (XLSX 1, ZIP 99), years 2009-2025 — top prefixes: Metadati=18, 2022=18, 2010=10, 2018=9, 2013=8
+- **Item**: 903
 - **Azione**: catalog-watch-ready
 
 ### • `aifa` — csv_magnet
@@ -46,8 +46,15 @@ _Generato: 2026-06-26T11:00:43+00:00 — 30 fonti controllate_
 - **Item**: 33
 - **Azione**: catalog-watch-ready
 
+### 📦 `unioncamere` — inventory change
+
+- **Protocollo**: ckan
+- **Dettaglio**: 373 item (package_search), delta +2 rispetto al run precedente (371).
+- **Item**: 373
+- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
+
 ## Fonti stabili / skipped
 
-_24 fonti senza segnali inventariali in questo run._
+_23 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
