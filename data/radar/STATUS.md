@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-06-28
+Ultimo run: 2026-06-29
 
 ## Sommario
 
@@ -58,7 +58,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | ministero_interno | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | agid | catalog | ckan | catalog-watch | GREEN | 200 | ipa_enti, ipa_istat_mapping |
 | noipa_sparql | catalog | sparql | catalog-watch | GREEN | 200 | - |
-| mimit_rna | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| mimit_rna | catalog | ckan | catalog-watch | GREEN | 200 | rna_aiuti_stato, rna_misure |
 | ministero_salute | catalog | ckan | catalog-watch | GREEN | 200 | farmacie, reparti_ricovero, strutture_asl, strutture_ricovero_asl |
 | agcm | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | unioncamere | catalog | ckan | catalog-watch | GREEN | 200 | - |
