@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-30T07:02:15.893769+00:00",
-  "probe_date": "2026-06-30",
+  "generated_at": "2026-07-01T07:19:39.025376+00:00",
+  "probe_date": "2026-07-01",
   "sources_total": 33,
   "status_counts": {
     "GREEN": 33,
@@ -137,7 +137,7 @@
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
       "ssl_issue": true,
-      "ssl_streak": 6
+      "ssl_streak": 7
     },
     {
       "id": "aifa",
@@ -147,7 +147,7 @@
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
       "ssl_issue": true,
-      "ssl_streak": 6
+      "ssl_streak": 7
     },
     {
       "id": "dait",
