@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-07-02T06:49:56.645962+00:00",
-  "probe_date": "2026-07-02",
+  "generated_at": "2026-07-03T06:40:50.317159+00:00",
+  "probe_date": "2026-07-03",
   "sources_total": 33,
   "status_counts": {
-    "GREEN": 33,
-    "YELLOW": 0,
+    "GREEN": 32,
+    "YELLOW": 1,
     "RED": 0
   },
   "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -137,7 +137,7 @@
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
       "ssl_issue": true,
-      "ssl_streak": 8
+      "ssl_streak": 9
     },
     {
       "id": "aifa",
@@ -147,7 +147,7 @@
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
       "ssl_issue": true,
-      "ssl_streak": 8
+      "ssl_streak": 9
     },
     {
       "id": "dait",
