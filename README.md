@@ -77,7 +77,7 @@ Le skills in `skills/` sono guide operative per agenti e review umana.
 | `inventory-triage.md` | Triage di un inventory per una shortlist — porta a issue SO per source-check |
 | `portal-scout.md` | Identifica protocollo e decide se aggiungere al registry |
 
-Il layer MCP (`so_mcp/so_server.py`) è il modo consigliato per consultare gli artifact senza scaricare file. Espone 12 tool interrogabili via qualsiasi client MCP.
+Il layer MCP (`so_mcp/so_server.py`) è il modo consigliato per consultare gli artifact senza scaricare file. Espone 7 tool interrogabili via qualsiasi client MCP (dopo refactoring luglio 2026: `so_registry_query`, `so_radar_summary`, `so_inventory_search`, `so_source_check`, `so_catalog_signals`, `so_find_by_url`, `so_source_overview`).
 
 ## Output e artefatti
 

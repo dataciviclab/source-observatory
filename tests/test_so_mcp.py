@@ -7,19 +7,17 @@ import pandas as pd  # must be before duckdb
 import pytest
 
 from so_mcp import _artifact
-from so_mcp._discovery import list_source_items
 from so_mcp._find_url import find_by_url
-from so_mcp._inventory import (
+from so_mcp._inventory_search import inventory_search
+from so_mcp._radar import radar_history, radar_summary
+from so_mcp._registry import registry_query
+from so_mcp._signals import query_signals
+from so_mcp._source_check import (
     _source_radar_context,
-    catalog_inventory_search,
     inventory_diff,
     inventory_status,
     query_inventory,
 )
-from so_mcp._radar import radar_history, radar_summary
-from so_mcp._recommend import recommend_sources
-from so_mcp._registry import registry_query
-from so_mcp._signals import query_signals
 
 pytestmark = pytest.mark.contract
 
@@ -182,7 +180,8 @@ def test_inventory_status_summarizes_report(tmp_path, monkeypatch) -> None:
     assert filtered["source"]["error"] == "HTTP 500"
 
 
-def test_catalog_inventory_search_filters_rows(tmp_path, monkeypatch) -> None:
+def test_inventory_search_filters_rows(tmp_path, monkeypatch) -> None:
+    """Search mode per testo e source_id."""
     inventory_path = tmp_path / "catalog_inventory_latest.parquet"
     _write_parquet(
         inventory_path,
@@ -231,7 +230,7 @@ def test_catalog_inventory_search_filters_rows(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
-    result = catalog_inventory_search("dipendenti", source_id="openbdap")
+    result = inventory_search(query="dipendenti", source_id="openbdap")
 
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "a"
@@ -240,7 +239,8 @@ def test_catalog_inventory_search_filters_rows(tmp_path, monkeypatch) -> None:
 # ─── Tests for new tools (MCP v2) ───────────────────────────────────────────────
 
 
-def test_recommend_sources(tmp_path, monkeypatch) -> None:
+def test_inventory_search_recommend_mode(tmp_path, monkeypatch) -> None:
+    """Recommend mode con keyword raggruppa per fonte."""
     inventory_path = tmp_path / "catalog_inventory_latest.parquet"
     _write_parquet(
         inventory_path,
@@ -291,18 +291,30 @@ def test_recommend_sources(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
-    result = recommend_sources("INPS")
+    result = inventory_search(keyword="INPS")
 
     assert result["returned"] == 1
     assert result["sources"][0]["source_id"] == "inps"
     assert result["sources"][0]["item_count"] >= 1
-    assert result["total_items_in_inventory"] == 2  # inps + openbdap in test data
+    assert result["total_items_in_inventory"] == 2
 
 
-def test_recommend_sources_empty_keyword() -> None:
-    result = recommend_sources("")
+def test_inventory_search_empty_keyword() -> None:
+    """keyword vuoto restituisce errore."""
+    result = inventory_search(keyword="")
+    assert result["error"] == "no_params"
 
-    assert result["error"] == "empty_keyword"
+
+def test_inventory_search_empty_query() -> None:
+    """query vuota restituisce errore."""
+    result = inventory_search(query="")
+    assert result["error"] == "no_params"
+
+
+def test_inventory_search_no_params() -> None:
+    """Nessun parametro → errore."""
+    result = inventory_search()
+    assert result["error"] == "no_params"
 
 
 def test_inventory_diff(tmp_path, monkeypatch) -> None:
@@ -896,11 +908,11 @@ def test_query_inventory_min_paqa_score_grouped(tmp_path, monkeypatch) -> None:
     assert result["results"][0]["dataset_group"] == "s1/g1"
 
 
-# ─── Discovery: list_source_items ───────────────────────────────────────────────
+# ─── Inventory Search: list mode (per source_id) ──────────────────────────────
 
 
-def test_list_source_items_filters_by_source(tmp_path, monkeypatch) -> None:
-    """list_source_items con source_id restituisce solo gli item di quella fonte."""
+def test_inventory_search_list_mode(tmp_path, monkeypatch) -> None:
+    """List mode con source_id restituisce solo gli item di quella fonte."""
     inventory_path = tmp_path / "catalog_inventory_latest.parquet"
     _write_parquet(
         inventory_path,
@@ -960,21 +972,21 @@ def test_list_source_items_filters_by_source(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
-    result = list_source_items("inps")
+    result = inventory_search(source_id="inps")
 
     assert result["source_id"] == "inps"
     assert result["returned"] == 2
     assert result["total_count"] == 2
     assert result["has_more"] is False
-    assert result["filters"]["limit"] == 50
+    assert result["filters"]["limit"] == 25  # default
     assert result["filters"]["offset"] == 0
     assert all(r["source_id"] == "inps" for r in result["results"])
     item_ids = {r["item_id"] for r in result["results"]}
     assert item_ids == {"544", "999"}
 
 
-def test_list_source_items_respects_limit_and_offset(tmp_path, monkeypatch) -> None:
-    """limit e offset controllano la paginazione."""
+def test_inventory_search_list_pagination(tmp_path, monkeypatch) -> None:
+    """limit e offset controllano la paginazione in list mode."""
     inventory_path = tmp_path / "catalog_inventory_latest.parquet"
     rows = [
         {
@@ -999,26 +1011,23 @@ def test_list_source_items_respects_limit_and_offset(tmp_path, monkeypatch) -> N
     _write_parquet(inventory_path, rows)
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
-    # Prima pagina: 3 item
-    page1 = list_source_items("inps", limit=3, offset=0)
+    page1 = inventory_search(source_id="inps", limit=3, offset=0)
     assert page1["returned"] == 3
     assert page1["has_more"] is True
     assert page1["total_count"] == 10
 
-    # Seconda pagina: altri 3
-    page2 = list_source_items("inps", limit=3, offset=3)
+    page2 = inventory_search(source_id="inps", limit=3, offset=3)
     assert page2["returned"] == 3
     assert page2["has_more"] is True
     assert page2["results"][0]["item_id"] != page1["results"][0]["item_id"]
 
-    # Ultima pagina: 4 item rimasti
-    page3 = list_source_items("inps", limit=5, offset=6)
+    page3 = inventory_search(source_id="inps", limit=5, offset=6)
     assert page3["returned"] == 4
     assert page3["has_more"] is False
 
 
-def test_list_source_items_text_query_filter(tmp_path, monkeypatch) -> None:
-    """query testuale filtra per item_id, item_name, title, tags, organization."""
+def test_inventory_search_search_within_source(tmp_path, monkeypatch) -> None:
+    """query + source_id cerca full-text filtrato per fonte."""
     inventory_path = tmp_path / "catalog_inventory_latest.parquet"
     _write_parquet(
         inventory_path,
@@ -1061,34 +1070,26 @@ def test_list_source_items_text_query_filter(tmp_path, monkeypatch) -> None:
     )
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
-    # Match su title
-    result = list_source_items("inps", query="pensioni")
+    result = inventory_search(query="pensioni", source_id="inps")
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "pens-2024"
 
-    # Match su tags
-    result2 = list_source_items("inps", query="contributi")
+    result2 = inventory_search(query="contributi", source_id="inps")
     assert result2["returned"] == 1
     assert result2["results"][0]["item_id"] == "contr-2024"
 
-    # Match su item_name
-    result3 = list_source_items("inps", query="pensioni-2024")
-    assert result3["returned"] == 1
-
-    # Nessun match
-    result4 = list_source_items("inps", query="inesistente")
-    assert result4["returned"] == 0
-    assert result4["total_count"] == 0
+    result3 = inventory_search(query="inesistente", source_id="inps")
+    assert result3["returned"] == 0
 
 
-def test_list_source_items_empty_source_id() -> None:
-    """source_id vuoto restituisce errore."""
-    result = list_source_items("")
-    assert result["error"] == "invalid_params"
+def test_inventory_search_list_empty_source_id() -> None:
+    """source_id vuoto in list mode restituisce errore."""
+    result = inventory_search(source_id="")
+    assert result["error"] == "no_params"
 
 
-def test_list_source_items_unknown_source(tmp_path, monkeypatch) -> None:
-    """source_id non presente nell'inventory restituisce 0 risultati."""
+def test_inventory_search_unknown_source(tmp_path, monkeypatch) -> None:
+    """source_id non presente restituisce 0 risultati."""
     inventory_path = tmp_path / "catalog_inventory_latest.parquet"
     _write_parquet(
         inventory_path,
@@ -1112,7 +1113,6 @@ def test_list_source_items_unknown_source(tmp_path, monkeypatch) -> None:
             },
         ],
     )
-    # Write a report so source_status works
     report_path = tmp_path / "catalog_inventory_report.json"
     report_path.write_text(
         json.dumps({"sources": {"unknown_source": {"status": "error", "error": "HTTP 500"}}}),
@@ -1121,17 +1121,17 @@ def test_list_source_items_unknown_source(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
 
-    result = list_source_items("unknown_source")
+    result = inventory_search(source_id="unknown_source")
     assert result["returned"] == 0
     assert result["total_count"] == 0
     assert result["source_status"] is not None
     assert "note" in result
 
 
-def test_list_source_items_parquet_not_found(tmp_path, monkeypatch) -> None:
+def test_inventory_search_parquet_not_found(tmp_path, monkeypatch) -> None:
     """Parquet non trovato restituisce artifact_not_found."""
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", tmp_path / "nonexistent.parquet")
-    result = list_source_items("inps")
+    result = inventory_search(source_id="inps")
     assert result["error"] == "artifact_not_found"
 
 

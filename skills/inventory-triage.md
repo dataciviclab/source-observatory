@@ -38,17 +38,17 @@ Usalo soprattutto se devi capire rapidamente cosa vale la pena approfondire e co
 Prima di toccare l'inventory parquet, consulta gli artifact SO via MCP per orientarti:
 
 ```
-1. so_catalog_inventory_search(query)  → cerca nell'inventory se la fonte esiste già
-2. so_inventory_status             → stato build inventory: ok/error/protocol_not_supported
+1. so_inventory_search(query=)  → cerca nell'inventory se la fonte esiste già
+2. so_source_check(include_diff=True) → stato build inventory: ok/error/protocol_not_supported
 3. so_catalog_signals(limit=5)     → segnali di drift per fonte
 4. so_radar_summary               → stato radar delle fonti monitorate
 ```
 
 **Alternativa compatta**: se conosci già lo `source_id`, puoi usare
-`so_source_overview(<source_id>)` che combina inventory_status + signals +
+`so_source_overview(<source_id>)` che combina source_check + signals +
 radar_summary + registry in una chiamata sola.
 
-**Se `so_inventory_status` mostra error per una fonte**: l'inventory di quella fonte è inaffidabile — salta il triage per quella fonte o interpreta i risultati con cautela.
+**Se `so_source_check(include_diff=True)` mostra error per una fonte**: l'inventory di quella fonte è inaffidabile — salta il triage per quella fonte o interpreta i risultati con cautela.
 
 **Se `so_catalog_signals` mostra `no signal`**: il catalogo è stabile, nessun bisogno urgente di re-inventory.
 
@@ -62,7 +62,7 @@ radar_summary + registry in una chiamata sola.
 
 ### 1. Inquadra l'inventory
 Identifica il catalogo, la data dell'inventory e la dimensione della lista.
-Se hai già consultato `so_inventory_status` e `so_catalog_signals`, integra qui il risultato.
+Se hai già consultato `so_source_check(include_diff=True)` e `so_catalog_signals`, integra qui il risultato.
 
 ### 2. Definisci il criterio di triage
 Dichiara cosa stai cercando (es. nuovi dataset su un tema specifico, aggiornamenti rilevanti, risorse candidate per il Lab).

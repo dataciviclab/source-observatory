@@ -67,9 +67,9 @@ Colonne chiave (per schema completo vedere `docs/source_check_results_schema.md`
 ## Accesso via MCP
 
 I tool MCP SO forniscono accesso programmatico a questi artifact:
-- `so_inventory_query` — query parquet source-check-results con filtri per source e score
-- `so_inventory_status` — legge `catalog_inventory_report.json` per stato build per fonte
-- `so_catalog_inventory_search` — cerca item nell'inventory parquet per keyword
+- `so_source_check` — query parquet source-check-results con filtri per source e score (ex `so_inventory_query`)
+- `so_source_check(include_diff=True)` — legge `catalog_inventory_report.json` per stato build per fonte (ex `so_inventory_status`)
+- `so_inventory_search(query=)` — cerca item nell'inventory parquet per keyword (ex `so_catalog_inventory_search`)
 - `so_find_by_url` — trova un URL in entrambi i parquet (source-check + inventory)
 
 GCS latest: `gs://dataciviclab-clean/catalog_inventory/catalog_inventory_latest.parquet`

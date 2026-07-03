@@ -51,7 +51,7 @@ duplicati e orientarti:
 
 ```
 1. so_find_by_url(<URL>)       → la fonte è già in source_check o inventory?
-2. so_inventory_query(source_id=?, min_score=3) → score esistente per questa fonte
+2. so_source_check(source_id=?, min_score=3) → score esistente per questa fonte
 3. so_radar_summary             → stato radar della fonte (se già nota)
 4. toolkit_probe_url(<URL>)     → reachability rapida (toolkit MCP)
 ```

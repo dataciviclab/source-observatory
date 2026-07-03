@@ -48,88 +48,38 @@ Variabili supportate per override:
 
 In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa la cache locale e lo dichiara in `cache.fallback_warning`. In `gcs`, un errore GCS è bloccante. In `local`, il server usa solo i file locali.
 
-## Tool — raggruppati per skill
+## Tool — 7 strumenti
 
-### SO_01 — portal-scout
+### Tool finali (dopo refactoring luglio 2026)
 
-| Tool | Uso |
+| # | Tool | Cosa fa | Sostituisce |
+|---|------|---------|-------------|
+| 1 | `so_registry_query` | Query `sources_registry.yaml` per protocol/source_kind/source_id | — |
+| 2 | `so_radar_summary` | Radar health portale (con `include_history=True` per cronologia probe) | — |
+| 3 | `so_inventory_search` | Cerca in `catalog_inventory_latest.parquet`: 3 modalità automatiche | `so_catalog_inventory_search` + `so_list_source_items` + `so_recommend_sources` |
+| 4 | `so_source_check` | Query `source_check_results.parquet` + inventory report/diff | `so_inventory_query` + `so_inventory_status` + `so_inventory_diff` |
+| 5 | `so_catalog_signals` | Segnali drift/inventory da `catalog_signals.json` | — |
+| 6 | `so_find_by_url` | Cerca URL su source_check + catalog_inventory (cross-parquet) | — |
+| 7 | `so_source_overview` | Composito: registry + radar + inventory + signals in 1 call | — |
+
+### Modalità `so_inventory_search`
+
+| Parametro | Modalità |
 |---|---|
-| `so_find_by_url` | pre-check: gia catalogato? |
-| — | Probe HTTP, CKAN, HTML: usa i tool **`toolkit_*`** del toolkit MCP |
-| `so_registry_query` | pre-check: gia nel registry? |
+| `keyword=` | Raggruppa per fonte (recommend) |
+| `source_id=` solo | Lista item con paginazione (`limit`/`offset`) |
+| `query=` + opz. `source_id=`/`protocol=` | Full-text search |
 
-> **Nota**: `so_probe_url`, `so_html_extract_links`, `so_ckan_package_show` sono stati rimossi. Usa i corrispondenti tool del toolkit MCP: `toolkit_probe_url`, `toolkit_html_extract_links`, `toolkit_ckan_package_show`.
+### Modalità `so_source_check`
 
-### SO_02 — inventory-triage
-
-| Tool | Uso |
+| Parametro | Modalità |
 |---|---|
-| `so_inventory_status` | stato build inventory per fonte (con `include_diff=True` per delta item) |
-| `so_catalog_inventory_search` | cerca item per keyword/testo |
-| `so_recommend_sources` | trova source_id per keyword tema |
+| `include_diff=True` | Inventory status + delta item count per fonte |
+| Default (senza `include_diff`) | Query source_check_results.parquet con filtri |
 
-> **Nota**: `so_infer_topic`, `so_inventory_diff` sono stati rimossi. Usa `so_inventory_status` con `include_diff=True` per il delta item (richiede `source_id`).
+### Caching
 
-### SO_03 — source-check
-
-| Tool | Uso |
-|---|---|
-| `so_find_by_url` | pre-check: gia catalogato? |
-| `so_inventory_query` | score esistente per questa fonte |
-| — | Probe, CKAN, Topic: usa i tool **`toolkit_*`** del toolkit MCP |
-
-> **Nota**: `so_probe_url`, `so_ckan_package_show`, `so_infer_topic` sono stati rimossi. Usa `toolkit_probe_url`, `toolkit_ckan_package_show` del toolkit MCP.
-
-### Extra (non legati a skill specifica)
-
-| Tool | Uso |
-|---|---|
-| `so_radar_summary` | health portali (con `include_history=True` per cronologia probe) |
-| `so_catalog_signals` | drift catalogo (weekly CI) |
-| — | SPARQL: usa **`toolkit_sparql_query`** del toolkit MCP |
-
-> **Nota**: `so_sparql_query`, `so_discover_sdmx`, `so_radar_status_md` sono stati rimossi.
-> - SPARQL → `toolkit_sparql_query` del toolkit MCP
-> - SDMX discovery multi-keyword con ranking → **rimosso senza sostituto equivalente**. In alternativa: `so_list_source_items(source_id="istat_sdmx", query="keyword")` per filtro base, oppure `so_inventory_query(protocol="sdmx")` per scored items.
-> - Health radar → `so_radar_summary`
-
-## Tool detail
-
-- `so_inventory_query`
-  - legge `source_check_results.parquet`
-  - cerca risultati item-level gia controllati
-  - include `has_results` filter e `gcs_uri`
-
-- `so_catalog_signals`
-  - legge `catalog_signals.json`
-  - segnali di drift o cambiamento catalogo
-
-- `so_radar_summary`
-  - legge `radar_summary.json`
-  - stato GREEN/YELLOW/RED per fonte
-  - con `include_history=True` include anche `radar_history.json`
-
-- `so_find_by_url`
-  - cerca URL in source_check_results e catalog_inventory
-  - verifica se gia catalogato
-
-- `so_registry_query`
-  - interroga `sources_registry.yaml`
-  - filtra per protocol, source_kind, observation_mode
-
-- `so_inventory_status`
-  - legge `catalog_inventory_report.json`
-  - distingue ok/error/protocol_not_supported
-  - con `include_diff=True` include anche il delta item (ex `so_inventory_diff`)
-
-- `so_catalog_inventory_search`
-  - legge `catalog_inventory_latest.parquet`
-  - cerca item per testo/libro
-
-- `so_recommend_sources`
-  - cerca fonti nell'inventory per keyword
-  - cerca in: item_name, title, tags, organization, notes_excerpt
-  - ritorna: source_id, item_count, organizations
+Tutti i tool (tranne `so_registry_query` e `so_source_overview`) hanno cache TTL 120s. Chiave include parametri normalizzati — query identiche tornano in ~100ms invece di 2-6s.
 
 
 
