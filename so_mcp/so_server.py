@@ -35,7 +35,7 @@ mcp = create_mcp_server(
 )
 
 # Cache TTL 120s per risposte ripetute (stesso pattern di clean-query PR #607)
-_query_cache = TtlCache(ttl_seconds=120)
+_query_cache: TtlCache[Any] = TtlCache(ttl_seconds=120)
 
 
 # ─── Tool 1/7: Registry ───────────────────────────────────────────────────────
