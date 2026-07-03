@@ -1,4 +1,4 @@
-"""Smoke test: verify so_server.py registers 10 MCP tools via create_mcp_server."""
+"""Smoke test: verify so_server.py registers 7 MCP tools via create_mcp_server."""
 
 from __future__ import annotations
 
@@ -9,22 +9,19 @@ import pytest
 from so_mcp import so_server
 
 
-def test_mcp_server_registers_10_tools() -> None:
-    """Verify all 10 tools are registered on the mcp server object."""
+def test_mcp_server_registers_7_tools() -> None:
+    """Verify all 7 tools are registered on the mcp server object."""
     tools = asyncio.run(so_server.mcp.list_tools())
     tool_names = sorted(t.name for t in tools)
 
     expected = sorted(
         [
-            "so_catalog_inventory_search",
             "so_catalog_signals",
             "so_find_by_url",
-            "so_inventory_query",
-            "so_inventory_status",
-            "so_list_source_items",
+            "so_inventory_search",
             "so_radar_summary",
-            "so_recommend_sources",
             "so_registry_query",
+            "so_source_check",
             "so_source_overview",
         ]
     )

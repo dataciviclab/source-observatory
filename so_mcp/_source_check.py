@@ -1,6 +1,9 @@
 """
-Inventory queries: read-only access to source_check_results, catalog_inventory
-parquet files, and the inventory report.
+Source-check queries: read-only access to source_check_results parquet
+and inventory status/diff from catalog_inventory_report.json.
+
+Unifica i precedenti ``query_inventory``, ``inventory_status`` e
+``inventory_diff`` in un unico modulo.
 """
 
 from __future__ import annotations
@@ -13,7 +16,7 @@ from lab_connectors.duckdb import gcs_connect
 
 from . import _artifact
 
-logger = logging.getLogger("so_mcp._inventory")
+logger = logging.getLogger("so_mcp._source_check")
 
 
 def query_inventory(
@@ -43,14 +46,12 @@ def query_inventory(
 
                 if grouped and has_group_col:
                     # ── grouped mode: aggregate by dataset_group ──────────────
-                    # Selected columns (use MAX for best values per group)
                     select_parts = [
                         "dataset_group",
                         "MIN(dataset_group_year_min) AS year_min",
                         "MAX(dataset_group_year_max) AS year_max",
                         "COUNT(*) AS item_count",
                         "MAX(intake_score) AS best_score",
-                        # Source + best title from the group
                         "source_id",
                     ]
                     filters: list[str] = []
@@ -66,7 +67,7 @@ def query_inventory(
                         filters.append("paqa_score >= ?")
                         params.append(min_paqa_score)
                     elif min_paqa_score is not None:
-                        filters.append("1=0")  # colonna non disponibile → zero risultati
+                        filters.append("1=0")
                     if has_results is not None:
                         if has_results:
                             filters.append("intake_score IS NOT NULL AND intake_score > 0")
@@ -119,7 +120,7 @@ def query_inventory(
                         query_parts.append("paqa_score >= ?")
                         params.append(min_paqa_score)
                     elif min_paqa_score is not None:
-                        query_parts.append("1=0")  # colonna non disponibile → zero risultati
+                        query_parts.append("1=0")
                     if has_results is not None:
                         if has_results:
                             query_parts.append("intake_score IS NOT NULL AND intake_score > 0")
@@ -220,117 +221,8 @@ def inventory_status(source_id: str | None = None) -> dict[str, Any]:
     }
 
 
-def catalog_inventory_search(
-    query: str,
-    source_id: str | None = None,
-    protocol: str | None = None,
-    limit: int = 25,
-) -> dict[str, Any]:
-    """Search catalog_inventory_latest.parquet across key text fields."""
-    clean_query = (query or "").strip().lower()
-    if not clean_query:
-        return {"error": "empty_query", "message": "Provide a non-empty query."}
-
-    safe_limit = max(1, min(int(limit or 25), 200))
-    artifact = _artifact._catalog_inventory_parquet()
-    try:
-        with _artifact._resolved_parquet(artifact) as (resolved_path, cache):
-            parquet_path = str(resolved_path)
-            with gcs_connect(resolved_path) as con:
-                columns = set(_artifact._table_columns(con, parquet_path))
-                search_columns = [
-                    column
-                    for column in (
-                        "item_id",
-                        "item_name",
-                        "title",
-                        "tags",
-                        "notes_excerpt",
-                        "topic",
-                        "theme",
-                    )
-                    if column in columns
-                ]
-                if not search_columns:
-                    return {
-                        "error": "schema_mismatch",
-                        "message": "No searchable text columns found.",
-                    }
-                where = [
-                    "("
-                    + " OR ".join(
-                        f"lower(coalesce(cast({column} as varchar), '')) LIKE ?"
-                        for column in search_columns
-                    )
-                    + ")"
-                ]
-                like = f"%{clean_query}%"
-                params: list[Any] = [like] * len(search_columns)
-                if source_id:
-                    where.append("source_id = ?")
-                    params.append(source_id)
-                if protocol:
-                    where.append("protocol = ?")
-                    params.append(protocol)
-
-                select_columns = [
-                    "source_id",
-                    "protocol",
-                    "item_id",
-                    "item_name",
-                    "title",
-                    "organization",
-                    "tags",
-                    "landing_page",
-                    "distribution_url",
-                    "format",
-                    "source_status",
-                    "inventory_method",
-                    "item_kind",
-                    "api_base_url",
-                    "captured_at",
-                ]
-                select_sql = ", ".join(
-                    _artifact._select_expr(column, columns) for column in select_columns
-                )
-                sql = f"""
-                    SELECT {select_sql}
-                    FROM "{parquet_path}"
-                    WHERE {" AND ".join(where)}
-                    ORDER BY source_id NULLS LAST, title NULLS LAST, item_id
-                    LIMIT {safe_limit}
-                """
-                rows = con.execute(sql, params).fetchall()
-                cols = [desc[0] for desc in con.description]
-    except FileNotFoundError:
-        return _artifact._parquet_not_found(artifact)
-
-    result: dict[str, Any] = {
-        "artifact": _artifact._display_path(_artifact._INVENTORY_PARQUET),
-        "cache": cache,
-        "filters": {
-            "query": clean_query,
-            "source_id": source_id,
-            "protocol": protocol,
-            "limit": safe_limit,
-        },
-        "results": [dict(zip(cols, row)) for row in rows],
-        "returned": len(rows),
-        "has_more": len(rows) == safe_limit,
-    }
-    if not rows and source_id:
-        result["source_status"] = _artifact._inventory_source_status(source_id)
-    return result
-
-
 def _source_radar_context(source_id: str) -> str | None:
-    """Check radar_summary.json for source context (status, red_streak).
-
-    Schema reale di radar_summary.json::
-
-        {"sources": [{"id": "dati_salute", "status": "RED",
-                      "red_streak": 14, ...}, ...]}
-    """
+    """Check radar_summary.json for source context (status, red_streak)."""
     if not _artifact._RADAR_JSON.exists():
         return None
     try:

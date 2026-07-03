@@ -15,7 +15,7 @@ from typing import Any
 import pytest
 
 # Aggiungi percorsi di import prima di qualsiasi test
-# REPO_ROOT serve per importare so_mcp come package (from so_mcp._discovery import ...)
+# REPO_ROOT serve per importare so_mcp come package (from so_mcp._source_check import ...)
 # SCRIPTS_DIR serve per importare _constants da scripts/ (non è un package)
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 _SCRIPTS_DIR = _REPO_ROOT / "scripts"

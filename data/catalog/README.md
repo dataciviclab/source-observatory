@@ -34,6 +34,6 @@ La salute di connettivita' e HTTP vive in `data/radar/radar_summary.json`; qui r
 
 I tool MCP SO forniscono accesso programmatico a questi artifact:
 - `so_catalog_signals` — legge `catalog_signals.json` (segnali drill/down/stable per fonte)
-- `so_inventory_status` — legge stato build inventory per fonte (ok/error/protocol_not_supported)
+- `so_source_check(include_diff=True)` — legge stato build inventory per fonte (ok/error/protocol_not_supported)
 
 GCS latest: `gs://dataciviclab-clean/catalog/catalog_signals.json`
