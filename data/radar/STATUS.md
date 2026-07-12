@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-07-11
+Ultimo run: 2026-07-12
 
 ## Sommario
 
 - Fonti controllate: 33
-- GREEN: 32
-- YELLOW: 1
+- GREEN: 31
+- YELLOW: 2
 - RED: 0
 
 ## Tipi sorgente
@@ -37,7 +37,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_entrate_stato, bdap_lea, bdap_spese_stato, dipendenti_pubblici |
 | inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali, mim_scuola_infanzia |
-| dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | camera_deputati_legislature, camera_votazioni_sparql, silos_infrastrutture |
+| dati_camera | catalog | sparql | catalog-watch | YELLOW | 403 | camera_deputati_legislature, camera_votazioni_sparql, silos_infrastrutture |
 | dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | dati_cultura | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
@@ -68,5 +68,6 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 ## Note
 
 - `istat_sdmx`: Timeout (ReadTimeout)
+- `dati_camera`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.camera.it/sparql | Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
 - `aifa`: HTTP 200 | content-type: text/html;charset=UTF-8 | url finale: https://www.aifa.gov.it/dati-aifa | SSL verify failed; fallback verify=False used (SSLError)
