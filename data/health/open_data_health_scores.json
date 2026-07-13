@@ -1,10 +1,10 @@
 {
-  "captured_at": "2026-07-06T08:01:02.930748+00:00",
+  "captured_at": "2026-07-13T06:36:39.613900+00:00",
   "sources_scored": 33,
   "distribuzione": {
     "buono": 0,
-    "medio": 31,
-    "debole": 1,
+    "medio": 32,
+    "debole": 0,
     "carente": 1
   },
   "scores": [
@@ -567,6 +567,37 @@
       }
     },
     {
+      "source_id": "istat_sdmx",
+      "protocol": "sdmx",
+      "totale": 70.0,
+      "livello": "medio",
+      "azione_raccomandata": "monitoraggio",
+      "flag_urgenza": [],
+      "assi_computed": 1,
+      "item_count": null,
+      "perc_reachable": null,
+      "formato_aperto_count": null,
+      "formato_chiuso_count": null,
+      "assi": {
+        "formato_aperto": {
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "raggiungibilita": {
+          "score": 70.0,
+          "fonte": "computed"
+        },
+        "licenza_aperta": {
+          "score": 0.0,
+          "fonte": "missing"
+        },
+        "presenza_datigovit": {
+          "score": 0.0,
+          "fonte": "missing"
+        }
+      }
+    },
+    {
       "source_id": "dati_camera",
       "protocol": "sparql",
       "totale": 70.0,
@@ -997,37 +1028,6 @@
         "presenza_datigovit": {
           "score": 80.0,
           "fonte": "computed"
-        }
-      }
-    },
-    {
-      "source_id": "istat_sdmx",
-      "protocol": "sdmx",
-      "totale": 30.0,
-      "livello": "debole",
-      "azione_raccomandata": "verifica umana",
-      "flag_urgenza": [],
-      "assi_computed": 1,
-      "item_count": null,
-      "perc_reachable": null,
-      "formato_aperto_count": null,
-      "formato_chiuso_count": null,
-      "assi": {
-        "formato_aperto": {
-          "score": 0.0,
-          "fonte": "missing"
-        },
-        "raggiungibilita": {
-          "score": 30.0,
-          "fonte": "computed"
-        },
-        "licenza_aperta": {
-          "score": 0.0,
-          "fonte": "missing"
-        },
-        "presenza_datigovit": {
-          "score": 0.0,
-          "fonte": "missing"
         }
       }
     }
