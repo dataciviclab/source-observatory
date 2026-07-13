@@ -1,14 +1,14 @@
 # Catalog Watch Report
 
-_Generato: 2026-07-06T07:58:38+00:00 — 30 fonti controllate_
+_Generato: 2026-07-13T06:34:26+00:00 — 30 fonti controllate_
 
 ## Segnali attivi
 
-### 📦 `openbdap` — inventory change
+### 📦 `istat_sdmx` — inventory change
 
-- **Protocollo**: ckan
-- **Dettaglio**: 3823 item (package_list), delta -8 rispetto al run precedente (3831).
-- **Item**: 3823
+- **Protocollo**: sdmx
+- **Dettaglio**: 4878 item (dataflow_count), delta +2 rispetto al run precedente (4876).
+- **Item**: 4878
 - **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
 
 ### • `mim_opendata` — csv_magnet
@@ -17,6 +17,13 @@ _Generato: 2026-07-06T07:58:38+00:00 — 30 fonti controllate_
 - **Dettaglio**: 1128 link data (CSV 376, JSON 376, XML 376), years 2015-2026 — top prefixes: INFANZIA=192, ALUCORSO=120, SCUANAGR=72, SCUANAAU=72, ALUITAST=60
 - **Item**: 1128
 - **Azione**: catalog-watch-ready
+
+### 📦 `dati_senato` — inventory change
+
+- **Protocollo**: sparql
+- **Dettaglio**: 100 item (named_graphs), delta +2 rispetto al run precedente (98).
+- **Item**: 100
+- **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
 
 ### • `mef_irpef` — csv_magnet
 
@@ -28,8 +35,8 @@ _Generato: 2026-07-06T07:58:38+00:00 — 30 fonti controllate_
 ### • `opencivitas` — csv_magnet
 
 - **Protocollo**: html
-- **Dettaglio**: 803 link data (XLSX 1, ZIP 88), years 2009-2024 — top prefixes: Metadati=14, 2018=9, 2011=8, 2010=8, 2013=8
-- **Item**: 803
+- **Dettaglio**: 813 link data (XLSX 1, ZIP 89), years 2009-2025 — top prefixes: Metadati=16, 2013=14, 2010=12, 2016=8, 2018=6
+- **Item**: 813
 - **Azione**: catalog-watch-ready
 
 ### • `aifa` — csv_magnet
@@ -53,15 +60,15 @@ _Generato: 2026-07-06T07:58:38+00:00 — 30 fonti controllate_
 - **Item**: 33
 - **Azione**: catalog-watch-ready
 
-### 📦 `unioncamere` — inventory change
+### 📦 `pagopa` — inventory change
 
 - **Protocollo**: ckan
-- **Dettaglio**: 384 item (package_search), delta +11 rispetto al run precedente (373).
-- **Item**: 384
+- **Dettaglio**: 12 item (package_search), delta +1 rispetto al run precedente (11).
+- **Item**: 12
 - **Azione**: verificare se variazione attesa; avviare inventory-triage se nuovi dataset
 
 ## Fonti stabili / skipped
 
-_22 fonti senza segnali inventariali in questo run._
+_21 fonti senza segnali inventariali in questo run._
 
 Per problemi di connettività o HTTP vedere `data/radar/radar_summary.json`.
