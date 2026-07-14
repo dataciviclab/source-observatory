@@ -5,7 +5,7 @@ istat_sdmx:
   base_url: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1
   inventory:
     timeout: 600
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: dataflow_count
@@ -33,7 +33,7 @@ anac:
   inventory:
     fq: organization:anac
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -59,7 +59,7 @@ inps:
     package_show_sample: true
     package_show_timeout: 5
     sample_size: 10000
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -89,7 +89,7 @@ openbdap:
     package_show_max_workers: 8
     package_show_timeout: 10
     sample_size: 25
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-04-02'
     metric: package_count
@@ -115,7 +115,7 @@ inail_opendata:
   inventory:
     fq: organization:inail
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   verdict: go
   note: Fonte via dati.gov.it. 102 dataset INAIL su infortuni sul lavoro e 
     malattie professionali. Complementare al portale diretto dati.inail.it 
@@ -126,7 +126,7 @@ mim_opendata:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://dati.istruzione.it/opendata/opendata/catalogo/
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-04-27'
     metric: csv_magnet_total_links
@@ -160,7 +160,7 @@ dati_camera:
   base_url: https://dati.camera.it/sparql
   scraping_blocked: true
   scraping_blocked_reason: reCAPTCHA / WAF blocca richieste HTTP non-browser
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -198,7 +198,7 @@ dati_senato:
     timeout: 600
     timeout_reason: 99 query SPARQL (1 discover + 98 schema enrich × 15 pred). 
       stimate 5s/query su Virtuoso. 99 × 5 × 1.2 = 594s
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-05-31'
     metric: named_graph_count
@@ -238,7 +238,7 @@ dati_cultura:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.cultura.gov.it/sparql
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -263,7 +263,7 @@ ispra_linked_data:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://dati.isprambiente.it/sparql
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-04-11'
     metric: dataset_count
@@ -290,7 +290,7 @@ consip_open_data:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.consip.it/api/3/action/package_list?limit=1
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-04-10'
     metric: package_count
@@ -313,7 +313,7 @@ lavoro_opendata:
   inventory:
     fq: organization:ministero-del-lavoro
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -336,7 +336,7 @@ mur_ustat:
   inventory:
     fq: organization:ministero-universita-e-ricerca
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -360,7 +360,7 @@ opencoesione:
   inventory:
     fq: organization:pcm-opencoesione
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   verdict: go
   note: "Fonte via dati.gov.it (harvesting PCM-OpenCoesione). Sostituisce accesso
     diretto a opencoesione.gov.it (API REST instabile: 403/timeout). 561 dataset totali
@@ -383,7 +383,7 @@ mef_irpef:
   observation_mode: catalog-watch
   base_url: 
     https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-05-03'
     metric: csv_magnet_homepage_links
@@ -411,7 +411,7 @@ opencivitas:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://www.opencivitas.it/it/open-data
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-05-07'
     metric: csv_magnet_total_links
@@ -452,13 +452,13 @@ aifa:
     probe_content_type: true
   datasets_in_use:
     - aifa_spesa_consumo
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
 dait:
   source_kind: catalog
   protocol: html
   observation_mode: radar-only
   base_url: https://dait.interno.gov.it/contenuti/tipo/open_data
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   verdict: go
   note: "DAIT — Anagrafe Amministratori locali. CSV snapshot annuali 1991-2026 + \
     \ corrente. 41 su 42 entry sono snapshot dello stesso dataset. radar-only iniziale
@@ -470,7 +470,7 @@ eligendo:
   protocol: html
   observation_mode: radar-only
   base_url: https://elezionistorico.interno.gov.it/eligendo/opendata.php
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   verdict: go
   note: "Eligendo — Archivio storico elettorale del DAIT (Ministero dell'Interno).\
     \  Risultati elettorali per comune dal 1946: Camera (19 tornate 1948-2022),  Senato
@@ -487,7 +487,7 @@ mit_opendata:
   protocol: ckan
   observation_mode: catalog-watch
   base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   verdict: go
   note: 'Dataset del Ministero Infrastrutture e Trasporti via dati.gov.it (portale
     MIT dati.mit.gov.it non raggiungibile da 2026-05). 70 dataset: contratti pubblici,
@@ -512,7 +512,7 @@ openga:
   observation_mode: catalog-watch
   base_url: 
     https://openga.giustizia-amministrativa.it/api/3/action/package_list?limit=1
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   verdict: go
   note: "Portale CKAN Giustizia Amministrativa — ~270 dataset su ricorsi TAR+CDS,
     sentenze, ordinanze, pareri. CC-BY 4.0. Aggiornamento mensile. Si incastra con
@@ -525,7 +525,7 @@ giustizia_statistiche:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://datiestatistiche.giustizia.it/
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   verdict: go
   note: "Portale statistico Ministero Giustizia — XLSX scaricabili su flussi civili/penali,
     clearance rate, disposition time, sorveglianza, intercettazioni, monitoraggio
@@ -550,7 +550,7 @@ cortecostituzionale:
   protocol: html
   observation_mode: catalog-watch
   base_url: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   verdict: go
   note: "Portale Open Data Corte Costituzionale — Pronunce (1956-oggi), Massime, Anagrafica
     Giudici, Atti di promovimento. CSV/XML/JSON in ZIP. Agg. giornaliero. Endpoint
@@ -566,7 +566,7 @@ terna_opendata:
   protocol: rest
   observation_mode: radar-only
   base_url: https://dati.terna.it/
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   verdict: go
   note: "Portale Dati Terna — API Sitecore REST. 31+ dataset su energia (fabbisogno,
     generazione, trasmissione, mercato, adeguatezza). API pubblica ritorna XLSX. Già
@@ -615,7 +615,7 @@ ministero_interno:
   inventory:
     fq: organization:ministero-dell-interno
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -639,7 +639,7 @@ agid:
   inventory:
     fq: organization:agenzia-per-l-italia-digitale
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -661,7 +661,7 @@ noipa_sparql:
   protocol: sparql
   observation_mode: catalog-watch
   base_url: https://sparql-noipa.mef.gov.it/sparql
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   verdict: go
   note: "NoiPA SPARQL — MEF/RGS. Dati mensili personale PA\n(entries-{YYYYMM}, 2019-2026)
     + pensioni PA (entriesPensioni-{YYYYMM},\n2017-oggi). ~509k soggetti/mese, 39
@@ -681,7 +681,7 @@ mimit_rna:
     timeout: 180
   source_check:
     max_concurrency: 2
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -708,7 +708,7 @@ ministero_salute:
   inventory:
     fq: organization:ministero-della-salute
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-05-24'
     metric: package_count
@@ -727,6 +727,7 @@ ministero_salute:
     diretto.'
   datasets_in_use:
     - farmacie
+    - personale_ssn
     - reparti_ricovero
     - strutture_asl
     - strutture_ricovero_asl
@@ -738,7 +739,7 @@ agcm:
   inventory:
     fq: organization:agcm
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-06-04'
     metric: package_count
@@ -761,7 +762,7 @@ unioncamere:
     fq: 
       organization:unione-italiana-delle-camere-di-commercio-industria-artigianato-e-agricoltura
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-06-04'
     metric: package_count
@@ -787,7 +788,7 @@ pagopa:
   inventory:
     fq: organization:pagopa-s-p-a
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-06-11'
     metric: package_count
@@ -810,7 +811,7 @@ aci:
   inventory:
     fq: organization:aci
     timeout: 180
-  last_probed: '2026-07-13'
+  last_probed: '2026-07-14'
   catalog_baseline:
     captured_at: '2026-06-11'
     metric: package_count
