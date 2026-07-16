@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-07-15
+Ultimo run: 2026-07-16
 
 ## Sommario
 
@@ -43,7 +43,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
-| mur_ustat | catalog | ckan | catalog-watch | GREEN | 200 | mur_contribuzione_universitaria |
+| mur_ustat | catalog | ckan | catalog-watch | GREEN | 200 | mur_contribuzione_universitaria, mur_immatricolati, mur_iscritti |
 | opencoesione | catalog | ckan | catalog-watch | GREEN | 200 | opencoesione_progetti |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso |
