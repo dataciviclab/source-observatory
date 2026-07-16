@@ -39,6 +39,9 @@ from so_mcp._paths import (
     REGISTRY_PATH as REGISTRY_PATH,  # noqa: F401
 )
 from so_mcp._paths import (
+    SCHEMA_DIR_PATH as SCHEMA_DIR_PATH,  # noqa: F401
+)
+from so_mcp._paths import (
     STATUS_MD_PATH as STATUS_MD_PATH,  # noqa: F401
 )
 
@@ -47,7 +50,6 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # ── Paths non esportati da so_mcp._paths (solo script) ─────────────────────
 CATALOG_WATCH_REPORT_PATH = _REPO_ROOT / "data" / "catalog" / "CATALOG_WATCH_REPORT.md"
-SCHEMA_DIR_PATH = _REPO_ROOT / "schemas"
 
 
 def validate_schema(instance: dict, schema_name: str) -> None:
