@@ -1,0 +1,155 @@
+{
+  "source_id": "mur_ustat",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "mur_ustat",
+    "protocol": "ckan",
+    "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Fonte via dati.gov.it (harvesting MUR). Sostituisce fonte diretta dati-ustat.mur.gov.it che aveva ConnectTimeout. 69 dataset su istruzione universitaria (contribuzione atenei, DSU regionale, collegi, AFAM).",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 69,
+    "method": "package_search",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 69,
+    "baseline_date": "2026-05-24",
+    "freshness_hours": 0.3,
+    "delta": 0,
+    "delta_pct": 0.0,
+    "formats": {
+      "CSV,XLSX,PDF": 17,
+      "CSV,OP_DATPRO": 9,
+      "CSV,PDF,XLSX": 7,
+      "CSV,XLSX": 7,
+      "XLSX,CSV,PDF": 6,
+      "PDF,CSV,XLSX": 5,
+      "CSV,ARC,XLSX": 2,
+      "XLSX,PDF,CSV": 1,
+      "PDF,CSV,ARC": 1,
+      "XLSX,CSV,ARC,PDF": 1,
+      "PDF,XLSX,CSV,ARC": 1,
+      "CSV,CSS,XLSX": 1,
+      "CSV,ARC,OP_DATPRO": 1,
+      "OP_DATPRO,CSV,ARC": 1,
+      "CSV,XLS,XLSX,ARC": 1,
+      "CSV,XLS": 1,
+      "DOC,XLSX,CSV": 1,
+      "PDF,CSV,XLSX,ARC": 1,
+      "XLSX,CSV": 1,
+      "XLSX,CSV,OP_DATPRO": 1,
+      "CSV,XLSX,ARC,DBASE": 1,
+      "CSV,PDF,XLSX,ARC": 1,
+      "PDF,CSV": 1
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 69,
+    "reachable": 0,
+    "intake_candidates": 0,
+    "needs_review": 49,
+    "top_items": [
+      {
+        "name": "2006-2015-contribuzione-e-interventi-afam",
+        "score": 39.0,
+        "year_range": [
+          2006,
+          2015
+        ],
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "2025-contribuzione-e-interventi-afam",
+        "score": 30.0,
+        "year_range": [
+          2025,
+          2025
+        ],
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "2022-contribuzione-e-interventi-afam",
+        "score": 30.0,
+        "year_range": [
+          2022,
+          2022
+        ],
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "2013-diritto-allo-studio-universitario-dsu-regionale",
+        "score": 30.0,
+        "year_range": [
+          2013,
+          2013
+        ],
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "2023-contribuzione-e-interventi-afam",
+        "score": 30.0,
+        "year_range": [
+          2023,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": false
+      }
+    ],
+    "coverage_pct": 100.0,
+    "formato_aperto": {
+      "score": 10.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 0.0,
+      "total": 69,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "mur_contribuzione_universitaria",
+      "status": "published"
+    },
+    {
+      "slug": "mur_immatricolati",
+      "status": "published"
+    },
+    {
+      "slug": "mur_iscritti",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "69 item (package_search), in linea con la baseline.",
+      "metric_value": 69,
+      "suggested_action": "nessuna"
+    }
+  ],
+  "operational_verdict": {
+    "label": "STABLE",
+    "score": "stable",
+    "triggers": [
+      "all_green"
+    ],
+    "next_action": null
+  }
+}

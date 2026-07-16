@@ -1,0 +1,113 @@
+{
+  "source_id": "giustizia_statistiche",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "giustizia_statistiche",
+    "protocol": "html",
+    "base_url": "https://datiestatistiche.giustizia.it/",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Portale statistico Ministero Giustizia — XLSX scaricabili su flussi civili/penali, clearance rate, disposition time, sorveglianza, intercettazioni, monitoraggio tribunali, durata procedimenti. Include dataset già in uso dal Lab.\n",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 9,
+    "method": null,
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": null,
+    "baseline_date": null,
+    "freshness_hours": 0.3,
+    "delta": null,
+    "delta_pct": 0.0,
+    "formats": {
+      "XLSX": 9
+    },
+    "years_range": [
+      2014,
+      2015
+    ]
+  },
+  "source_check": {
+    "last_run": "2026-05-22 12:32:50+00:00",
+    "total_scored": 4,
+    "reachable": 3,
+    "intake_candidates": 0,
+    "needs_review": 4,
+    "top_items": [
+      {
+        "name": "Indicatori",
+        "score": 23.0,
+        "year_range": null,
+        "format": "XML",
+        "reachable": true
+      },
+      {
+        "name": "Durata",
+        "score": 23.0,
+        "year_range": [
+          2014,
+          2014
+        ],
+        "format": "XML",
+        "reachable": true
+      },
+      {
+        "name": "Interc",
+        "score": 23.0,
+        "year_range": null,
+        "format": "XML",
+        "reachable": true
+      },
+      {
+        "name": NaN,
+        "score": 0,
+        "year_range": null,
+        "format": NaN,
+        "reachable": false
+      }
+    ],
+    "coverage_pct": 44.4,
+    "formato_aperto": {
+      "score": 20.0,
+      "perc_aperto": 0.0,
+      "total": 9,
+      "fonte": "inventory"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "civile_flussi",
+      "status": "published"
+    },
+    {
+      "slug": "giustizia_penale_indicatori",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "csv_magnet",
+      "result": "scan_completed",
+      "detail": "9 link data (XLSX 9), years 2014-2015 — top prefixes: Indicatori=2, Durata=2, Civile=1, Sorveg=1, Sorveglianza=1",
+      "metric_value": 9,
+      "suggested_action": "low signal"
+    }
+  ],
+  "operational_verdict": {
+    "label": "PARTIALLY_SCOPED",
+    "score": "partial",
+    "triggers": [
+      "source_check_partial"
+    ],
+    "next_action": "complete source-check"
+  }
+}

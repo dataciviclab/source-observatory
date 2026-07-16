@@ -1,0 +1,135 @@
+{
+  "source_id": "agid",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "agid",
+    "protocol": "ckan",
+    "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Fonte via dati.gov.it. IPA — Indice delle PA: enti, unita organizzative, PEC, domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione elettronica, cloud. Codice_IPA chiave di join con ANAC.",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 40,
+    "method": "package_search",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 40,
+    "baseline_date": "2026-05-24",
+    "freshness_hours": 0.3,
+    "delta": 0,
+    "delta_pct": 0.0,
+    "formats": {
+      "JSON,XLSX": 8,
+      "XLSX,JSON": 7,
+      "TXT,JSON": 7,
+      "JSON,TXT": 5,
+      "CSV,JSON": 5,
+      "JSON": 4,
+      "CSV": 3,
+      "CSV,JSON,XML": 1
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 16,
+    "reachable": 9,
+    "intake_candidates": 1,
+    "needs_review": 15,
+    "top_items": [
+      {
+        "name": "elenco-open-data-accessibilita",
+        "score": 60.0,
+        "year_range": [
+          2025,
+          2025
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "porte-di-dominio",
+        "score": 42.0,
+        "year_range": null,
+        "format": "JSON",
+        "reachable": true
+      },
+      {
+        "name": "elenco-delle-pec-attive-degli-enti",
+        "score": 42.0,
+        "year_range": null,
+        "format": "JSON",
+        "reachable": true
+      },
+      {
+        "name": "unita-organizzative-che-emettono-ordini-elettronici",
+        "score": 42.0,
+        "year_range": [
+          2017,
+          2017
+        ],
+        "format": "JSON",
+        "reachable": true
+      },
+      {
+        "name": "casi-di-riutilizzo-portale-dati-gov-it",
+        "score": 35.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": true
+      }
+    ],
+    "coverage_pct": 40.0,
+    "formato_aperto": {
+      "score": 15.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 44.4,
+      "total": 9,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "ipa_aree_organizzative_omogenee",
+      "status": "published"
+    },
+    {
+      "slug": "ipa_enti",
+      "status": "published"
+    },
+    {
+      "slug": "ipa_istat_mapping",
+      "status": "published"
+    },
+    {
+      "slug": "ipa_unita_organizzative",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "40 item (package_search), in linea con la baseline.",
+      "metric_value": 40,
+      "suggested_action": "nessuna"
+    }
+  ],
+  "operational_verdict": {
+    "label": "PARTIALLY_SCOPED",
+    "score": "partial",
+    "triggers": [
+      "source_check_partial"
+    ],
+    "next_action": "complete source-check"
+  }
+}

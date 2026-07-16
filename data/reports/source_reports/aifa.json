@@ -1,0 +1,131 @@
+{
+  "source_id": "aifa",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "aifa",
+    "protocol": "html",
+    "base_url": "https://www.aifa.gov.it/dati-aifa",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Portale Open Data AIFA — CSV scaricabili senza autenticazione. Licenza CC-BY 4.0. Inventory via area_pages (sito principale ha protezioni anti-bot). Dataset: liste farmaci, provvedimenti, sperimentazioni cliniche, farmacovigilanza, incarichi, bandi.\n",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": "SSL verify failed; fallback verify=False used (SSLError)",
+    "ssl_fallback": true
+  },
+  "inventory": {
+    "total_items": 38,
+    "method": null,
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": null,
+    "baseline_date": null,
+    "freshness_hours": 0.3,
+    "delta": null,
+    "delta_pct": 0.0,
+    "formats": {
+      "CSV": 34,
+      "ZIP": 3,
+      "XML": 1
+    },
+    "years_range": [
+      2010,
+      2026
+    ]
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 60,
+    "reachable": 58,
+    "intake_candidates": 11,
+    "needs_review": 49,
+    "top_items": [
+      {
+        "name": "strutture",
+        "score": 60.0,
+        "year_range": [
+          2014,
+          2014
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "Lista-",
+        "score": 60.0,
+        "year_range": [
+          2025,
+          2025
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "Strutture",
+        "score": 60.0,
+        "year_range": [
+          2026,
+          2026
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "provvedimenti",
+        "score": 60.0,
+        "year_range": [
+          2025,
+          2025
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "Classe",
+        "score": 60.0,
+        "year_range": [
+          2026,
+          2026
+        ],
+        "format": "CSV",
+        "reachable": true
+      }
+    ],
+    "coverage_pct": 157.9,
+    "formato_aperto": {
+      "score": 90.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 100.0,
+      "total": 53,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "aifa_spesa_consumo",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "csv_magnet",
+      "result": "scan_completed",
+      "detail": "38 link data (CSV 34, XML 1, ZIP 3), years 2010-2026 — top prefixes: provvedimenti=8, Classe=4, sc=3, elenco=2, Elenco=2",
+      "metric_value": 38,
+      "suggested_action": "catalog-watch-ready"
+    }
+  ],
+  "operational_verdict": {
+    "label": "STABLE",
+    "score": "stable",
+    "triggers": [
+      "all_green"
+    ],
+    "next_action": null
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "source_id": "anac",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "anac",
+    "protocol": "ckan",
+    "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Fonte via dati.gov.it (harvesting ANAC). I download raw vanno al portale diretto dati.anticorruzione.it con User-Agent browser (WAF blocca solo python-requests). 70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari, subappalti, varianti, PNRR indicatori, SOA. CC-BY-SA 4.0.",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 70,
+    "method": "package_search",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 70,
+    "baseline_date": "2026-05-24",
+    "freshness_hours": 0.3,
+    "delta": 0,
+    "delta_pct": 0.0,
+    "formats": {
+      "TTL,CSV,JSON": 14,
+      "CSV,TTL,JSON": 11,
+      "CSV,JSON,TTL": 10,
+      "JSON": 9,
+      "JSON,CSV,TTL": 9,
+      "JSON,TTL,CSV": 7,
+      "TTL,JSON,CSV": 6,
+      "JSON,CSV": 2,
+      "CSV": 1,
+      "CSV,ZIP,JSON,TTL": 1
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 66,
+    "reachable": 3,
+    "intake_candidates": 0,
+    "needs_review": 66,
+    "top_items": [
+      {
+        "name": "ocds-appalti-ordinari-anno-2025",
+        "score": 35.0,
+        "year_range": [
+          2025,
+          2025
+        ],
+        "format": "JSON",
+        "reachable": true
+      },
+      {
+        "name": "ocds-appalti-ordinari-anno-2022",
+        "score": 35.0,
+        "year_range": [
+          2022,
+          2022
+        ],
+        "format": "JSON",
+        "reachable": true
+      },
+      {
+        "name": "ocds-appalti-ordinari-anno-2024",
+        "score": 35.0,
+        "year_range": [
+          2024,
+          2024
+        ],
+        "format": "JSON",
+        "reachable": true
+      },
+      {
+        "name": "attestazioni-soa-v2",
+        "score": 25.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "smartcig-anno-2014",
+        "score": 15.0,
+        "year_range": [
+          2014,
+          2014
+        ],
+        "format": "CSV",
+        "reachable": false
+      }
+    ],
+    "coverage_pct": 94.3,
+    "formato_aperto": {
+      "score": 10.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 0.0,
+      "total": 61,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "anac_bandi_gara",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "70 item (package_search), in linea con la baseline.",
+      "metric_value": 70,
+      "suggested_action": "nessuna"
+    }
+  ],
+  "operational_verdict": {
+    "label": "STABLE",
+    "score": "stable",
+    "triggers": [
+      "all_green"
+    ],
+    "next_action": null
+  }
+}

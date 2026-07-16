@@ -1,0 +1,127 @@
+{
+  "source_id": "aci",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "aci",
+    "protocol": "ckan",
+    "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Fonte via dati.gov.it. 35 dataset ACI su parco veicolare: prime iscrizioni autovetture (per comune, alimentazione, classe euro, 2017-2024), radiazioni per demolizione. CSV su lod.aci.it in formato tidy. Incrociabile con MIT incidentalità.",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 35,
+    "method": "package_search",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 35,
+    "baseline_date": "2026-06-11",
+    "freshness_hours": 0.3,
+    "delta": 0,
+    "delta_pct": 0.0,
+    "formats": {
+      "CSV,ZIP": 29,
+      "ZIP,CSV": 3,
+      "ZIP": 3
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 32,
+    "reachable": 29,
+    "intake_candidates": 32,
+    "needs_review": 0,
+    "top_items": [
+      {
+        "name": "radiazioni-per-demolizione-nel-2020-autovetture-per-ente-territoriale",
+        "score": 80.0,
+        "year_range": [
+          2020,
+          2020
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "prime-iscrizioni-veicoli-nuovi-nel-2022-autovetture-per-ente-territoriale",
+        "score": 80.0,
+        "year_range": [
+          2022,
+          2022
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "radiazioni-per-demolizione-nel-2022-autovetture-per-ente-territoriale",
+        "score": 80.0,
+        "year_range": [
+          2022,
+          2022
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "prime-iscrizioni-veicoli-nuovi-nel-2022-autovetture-per-ente-territoriale-e-alimentazione",
+        "score": 80.0,
+        "year_range": [
+          2022,
+          2022
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "radiazioni-per-demolizione-nel-2022-autovetture-per-ente-territoriale-e-classe-euro",
+        "score": 80.0,
+        "year_range": [
+          2022,
+          2022
+        ],
+        "format": "CSV",
+        "reachable": true
+      }
+    ],
+    "coverage_pct": 91.4,
+    "formato_aperto": {
+      "score": 90.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 90.6,
+      "total": 32,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "aci_prime_iscrizioni_autovetture",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "35 item (package_search), in linea con la baseline.",
+      "metric_value": 35,
+      "suggested_action": "nessuna"
+    }
+  ],
+  "operational_verdict": {
+    "label": "STABLE",
+    "score": "stable",
+    "triggers": [
+      "all_green"
+    ],
+    "next_action": null
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "source_id": "terna_opendata",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "terna_opendata",
+    "protocol": "rest",
+    "base_url": "https://dati.terna.it/",
+    "source_kind": "catalog",
+    "observation_mode": "radar-only",
+    "verdict": "go",
+    "note": "Portale Dati Terna — API Sitecore REST. 31+ dataset su energia (fabbisogno, generazione, trasmissione, mercato, adeguatezza). API pubblica ritorna XLSX. Già in uso da pipeline Lab. Catalog-watch richiederebbe connector custom.\n",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 0,
+    "method": null,
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": null,
+    "baseline_date": null,
+    "delta": null,
+    "delta_pct": 0.0
+  },
+  "source_check": {
+    "last_run": null,
+    "total_scored": 0,
+    "reachable": 0,
+    "intake_candidates": 0,
+    "needs_review": 0,
+    "top_items": [],
+    "coverage_pct": null,
+    "formato_aperto": {
+      "score": 0.0,
+      "perc_aperto": 0.0,
+      "total": 0,
+      "fonte": "missing"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "terna_electrical_energy_by_sector",
+      "status": "published"
+    },
+    {
+      "slug": "terna_electricity_by_source",
+      "status": "published"
+    }
+  ],
+  "signals": [],
+  "operational_verdict": {
+    "label": "STABLE",
+    "score": "stable",
+    "triggers": [
+      "all_green"
+    ],
+    "next_action": null
+  }
+}
