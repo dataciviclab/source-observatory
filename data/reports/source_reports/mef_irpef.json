@@ -1,0 +1,134 @@
+{
+  "source_id": "mef_irpef",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "mef_irpef",
+    "protocol": "html",
+    "base_url": "https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Portale MEF Dipartimento Finanze — Open Data IRPEF comunale. Dati fiscali regionali per tipo reddito, classi, sesso. Alta rilevanza civica per analisi disuguaglianza e gettito regionale.",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 147,
+    "method": "csv_magnet_homepage_direct",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 147,
+    "baseline_date": "2026-05-03",
+    "freshness_hours": 0.3,
+    "delta": 0,
+    "delta_pct": 0.0,
+    "formats": {
+      "CSV": 81,
+      "ZIP": 66
+    },
+    "years_range": [
+      2000,
+      2025
+    ]
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 119,
+    "reachable": 81,
+    "intake_candidates": 27,
+    "needs_review": 92,
+    "top_items": [
+      {
+        "name": "REG",
+        "score": 60.0,
+        "year_range": [
+          2025,
+          2025
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "REG",
+        "score": 60.0,
+        "year_range": [
+          2025,
+          2025
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "REG",
+        "score": 60.0,
+        "year_range": [
+          2025,
+          2025
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "REG",
+        "score": 60.0,
+        "year_range": [
+          2024,
+          2024
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "REG",
+        "score": 60.0,
+        "year_range": [
+          2024,
+          2024
+        ],
+        "format": "CSV",
+        "reachable": true
+      }
+    ],
+    "coverage_pct": 81.0,
+    "formato_aperto": {
+      "score": 90.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 100.0,
+      "total": 81,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "irpef_comunale",
+      "status": "published"
+    },
+    {
+      "slug": "mef_irpef_regionale",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "csv_magnet",
+      "result": "scan_completed",
+      "detail": "147 link data (CSV 81, ZIP 66), years 2000-2025 — top prefixes: Redditi=66, REG=27, cla=27, sesso=27",
+      "metric_value": 147,
+      "suggested_action": "catalog-watch-ready"
+    }
+  ],
+  "operational_verdict": {
+    "label": "STABLE",
+    "score": "stable",
+    "triggers": [
+      "all_green"
+    ],
+    "next_action": null
+  }
+}

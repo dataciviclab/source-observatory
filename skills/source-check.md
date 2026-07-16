@@ -57,8 +57,8 @@ duplicati e orientarti:
 ```
 
 **Se la fonte è già nota (source_id conosciuto)**: sostituisci i passaggi
-2-3 con `so_source_overview(<source_id>)` che dà radar + inventory_status +
-signals + registry in una chiamata.
+2-3 con `so_source_report(<source_id>)` che dà health + inventory +
+source_check + signals + verdict in una chiamata.
 
 **Se `so_find_by_url` trova risultati**: la fonte è già catalogata — consulta
 i risultati prima di proseguire e possibilmente riutilizza evidenze esistenti.

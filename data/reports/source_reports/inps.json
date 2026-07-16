@@ -1,0 +1,135 @@
+{
+  "source_id": "inps",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "inps",
+    "protocol": "ckan",
+    "base_url": "https://serviziweb2.inps.it/odapi/package_list?limit=1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Catalogo CKAN INPS — inventory via package_list + package_show_sample (current_package_list_with_resources lento a offset alti).",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 2323,
+    "method": "package_list",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 2323,
+    "baseline_date": "2026-04-02",
+    "freshness_hours": 0.3,
+    "delta": 0,
+    "delta_pct": 0.0,
+    "formats": {
+      "XLS,CSV,XML": 1378,
+      "CSV,XML": 807,
+      "XML,CSV,XLS": 121,
+      "XML,XLS,CSV": 11,
+      "XLS,XML": 3,
+      "XML,CSV": 2,
+      "XLS,CSV": 1
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 2263,
+    "reachable": 237,
+    "intake_candidates": 484,
+    "needs_review": 1729,
+    "top_items": [
+      {
+        "name": "prestazioni-sostegno-alla-famiglia-(assegni-maternit&#224;-del-comune)",
+        "score": 92.0,
+        "year_range": [
+          2018,
+          2018
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "stipendi-dipendenti-italiani-e-stranieri--per-comune,-anno-2007",
+        "score": 83.0,
+        "year_range": [
+          2006,
+          2009
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "stipendi-dipendenti-italiani-e-stranieri-per-comune,-anno-2009",
+        "score": 83.0,
+        "year_range": [
+          2006,
+          2009
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "stipendi-dipendenti-italiani-e-stranieri-per-comune,-anno-2008",
+        "score": 83.0,
+        "year_range": [
+          2006,
+          2009
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "stipendi-dipendenti-italiani-e-stranieri-per-comune,-anno-2011",
+        "score": 82.0,
+        "year_range": [
+          2010,
+          2012
+        ],
+        "format": "CSV",
+        "reachable": true
+      }
+    ],
+    "coverage_pct": 97.4,
+    "formato_aperto": {
+      "score": 10.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 8.2,
+      "total": 2198,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "inps_pensioni_trimestrale",
+      "status": "published"
+    },
+    {
+      "slug": "pensioni_pa_dag",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "2323 item (package_list), in linea con la baseline.",
+      "metric_value": 2323,
+      "suggested_action": "nessuna"
+    }
+  ],
+  "operational_verdict": {
+    "label": "STABLE",
+    "score": "stable",
+    "triggers": [
+      "all_green"
+    ],
+    "next_action": null
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "source_id": "openbdap",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "openbdap",
+    "protocol": "ckan",
+    "base_url": "https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario senza intake o monitor diffuso.",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 3841,
+    "method": "package_list",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 3772,
+    "baseline_date": "2026-04-02",
+    "freshness_hours": 0.3,
+    "delta": 69,
+    "delta_pct": 1.8,
+    "formats": {
+      "?": 3819,
+      "CSV,XML": 18,
+      "CSV,1654_PAGAMENTI DEL BILANCIO DELLO STATO.PDF,XML": 1,
+      "CSV,1714_PRESTITI OBBLIGAZIONARI - PRIMA EMISSIONE.PDF,XML": 1,
+      "1492_SIOPE MOVIMENTI CUMULATI MENSILI DI ENTRATA.PDF,CSV,XML": 1,
+      "CSV,1455_SIOPE MOVIMENTI CUMULATI MENSILI DI ENTRATA.PDF,XML": 1
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 3570,
+    "reachable": 25,
+    "intake_candidates": 1077,
+    "needs_review": 2419,
+    "top_items": [
+      {
+        "name": "spd_bar_pre_mps_naz00_01_2016",
+        "score": 68.0,
+        "year_range": [
+          2016,
+          2024
+        ],
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "spd_bar_cnb_mrs_ncom0_01_2016",
+        "score": 68.0,
+        "year_range": [
+          2016,
+          2024
+        ],
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "spd_mop_sog_mon_reg11_01_9999",
+        "score": 60.0,
+        "year_range": [
+          2026,
+          2026
+        ],
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "spd_mop_sog_mon_reg09_01_9999",
+        "score": 60.0,
+        "year_range": [
+          2026,
+          2026
+        ],
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "spd_mop_sog_mon_reg06_01_9999",
+        "score": 60.0,
+        "year_range": [
+          2026,
+          2026
+        ],
+        "format": "CSV",
+        "reachable": false
+      }
+    ],
+    "coverage_pct": 92.9,
+    "formato_aperto": {
+      "score": 10.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 0.0,
+      "total": 68,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "bdap_anagrafe_enti",
+      "status": "published"
+    },
+    {
+      "slug": "bdap_entrate_stato",
+      "status": "published"
+    },
+    {
+      "slug": "bdap_lea",
+      "status": "published"
+    },
+    {
+      "slug": "bdap_spese_stato",
+      "status": "published"
+    },
+    {
+      "slug": "dipendenti_pubblici",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "inventory change",
+      "result": "inventory change",
+      "detail": "3841 item (package_list), delta +18 rispetto al run precedente (3823).",
+      "metric_value": 3841,
+      "suggested_action": "verificare se variazione attesa; avviare inventory-triage se nuovi dataset"
+    }
+  ],
+  "operational_verdict": {
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
+    "triggers": [
+      "inventory_changed"
+    ],
+    "next_action": "review inventory changes"
+  }
+}

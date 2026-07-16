@@ -27,6 +27,3 @@ CHECK_PARQUET_PATH = (
     _REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
 )
 CATALOG_SIGNALS_PATH = _REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
-
-# ── Health scores (scripts/build_compliance_scores.py → data-advocacy) ────────
-OPEN_DATA_HEALTH_SCORES_PATH = _REPO_ROOT / "data" / "health" / "open_data_health_scores.json"

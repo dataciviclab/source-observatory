@@ -1,0 +1,142 @@
+{
+  "source_id": "mit_opendata",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "mit_opendata",
+    "protocol": "ckan",
+    "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Dataset del Ministero Infrastrutture e Trasporti via dati.gov.it (portale MIT dati.mit.gov.it non raggiungibile da 2026-05). 70 dataset: contratti pubblici, incidentalità, trasporti, opere pubbliche. CC-BY-4.0.",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 70,
+    "method": "package_search",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 70,
+    "baseline_date": "2026-06-22",
+    "freshness_hours": 0.3,
+    "delta": 0,
+    "delta_pct": 0.0,
+    "formats": {
+      "XLSX,CSV": 21,
+      "CSV,JSON": 13,
+      "CSV,XLSX": 8,
+      "XLSX": 8,
+      "CSV,JSON,PDF": 4,
+      "ZIP,JSON": 3,
+      "CSV,ZIP": 2,
+      "CSV,ODS,XLSX": 2,
+      "CSV,JSON,XLSX": 1,
+      "CSV,XLSX,ODS,PDF": 1,
+      "CSV,XLSX,ODS": 1,
+      "CSV,JSON,ZIP": 1,
+      "XLSX,CSV,JSON": 1,
+      "ZIP,CSV,JSON,PDF": 1,
+      "CSV,XLSX,JSON": 1,
+      "CSV,JSON,PDF,XLSX": 1,
+      "JSON,ZIP,CSV": 1
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 62,
+    "reachable": 35,
+    "intake_candidates": 22,
+    "needs_review": 38,
+    "top_items": [
+      {
+        "name": "contratti-di-programma-rfi-e-anas",
+        "score": 100.0,
+        "year_range": [
+          1988,
+          2015
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "posti-barca",
+        "score": 100.0,
+        "year_range": [
+          2016,
+          2098
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "storico-interventi-previsti-dai-contratti-di-programma-rfi-e-anas",
+        "score": 100.0,
+        "year_range": [
+          1988,
+          2015
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "interventi-autorita-portuali",
+        "score": 98.0,
+        "year_range": [
+          1997,
+          2015
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "interventi-di-recupero-di-edilizia-residenziale-pubblica",
+        "score": 75.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": true
+      }
+    ],
+    "coverage_pct": 88.6,
+    "formato_aperto": {
+      "score": 90.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 57.6,
+      "total": 59,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "mit_incidentalita_mensile",
+      "status": "published"
+    },
+    {
+      "slug": "mit_opere_incompiute_2020",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "70 item (package_search), in linea con la baseline.",
+      "metric_value": 70,
+      "suggested_action": "nessuna"
+    }
+  ],
+  "operational_verdict": {
+    "label": "STABLE",
+    "score": "stable",
+    "triggers": [
+      "all_green"
+    ],
+    "next_action": null
+  }
+}

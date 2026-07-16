@@ -34,7 +34,7 @@ Probe leggero HTTP su ogni fonte nel registry. Aggiorna `radar_summary.json`, `r
 ### `observatory.yml` (weekly, lunedì)
 
 1. **Inventory** — build del parquet `catalog_inventory_latest.parquet` per le fonti `catalog-watch`
-2. **Catalog signals** — calcola segnali di drift/inventory, produce `catalog_signals.json` e `CATALOG_WATCH_REPORT.md`
+2. **Catalog signals** — calcola segnali di drift/inventory, produce `catalog_signals.json`
 3. **Source-check** — scoring item-level sul parquet inventory (merge con risultati precedenti da GCS)
 4. **Upload GCS** — parquet, report e snapshot su `gs://dataciviclab-clean/catalog_inventory/`
 5. **Issue alert** — crea/aggiorna automaticamente issue `catalog-alert` in caso di variazioni rilevanti
@@ -92,7 +92,10 @@ data/radar/
 
 data/catalog/
   catalog_signals.json        # segnali drift/inventory per fonte
-  CATALOG_WATCH_REPORT.md     # report settimanale (lunedì)
+
+data/reports/
+  sources_dashboard.json      # KPI riassuntivi di tutte le fonti (lunedì)
+  source_reports/*.json       # report per singola fonte
 
 data/catalog_inventory/generated/
   catalog_inventory_latest.parquet   # snapshot cumulativo item

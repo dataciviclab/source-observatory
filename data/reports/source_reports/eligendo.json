@@ -1,0 +1,73 @@
+{
+  "source_id": "eligendo",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "eligendo",
+    "protocol": "html",
+    "base_url": "https://elezionistorico.interno.gov.it/eligendo/opendata.php",
+    "source_kind": "catalog",
+    "observation_mode": "radar-only",
+    "verdict": "go",
+    "note": "Eligendo — Archivio storico elettorale del DAIT (Ministero dell'Interno).  Risultati elettorali per comune dal 1946: Camera (19 tornate 1948-2022),  Senato (19 tornate), Europee (10 tornate 1979-2024), Regionali (1970-),  Comunali, Referendum, Assemblea Costituente. 312 file in ZIP/CSV. radar-only perche' l'inventario e' embedded in JS, non in link HTML diretti. Issue intake #523 su dataset-incubator.\n",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 0,
+    "method": null,
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": null,
+    "baseline_date": null,
+    "delta": null,
+    "delta_pct": 0.0
+  },
+  "source_check": {
+    "last_run": null,
+    "total_scored": 0,
+    "reachable": 0,
+    "intake_candidates": 0,
+    "needs_review": 0,
+    "top_items": [],
+    "coverage_pct": null,
+    "formato_aperto": {
+      "score": 0.0,
+      "perc_aperto": 0.0,
+      "total": 0,
+      "fonte": "missing"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "elezioni_comunali",
+      "status": "published"
+    },
+    {
+      "slug": "elezioni_europee",
+      "status": "published"
+    },
+    {
+      "slug": "elezioni_referendum",
+      "status": "published"
+    },
+    {
+      "slug": "elezioni_regionali",
+      "status": "published"
+    }
+  ],
+  "signals": [],
+  "operational_verdict": {
+    "label": "STABLE",
+    "score": "stable",
+    "triggers": [
+      "all_green"
+    ],
+    "next_action": null
+  }
+}

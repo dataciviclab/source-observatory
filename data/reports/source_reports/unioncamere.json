@@ -1,0 +1,120 @@
+{
+  "source_id": "unioncamere",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "unioncamere",
+    "protocol": "ckan",
+    "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Fonte via dati.gov.it (Unioncamere). 352 dataset su demografia d'impresa per provincia: femminili, giovanili, straniere, artigiane, ATECO, forma giuridica. Dataset prevalentemente provincia-specifici (~340). ~12 dataset nazionali aggregati (es. 'Italia - Imprese femminili...').\n",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 384,
+    "method": "package_search",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 352,
+    "baseline_date": "2026-06-04",
+    "freshness_hours": 0.3,
+    "delta": 32,
+    "delta_pct": 9.1,
+    "formats": {
+      "CSV": 384
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 384,
+    "reachable": 382,
+    "intake_candidates": 367,
+    "needs_review": 17,
+    "top_items": [
+      {
+        "name": "modena-esportazioni-settore-biomedicale-provincia-di-modena-dal-1993-al-2023",
+        "score": 90.0,
+        "year_range": [
+          1993,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "modena-esportazioni-macchine-e-apparecchiature-meccaniche-provincia-di-modena-dal-1993-al-2023",
+        "score": 90.0,
+        "year_range": [
+          1993,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "modena-demografia-delle-imprese-della-provincia-di-modena-dal-1991-al-2023",
+        "score": 90.0,
+        "year_range": [
+          1991,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "modena-esportazioni-settore-ceramico-provincia-di-modena-dal-1993-al-2023",
+        "score": 90.0,
+        "year_range": [
+          1993,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "modena-focus-settore-industria-delle-imprese-nella-provincia-di-modena-dal-1991-al-2023",
+        "score": 90.0,
+        "year_range": [
+          1991,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": true
+      }
+    ],
+    "coverage_pct": 100.0,
+    "formato_aperto": {
+      "score": 90.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 99.5,
+      "total": 384,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [],
+  "signals": [
+    {
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "384 item (package_search), in linea con la baseline.",
+      "metric_value": 384,
+      "suggested_action": "nessuna"
+    }
+  ],
+  "operational_verdict": {
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
+    "triggers": [
+      "inventory_changed"
+    ],
+    "next_action": "review inventory changes"
+  }
+}

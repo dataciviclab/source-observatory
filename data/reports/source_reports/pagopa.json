@@ -1,0 +1,108 @@
+{
+  "source_id": "pagopa",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "pagopa",
+    "protocol": "ckan",
+    "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Fonte via dati.gov.it. 8 dataset: pagoPA (transazioni per anno, mese, fascia importo, categoria ente), IO App (messaggi, geografia enti e servizi), SEND (notifiche per ambito, geografia comuni, numero notifiche). Dati su digitalizzazione pagamenti PA e adozione piattaforme digitali (IO, SEND).",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 12,
+    "method": "package_search",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 8,
+    "baseline_date": "2026-06-11",
+    "freshness_hours": 0.3,
+    "delta": 4,
+    "delta_pct": 50.0,
+    "formats": {
+      "CSV,JSON": 12
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 12,
+    "reachable": 11,
+    "intake_candidates": 0,
+    "needs_review": 12,
+    "top_items": [
+      {
+        "name": "send-distribuzione-geografica-dei-comuni-su-send",
+        "score": 75.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "io-distribuzione-geografica-enti-e-servizi",
+        "score": 75.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "pagopa-distribuzione-mensile-del-numero-di-transazioni-per-categoria-di-ente-creditore",
+        "score": 35.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "pagopa-distribuzione-del-numero-di-transazioni-valore-economico-ed-enti-creditori",
+        "score": 35.0,
+        "year_range": [
+          2016,
+          2016
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "send-distribuzione-delle-principali-tipologie-di-atti-notificati-da-send",
+        "score": 35.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": true
+      }
+    ],
+    "coverage_pct": 100.0,
+    "formato_aperto": {
+      "score": 90.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 91.7,
+      "total": 12,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [],
+  "signals": [
+    {
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "12 item (package_search), in linea con la baseline.",
+      "metric_value": 12,
+      "suggested_action": "nessuna"
+    }
+  ],
+  "operational_verdict": {
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
+    "triggers": [
+      "inventory_changed"
+    ],
+    "next_action": "review inventory changes"
+  }
+}

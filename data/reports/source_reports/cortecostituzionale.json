@@ -1,0 +1,123 @@
+{
+  "source_id": "cortecostituzionale",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "cortecostituzionale",
+    "protocol": "html",
+    "base_url": "https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Portale Open Data Corte Costituzionale — Pronunce (1956-oggi), Massime, Anagrafica Giudici, Atti di promovimento. CSV/XML/JSON in ZIP. Agg. giornaliero. Endpoint SPARQL disponibile.\n",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 33,
+    "method": null,
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": null,
+    "baseline_date": null,
+    "freshness_hours": 0.3,
+    "delta": null,
+    "delta_pct": 0.0,
+    "formats": {
+      "ZIP": 33
+    },
+    "years_range": [
+      2000,
+      2001
+    ]
+  },
+  "source_check": {
+    "last_run": "2026-06-01 08:57:01+00:00",
+    "total_scored": 13,
+    "reachable": 0,
+    "intake_candidates": 0,
+    "needs_review": 13,
+    "top_items": [
+      {
+        "name": "P",
+        "score": 15.0,
+        "year_range": [
+          1956,
+          1980
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "CC",
+        "score": 15.0,
+        "year_range": [
+          1956,
+          1980
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "P",
+        "score": 14.0,
+        "year_range": [
+          1981,
+          2000
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "CC",
+        "score": 14.0,
+        "year_range": [
+          1981,
+          2000
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "P",
+        "score": 0,
+        "year_range": [
+          2001,
+          2001
+        ],
+        "format": "ZIP",
+        "reachable": false
+      }
+    ],
+    "coverage_pct": 39.4,
+    "formato_aperto": {
+      "score": 20.0,
+      "perc_aperto": 0.0,
+      "total": 33,
+      "fonte": "inventory"
+    }
+  },
+  "datasets_in_use": [],
+  "signals": [
+    {
+      "type": "csv_magnet",
+      "result": "scan_completed",
+      "detail": "33 link data (ZIP 33), years 2000-2001 — top prefixes: Cc=15, CC=12, P=6",
+      "metric_value": 33,
+      "suggested_action": "catalog-watch-ready"
+    }
+  ],
+  "operational_verdict": {
+    "label": "PARTIALLY_SCOPED",
+    "score": "partial",
+    "triggers": [
+      "source_check_partial"
+    ],
+    "next_action": "complete source-check"
+  }
+}

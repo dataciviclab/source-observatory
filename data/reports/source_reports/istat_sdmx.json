@@ -1,0 +1,135 @@
+{
+  "source_id": "istat_sdmx",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "istat_sdmx",
+    "protocol": "sdmx",
+    "base_url": "https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Endpoint SDMX ricco e ad alto valore per scouting e source-check.",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 4884,
+    "method": "dataflow_count",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 4212,
+    "baseline_date": "2026-04-10",
+    "freshness_hours": 0.3,
+    "delta": 672,
+    "delta_pct": 16.0,
+    "formats": {
+      "SDMX": 4884
+    }
+  },
+  "source_check": {
+    "last_run": "2026-06-22 09:30:07+00:00",
+    "total_scored": 3867,
+    "reachable": 0,
+    "intake_candidates": 16,
+    "needs_review": 3766,
+    "top_items": [
+      {
+        "name": "DF_BULK_CEN2011_DICA_IPSTRIPCOM",
+        "score": 57.0,
+        "year_range": [
+          2011,
+          2015
+        ],
+        "format": "SDMX",
+        "reachable": false
+      },
+      {
+        "name": "DF_BULK_CEN2011_DICA_IPSTRULCOM",
+        "score": 57.0,
+        "year_range": [
+          2011,
+          2015
+        ],
+        "format": "SDMX",
+        "reachable": false
+      },
+      {
+        "name": "741_1099_DF_DICA_IPSTRULCOM_1",
+        "score": 55.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "73_440_DF_DCCV_PROCEEDCRIME_A_21",
+        "score": 55.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "73_436_DF_DCCV_PROCEEDCRIME_M_9",
+        "score": 55.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      }
+    ],
+    "coverage_pct": 79.2,
+    "formato_aperto": {
+      "score": 20.0,
+      "perc_aperto": 0.0,
+      "total": 4884,
+      "fonte": "inventory"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "istat_gini_regionale",
+      "status": "published"
+    },
+    {
+      "slug": "istat_housing_crowding",
+      "status": "published"
+    },
+    {
+      "slug": "istat_ipab_aree",
+      "status": "published"
+    },
+    {
+      "slug": "istat_occupazione_provinciale",
+      "status": "published"
+    },
+    {
+      "slug": "istat_pil_territoriale",
+      "status": "published"
+    },
+    {
+      "slug": "popolazione_istat_comunale_2019_2025",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "inventory change",
+      "result": "inventory change",
+      "detail": "4884 item (dataflow_count), delta +6 rispetto al run precedente (4878).",
+      "metric_value": 4884,
+      "suggested_action": "verificare se variazione attesa; avviare inventory-triage se nuovi dataset"
+    }
+  ],
+  "operational_verdict": {
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
+    "triggers": [
+      "inventory_changed"
+    ],
+    "next_action": "review inventory changes"
+  }
+}

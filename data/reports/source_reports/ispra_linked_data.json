@@ -1,0 +1,126 @@
+{
+  "source_id": "ispra_linked_data",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "ispra_linked_data",
+    "protocol": "sparql",
+    "base_url": "https://dati.isprambiente.it/sparql",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline tabellari.",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 70,
+    "method": "sparql_query",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 66,
+    "baseline_date": "2026-04-11",
+    "freshness_hours": 0.3,
+    "delta": 4,
+    "delta_pct": 6.1,
+    "formats": {
+      "?": 38,
+      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_N_TRIPLES": 10,
+      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_TURTLE, HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/CSV": 8,
+      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/CSV, HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_TURTLE": 7,
+      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_TURTLE": 7
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 15,
+    "reachable": 0,
+    "intake_candidates": 0,
+    "needs_review": 15,
+    "top_items": [
+      {
+        "name": "typologies",
+        "score": 55.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "capture_types",
+        "score": 20.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "certainty",
+        "score": 15.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "indicators",
+        "score": 15.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "repair-types",
+        "score": 15.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      }
+    ],
+    "coverage_pct": 21.4,
+    "formato_aperto": {
+      "score": 35.0,
+      "perc_aperto": 21.4,
+      "total": 70,
+      "fonte": "inventory"
+    }
+  },
+  "datasets_in_use": [
+    {
+      "slug": "ispra_consumo_suolo",
+      "status": "published"
+    },
+    {
+      "slug": "ispra_ru_base",
+      "status": "published"
+    },
+    {
+      "slug": "ispra_ru_costi_kg",
+      "status": "published"
+    },
+    {
+      "slug": "ispra_ru_costi_procapite",
+      "status": "published"
+    }
+  ],
+  "signals": [
+    {
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "70 item (sparql_query), in linea con la baseline.",
+      "metric_value": 70,
+      "suggested_action": "nessuna"
+    }
+  ],
+  "operational_verdict": {
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
+    "triggers": [
+      "inventory_changed",
+      "source_check_partial"
+    ],
+    "next_action": "review inventory changes"
+  }
+}

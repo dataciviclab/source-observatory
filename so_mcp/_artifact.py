@@ -332,7 +332,21 @@ def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
     backend = _artifact_backend()
     uri = artifact.gcs_uri()
     fallback_warning = None
+    local_available = artifact.local_path.exists()
 
+    # Modalità auto: locale prima, GCS come fallback
+    if backend == "auto" and local_available:
+        yield (
+            artifact.local_path,
+            _artifact_cache_info(
+                artifact.local_path,
+                source="local_cache",
+                uri=uri,
+            ),
+        )
+        return
+
+    # Modalità auto (senza locale) o gcs → tenta GCS
     if backend in {"auto", "gcs"} and uri:
         # Parquet → lettura diretta via DuckDB S3 (nessun download)
         if isinstance(artifact, _ParquetArtifact):
@@ -364,7 +378,10 @@ def _resolved_artifact(artifact: _ParquetArtifact | _JsonArtifact):
                 finally:
                     tmp_path.unlink(missing_ok=True)
 
-    if artifact.local_path.exists():
+    # Fallback: locale se non ancora tentato (solo per backend == "gcs" che arriva qui)
+    if not local_available:
+        local_available = artifact.local_path.exists()
+    if local_available:
         yield (
             artifact.local_path,
             _artifact_cache_info(

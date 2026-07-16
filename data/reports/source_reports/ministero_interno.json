@@ -1,0 +1,121 @@
+{
+  "source_id": "ministero_interno",
+  "generated_at": "2026-07-16T16:11:56+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "ministero_interno",
+    "protocol": "ckan",
+    "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "Fonte via dati.gov.it. Dati elezioni (Politiche 2022, Comunali 2024, Europee 2024, Regionali) per comune + ANPR (popolazione residente, cambi residenza, certificati, AIRE). Alto valore civico per analisi territoriale del voto.",
+    "last_probed": "2026-07-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 38,
+    "method": "package_search",
+    "captured_at": "2026-07-16T15:54:37+00:00",
+    "baseline_value": 38,
+    "baseline_date": "2026-05-24",
+    "freshness_hours": 0.3,
+    "delta": 0,
+    "delta_pct": 0.0,
+    "formats": {
+      "CSV,JSON": 22,
+      "CSV": 16
+    }
+  },
+  "source_check": {
+    "last_run": "2026-07-16 15:56:58+00:00",
+    "total_scored": 38,
+    "reachable": 38,
+    "intake_candidates": 26,
+    "needs_review": 12,
+    "top_items": [
+      {
+        "name": "popolazione-residente1",
+        "score": 100.0,
+        "year_range": [
+          1955,
+          1990
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "elezioni-comunali-2024",
+        "score": 80.0,
+        "year_range": [
+          2024,
+          2024
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "elezioni-politiche-20222",
+        "score": 80.0,
+        "year_range": [
+          2022,
+          2022
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "elezioni-regionali-2023",
+        "score": 80.0,
+        "year_range": [
+          2023,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "elenco-comuni-italiani-al-censimento-2021",
+        "score": 80.0,
+        "year_range": [
+          2021,
+          2021
+        ],
+        "format": "CSV",
+        "reachable": true
+      }
+    ],
+    "coverage_pct": 100.0,
+    "formato_aperto": {
+      "score": 90.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 100.0,
+      "total": 38,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [],
+  "signals": [
+    {
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "38 item (package_search), in linea con la baseline.",
+      "metric_value": 38,
+      "suggested_action": "nessuna"
+    }
+  ],
+  "operational_verdict": {
+    "label": "STABLE",
+    "score": "stable",
+    "triggers": [
+      "all_green"
+    ],
+    "next_action": null
+  }
+}
