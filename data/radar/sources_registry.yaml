@@ -839,3 +839,27 @@ aci:
     demolizione. CSV su lod.aci.it in formato tidy. Incrociabile con MIT incidentalità.'
   datasets_in_use:
     - aci_prime_iscrizioni_autovetture
+adm_opendata:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:agenzia-delle-dogane-e-dei-monopoli
+    timeout: 180
+  last_probed: '2026-07-16'
+  catalog_baseline:
+    captured_at: '2026-07-16'
+    metric: package_count
+    value: 31
+    method: package_search
+    reliability: high
+    note: 'Conteggio via package_search con fq=organization:agenzia-delle-dogane-e-dei-monopoli
+      su dati.gov.it. 31 dataset su giochi, tabacchi, accise, personale.'
+  verdict: go
+  note: 'Fonte via dati.gov.it (ADM). 31 dataset CSV su vigilanza giochi (scommesse,
+    lotto, bingo, online, apparecchi), fiscalità giochi (raccolta, vincite, spesa),
+    conti gioco attivi per regione/età/genere, vendite tabacchi, rete vendita, accise
+    (energetici, gas, elettricità, alcolici), personale ADM. Copertura 2022-2023,
+    granularità regionale. CSV su dati.gov.it. FOIA #16 aperta per catalogo completo.'
+  datasets_in_use: []
