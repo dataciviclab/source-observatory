@@ -704,6 +704,29 @@ mimit_rna:
   datasets_in_use:
     - rna_aiuti_stato
     - rna_misure
+ministero_turismo_opendata:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:ministero-del-turismo
+    timeout: 180
+  last_probed: '2026-07-16'
+  catalog_baseline:
+    captured_at: '2026-07-16'
+    metric: package_count
+    value: 16
+    method: package_search
+    reliability: high
+    note: 'Conteggio via package_search con fq=organization:ministero-del-turismo
+      su dati.gov.it. 16 dataset su strutture ricettive, professioni turistiche, cammini religiosi.'
+  verdict: go
+  note: 'Fonte via dati.gov.it (Ministero del Turismo). 16 dataset CSV su BDSR (Banca
+    Dati Strutture Ricettive) in formato aggregato per regione/provincia, professioni
+    turistiche (guide, accompagnatori, direttori tecnici), cammini religiosi. FOIA #17
+    aperta per dati micro BDSR e catalogo completo.'
+  datasets_in_use: []
 ministero_salute:
   source_kind: catalog
   protocol: ckan
