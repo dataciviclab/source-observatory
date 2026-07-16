@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-07-13T06:34:26+00:00",
+  "captured_at": "2026-07-16T15:54:37+00:00",
   "sources_checked": 30,
   "signals": [
     {
@@ -7,8 +7,8 @@
       "protocol": "sdmx",
       "signal_type": "inventory change",
       "result": "inventory change",
-      "metric_value": 4878,
-      "detail": "4878 item (dataflow_count), delta +2 rispetto al run precedente (4876).",
+      "metric_value": 4884,
+      "detail": "4884 item (dataflow_count), delta +6 rispetto al run precedente (4878).",
       "suggested_action": "verificare se variazione attesa; avviare inventory-triage se nuovi dataset"
     },
     {
@@ -32,11 +32,11 @@
     {
       "source": "openbdap",
       "protocol": "ckan",
-      "signal_type": "no signal",
-      "result": "stabile",
-      "metric_value": 3823,
-      "detail": "3823 item (package_list), in linea con la baseline.",
-      "suggested_action": "nessuna"
+      "signal_type": "inventory change",
+      "result": "inventory change",
+      "metric_value": 3841,
+      "detail": "3841 item (package_list), delta +18 rispetto al run precedente (3823).",
+      "suggested_action": "verificare se variazione attesa; avviare inventory-triage se nuovi dataset"
     },
     {
       "source": "inail_opendata",
@@ -579,7 +579,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTABRUZZO000020260713.csv"
+          "sample": "ALTABRUZZO000020260715.csv"
         },
         "ALTBASIL": {
           "years": [
@@ -591,7 +591,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTBASILICATA000020260713.csv"
+          "sample": "ALTBASILICATA000020260715.csv"
         },
         "ALTCALAB": {
           "years": [
@@ -603,7 +603,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTCALABRIA000020260713.csv"
+          "sample": "ALTCALABRIA000020260715.csv"
         },
         "ALTCAMPA": {
           "years": [
@@ -615,7 +615,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTCAMPANIA000020260708.csv"
+          "sample": "ALTCAMPANIA000020260715.csv"
         },
         "ALTEMILI": {
           "years": [
@@ -627,7 +627,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTEMILIAROMAGNA000020260713.csv"
+          "sample": "ALTEMILIAROMAGNA000020260715.csv"
         },
         "ALTFRIUL": {
           "years": [
@@ -639,7 +639,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTFRIULIVENEZIAGIULIA000020260713.csv"
+          "sample": "ALTFRIULIVENEZIAGIULIA000020260715.csv"
         },
         "ALTLAZIO": {
           "years": [
@@ -651,7 +651,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTLAZIO000020260713.csv"
+          "sample": "ALTLAZIO000020260715.csv"
         },
         "ALTLIGUR": {
           "years": [
@@ -663,7 +663,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTLIGURIA000020260713.csv"
+          "sample": "ALTLIGURIA000020260715.csv"
         },
         "ALTLOMBA": {
           "years": [
@@ -675,7 +675,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTLOMBARDIA000020260713.csv"
+          "sample": "ALTLOMBARDIA000020260715.csv"
         },
         "ALTMARCH": {
           "years": [
@@ -687,7 +687,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTMARCHE000020260713.csv"
+          "sample": "ALTMARCHE000020260715.csv"
         },
         "ALTMOLIS": {
           "years": [
@@ -699,7 +699,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTMOLISE000020260713.csv"
+          "sample": "ALTMOLISE000020260715.csv"
         },
         "ALTPIEMO": {
           "years": [
@@ -711,7 +711,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTPIEMONTE000020260713.csv"
+          "sample": "ALTPIEMONTE000020260715.csv"
         },
         "ALTPUGLI": {
           "years": [
@@ -723,7 +723,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTPUGLIA000020260713.csv"
+          "sample": "ALTPUGLIA000020260715.csv"
         },
         "ALTSARDE": {
           "years": [
@@ -735,7 +735,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTSARDEGNA000020260713.csv"
+          "sample": "ALTSARDEGNA000020260715.csv"
         },
         "ALTSICIL": {
           "years": [
@@ -747,7 +747,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTSICILIA000020260713.csv"
+          "sample": "ALTSICILIA000020260715.csv"
         },
         "ALTTOSCA": {
           "years": [
@@ -759,7 +759,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTTOSCANA000020260713.csv"
+          "sample": "ALTTOSCANA000020260715.csv"
         },
         "ALTTRENT": {
           "years": [
@@ -771,7 +771,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTTRENTINOALTOADIGE000020260713.csv"
+          "sample": "ALTTRENTINOALTOADIGE000020260715.csv"
         },
         "ALTUMBRI": {
           "years": [
@@ -783,7 +783,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTUMBRIA000020260713.csv"
+          "sample": "ALTUMBRIA000020260715.csv"
         },
         "ALTVALLE": {
           "years": [
@@ -795,7 +795,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTVALLEDAOSTA000020260713.csv"
+          "sample": "ALTVALLEDAOSTA000020260715.csv"
         },
         "ALTVENET": {
           "years": [
@@ -807,7 +807,7 @@
             "JSON",
             "XML"
           ],
-          "sample": "ALTVENETO000020260713.csv"
+          "sample": "ALTVENETO000020260715.csv"
         }
       },
       "topics": {
@@ -830,11 +830,11 @@
     {
       "source": "dati_senato",
       "protocol": "sparql",
-      "signal_type": "inventory change",
-      "result": "inventory change",
+      "signal_type": "no signal",
+      "result": "stabile",
       "metric_value": 100,
-      "detail": "100 item (named_graphs), delta +2 rispetto al run precedente (98).",
-      "suggested_action": "verificare se variazione attesa; avviare inventory-triage se nuovi dataset"
+      "detail": "100 item (named_graphs), in linea con la baseline.",
+      "suggested_action": "nessuna"
     },
     {
       "source": "dati_cultura",
@@ -1006,105 +1006,127 @@
       "protocol": "html",
       "signal_type": "csv_magnet",
       "result": "scan_completed",
-      "metric_value": 813,
-      "detail": "813 link data (XLSX 1, ZIP 89), years 2009-2025 — top prefixes: Metadati=16, 2013=14, 2010=12, 2016=8, 2018=6",
+      "metric_value": 822,
+      "detail": "822 link data (XLSX 1, ZIP 90), years 2009-2022 — top prefixes: 2010=18, Metadati=14, 2009=8, 2016=6, 2019=6",
       "prefix_matrix": {
-        "Metadati": 16,
-        "2013": 14,
-        "2010": 12,
-        "2016": 8,
-        "2018": 6,
-        "2022": 6,
-        "2011": 4,
+        "2010": 18,
+        "Metadati": 14,
+        "2009": 8,
+        "2016": 6,
+        "2019": 6,
+        "2013": 6,
+        "2018": 5,
+        "2021": 3,
+        "FC80A": 3,
         "FC60B": 3,
-        "Ind": 3,
-        "2025": 3,
-        "FC30B": 3,
-        "2023": 3,
-        "2017": 3,
-        "2009": 2,
-        "FC10D": 1,
-        "2015": 1,
+        "2022": 3,
+        "Ind": 2,
+        "2015": 2,
+        "2011": 2,
+        "RIFIUTI-Determinanti": 2,
         "Variazioni": 1,
-        "FC06U": 1
+        "FC05U": 1,
+        "FC01B": 1,
+        "FC01C": 1,
+        "FP07U": 1,
+        "FC04U": 1,
+        "FC06U": 1,
+        "2017": 1
       },
       "series": {
+        "2010": {
+          "years": [
+            2010
+          ],
+          "count": 18,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2010_FC05U_Unioni_Questionari_csv.zip"
+        },
         "Metadati": {
           "years": [
             2013,
             2015,
             2016,
-            2017,
             2018,
             2019,
-            2022,
-            2023
-          ],
-          "count": 16,
-          "formats": [
-            "ZIP"
-          ],
-          "sample": "Metadati_Enti_2019_xlsx.zip"
-        },
-        "2013": {
-          "years": [
-            2013
+            2021,
+            2022
           ],
           "count": 14,
           "formats": [
             "ZIP"
           ],
-          "sample": "2013_Spesa_storica_generale_csv.zip"
+          "sample": "Metadati_Enti_2021_xlsx.zip"
         },
-        "2010": {
+        "2009": {
           "years": [
-            2010
-          ],
-          "count": 12,
-          "formats": [
-            "ZIP"
-          ],
-          "sample": "2010_FP03U_Province_Fabbisogni_csv.zip"
-        },
-        "2016": {
-          "years": [
-            2016
+            2009
           ],
           "count": 8,
           "formats": [
             "ZIP"
           ],
-          "sample": "2016_FC20AMMIN_rdf.zip"
+          "sample": "2009_FC01B_Comuni_Questionari_csv.zip"
+        },
+        "2016": {
+          "years": [
+            2016
+          ],
+          "count": 6,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2016_Ind_FC30SOCNID_1_csv.zip"
+        },
+        "2019": {
+          "years": [
+            2019
+          ],
+          "count": 6,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2019_Ind_FC60RIFIUTI_1_csv.zip"
+        },
+        "2013": {
+          "years": [
+            2013
+          ],
+          "count": 6,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2013_FC05B_Comuni_Fabbisogni_caratteristiche_prestazioni_csv.zip"
         },
         "2018": {
           "years": [
             2018
           ],
-          "count": 6,
+          "count": 5,
           "formats": [
             "ZIP"
           ],
-          "sample": "2018_Ind_FP20U_TOT_PROV_1_csv.zip"
+          "sample": "2018_Ind_FC50AMMIN_1_csv.zip"
         },
-        "2022": {
+        "2021": {
           "years": [
-            2022
+            2021
           ],
-          "count": 6,
+          "count": 3,
           "formats": [
             "ZIP"
           ],
-          "sample": "2022_Ind_FP20U_FDI_PROV_1_csv.zip"
+          "sample": "2021_Ind_FC70TERRVIAB_1_csv.zip"
         },
-        "2011": {
-          "years": [
-            2011
-          ],
-          "count": 4,
+        "FC80A": {
+          "years": [],
+          "count": 3,
           "formats": [
             "ZIP"
           ],
-          "sample": "2011_FC01A_Comuni_Spesa_storica_csv.zip"
+          "sample": "FC80A_UNIONI_1_csv.zip"
         },
         "FC60B": {
           "years": [],
@@ -1114,79 +1136,53 @@
           ],
           "sample": "FC60B_1_csv.zip"
         },
+        "2022": {
+          "years": [
+            2022
+          ],
+          "count": 3,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2022_Ind_FP20U_TOT_PROV_1_csv.zip"
+        },
         "Ind": {
           "years": [],
-          "count": 3,
-          "formats": [
-            "ZIP"
-          ],
-          "sample": "Ind_FC20AMMIN_csv.zip"
-        },
-        "2025": {
-          "years": [
-            2025
-          ],
-          "count": 3,
-          "formats": [
-            "ZIP"
-          ],
-          "sample": "2025_FPRCM_1_2025_csv.zip"
-        },
-        "FC30B": {
-          "years": [],
-          "count": 3,
-          "formats": [
-            "ZIP"
-          ],
-          "sample": "FC30B_UNIONI_csv.zip"
-        },
-        "2023": {
-          "years": [
-            2023
-          ],
-          "count": 3,
-          "formats": [
-            "ZIP"
-          ],
-          "sample": "2023_FPRCM_1_2023_csv.zip"
-        },
-        "2017": {
-          "years": [
-            2017
-          ],
-          "count": 3,
-          "formats": [
-            "ZIP"
-          ],
-          "sample": "2017_Ind_FC40POLIZIA_1_csv.zip"
-        },
-        "2009": {
-          "years": [
-            2009
-          ],
           "count": 2,
           "formats": [
             "ZIP"
           ],
-          "sample": "2009_FP06U_Province_Spesa_storica_csv.zip"
-        },
-        "FC10D": {
-          "years": [],
-          "count": 1,
-          "formats": [
-            "ZIP"
-          ],
-          "sample": "FC10D_Metadati_Variabili_xlsx.zip"
+          "sample": "Ind_FC20TOT_2_csv.zip"
         },
         "2015": {
           "years": [
             2015
           ],
-          "count": 1,
+          "count": 2,
           "formats": [
             "ZIP"
           ],
-          "sample": "2015_FC20AMMIN_2_rdf.zip"
+          "sample": "2015_FC20TOT_2_rdf.zip"
+        },
+        "2011": {
+          "years": [
+            2011
+          ],
+          "count": 2,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2011_FC02U_Comuni_Spesa_storica_csv.zip"
+        },
+        "RIFIUTI-Determinanti": {
+          "years": [
+            2013
+          ],
+          "count": 2,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "RIFIUTI-Determinanti_FS_2013_csv.zip"
         },
         "Variazioni": {
           "years": [
@@ -1198,6 +1194,46 @@
           ],
           "sample": "Variazioni_Metadati_Variabili_08_07_2015.xlsx"
         },
+        "FC05U": {
+          "years": [],
+          "count": 1,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC05U_Metadati_Variabili_xlsx.zip"
+        },
+        "FC01B": {
+          "years": [],
+          "count": 1,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC01B_Metadati_Variabili_xlsx.zip"
+        },
+        "FC01C": {
+          "years": [],
+          "count": 1,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC01C_Metadati_Variabili_xlsx.zip"
+        },
+        "FP07U": {
+          "years": [],
+          "count": 1,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FP07U_Metadati_Variabili_xlsx.zip"
+        },
+        "FC04U": {
+          "years": [],
+          "count": 1,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "FC04U_Metadati_Variabili_xlsx.zip"
+        },
         "FC06U": {
           "years": [],
           "count": 1,
@@ -1205,14 +1241,24 @@
             "ZIP"
           ],
           "sample": "FC06U_Metadati_Variabili_xlsx.zip"
+        },
+        "2017": {
+          "years": [
+            2017
+          ],
+          "count": 1,
+          "formats": [
+            "ZIP"
+          ],
+          "sample": "2017_Metadati_FSC_1_xlsx.zip"
         }
       },
       "topics": {
-        "trasparenza": 90
+        "trasparenza": 91
       },
       "years_range": [
         2009,
-        2025
+        2022
       ],
       "suggested_action": "catalog-watch-ready"
     },
@@ -1300,7 +1346,7 @@
           "formats": [
             "CSV"
           ],
-          "sample": "Elenco_Registri_PT_attivi_02.07.2026.csv"
+          "sample": "Elenco_Registri_PT_attivi_16.07.2026.csv"
         },
         "Accordi": {
           "years": [
@@ -1705,11 +1751,11 @@
     {
       "source": "pagopa",
       "protocol": "ckan",
-      "signal_type": "inventory change",
-      "result": "inventory change",
+      "signal_type": "no signal",
+      "result": "stabile",
       "metric_value": 12,
-      "detail": "12 item (package_search), delta +1 rispetto al run precedente (11).",
-      "suggested_action": "verificare se variazione attesa; avviare inventory-triage se nuovi dataset"
+      "detail": "12 item (package_search), in linea con la baseline.",
+      "suggested_action": "nessuna"
     },
     {
       "source": "aci",
