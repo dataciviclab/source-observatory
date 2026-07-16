@@ -9,21 +9,17 @@ import pytest
 from so_mcp import so_server
 
 
-def test_mcp_server_registers_9_tools() -> None:
-    """Verify all 9 tools are registered on the mcp server object."""
+def test_mcp_server_registers_5_tools() -> None:
+    """Verify all 5 tools are registered on the mcp server object."""
     tools = asyncio.run(so_server.mcp.list_tools())
     tool_names = sorted(t.name for t in tools)
 
     expected = sorted(
         [
-            "so_catalog_signals",
             "so_dashboard",
             "so_find_by_url",
             "so_inventory_search",
-            "so_radar_summary",
-            "so_registry_query",
             "so_source_check",
-            "so_source_overview",
             "so_source_report",
         ]
     )

@@ -20,18 +20,15 @@ from lab_connectors.mcp import (
 
 from ._find_url import find_by_url
 from ._inventory_search import inventory_search
-from ._radar import radar_history, radar_summary
-from ._registry import registry_query
 from ._report import dashboard, source_report
-from ._signals import query_signals
 from ._source_check import inventory_diff, inventory_status, query_inventory
 
 mcp = create_mcp_server(
     name="source-observatory",
     instructions=(
         "Read-only MCP per Source Observatory. "
-        "Query artifact di source-check, catalog-inventory e catalog-signals "
-        "prodotti dalla CI di SO, con probe URL leggero on-demand."
+        "Report per fonte (so_source_report), dashboard KPI (so_dashboard), "
+        "ricerca inventory (so_inventory_search, so_source_check) e URL (so_find_by_url)."
     ),
 )
 
@@ -39,52 +36,7 @@ mcp = create_mcp_server(
 _query_cache: TtlCache[tuple[Any, ...], dict[str, Any]] = TtlCache(ttl_seconds=120)
 
 
-# ─── Tool 1/7: Registry ───────────────────────────────────────────────────────
-
-
-@mcp.tool(
-    description="[LEGACY] Interroga sources_registry.yaml. Per consumo standard usa so_source_report — l'identity è inclusa nel report.",
-    structured_output=True,
-)
-def so_registry_query(
-    protocol: str | None = None,
-    source_kind: str | None = None,
-    observation_mode: str | None = None,
-    source_id: str | None = None,
-) -> dict[str, Any]:
-    return guard_timed(
-        registry_query, "so_registry_query", protocol, source_kind, observation_mode, source_id
-    )
-
-
-# ─── Tool 2/7: Radar ──────────────────────────────────────────────────────────
-
-
-@mcp.tool(
-    description="[LEGACY] Legge radar_summary.json. Per consumo standard usa so_source_report — health è inclusa nel report.",
-    structured_output=True,
-)
-def so_radar_summary(
-    source_id: str | None = None,
-    include_history: bool = False,
-) -> dict[str, Any]:
-    cache_key = ("radar_summary", source_id, include_history)
-    cached = _query_cache.get(cache_key)
-    if cached is not None:
-        return cached
-
-    def _exec() -> dict[str, Any]:
-        result = radar_summary(source_id)
-        if include_history:
-            result["history"] = radar_history(source_id, limit=5)
-        return result
-
-    result = guard_timed(_exec, "so_radar_summary")
-    _query_cache.set(cache_key, result)
-    return result
-
-
-# ─── Tool 3/7: Inventory Search ───────────────────────────────────────────────
+# ─── Tool 1/5: Inventory Search ─────────────────────────────────────────────
 
 
 @mcp.tool(
@@ -114,7 +66,7 @@ def so_inventory_search(
     return result
 
 
-# ─── Tool 4/7: Source Check ────────────────────────────────────────────────────
+# ─── Tool 2/5: Source Check ──────────────────────────────────────────────────
 
 
 @mcp.tool(
@@ -177,25 +129,7 @@ def so_source_check(
     return result
 
 
-# ─── Tool 5/7: Signals ────────────────────────────────────────────────────────
-
-
-@mcp.tool(
-    description="[LEGACY] Query catalog_signals.json. Per consumo standard usa so_source_report — signals sono inclusi nel report.",
-    structured_output=True,
-)
-def so_catalog_signals(source_id: str | None = None, limit: int | None = None) -> dict[str, Any]:
-    cache_key = ("catalog_signals", source_id, limit)
-    cached = _query_cache.get(cache_key)
-    if cached is not None:
-        return cached
-
-    result = guard_timed(query_signals, "so_catalog_signals", source_id, limit)
-    _query_cache.set(cache_key, result)
-    return result
-
-
-# ─── Tool 6/7: Find by URL ────────────────────────────────────────────────────
+# ─── Tool 3/5: Find by URL ──────────────────────────────────────────────────
 
 
 @mcp.tool(
@@ -215,7 +149,7 @@ def so_find_by_url(url: str) -> dict[str, Any]:
     return result
 
 
-# ─── Tool 8/9: Source Report (da JSON — consumo standard) ──────────────────────
+# ─── Tool 4/5: Source Report (da JSON — consumo standard) ───────────────────
 
 
 @mcp.tool(
@@ -231,7 +165,7 @@ def so_source_report(source_id: str) -> dict[str, Any]:
     return guard_timed(source_report, "so_source_report", source_id)
 
 
-# ─── Tool 9/9: Dashboard (da JSON — consumo standard) ─────────────────────────
+# ─── Tool 5/5: Dashboard (da JSON — consumo standard) ───────────────────────
 
 
 @mcp.tool(
@@ -245,34 +179,6 @@ def so_source_report(source_id: str) -> dict[str, Any]:
 )
 def so_dashboard() -> dict[str, Any]:
     return guard_timed(dashboard, "so_dashboard")
-
-
-# ─── Tool 7/7 legacy: Source Overview — DEPRECATO, usa so_source_report ────
-
-
-@mcp.tool(
-    description=(
-        "[LEGACY] Overview composito via 5 chiamate interne. "
-        "Per consumo standard usa so_source_report — singola lettura file, "
-        "più veloce e con verdict operativo."
-    ),
-    structured_output=True,
-)
-def so_source_overview(source_id: str) -> dict[str, Any]:
-    """Overview completo di una fonte in un giro solo."""
-
-    def _exec() -> dict[str, Any]:
-        result: dict[str, Any] = {
-            "source_id": source_id,
-            "registry": registry_query(source_id=source_id),
-            "radar": radar_summary(source_id),
-            "inventory_status": inventory_status(source_id),
-            "inventory_diff": inventory_diff(source_id),
-            "signals": query_signals(source_id, limit=5),
-        }
-        return result
-
-    return guard_timed(_exec, "so_source_overview")
 
 
 def main() -> None:

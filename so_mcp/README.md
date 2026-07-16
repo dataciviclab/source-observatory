@@ -48,26 +48,15 @@ Variabili supportate per override:
 
 In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa la cache locale e lo dichiara in `cache.fallback_warning`. In `gcs`, un errore GCS è bloccante. In `local`, il server usa solo i file locali.
 
-## Tool — 9 strumenti
-
-### Consumo standard
+## Tool — 5 strumenti
 
 | # | Tool | Cosa fa | Legge da |
 |---|------|---------|----------|
 | 1 | `so_source_report` | 📋 Report completo per fonte (health, inventory, source_check, signals, verdict) | `data/reports/source_reports/{id}.json` (git) |
 | 2 | `so_dashboard` | 📊 KPI riassuntivi di tutte le fonti | `data/reports/sources_dashboard.json` (git) |
-
-### Deep / legacy
-
-| # | Tool | Cosa fa | Sostituisce |
-|---|------|---------|-------------|
-| 3 | `so_inventory_search` | Cerca in `catalog_inventory_latest.parquet`: 3 modalità automatiche | `so_catalog_inventory_search` + `so_list_source_items` + `so_recommend_sources` |
-| 4 | `so_source_check` | Query `source_check_results.parquet` + inventory report/diff | `so_inventory_query` + `so_inventory_status` + `so_inventory_diff` |
-| 5 | `so_find_by_url` | Cerca URL su source_check + catalog_inventory (cross-parquet) | — |
-| 6 | `so_radar_summary` [LEGACY] | Radar health (usa `so_source_report`) | — |
-| 7 | `so_registry_query` [LEGACY] | Query registry (identity nel report) | — |
-| 8 | `so_catalog_signals` [LEGACY] | Segnali (inclusi nel report) | — |
-| 9 | `so_source_overview` [LEGACY] | Composito (usa `so_source_report`) | — |
+| 3 | `so_inventory_search` | Cerca in `catalog_inventory_latest.parquet`: 3 modalità | parquet (locale → GCS) |
+| 4 | `so_source_check` | Query `source_check_results.parquet` + inventory status/diff | parquet (locale → GCS) |
+| 5 | `so_find_by_url` | Cerca URL su source_check + catalog_inventory (cross-parquet) | parquet (locale → GCS) |
 
 ### Modalità `so_inventory_search`
 
@@ -86,7 +75,7 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 
 ### Caching
 
-Tutti i tool deep/legacy (tranne `so_registry_query` e `so_source_overview`) hanno cache TTL 120s. `so_source_report` e `so_dashboard` leggono file JSON statici da git — risposta in millisecondi senza cache.
+`so_source_report` e `so_dashboard` leggono file JSON statici da git — risposta in millisecondi senza cache. `so_inventory_search`, `so_source_check` e `so_find_by_url` hanno cache TTL 120s sui parquet.
 
 
 
