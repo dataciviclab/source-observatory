@@ -312,7 +312,7 @@ def main() -> int:
     captured_at: str | None = None
     if not args.no_inventory:
         t0 = _time.time()
-        rows, captured_at = _inventory(args.source, cfg)  # type: ignore[assignment]
+        rows, captured_at = _inventory(args.source, cfg)
         timing["INVENTORY"] = round(_time.time() - t0, 1)
     else:
         timing["INVENTORY"] = "skip"

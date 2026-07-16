@@ -102,11 +102,11 @@ def aggregate_source_check(results: list[dict]) -> dict:
 
     # Needs review
     no_gran = sum(1 for r in results if r.get("granularity") in (None, "", "non_determinato"))
-    no_year = sum(
-        r.get("year_min") is None
-        or (isinstance(r.get("year_min"), float) and math.isnan(r.get("year_min")))
-        for r in results
-    )
+    no_year = 0
+    for r in results:
+        ym = r.get("year_min")
+        if ym is None or (isinstance(ym, float) and math.isnan(ym)):
+            no_year += 1
     has_no_url = sum(1 for r in results if not r.get("url_checked"))
     problematic = [r for r in results if not r.get("reachable")]
 
