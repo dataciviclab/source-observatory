@@ -52,18 +52,17 @@ duplicati e orientarti:
 ```
 1. so_find_by_url(<URL>)       → la fonte è già in source_check o inventory?
 2. so_source_check(source_id=?, min_score=3) → score esistente per questa fonte
-3. so_radar_summary             → stato radar della fonte (se già nota)
-4. toolkit_probe_url(<URL>)     → reachability rapida (toolkit MCP)
+3. toolkit_probe_url(<URL>)     → reachability rapida (toolkit MCP)
 ```
 
 **Se la fonte è già nota (source_id conosciuto)**: sostituisci i passaggi
-2-3 con `so_source_report(<source_id>)` che dà health + inventory +
+1-2 con `so_source_report(<source_id>)` che dà identity + health + inventory +
 source_check + signals + verdict in una chiamata.
 
 **Se `so_find_by_url` trova risultati**: la fonte è già catalogata — consulta
 i risultati prima di proseguire e possibilmente riutilizza evidenze esistenti.
 
-**Se `so_radar_summary` mostra RED**: valuta se il source-check ha senso (fonte
+**Se il report mostra health RED**: valuta se il source-check ha senso (fonte
 temporaneamente down).
 
 **Se la fonte non è ancora nel radar**: procedi normalmente, ma annota
