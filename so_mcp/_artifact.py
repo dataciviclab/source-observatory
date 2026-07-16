@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 import duckdb
-from lab_connectors.gcs.paths import CLEAN_BUCKET
+from lab_connectors.gcs.paths import CLEAN_BUCKET, parse_gs_url
 from lab_connectors.http import HttpClient
 
 from ._paths import (
@@ -242,20 +242,21 @@ def _artifact_cache_info(
 
 
 def _public_url(uri: str) -> str:
-    if uri.startswith("gs://"):
-        bucket_and_path = uri.removeprefix("gs://")
-        bucket, _, object_name = bucket_and_path.partition("/")
-        return f"https://storage.googleapis.com/{bucket}/{object_name}"
-    return uri
+    """Convert gs://bucket/key → https://storage.googleapis.com/bucket/key."""
+    if not uri.startswith("gs://"):
+        return uri
+    bucket, key = parse_gs_url(uri)
+    return f"https://storage.googleapis.com/{bucket}/{key}"
 
 
 def _gs_to_s3(uri: str) -> str:
-    """Convert gs://bucket/key to s3://bucket/key for DuckDB httpfs.
+    """Convert gs://bucket/key → s3://bucket/key for DuckDB httpfs.
 
     DuckDB's httpfs extension reads GCS public buckets via the S3 API,
     using ``s3://`` URIs with ``s3_endpoint = storage.googleapis.com``.
     """
-    return "s3://" + uri.removeprefix("gs://")
+    bucket, key = parse_gs_url(uri)
+    return f"s3://{bucket}/{key}"
 
 
 def _direct_cache_info(uri: str) -> dict[str, Any]:

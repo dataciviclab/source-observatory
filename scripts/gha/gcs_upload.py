@@ -13,15 +13,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-
-def _parse_gs_url(url: str) -> tuple[str, str]:
-    """Parse 'gs://bucket/key/path' into (bucket, key/path)."""
-    if not url.startswith("gs://"):
-        raise ValueError(f"URL must start with gs://, got: {url}")
-    parts = url[5:].split("/", 1)
-    bucket = parts[0]
-    key = parts[1] if len(parts) > 1 else ""
-    return bucket, key
+from lab_connectors.gcs.paths import parse_gs_url
 
 
 def main() -> None:
@@ -36,7 +28,7 @@ def main() -> None:
         print(f"ERROR: file non trovato: {local_path}", file=sys.stderr)
         sys.exit(1)
 
-    bucket, key = _parse_gs_url(gs_url)
+    bucket, key = parse_gs_url(gs_url)
     from lab_connectors.gcs import upload_file
 
     upload_file(str(local_path), bucket, key)
