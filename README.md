@@ -92,7 +92,10 @@ data/radar/
 
 data/catalog/
   catalog_signals.json        # segnali drift/inventory per fonte
+
+data/reports/
   sources_dashboard.json      # KPI riassuntivi di tutte le fonti (lunedì)
+  source_reports/*.json       # report per singola fonte
 
 data/catalog_inventory/generated/
   catalog_inventory_latest.parquet   # snapshot cumulativo item
