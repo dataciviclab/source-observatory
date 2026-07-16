@@ -77,8 +77,7 @@ jobs:
             --report data/catalog_inventory/generated/catalog_inventory_report.json \
             --previous previous_report.json \
             --radar data/radar/radar_summary.json \
-            --out data/catalog/catalog_signals.json \
-            --report-out data/catalog/CATALOG_WATCH_REPORT.md
+            --out data/catalog/catalog_signals.json
 
           if python -c "import json,sys; d=json.load(open('previous_report.json')); sys.exit(0 if d.get('sources') else 1)"; then
             python scripts/catalog_diff.py previous_report.json \
@@ -93,7 +92,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/catalog/catalog_signals.json data/catalog/CATALOG_WATCH_REPORT.md
+          git add data/catalog/catalog_signals.json
           if git diff --cached --quiet; then
             echo "Nessuna variazione nei segnali."
           else
@@ -122,30 +121,6 @@ jobs:
           fi
 
       # ═══════════════════════════════════════════════════════════════════
-      # STEP 2 — OPEN DATA HEALTH SCORES (bridge verso data-advocacy)
-      # ═══════════════════════════════════════════════════════════════════
-      - name: Build open data health scores
-        run: |
-          python scripts/build_compliance_scores.py \
-            --radar data/radar/radar_summary.json \
-            --signals data/catalog/catalog_signals.json \
-            --out data/health/open_data_health_scores.json
-
-      - name: Commit health scores
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f data/health/open_data_health_scores.json
-          if git diff --cached --quiet; then
-            echo "Nessuna variazione negli health scores."
-          else
-            git commit -m "chore(so): aggiorna open_data_health_scores [ci skip]"
-            git push
-          fi
-
-      # ═══════════════════════════════════════════════════════════════════
       # STEP 3 — SOURCE-CHECK (sempre)
       # ═══════════════════════════════════════════════════════════════════
       - name: Download source-check results from GCS (for merge)
@@ -166,6 +141,31 @@ jobs:
             --circuit-fail-threshold 2 \
             --max-items 5000 \
             --workers 16
+
+      # ═══════════════════════════════════════════════════════════════════
+      # STEP 3b — BUILD SOURCE REPORTS
+      # ═══════════════════════════════════════════════════════════════════
+      - name: Build source reports
+        run: |
+          python scripts/build_source_reports.py
+
+      - name: Commit source reports + parquet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/reports/
+          # Parquet: force-add perché data/catalog_inventory/generated/ è in .gitignore
+          git add -f data/catalog_inventory/generated/catalog_inventory_latest.parquet \
+                     data/catalog_inventory/generated/source_check_results.parquet \
+                     data/catalog_inventory/generated/catalog_inventory_report.json
+          if git diff --cached --quiet; then
+            echo "Nessuna variazione nei report."
+          else
+            git commit -m "chore(so): aggiorna reports e parquet [ci skip]"
+            git push
+          fi
 
       # ═══════════════════════════════════════════════════════════════════
       # STEP 4 — UPLOAD GCS

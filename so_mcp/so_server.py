@@ -22,6 +22,7 @@ from ._find_url import find_by_url
 from ._inventory_search import inventory_search
 from ._radar import radar_history, radar_summary
 from ._registry import registry_query
+from ._report import dashboard, source_report
 from ._signals import query_signals
 from ._source_check import inventory_diff, inventory_status, query_inventory
 
@@ -42,7 +43,7 @@ _query_cache: TtlCache[tuple[Any, ...], dict[str, Any]] = TtlCache(ttl_seconds=1
 
 
 @mcp.tool(
-    description="Interroga sources_registry.yaml: filtra per protocol, source_kind, observation_mode o cerca per source_id.",
+    description="[LEGACY] Interroga sources_registry.yaml. Per consumo standard usa so_source_report — l'identity è inclusa nel report.",
     structured_output=True,
 )
 def so_registry_query(
@@ -60,8 +61,7 @@ def so_registry_query(
 
 
 @mcp.tool(
-    description="Legge radar_summary.json: health portali e stato GREEN/YELLOW/RED per fonte. "
-    "Con include_history=True include anche la cronologia probe recente.",
+    description="[LEGACY] Legge radar_summary.json. Per consumo standard usa so_source_report — health è inclusa nel report.",
     structured_output=True,
 )
 def so_radar_summary(
@@ -181,7 +181,7 @@ def so_source_check(
 
 
 @mcp.tool(
-    description="Query catalog_signals.json: drift/inventory signals per fonte.",
+    description="[LEGACY] Query catalog_signals.json. Per consumo standard usa so_source_report — signals sono inclusi nel report.",
     structured_output=True,
 )
 def so_catalog_signals(source_id: str | None = None, limit: int | None = None) -> dict[str, Any]:
@@ -215,15 +215,46 @@ def so_find_by_url(url: str) -> dict[str, Any]:
     return result
 
 
-# ─── Tool 7/7: Source Overview (composito) ────────────────────────────────────
+# ─── Tool 8/9: Source Report (da JSON — consumo standard) ──────────────────────
 
 
 @mcp.tool(
     description=(
-        "Overview completo di una fonte: registry, radar, inventory, "
-        "delta item count, signals recenti. Compone registry_query + "
-        "radar_summary + inventory_status + inventory_diff + "
-        "catalog_signals in una singola chiamata."
+        "📋 Report sintetico di una fonte: health, inventory, source-check, "
+        "datasets_in_use, segnali e verdict operativo. "
+        "Legge da data/reports/source_reports/{source_id}.json (git, prodotto dalla CI). "
+        "Sostituisce so_source_overview per il consumo standard."
+    ),
+    structured_output=True,
+)
+def so_source_report(source_id: str) -> dict[str, Any]:
+    return guard_timed(source_report, "so_source_report", source_id)
+
+
+# ─── Tool 9/9: Dashboard (da JSON — consumo standard) ─────────────────────────
+
+
+@mcp.tool(
+    description=(
+        "📊 Dashboard di tutte le fonti: KPI riassuntivi per ogni fonte "
+        "(protocol, radar, inventory_items, scored_items, intake_candidates, "
+        "datasets_in_use, verdict). "
+        "Legge da data/reports/sources_dashboard.json (git, prodotto dalla CI)."
+    ),
+    structured_output=True,
+)
+def so_dashboard() -> dict[str, Any]:
+    return guard_timed(dashboard, "so_dashboard")
+
+
+# ─── Tool 7/7 legacy: Source Overview — DEPRECATO, usa so_source_report ────
+
+
+@mcp.tool(
+    description=(
+        "[LEGACY] Overview composito via 5 chiamate interne. "
+        "Per consumo standard usa so_source_report — singola lettura file, "
+        "più veloce e con verdict operativo."
     ),
     structured_output=True,
 )

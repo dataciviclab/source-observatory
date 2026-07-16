@@ -30,7 +30,7 @@ Usalo soprattutto se devi capire rapidamente cosa vale la pena approfondire e co
 ## Non usarlo quando
 
 - Devi verificare davvero una singola fonte: in quel caso fai [source-check.md](./source-check.md).
-- Devi vedere se il catalogo ha cambiato inventario o struttura: leggi `data/catalog/CATALOG_WATCH_REPORT.md` (prodotto dalla CI ogni lunedì) oppure usa `so_catalog_signals` via MCP.
+- Vuoi una panoramica rapida di tutte le fonti: usa `so_dashboard()` via MCP.
 - L'inventory non è leggibile o non hai abbastanza metadati minimi per triagiarlo.
 
 ## Pre-check MCP (prima di aprire il parquet)
@@ -44,9 +44,10 @@ Prima di toccare l'inventory parquet, consulta gli artifact SO via MCP per orien
 4. so_radar_summary               → stato radar delle fonti monitorate
 ```
 
-**Alternativa compatta**: se conosci già lo `source_id`, puoi usare
-`so_source_overview(<source_id>)` che combina source_check + signals +
-radar_summary + registry in una chiamata sola.
+**Alternativa compatta**: se conosci già lo `source_id`, usa
+`so_source_report(<source_id>)` che dà identity, health, inventory,
+source_check, segnali e verdict in una chiamata sola.
+Per KPI su tutte le fonti, usa `so_dashboard()`.
 
 **Se `so_source_check(include_diff=True)` mostra error per una fonte**: l'inventory di quella fonte è inaffidabile — salta il triage per quella fonte o interpreta i risultati con cautela.
 
@@ -89,7 +90,7 @@ la pertinenza con una domanda civica, e che porti a una issue intake in DI.
 
 - `inventory-triage` -> prepara il terreno via triage di una lista.
 - [source-check.md](./source-check.md) -> verifica una fonte specifica.
-- `CATALOG_WATCH_REPORT.md` / `catalog_signals.json` -> segnali differenziali prodotti automaticamente dalla CI.
+- `so_dashboard()` / `so_source_report()` -> report sintetici per fonte (prodotti dalla CI).
 
 ## Output atteso
 

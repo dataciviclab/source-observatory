@@ -9,9 +9,7 @@ Utilizzo:
 
 from __future__ import annotations
 
-import math
 import sys
-from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,6 +18,12 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from _constants import load_registry  # noqa: E402
 from collectors import dispatch  # noqa: E402
+
+from scripts.source_report import (  # noqa: E402
+    aggregate_inventory_rows,
+    aggregate_source_check,
+    build_report,
+)
 
 # ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -70,8 +74,11 @@ def _radar(source_id: str, cfg: dict) -> dict:
     return {"status": result.status, "http_code": result.http_code, "note": result.note}
 
 
-def _inventory(source_id: str, cfg: dict) -> list[dict]:
-    """2. INVENTORY — raccoglie dataset/item della fonte."""
+def _inventory(source_id: str, cfg: dict) -> tuple[list[dict], str]:
+    """2. INVENTORY — raccoglie dataset/item della fonte.
+
+    Restituisce (rows, captured_at).
+    """
     import time as _time
 
     _heading(f"INVENTORY — {source_id}  ({cfg.get('protocol', '?')})")
@@ -82,7 +89,7 @@ def _inventory(source_id: str, cfg: dict) -> list[dict]:
         res = dispatch(source_id, cfg, captured_at)
     except Exception as e:
         print(f"  ❌ ERRORE: {e}")
-        return []
+        return [], captured_at
     elapsed = _time.time() - t0
 
     rows = res.rows
@@ -94,30 +101,20 @@ def _inventory(source_id: str, cfg: dict) -> list[dict]:
     if res.ssl_fallback_used:
         print("  ⚠️  SSL fallback durante inventory")
 
-    # Aggregazione da rows (sempre disponibile, indipendente dal collector)
-    if rows:
-        fmt_dist = Counter((r.get("format") or "?").upper() for r in rows)
-        print(f"  Formati: {', '.join(f'{k}:{v}' for k, v in sorted(fmt_dist.items()))}")
-
-        years = []
-        for r in rows:
-            for k in ("year_min", "year_signal", "issued"):
-                v = r.get(k)
-                if v is not None:
-                    try:
-                        years.append(int(v))
-                    except (ValueError, TypeError):
-                        pass
-        if years:
-            print(f"  Anni: {min(years)}–{max(years)}")
-
-        orgs = {r.get("organization") for r in rows if r.get("organization")}
-        if orgs and len(orgs) <= 5:
-            print(f"  Organizzazioni: {', '.join(sorted(orgs))}")
-        elif orgs:
+    # Aggregazione (condivisa)
+    agg = aggregate_inventory_rows(rows)
+    if agg["formats"]:
+        print(f"  Formati: {', '.join(f'{k}:{v}' for k, v in sorted(agg['formats'].items()))}")
+    if agg["years_range"]:
+        print(f"  Anni: {agg['years_range'][0]}–{agg['years_range'][1]}")
+    if agg["organizations"]:
+        orgs = agg["organizations"]
+        if len(orgs) <= 5:
+            print(f"  Organizzazioni: {', '.join(orgs)}")
+        else:
             print(f"  Organizzazioni: {len(orgs)}")
 
-    return rows
+    return rows, captured_at
 
 
 def _source_check(source_id: str, cfg: dict, rows: list[dict]) -> list[dict]:
@@ -156,138 +153,49 @@ def _source_check(source_id: str, cfg: dict, rows: list[dict]) -> list[dict]:
             if r is not None:
                 results.append(r)
 
-    total = len(results)
-    reachable = sum(1 for r in results if r.get("reachable"))
-    circuit = sum(1 for r in results if r.get("check_notes") == "circuit_open")
-    content_mismatch = sum(
-        1 for r in results if (r.get("check_notes") or "").startswith("content_mismatch")
-    )
-    formats = Counter(r.get("resource_format") or "?" for r in results)
-    statuses = Counter(str(r.get("http_status", "?")) for r in results)
-
-    print(f"  Totali: {total} item")
+    agg = aggregate_source_check(results)
+    print(f"  Totali: {agg['total']} item")
     print(
-        f"  Raggiungibili: {_color('GREEN', str(reachable))}/{total}  "
-        f"({round(reachable / total * 100, 1)}%)"
+        f"  Raggiungibili: {_color('GREEN', str(agg['reachable']))}/{agg['total']}  "
+        f"({round(agg['reachable'] / agg['total'] * 100, 1)}%)"
     )
-    if circuit:
-        print(f"  ⚠️  Circuit open: {circuit}")
-    if content_mismatch:
-        print(f"  ⚠️  Content mismatch: {content_mismatch}")
-    if formats:
-        print(f"  Formati: {', '.join(f'{k}:{v}' for k, v in formats.most_common(5))}")
-    if len(statuses) > 1:
-        non_ok = {k: v for k, v in statuses.most_common() if k not in ("200", "?")}
-        if non_ok:
-            print(f"  ⚠️  HTTP non-200: {dict(non_ok)}")
+    if agg["circuit"]:
+        print(f"  ⚠️  Circuit open: {agg['circuit']}")
+    if agg["content_mismatch"]:
+        print(f"  ⚠️  Content mismatch: {agg['content_mismatch']}")
+    if agg["formats"]:
+        top5 = list(agg["formats"].items())[:5]
+        print(f"  Formati: {', '.join(f'{k}:{v}' for k, v in top5)}")
+    non_ok = {k: v for k, v in agg["statuses"].items() if k not in ("200", "?")}
+    if non_ok:
+        print(f"  ⚠️  HTTP non-200: {non_ok}")
 
-    # Preview (profilazione reale col toolkit)
-    with_preview = [r for r in results if r.get("paqa_score") is not None]
-    if with_preview:
-        avg = sum(r["paqa_score"] for r in with_preview if r["paqa_score"] is not None) / len(
-            with_preview
-        )
-        p_verdicts = Counter(r.get("paqa_verdict") or "?" for r in with_preview)
-        print(f"  Preview CSV: {len(with_preview)}/{total}")
+    if agg["with_preview_count"]:
+        print(f"  Preview CSV: {agg['with_preview_count']}/{agg['total']}")
         print(
-            f"  PAQA medio: {avg:.0f}/100  ({', '.join(f'{k}:{v}' for k, v in p_verdicts.most_common())})"
+            f"  PAQA medio: {agg['paqa_avg']:.0f}/100  "
+            f"({', '.join(f'{k}:{v}' for k, v in agg['paqa_verdicts'].items())})"
         )
 
-    # Needs review: granularità non determinata e/o anno minimo mancante
-    no_gran = sum(1 for r in results if r.get("granularity") in (None, "", "non_determinato"))
-    no_year = sum(
-        r.get("year_min") is None
-        or (isinstance(r.get("year_min"), float) and math.isnan(r.get("year_min")))  # type: ignore[arg-type]
-        for r in results
-    )
-    if no_gran or no_year:
-        flags = []
-        if no_gran:
-            flags.append(f"granularità:{no_gran}/{total}")
-        if no_year:
-            flags.append(f"anni:{no_year}/{total}")
+    flags = []
+    if agg["no_gran"]:
+        flags.append(f"granularità:{agg['no_gran']}/{agg['total']}")
+    if agg["no_year"]:
+        flags.append(f"anni:{agg['no_year']}/{agg['total']}")
+    if flags:
         print(f"  ⚠️  Needs review: {', '.join(flags)}")
 
-    # Metriche probe: media per item (con workers attivi)
-    has_no_url = sum(1 for r in results if not r.get("url_checked"))
-    if has_no_url:
-        print(f"  ℹ️  Senza URL: {has_no_url}/{total}")
+    if agg["has_no_url"]:
+        print(f"  ℹ️  Senza URL: {agg['has_no_url']}/{agg['total']}")
     print(f"  Worker: {max_workers}")
 
-    problematic = [r for r in results if not r.get("reachable")]
-    if problematic:
+    if agg["problematic"]:
         print("  🔴 Esempi non raggiungibili:")
-        for r in problematic[:3]:
-            url = (r.get("url_checked") or "N/A")[:80]
+        for r in agg["problematic"]:
+            url = (r.get("url_checked") or "N/A")[:80] if isinstance(r, dict) else "N/A"
             print(f"    {r.get('http_status')} – {r.get('check_notes')} – {url}")
 
     return results
-
-
-def _health_score(
-    source_id: str,
-    _cfg: dict,
-    rows: list[dict] | None = None,
-    results: list[dict] | None = None,
-) -> dict | None:
-    """4. HEALTH SCORE — calcola e mostra il punteggio finale.
-
-    Usa rows (inventory) e results (source-check) in memoria per evitare
-    fake signals da parquet non aggiornato.
-    """
-    _heading(f"HEALTH SCORE — {source_id}")
-    from scripts.build_compliance_scores import (
-        _build_inventory_stats,
-        _build_license_stats,
-        _build_source_check_stats,
-        build_scores,
-    )
-
-    reg = load_registry()
-    radar_path = REPO_ROOT / "data" / "radar" / "radar_summary.json"
-    signals_path = REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
-
-    radar_sources: list = []
-    if radar_path.exists():
-        radar_sources = __import__("json").loads(radar_path.read_text()).get("sources", [])
-
-    signals_data: dict | None = None
-    if signals_path.exists():
-        signals_data = __import__("json").loads(signals_path.read_text())
-
-    # Costruisce stats in memoria invece di leggere da parquet
-    inventory_stats = _build_inventory_stats(source_id, rows) if rows else None
-    license_stats = _build_license_stats(source_id, rows) if rows else None
-    source_check_stats = _build_source_check_stats(source_id, results) if results else None
-
-    result = build_scores(
-        {source_id: reg.get(source_id, {})},
-        [s for s in radar_sources if s["id"] == source_id],
-        signals_data,
-        inventory_stats=inventory_stats,
-        license_stats=license_stats,
-        source_check_stats=source_check_stats,
-    )
-    entry = result["scores"][0] if result["scores"] else None
-    if not entry:
-        print("  Nessun health score disponibile")
-        return None
-
-    c = _color(entry["livello"], entry["livello"].upper())
-    print(f"  Score: {entry['totale']}/100  ({c})")
-    print(f"  Azione: {entry['azione_raccomandata']}")
-    if entry.get("flag_urgenza"):
-        print(f"  Flag: {', '.join(entry['flag_urgenza'])}")
-
-    print("\n  Assi:")
-    for k, v in entry["assi"].items():
-        assi_color = _color(
-            "GREEN" if v["score"] >= 70 else "YELLOW" if v["score"] >= 55 else "RED",
-            f"{v['score']:.0f}",
-        )
-        src = v["fonte"]
-        print(f"    {k:30s} {assi_color:>5s}  ({src})")
-    return entry
 
 
 # ── MAIN ─────────────────────────────────────────────────────────────────────
@@ -299,7 +207,6 @@ def _report_markdown(
     radar: str,
     rows: list[dict],
     results: list[dict],
-    health_entry: dict | None,
     timing: dict,
 ) -> None:
     """Stampa report Markdown della fonte (per allegati FOIA)."""
@@ -308,60 +215,44 @@ def _report_markdown(
     print(f"- **Protocollo**: {protocol}")
     print(f"- **RADAR**: {radar}")
 
-    if rows:
+    inv_agg = aggregate_inventory_rows(rows)
+    if inv_agg["formats"]:
+        fmt_str = ", ".join(f"{k}:{v}" for k, v in sorted(inv_agg["formats"].items()) if k != "?")
         print(f"- **Inventory**: {len(rows)} dataset")
-        from collections import Counter
-
-        fmt_dist = Counter((r.get("format") or "?").upper() for r in rows)
-        fmt_str = ", ".join(f"{k}:{v}" for k, v in sorted(fmt_dist.items()) if k != "?")
         if fmt_str:
             print(f"- **Formati (inventory)**: {fmt_str}")
 
-    if results:
-        total = len(results)
-        reachable = sum(1 for r in results if r.get("reachable"))
-        circuit = sum(1 for r in results if r.get("check_notes") == "circuit_open")
-        with_preview = [r for r in results if r.get("paqa_score") is not None]
-        formats = Counter(r.get("resource_format") or "?" for r in results)
-        no_gran = sum(1 for r in results if r.get("granularity") in (None, "", "non_determinato"))
-
-        print(f"- **Source-check**: {reachable}/{total} raggiungibili", end="")
-        if circuit:
-            print(f" ({circuit} circuit open)", end="")
+    sc_agg = aggregate_source_check(results)
+    if sc_agg["total"]:
+        print(f"- **Source-check**: {sc_agg['reachable']}/{sc_agg['total']} raggiungibili", end="")
+        if sc_agg["circuit"]:
+            print(f" ({sc_agg['circuit']} circuit open)", end="")
         print()
-        print(f"  - Formati: {', '.join(f'{k}:{v}' for k, v in formats.most_common(4))}")
-        if with_preview:
-            avg = sum(r["paqa_score"] for r in with_preview if r["paqa_score"] is not None) / len(
-                with_preview
+        top4 = list(sc_agg["formats"].items())[:4]
+        if top4:
+            print(f"  - Formati: {', '.join(f'{k}:{v}' for k, v in top4)}")
+        if sc_agg["with_preview_count"]:
+            print(
+                f"  - Preview CSV: {sc_agg['with_preview_count']}/{sc_agg['total']}, "
+                f"PAQA medio: {sc_agg['paqa_avg']:.0f}/100"
             )
-            print(f"  - Preview CSV: {len(with_preview)}/{total}, PAQA medio: {avg:.0f}/100")
-        if no_gran:
-            print(f"  - Needs review (granularità): {no_gran}/{total}")
-        if circuit:
-            print(f"  - Circuit open: {circuit}")
-
-    if health_entry:
-        print(f"\n### Health score: {health_entry['totale']}/100 ({health_entry['livello']})")
-        print(f"- **Azione**: {health_entry['azione_raccomandata']}")
-        max_assi = len(health_entry.get("assi", {}))
-        print(f"- **Assi computed**: {health_entry.get('assi_computed', 0)}/{max_assi}")
-        print()
-        print("| Asse | Score | Fonte |")
-        print("|---|---|---|")
-        for k, v in health_entry.get("assi", {}).items():
-            print(f"| {k} | {v['score']:.0f} | {v['fonte']} |")
+        if sc_agg["no_gran"]:
+            print(f"  - Needs review (granularità): {sc_agg['no_gran']}/{sc_agg['total']}")
+        if sc_agg["circuit"]:
+            print(f"  - Circuit open: {sc_agg['circuit']}")
 
     # Tempi
     print("\n### Tempi di esecuzione")
-    for fase in ("RADAR", "INVENTORY", "SOURCE-CHECK", "HEALTH"):
+    for fase in (
+        "RADAR",
+        "INVENTORY",
+        "SOURCE-CHECK",
+    ):
         v = timing.get(fase, "?")
         if not isinstance(v, str):
             print(f"- **{fase}**: {v:.1f}s")
     if isinstance(timing.get("TOTALE"), float):
         print(f"- **Totale**: {timing['TOTALE']:.1f}s")
-
-    if health_entry and health_entry.get("flag_urgenza"):
-        print(f"\n⚠️ **Flag urgenza**: {', '.join(health_entry['flag_urgenza'])}")
 
     print(
         f"\n_Report generato da DataCivicLab — run_source.py il {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}_"
@@ -370,6 +261,7 @@ def _report_markdown(
 
 def main() -> int:
     import argparse
+    import json
     import time as _time
 
     parser = argparse.ArgumentParser(description="End-to-end per una fonte")
@@ -378,9 +270,14 @@ def main() -> int:
     parser.add_argument("--no-radar", action="store_true")
     parser.add_argument("--no-inventory", action="store_true")
     parser.add_argument("--no-sourcecheck", action="store_true")
-    parser.add_argument("--no-health", action="store_true")
     parser.add_argument(
         "--markdown", action="store_true", help="Output in Markdown (per allegati FOIA)"
+    )
+    parser.add_argument("--report", action="store_true", help="Produce source report JSON")
+    parser.add_argument(
+        "--report-dir",
+        default=".",
+        help="Directory per il report JSON (default: corrente)",
     )
     args = parser.parse_args()
 
@@ -398,6 +295,7 @@ def main() -> int:
     t_start = _time.time()
 
     # 1. RADAR
+    radar_result: dict | None = None
     radar_str = "?"
     if not args.no_radar:
         t0 = _time.time()
@@ -410,16 +308,17 @@ def main() -> int:
         timing["RADAR"] = "skip"
 
     # 2. INVENTORY
-    rows = []
+    rows: list[dict] = []
+    captured_at: str | None = None
     if not args.no_inventory:
         t0 = _time.time()
-        rows = _inventory(args.source, cfg)
+        rows, captured_at = _inventory(args.source, cfg)  # type: ignore[assignment]
         timing["INVENTORY"] = round(_time.time() - t0, 1)
     else:
         timing["INVENTORY"] = "skip"
 
     # 3. SOURCE-CHECK
-    results = []
+    results: list[dict] = []
     if not args.no_sourcecheck:
         t0 = _time.time()
         results = _source_check(args.source, cfg, rows)
@@ -427,26 +326,36 @@ def main() -> int:
     else:
         timing["SOURCE-CHECK"] = "skip"
 
-    # 4. HEALTH SCORE
-    health_entry = None
-    if not args.no_health:
-        t0 = _time.time()
-        health_entry = _health_score(args.source, cfg, rows=rows, results=results)
-        timing["HEALTH"] = round(_time.time() - t0, 1)
-    else:
-        timing["HEALTH"] = "skip"
-
     timing["TOTALE"] = round(_time.time() - t_start, 1)
 
+    if args.report:
+        report = build_report(
+            args.source,
+            cfg,
+            radar_result,
+            rows,
+            captured_at,
+            results,
+        )
+        report_dir = Path(args.report_dir)
+        report_dir.mkdir(parents=True, exist_ok=True)
+        report_path = report_dir / f"source_report_{args.source}.json"
+        report_path.write_text(json.dumps(report, indent=2, ensure_ascii=False))
+        print(f"\n📄 Report JSON salvato: {report_path}")
+
     if args.markdown:
-        _report_markdown(args.source, cfg, radar_str, rows, results, health_entry, timing)
+        _report_markdown(args.source, cfg, radar_str, rows, results, timing)
     else:
         # Riepilogo tempi
         print(f"\n{'─' * 50}")
         print("  ⏱  RIEPILOGO TEMPI")
         print(f"{'─' * 50}")
-        for fase in ("RADAR", "INVENTORY", "SOURCE-CHECK", "HEALTH"):
-            v = timing[fase]
+        for fase in (
+            "RADAR",
+            "INVENTORY",
+            "SOURCE-CHECK",
+        ):
+            v = timing.get(fase, "?")
             if isinstance(v, str):
                 print(f"    {fase:<15} {v}")
             else:

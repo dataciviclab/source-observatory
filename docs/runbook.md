@@ -45,7 +45,7 @@ Boundary:
 
 Output correnti:
 
-- [CATALOG_WATCH_REPORT.md](../data/catalog/CATALOG_WATCH_REPORT.md)
+- [sources_dashboard.json](../data/reports/sources_dashboard.json) (KPI riassuntivi)
 - [catalog_signals.json](../data/catalog/catalog_signals.json)
 
 Usa `catalog-watch` quando la domanda è:
@@ -59,7 +59,7 @@ Modello v0:
 - i segnali vengono prodotti automaticamente dal workflow schedulato `observatory.yml` (ogni lunedì 03:20)
 - il follow-up resta `human-run`: il report non sostituisce la review umana sui cambi rilevanti
 - il run manuale va usato quando serve un check metodologicamente difendibile fuori schedule
-- gli output canonici restano `CATALOG_WATCH_REPORT.md` e `catalog_signals.json`
+- gli output canonici sono `catalog_signals.json` e i source report in `data/reports/`
 - problemi di connessione/HTTP vanno letti in `radar_summary.json`, non in `catalog_signals.json`
 - **Issue automatiche**: in caso di variazioni rilevanti nel catalogo, `observatory.yml` crea o aggiorna una issue `catalog-alert` su GitHub
 

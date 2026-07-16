@@ -11,7 +11,7 @@ Gli artifact di catalog-inventory sono cache locali sotto `data/catalog_inventor
 | Workflow | Schedule | Prodotto principale | Dove finisce |
 |---|---|---|---|
 | `radar.yml` | **daily** 03:15 | `radar_summary.json`, `radar_history.json`, `sources_registry.yaml`, `STATUS.md` | commit su git |
-| `observatory.yml` | **weekly** lun 03:20 | inventory parquet, source-check parquet, `catalog_signals.json`, `CATALOG_WATCH_REPORT.md` | upload GCS + commit signals su git. Crea/aggiorna issue `catalog-alert` in caso di variazioni |
+| `observatory.yml` | **weekly** lun 03:20 | inventory parquet, source-check parquet, `catalog_signals.json`, source reports (33 JSON) | upload GCS + commit signals e report su git. Crea/aggiorna issue `catalog-alert` in caso di variazioni |
 | `ci.yml` | PR/push su main | test, lint, mypy, smoke test | solo CI — non produce artifact |
 
 Il server MCP legge i dati nell'ordine: **GCS → cache locale**. I commit su git sono la fonte per radar e signals. I parquet operativi sono letti dal prefisso GCS configurato (`CATALOG_INVENTORY_GCS_PREFIX`); la cache locale in `data/catalog_inventory/generated/` è il fallback.
