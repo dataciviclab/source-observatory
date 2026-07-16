@@ -791,6 +791,30 @@ pagopa:
     per ambito, geografia comuni, numero notifiche). Dati su digitalizzazione pagamenti
     PA e adozione piattaforme digitali (IO, SEND).'
   datasets_in_use: []
+art_opendata:
+  source_kind: catalog
+  protocol: ckan
+  observation_mode: catalog-watch
+  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:autorita-di-regolazione-dei-trasporti
+    timeout: 180
+  last_probed: '2026-07-16'
+  catalog_baseline:
+    captured_at: '2026-07-16'
+    metric: package_count
+    value: 32
+    method: package_search
+    reliability: high
+    note: 'Conteggio via package_search con fq=organization:autorita-di-regolazione-dei-trasporti
+      su dati.gov.it. 32 dataset su trasporti (taxi/NCC, ferrovie, autostrade, aeroporti).'
+  verdict: go
+  note: 'Fonte via dati.gov.it (ART). 32 dataset CSV su trasporto ferroviario regionale
+    (ritardi, soppressioni, ricavi), taxi/NCC per comune (licenze, tariffe, importi
+    fissi 2002-2024), autostrade (traffico, pedaggi, manutenzioni, sicurezza), aeroporti,
+    interporti, trasporto marittimo. CC BY 4.0. CSV su bdt.autorita-trasporti.it.
+    Incrociabile con MIT incidentalità e ACI parco veicolare.'
+  datasets_in_use: []
 aci:
   source_kind: catalog
   protocol: ckan
