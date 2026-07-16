@@ -35,6 +35,15 @@ _TABULAR_EXT_RANK: dict[str, int] = {
 }
 
 
+def _normalize_format_uri(fmt: str) -> str:
+    """Normalizza URI formato in nome breve.
+
+    Es: ``http://purl.org/dc/terms/IMT`` → ``IMT``
+        ``http://publications.europa.eu/resource/authority/file-type/CSV`` → ``CSV``
+    """
+    return fmt.rsplit("/", 1)[-1].rsplit("#", 1)[-1] if "/" in fmt or "#" in fmt else fmt
+
+
 def _best_distribution_url(urls: list[str]) -> str | None:
     """Sceglie la distribuzione più probabilmente tabulare/scaricabile.
 
@@ -196,7 +205,9 @@ def _build_sparql_rows(
                 "distribution_count": distribution_count
                 if distribution_count is not None
                 else (len(distribution_urls) if distribution_urls else None),
-                "format": ", ".join(formats) if formats else None,
+                "format": (
+                    ", ".join(_normalize_format_uri(f) for f in formats) if formats else "SPARQL"
+                ),
                 "theme": ", ".join(themes) if themes else None,
             }
         )
@@ -305,7 +316,7 @@ def _collect_named_graphs(
                 "landing_page": None,
                 "distribution_url": None,
                 "distribution_count": None,
-                "format": None,
+                "format": "SPARQL_NAMED_GRAPH",
                 "theme": None,
             }
         )

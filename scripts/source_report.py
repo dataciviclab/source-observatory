@@ -165,12 +165,25 @@ def compute_formato_aperto(
     results: list[dict],
     rows: list[dict] | None = None,
 ) -> dict:
-    """Metrica 'formato aperto': percentuale di item in formato aperto (CSV/JSON/XML).
+    """Metrica 'formato aperto': percentuale di item in formato aperto.
 
+    I formati includono formati tabulari classici (CSV, JSON, XML)
+    e formati RDF (RDF_TURTLE, RDF_N_TRIPLES, SPARQL).
     Usa source-check results se disponibili (formato reale via HTTP probe),
     altrimenti fallback su inventory rows (metadato).
     """
-    APERTI = {"CSV", "JSON", "XML"}
+    APERTI = {
+        "CSV",
+        "JSON",
+        "XML",
+        "RDF",
+        "TTL",
+        "RDF_TURTLE",
+        "RDF_N_TRIPLES",
+        "RDF_XML",
+        "SPARQL",
+        "SPARQL_NAMED_GRAPH",
+    }
 
     # Source-check: formato reale da probe HTTP
     probeable = [r for r in results if r.get("probe_applicable", True)]
@@ -181,8 +194,8 @@ def compute_formato_aperto(
         for r in probeable:
             if r.get("reachable"):
                 reachable += 1
-            fmt = _safe_str(r.get("resource_format")).upper().strip()
-            if fmt in APERTI:
+            fmt = _safe_str(r.get("resource_format")).upper()
+            if any(a in fmt for a in APERTI):
                 n_aperto += 1
 
         perc_reachable = round(reachable / total * 100, 1) if total > 0 else 0.0
@@ -219,7 +232,7 @@ def compute_formato_aperto(
         total = len(rows)
         n_aperto = 0
         for r in rows:
-            fmt = _safe_str(r.get("format")).upper().strip()
+            fmt = _safe_str(r.get("format")).upper()
             if any(a in fmt for a in APERTI):
                 n_aperto += 1
 
