@@ -22,7 +22,7 @@ Prima di qualsiasi probe, verifica che il portale non sia già nel sistema:
 
 ```
 1. so_find_by_url(<URL>)     → è già in source_check o inventory?
-2. so_registry_query(source_id=?) → già nel registry?
+2. so_source_report(<source_id>) → già nel registry? (identity + verdict inclusi)
 ```
 
 **Se già catalogato (source_id noto)**: invece dei passaggi separati, usa
