@@ -1,280 +1,6 @@
 {
   "probes": [
     {
-      "probe_date": "2026-07-03",
-      "captured_at": "2026-07-03T06:40:50.317149+00:00",
-      "sources": [
-        {
-          "id": "istat_sdmx",
-          "status": "YELLOW",
-          "protocol": "sdmx",
-          "http_code": "-",
-          "note": "Timeout (ReadTimeout)",
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "anac",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "inps",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "openbdap",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "inail_opendata",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "mim_opendata",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "dati_camera",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "dati_senato",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "dati_cultura",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "ispra_linked_data",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "consip_open_data",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "lavoro_opendata",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "mur_ustat",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "opencoesione",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "mef_irpef",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "opencivitas",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": "SSL verify failed; fallback verify=False used (SSLError)",
-          "ssl_fallback_used": true,
-          "ssl_issue": true,
-          "ssl_streak": 8
-        },
-        {
-          "id": "aifa",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": "SSL verify failed; fallback verify=False used (SSLError)",
-          "ssl_fallback_used": true,
-          "ssl_issue": true,
-          "ssl_streak": 8
-        },
-        {
-          "id": "dait",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "eligendo",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "mit_opendata",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "openga",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "giustizia_statistiche",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "cortecostituzionale",
-          "status": "GREEN",
-          "protocol": "html",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "terna_opendata",
-          "status": "GREEN",
-          "protocol": "rest",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "ministero_interno",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "agid",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "noipa_sparql",
-          "status": "GREEN",
-          "protocol": "sparql",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "mimit_rna",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "ministero_salute",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "agcm",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "unioncamere",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "pagopa",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        },
-        {
-          "id": "aci",
-          "status": "GREEN",
-          "protocol": "ckan",
-          "http_code": "200",
-          "note": null,
-          "ssl_fallback_used": false
-        }
-      ]
-    },
-    {
       "probe_date": "2026-07-04",
       "captured_at": "2026-07-04T06:27:38.301962+00:00",
       "sources": [
@@ -3828,6 +3554,304 @@
         },
         {
           "id": "aci",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        }
+      ]
+    },
+    {
+      "probe_date": "2026-07-17",
+      "captured_at": "2026-07-17T05:49:41.446583+00:00",
+      "sources": [
+        {
+          "id": "istat_sdmx",
+          "status": "YELLOW",
+          "protocol": "sdmx",
+          "http_code": "-",
+          "note": "Timeout (ReadTimeout)",
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "anac",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "inps",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "openbdap",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "inail_opendata",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "mim_opendata",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "dati_camera",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "dati_senato",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "dati_cultura",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "ispra_linked_data",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "consip_open_data",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "lavoro_opendata",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "mur_ustat",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "opencoesione",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "mef_irpef",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "opencivitas",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": "SSL verify failed; fallback verify=False used (SSLError)",
+          "ssl_fallback_used": true,
+          "ssl_issue": true,
+          "ssl_streak": 14
+        },
+        {
+          "id": "aifa",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": "SSL verify failed; fallback verify=False used (SSLError)",
+          "ssl_fallback_used": true,
+          "ssl_issue": true,
+          "ssl_streak": 14
+        },
+        {
+          "id": "dait",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "eligendo",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "mit_opendata",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "openga",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "giustizia_statistiche",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "cortecostituzionale",
+          "status": "GREEN",
+          "protocol": "html",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "terna_opendata",
+          "status": "GREEN",
+          "protocol": "rest",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "ministero_interno",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "agid",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "noipa_sparql",
+          "status": "GREEN",
+          "protocol": "sparql",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "mimit_rna",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "ministero_turismo_opendata",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "ministero_salute",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "agcm",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "unioncamere",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "pagopa",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "art_opendata",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "aci",
+          "status": "GREEN",
+          "protocol": "ckan",
+          "http_code": "200",
+          "note": null,
+          "ssl_fallback_used": false
+        },
+        {
+          "id": "adm_opendata",
           "status": "GREEN",
           "protocol": "ckan",
           "http_code": "200",

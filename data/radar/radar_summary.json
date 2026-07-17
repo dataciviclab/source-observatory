@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-07-16T05:48:28.407357+00:00",
-  "probe_date": "2026-07-16",
-  "sources_total": 33,
+  "generated_at": "2026-07-17T05:49:41.446594+00:00",
+  "probe_date": "2026-07-17",
+  "sources_total": 36,
   "status_counts": {
-    "GREEN": 33,
-    "YELLOW": 0,
+    "GREEN": 35,
+    "YELLOW": 1,
     "RED": 0
   },
   "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -238,6 +238,14 @@
       "ssl_fallback_used": false
     },
     {
+      "id": "ministero_turismo_opendata",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "http_code": "200",
+      "note": null,
+      "ssl_fallback_used": false
+    },
+    {
       "id": "ministero_salute",
       "status": "GREEN",
       "protocol": "ckan",
@@ -270,7 +278,23 @@
       "ssl_fallback_used": false
     },
     {
+      "id": "art_opendata",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "http_code": "200",
+      "note": null,
+      "ssl_fallback_used": false
+    },
+    {
       "id": "aci",
+      "status": "GREEN",
+      "protocol": "ckan",
+      "http_code": "200",
+      "note": null,
+      "ssl_fallback_used": false
+    },
+    {
+      "id": "adm_opendata",
       "status": "GREEN",
       "protocol": "ckan",
       "http_code": "200",

@@ -1,19 +1,19 @@
 # Stato Radar
 
-Ultimo run: 2026-07-16
+Ultimo run: 2026-07-17
 
 ## Sommario
 
-- Fonti controllate: 33
-- GREEN: 33
-- YELLOW: 0
+- Fonti controllate: 36
+- GREEN: 35
+- YELLOW: 1
 - RED: 0
 
 ## Tipi sorgente
 
 | Tipo | Conteggio |
 | --- | --- |
-| catalog | 33 |
+| catalog | 36 |
 | portal | 0 |
 | source | 0 |
 
@@ -21,8 +21,8 @@ Ultimo run: 2026-07-16
 
 | Modalita' | Conteggio | Significato |
 | --- | --- | --- |
-| radar-only | 3 | Salute della fonte senza segnali di inventario |
-| catalog-watch | 30 | Inventario e drift strutturale del catalogo |
+| radar-only | 4 | Salute della fonte senza segnali di inventario |
+| catalog-watch | 32 | Inventario e drift strutturale del catalogo |
 | monitor-active | 0 | Caso ristretto con monitoraggio piu' vicino alla risorsa |
 
 Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornamento del dataset.
@@ -31,7 +31,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
+| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | catalog-watch | GREEN | 200 | anac_bandi_gara |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_entrate_stato, bdap_lea, bdap_spese_stato, dipendenti_pubblici |
@@ -56,16 +56,20 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | cortecostituzionale | catalog | html | catalog-watch | GREEN | 200 | - |
 | terna_opendata | catalog | rest | radar-only | GREEN | 200 | terna_electrical_energy_by_sector, terna_electricity_by_source |
 | ministero_interno | catalog | ckan | catalog-watch | GREEN | 200 | - |
-| agid | catalog | ckan | catalog-watch | GREEN | 200 | ipa_enti, ipa_istat_mapping |
+| agid | catalog | ckan | catalog-watch | GREEN | 200 | ipa_aree_organizzative_omogenee, ipa_enti, ipa_istat_mapping, ipa_unita_organizzative |
 | noipa_sparql | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | mimit_rna | catalog | ckan | catalog-watch | GREEN | 200 | rna_aiuti_stato, rna_misure |
+| ministero_turismo_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | ministero_salute | catalog | ckan | catalog-watch | GREEN | 200 | farmacie, personale_ssn, reparti_ricovero, strutture_asl, strutture_ricovero_asl |
 | agcm | catalog | ckan | catalog-watch | GREEN | 200 | - |
-| unioncamere | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| unioncamere | catalog | ckan | radar-only | GREEN | 200 | - |
 | pagopa | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| art_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | aci | catalog | ckan | catalog-watch | GREEN | 200 | aci_prime_iscrizioni_autovetture |
+| adm_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 
 ## Note
 
+- `istat_sdmx`: Timeout (ReadTimeout)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
 - `aifa`: HTTP 200 | content-type: text/html;charset=UTF-8 | url finale: https://www.aifa.gov.it/dati-aifa | SSL verify failed; fallback verify=False used (SSLError)
