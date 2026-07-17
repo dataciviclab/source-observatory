@@ -1,6 +1,6 @@
 {
   "source_id": "unioncamere",
-  "generated_at": "2026-07-16T16:11:56+00:00",
+  "generated_at": "2026-07-17T09:50:59+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -8,10 +8,10 @@
     "protocol": "ckan",
     "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
     "source_kind": "catalog",
-    "observation_mode": "catalog-watch",
-    "verdict": "go",
-    "note": "Fonte via dati.gov.it (Unioncamere). 352 dataset su demografia d'impresa per provincia: femminili, giovanili, straniere, artigiane, ATECO, forma giuridica. Dataset prevalentemente provincia-specifici (~340). ~12 dataset nazionali aggregati (es. 'Italia - Imprese femminili...').\n",
-    "last_probed": "2026-07-16"
+    "observation_mode": "radar-only",
+    "verdict": "watchlist",
+    "note": "Fonte via dati.gov.it (Unioncamere). 352 dataset su demografia d'impresa provincia-specifici, costo unione alto. Passato a radar-only: se il catalogo publlica dati aggregati nazionali, si rivaluta.",
+    "last_probed": "2026-07-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -21,80 +21,80 @@
   },
   "inventory": {
     "total_items": 384,
-    "method": "package_search",
-    "captured_at": "2026-07-16T15:54:37+00:00",
-    "baseline_value": 352,
-    "baseline_date": "2026-06-04",
+    "method": null,
+    "captured_at": "2026-07-17T09:34:28+00:00",
+    "baseline_value": null,
+    "baseline_date": null,
     "freshness_hours": 0.3,
-    "delta": 32,
-    "delta_pct": 9.1,
+    "delta": null,
+    "delta_pct": 0.0,
     "formats": {
       "CSV": 384
     }
   },
   "source_check": {
-    "last_run": "2026-07-16 15:56:58+00:00",
+    "last_run": "2026-07-17 09:36:49+00:00",
     "total_scored": 384,
-    "reachable": 382,
-    "intake_candidates": 367,
-    "needs_review": 17,
+    "reachable": 0,
+    "intake_candidates": 365,
+    "needs_review": 19,
     "top_items": [
       {
-        "name": "modena-esportazioni-settore-biomedicale-provincia-di-modena-dal-1993-al-2023",
-        "score": 90.0,
+        "name": "modena-focus-settore-industria-delle-imprese-nella-provincia-di-modena-dal-1991-al-2023",
+        "score": 70.0,
         "year_range": [
-          1993,
+          1991,
           2023
         ],
         "format": "CSV",
-        "reachable": true
+        "reachable": false
       },
       {
-        "name": "modena-esportazioni-macchine-e-apparecchiature-meccaniche-provincia-di-modena-dal-1993-al-2023",
-        "score": 90.0,
+        "name": "modena-focus-settore-grandi-settori-delle-imprese-nella-provincia-di-modena-dal-1988-al-2023",
+        "score": 70.0,
         "year_range": [
-          1993,
+          1988,
           2023
         ],
         "format": "CSV",
-        "reachable": true
+        "reachable": false
+      },
+      {
+        "name": "modena-focus-settore-terziario-delle-imprese-nella-provincia-di-modena-dal-1991-al-2023",
+        "score": 70.0,
+        "year_range": [
+          1991,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": false
       },
       {
         "name": "modena-demografia-delle-imprese-della-provincia-di-modena-dal-1991-al-2023",
-        "score": 90.0,
+        "score": 70.0,
         "year_range": [
           1991,
           2023
         ],
         "format": "CSV",
-        "reachable": true
+        "reachable": false
       },
       {
-        "name": "modena-esportazioni-settore-ceramico-provincia-di-modena-dal-1993-al-2023",
-        "score": 90.0,
+        "name": "modena-esportazioni-mezzi-di-trasporto-provincia-di-modena-dal-1993-al-2023",
+        "score": 70.0,
         "year_range": [
           1993,
           2023
         ],
         "format": "CSV",
-        "reachable": true
-      },
-      {
-        "name": "modena-focus-settore-industria-delle-imprese-nella-provincia-di-modena-dal-1991-al-2023",
-        "score": 90.0,
-        "year_range": [
-          1991,
-          2023
-        ],
-        "format": "CSV",
-        "reachable": true
+        "reachable": false
       }
     ],
     "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 90.0,
+      "score": 10.0,
       "perc_aperto": 100.0,
-      "perc_reachable": 99.5,
+      "perc_reachable": 0.0,
       "total": 384,
       "fonte": "source_check"
     }
@@ -110,11 +110,11 @@
     }
   ],
   "operational_verdict": {
-    "label": "INVENTORY_CHANGED",
-    "score": "changed",
+    "label": "STABLE",
+    "score": "stable",
     "triggers": [
-      "inventory_changed"
+      "all_green"
     ],
-    "next_action": "review inventory changes"
+    "next_action": null
   }
 }

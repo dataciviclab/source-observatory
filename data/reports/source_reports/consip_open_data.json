@@ -1,6 +1,6 @@
 {
   "source_id": "consip_open_data",
-  "generated_at": "2026-07-16T16:11:56+00:00",
+  "generated_at": "2026-07-17T09:50:59+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN piccolo ma difendibile per catalog-watch. I source-check dataset-specifici hanno confermato che il catalogo contiene almeno due target primari e un support dataset utile per il filone Consip acquisti PA.",
-    "last_probed": "2026-07-16"
+    "last_probed": "2026-07-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 16,
     "method": "package_list",
-    "captured_at": "2026-07-16T15:54:37+00:00",
+    "captured_at": "2026-07-17T09:34:28+00:00",
     "baseline_value": 17,
     "baseline_date": "2026-04-10",
     "freshness_hours": 0.3,
@@ -35,42 +35,42 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-16 15:56:58+00:00",
+    "last_run": "2026-07-17 09:36:49+00:00",
     "total_scored": 16,
     "reachable": 0,
     "intake_candidates": 0,
     "needs_review": 16,
     "top_items": [
       {
-        "name": "dataset-richieste-di-offerta-e-trattative-dirette-bandite-sul-mepa",
-        "score": 35.0,
-        "year_range": null,
-        "format": "CSV",
-        "reachable": false
-      },
-      {
-        "name": "dataset-appalti-specifici-banditi-su-sistema-dinamico-di-acquisizione",
-        "score": 35.0,
-        "year_range": null,
-        "format": "CSV",
-        "reachable": false
-      },
-      {
-        "name": "dataset-beni-e-servizi-acquistati-tramite-rdo-td-su-mepa",
-        "score": 35.0,
-        "year_range": null,
-        "format": "CSV",
-        "reachable": false
-      },
-      {
-        "name": "dataset-beni-e-servizi-richiesti-tramite-rdo-td-bandite",
-        "score": 35.0,
-        "year_range": null,
-        "format": "CSV",
-        "reachable": false
-      },
-      {
         "name": "dataset-consumi-generati-tramite-ordini-diretti-di-acquisto-in-convenzione",
+        "score": 35.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "dataset-contratti-stipulati-a-seguito-di-rdo-td-su-mepa",
+        "score": 35.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "dataset-ordini-diretti-di-acquisto-su-accordi-quadro",
+        "score": 35.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "dataset-ordini-diretti-di-acquisto-sul-mepa",
+        "score": 35.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "dataset-ordini-diretti-di-acquisto-in-convenzione",
         "score": 35.0,
         "year_range": null,
         "format": "CSV",

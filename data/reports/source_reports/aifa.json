@@ -1,6 +1,6 @@
 {
   "source_id": "aifa",
-  "generated_at": "2026-07-16T16:11:56+00:00",
+  "generated_at": "2026-07-17T09:50:59+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale Open Data AIFA — CSV scaricabili senza autenticazione. Licenza CC-BY 4.0. Inventory via area_pages (sito principale ha protezioni anti-bot). Dataset: liste farmaci, provvedimenti, sperimentazioni cliniche, farmacovigilanza, incarichi, bandi.\n",
-    "last_probed": "2026-07-16"
+    "last_probed": "2026-07-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 38,
     "method": null,
-    "captured_at": "2026-07-16T15:54:37+00:00",
+    "captured_at": "2026-07-17T09:34:28+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "freshness_hours": 0.3,
@@ -39,22 +39,12 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-07-16 15:56:58+00:00",
+    "last_run": "2026-07-17 09:36:49+00:00",
     "total_scored": 60,
     "reachable": 58,
     "intake_candidates": 11,
     "needs_review": 49,
     "top_items": [
-      {
-        "name": "strutture",
-        "score": 60.0,
-        "year_range": [
-          2014,
-          2014
-        ],
-        "format": "CSV",
-        "reachable": true
-      },
       {
         "name": "Lista-",
         "score": 60.0,
@@ -81,6 +71,16 @@
         "year_range": [
           2025,
           2025
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "Classe",
+        "score": 60.0,
+        "year_range": [
+          2026,
+          2026
         ],
         "format": "CSV",
         "reachable": true

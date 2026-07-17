@@ -1,6 +1,6 @@
 {
   "source_id": "ispra_linked_data",
-  "generated_at": "2026-07-16T16:11:56+00:00",
+  "generated_at": "2026-07-17T09:50:59+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline tabellari.",
-    "last_probed": "2026-07-16"
+    "last_probed": "2026-07-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,22 +22,22 @@
   "inventory": {
     "total_items": 70,
     "method": "sparql_query",
-    "captured_at": "2026-07-16T15:54:37+00:00",
+    "captured_at": "2026-07-17T09:34:28+00:00",
     "baseline_value": 66,
     "baseline_date": "2026-04-11",
     "freshness_hours": 0.3,
     "delta": 4,
     "delta_pct": 6.1,
     "formats": {
-      "?": 38,
-      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_N_TRIPLES": 10,
-      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_TURTLE, HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/CSV": 8,
-      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/CSV, HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_TURTLE": 7,
-      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_TURTLE": 7
+      "SPARQL": 38,
+      "RDF_N_TRIPLES": 10,
+      "RDF_TURTLE, CSV": 8,
+      "CSV, RDF_TURTLE": 7,
+      "RDF_TURTLE": 7
     }
   },
   "source_check": {
-    "last_run": "2026-07-16 15:56:58+00:00",
+    "last_run": "2026-07-17 09:36:49+00:00",
     "total_scored": 15,
     "reachable": 0,
     "intake_candidates": 0,
@@ -65,14 +65,14 @@
         "reachable": false
       },
       {
-        "name": "indicators",
+        "name": "repair-types",
         "score": 15.0,
         "year_range": null,
         "format": "CSV",
         "reachable": false
       },
       {
-        "name": "repair-types",
+        "name": "instability-types",
         "score": 15.0,
         "year_range": null,
         "format": "CSV",
@@ -81,8 +81,8 @@
     ],
     "coverage_pct": 21.4,
     "formato_aperto": {
-      "score": 35.0,
-      "perc_aperto": 21.4,
+      "score": 90.0,
+      "perc_aperto": 100.0,
       "total": 70,
       "fonte": "inventory"
     }

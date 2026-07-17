@@ -1,6 +1,6 @@
 {
   "source_id": "openga",
-  "generated_at": "2026-07-16T16:11:56+00:00",
+  "generated_at": "2026-07-17T09:50:59+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale CKAN Giustizia Amministrativa — ~270 dataset su ricorsi TAR+CDS, sentenze, ordinanze, pareri. CC-BY 4.0. Aggiornamento mensile. Si incastra con civile_flussi (giustizia ordinaria).\n",
-    "last_probed": "2026-07-16"
+    "last_probed": "2026-07-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 436,
     "method": null,
-    "captured_at": "2026-07-16T15:54:37+00:00",
+    "captured_at": "2026-07-17T09:34:28+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "freshness_hours": 0.3,
@@ -33,28 +33,28 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-16 15:56:58+00:00",
+    "last_run": "2026-07-17 09:36:49+00:00",
     "total_scored": 436,
     "reachable": 436,
     "intake_candidates": 356,
     "needs_review": 80,
     "top_items": [
       {
-        "name": "tar-emilia-romagna-bologna-ricorsi-pendenti-per-periodo",
-        "score": 80.0,
-        "year_range": [
-          2052,
-          2094
-        ],
-        "format": "CSV",
-        "reachable": true
-      },
-      {
         "name": "cga-sicilia-ricorsi-pendenti-per-periodo",
         "score": 80.0,
         "year_range": [
           1917,
           2047
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "tar-emilia-romagna-bologna-ricorsi-pendenti-per-periodo",
+        "score": 80.0,
+        "year_range": [
+          2052,
+          2094
         ],
         "format": "CSV",
         "reachable": true
@@ -70,7 +70,7 @@
         "reachable": true
       },
       {
-        "name": "trga-bolzano-ricorsi-pervenuti-in-materia-d-appalto",
+        "name": "trga-trento-ricorsi-pervenuti-in-materia-d-appalto",
         "score": 70.0,
         "year_range": [
           2024,
@@ -80,11 +80,11 @@
         "reachable": true
       },
       {
-        "name": "trga-trento-ricorsi-pervenuti-in-materia-d-appalto",
+        "name": "tar-valle-d-aosta-ricorsi-pervenuti-in-materia-d-appalto",
         "score": 70.0,
         "year_range": [
-          2024,
-          2024
+          2025,
+          2025
         ],
         "format": "CSV",
         "reachable": true

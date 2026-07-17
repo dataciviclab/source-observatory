@@ -1,6 +1,6 @@
 {
   "source_id": "mef_irpef",
-  "generated_at": "2026-07-16T16:11:56+00:00",
+  "generated_at": "2026-07-17T09:50:59+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale MEF Dipartimento Finanze — Open Data IRPEF comunale. Dati fiscali regionali per tipo reddito, classi, sesso. Alta rilevanza civica per analisi disuguaglianza e gettito regionale.",
-    "last_probed": "2026-07-16"
+    "last_probed": "2026-07-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 147,
     "method": "csv_magnet_homepage_direct",
-    "captured_at": "2026-07-16T15:54:37+00:00",
+    "captured_at": "2026-07-17T09:34:28+00:00",
     "baseline_value": 147,
     "baseline_date": "2026-05-03",
     "freshness_hours": 0.3,
@@ -38,7 +38,7 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-07-16 15:56:58+00:00",
+    "last_run": "2026-07-17 09:36:49+00:00",
     "total_scored": 119,
     "reachable": 81,
     "intake_candidates": 27,
@@ -48,8 +48,8 @@
         "name": "REG",
         "score": 60.0,
         "year_range": [
-          2025,
-          2025
+          2017,
+          2017
         ],
         "format": "CSV",
         "reachable": true
@@ -58,8 +58,8 @@
         "name": "REG",
         "score": 60.0,
         "year_range": [
-          2025,
-          2025
+          2018,
+          2018
         ],
         "format": "CSV",
         "reachable": true
@@ -68,8 +68,8 @@
         "name": "REG",
         "score": 60.0,
         "year_range": [
-          2025,
-          2025
+          2021,
+          2021
         ],
         "format": "CSV",
         "reachable": true
@@ -78,8 +78,8 @@
         "name": "REG",
         "score": 60.0,
         "year_range": [
-          2024,
-          2024
+          2017,
+          2017
         ],
         "format": "CSV",
         "reachable": true
@@ -88,8 +88,8 @@
         "name": "REG",
         "score": 60.0,
         "year_range": [
-          2024,
-          2024
+          2021,
+          2021
         ],
         "format": "CSV",
         "reachable": true

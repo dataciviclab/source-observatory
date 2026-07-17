@@ -1,6 +1,6 @@
 {
   "source_id": "noipa_sparql",
-  "generated_at": "2026-07-16T16:11:56+00:00",
+  "generated_at": "2026-07-17T09:50:59+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "NoiPA SPARQL — MEF/RGS. Dati mensili personale PA\n(entries-{YYYYMM}, 2019-2026) + pensioni PA (entriesPensioni-{YYYYMM},\n2017-oggi). ~509k soggetti/mese, 39 predicati (ente, comparto, qualifica,\nritenute previdenziali/IRPEF, detrazioni, assenze, genere, eta', residenza).\nPOST bloccato (403), solo GET funziona. XML SPARQL parsato da\nlab-connectors via _parse_sparql_xml() dal 2026-06-25.\nI named graph usano URI completi:\nhttps://sparql-noipa.mef.gov.it/entries-YYYYMM\n(usare prefix=\"https://sparql-noipa.mef.gov.it/entries-\" in discover_graphs).\n",
-    "last_probed": "2026-07-16"
+    "last_probed": "2026-07-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,27 +22,27 @@
   "inventory": {
     "total_items": 21,
     "method": null,
-    "captured_at": "2026-07-16T15:54:37+00:00",
+    "captured_at": "2026-07-17T09:34:28+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "freshness_hours": 0.3,
     "delta": null,
     "delta_pct": 0.0,
     "formats": {
-      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/CSV, HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_N_TRIPLES": 11,
-      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_N_TRIPLES, HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/CSV": 8,
-      "HTTP://PUBLICATIONS.EUROPA.EU/RESOURCE/AUTHORITY/FILE-TYPE/RDF_N_TRIPLES": 2
+      "CSV, RDF_N_TRIPLES": 11,
+      "RDF_N_TRIPLES, CSV": 8,
+      "RDF_N_TRIPLES": 2
     }
   },
   "source_check": {
-    "last_run": "2026-07-16 15:56:58+00:00",
+    "last_run": "2026-07-17 09:36:49+00:00",
     "total_scored": 19,
     "reachable": 0,
     "intake_candidates": 0,
     "needs_review": 19,
     "top_items": [
       {
-        "name": "EntryDetrazioniFamiliari",
+        "name": "EntryAmministrati",
         "score": 55.0,
         "year_range": null,
         "format": "CSV",
@@ -50,13 +50,6 @@
       },
       {
         "name": "EntryCedolinoRitenuteFiscali",
-        "score": 55.0,
-        "year_range": null,
-        "format": "CSV",
-        "reachable": false
-      },
-      {
-        "name": "EntryAmministrati",
         "score": 55.0,
         "year_range": null,
         "format": "CSV",
@@ -75,12 +68,19 @@
         "year_range": null,
         "format": "CSV",
         "reachable": false
+      },
+      {
+        "name": "EntryDetrazioniFamiliari",
+        "score": 55.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
       }
     ],
     "coverage_pct": 90.5,
     "formato_aperto": {
-      "score": 75.0,
-      "perc_aperto": 90.5,
+      "score": 90.0,
+      "perc_aperto": 100.0,
       "total": 21,
       "fonte": "inventory"
     }
