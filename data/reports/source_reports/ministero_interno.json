@@ -1,6 +1,6 @@
 {
   "source_id": "ministero_interno",
-  "generated_at": "2026-07-17T09:50:59+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. Dati elezioni (Politiche 2022, Comunali 2024, Europee 2024, Regionali) per comune + ANPR (popolazione residente, cambi residenza, certificati, AIRE). Alto valore civico per analisi territoriale del voto.",
-    "last_probed": "2026-07-17"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 38,
     "method": "package_search",
-    "captured_at": "2026-07-17T09:34:28+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 38,
     "baseline_date": "2026-05-24",
     "freshness_hours": 0.3,
@@ -34,7 +34,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-17 09:36:49+00:00",
+    "last_run": "2026-07-20 06:31:02+00:00",
     "total_scored": 38,
     "reachable": 38,
     "intake_candidates": 26,
@@ -46,16 +46,6 @@
         "year_range": [
           1955,
           1990
-        ],
-        "format": "CSV",
-        "reachable": true
-      },
-      {
-        "name": "cambi-residenza",
-        "score": 80.0,
-        "year_range": [
-          2022,
-          2022
         ],
         "format": "CSV",
         "reachable": true
@@ -76,6 +66,16 @@
         "year_range": [
           2024,
           2024
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "elezioni-politiche-20222",
+        "score": 80.0,
+        "year_range": [
+          2022,
+          2022
         ],
         "format": "CSV",
         "reachable": true

@@ -1,6 +1,6 @@
 {
   "source_id": "opencivitas",
-  "generated_at": "2026-07-17T09:50:59+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale OpenCivitas — csv_magnet scan via discovery=auto (sitemap alla root). ZIP con CSV/XLSX dentro.",
-    "last_probed": "2026-07-17"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,21 +20,21 @@
     "ssl_fallback": true
   },
   "inventory": {
-    "total_items": 94,
+    "total_items": 88,
     "method": "csv_magnet_area_pages_paginated",
-    "captured_at": "2026-07-17T09:34:28+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 1084,
     "baseline_date": "2026-05-07",
     "freshness_hours": 0.3,
-    "delta": -990,
-    "delta_pct": -91.3,
+    "delta": -996,
+    "delta_pct": -91.9,
     "formats": {
-      "ZIP": 93,
+      "ZIP": 87,
       "XLSX": 1
     },
     "years_range": [
       2009,
-      2022
+      2023
     ]
   },
   "source_check": {
@@ -45,11 +45,31 @@
     "needs_review": 384,
     "top_items": [
       {
-        "name": "2012",
+        "name": "2010",
         "score": 0,
         "year_range": [
-          2012,
-          2012
+          2010,
+          2010
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "2013",
+        "score": 0,
+        "year_range": [
+          2013,
+          2013
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "2009",
+        "score": 0,
+        "year_range": [
+          2009,
+          2009
         ],
         "format": "ZIP",
         "reachable": false
@@ -62,38 +82,18 @@
         "reachable": false
       },
       {
-        "name": "2023",
-        "score": 0,
-        "year_range": [
-          2023,
-          2023
-        ],
-        "format": "ZIP",
-        "reachable": false
-      },
-      {
-        "name": "2010",
-        "score": 0,
-        "year_range": [
-          2010,
-          2010
-        ],
-        "format": "ZIP",
-        "reachable": false
-      },
-      {
-        "name": "FC50A",
+        "name": "FC50B",
         "score": 0,
         "year_range": null,
         "format": "ZIP",
         "reachable": false
       }
     ],
-    "coverage_pct": 408.5,
+    "coverage_pct": 436.4,
     "formato_aperto": {
       "score": 20.0,
       "perc_aperto": 0.0,
-      "total": 94,
+      "total": 88,
       "fonte": "inventory"
     }
   },
@@ -101,14 +101,22 @@
     {
       "slug": "opencivitas_fsc_2025_rso",
       "status": "published"
+    },
+    {
+      "slug": "opencivitas_glossario",
+      "status": "published"
+    },
+    {
+      "slug": "opencivitas_indicatori",
+      "status": "published"
     }
   ],
   "signals": [
     {
       "type": "csv_magnet",
       "result": "scan_completed",
-      "detail": "849 link data (XLSX 1, ZIP 93), years 2009-2022 — top prefixes: Metadati=16, 2018=12, 2013=10, 2019=9, 2010=8",
-      "metric_value": 849,
+      "detail": "794 link data (XLSX 1, ZIP 87), years 2009-2023 — top prefixes: Metadati=15, 2010=14, 2013=12, 2017=10, 2018=6",
+      "metric_value": 794,
       "suggested_action": "catalog-watch-ready"
     }
   ],

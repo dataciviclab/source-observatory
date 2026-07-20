@@ -1,6 +1,6 @@
 {
   "source_id": "pagopa",
-  "generated_at": "2026-07-17T09:50:59+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. 8 dataset: pagoPA (transazioni per anno, mese, fascia importo, categoria ente), IO App (messaggi, geografia enti e servizi), SEND (notifiche per ambito, geografia comuni, numero notifiche). Dati su digitalizzazione pagamenti PA e adozione piattaforme digitali (IO, SEND).",
-    "last_probed": "2026-07-17"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 12,
     "method": "package_search",
-    "captured_at": "2026-07-17T09:34:28+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 8,
     "baseline_date": "2026-06-11",
     "freshness_hours": 0.3,
@@ -33,19 +33,12 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-17 09:36:49+00:00",
+    "last_run": "2026-07-20 06:31:02+00:00",
     "total_scored": 12,
     "reachable": 11,
     "intake_candidates": 0,
     "needs_review": 12,
     "top_items": [
-      {
-        "name": "io-distribuzione-geografica-enti-e-servizi",
-        "score": 75.0,
-        "year_range": null,
-        "format": "CSV",
-        "reachable": true
-      },
       {
         "name": "send-distribuzione-geografica-dei-comuni-su-send",
         "score": 75.0,
@@ -54,7 +47,14 @@
         "reachable": true
       },
       {
-        "name": "send-distribuzione-delle-principali-tipologie-di-atti-notificati-da-send",
+        "name": "io-distribuzione-geografica-enti-e-servizi",
+        "score": 75.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "send-enti-aderenti-a-send-per-anno",
         "score": 35.0,
         "year_range": null,
         "format": "CSV",
@@ -68,7 +68,7 @@
         "reachable": true
       },
       {
-        "name": "io-messaggi-inviati-da-servizi",
+        "name": "send-distribuzione-delle-principali-tipologie-di-atti-notificati-da-send",
         "score": 35.0,
         "year_range": null,
         "format": "CSV",

@@ -1,6 +1,6 @@
 {
   "source_id": "mimit_rna",
-  "generated_at": "2026-07-17T09:50:59+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. RNA — Registro Nazionale Aiuti di Stato. 133 dataset mensili Aiuti (2017-2026, XML, ~14.500 record/mese) + 237 dataset Misure (1994-2023). File su www.rna.gov.it scaricabili (200 MB/mese, XML strutturato). Altissimo valore civico: tracciamento aiuti pubblici alle imprese con beneficiario, CF, importo, regione, CUP.",
-    "last_probed": "2026-07-17"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 370,
     "method": "package_search",
-    "captured_at": "2026-07-17T09:34:28+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 370,
     "baseline_date": "2026-05-24",
     "freshness_hours": 0.3,
@@ -39,16 +39,6 @@
     "intake_candidates": 0,
     "needs_review": 85,
     "top_items": [
-      {
-        "name": "open-data-rna-misura-2011-05",
-        "score": 3.0,
-        "year_range": [
-          2011,
-          2011
-        ],
-        "format": "XML",
-        "reachable": false
-      },
       {
         "name": "open-data-rna-aiuti-2023-04-parte-002",
         "score": 3.0,
@@ -70,21 +60,31 @@
         "reachable": false
       },
       {
-        "name": "open-data-rna-aiuti-2025-06",
+        "name": "open-data-rna-misura-2011-05",
         "score": 3.0,
         "year_range": [
-          2025,
-          2025
+          2011,
+          2011
         ],
         "format": "XML",
         "reachable": false
       },
       {
-        "name": "open-data-rna-misura-2009-07",
+        "name": "open-data-rna-misura-2018-06",
         "score": 3.0,
         "year_range": [
-          2009,
-          2009
+          2018,
+          2018
+        ],
+        "format": "XML",
+        "reachable": false
+      },
+      {
+        "name": "open-data-rna-aiuti-2022-02",
+        "score": 3.0,
+        "year_range": [
+          2022,
+          2022
         ],
         "format": "XML",
         "reachable": false

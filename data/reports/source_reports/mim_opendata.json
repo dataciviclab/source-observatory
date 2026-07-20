@@ -1,6 +1,6 @@
 {
   "source_id": "mim_opendata",
-  "generated_at": "2026-07-17T09:50:59+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale Ministero Istruzione — csv_magnet scan via area_pages (no sitemap).",
-    "last_probed": "2026-07-17"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 376,
     "method": "csv_magnet_homepage_area_pages",
-    "captured_at": "2026-07-17T09:34:28+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 1116,
     "baseline_date": "2026-04-27",
     "freshness_hours": 0.3,
@@ -37,7 +37,7 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-07-17 09:36:49+00:00",
+    "last_run": "2026-07-20 06:31:02+00:00",
     "total_scored": 511,
     "reachable": 510,
     "intake_candidates": 181,
@@ -74,7 +74,7 @@
         "reachable": true
       },
       {
-        "name": "ALTLAZIO",
+        "name": "ALTBASIL",
         "score": 72.0,
         "year_range": [
           2026,
@@ -84,7 +84,7 @@
         "reachable": true
       },
       {
-        "name": "ALTBASIL",
+        "name": "ALTLAZIO",
         "score": 72.0,
         "year_range": [
           2026,
