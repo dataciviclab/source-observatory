@@ -21,6 +21,7 @@ from typing import Final
 
 REGIONI: Final[set[str]] = {
     "abruzzo",
+    "italia",
     "basilicata",
     "calabria",
     "campania",
@@ -43,6 +44,7 @@ REGIONI: Final[set[str]] = {
     "umbria",
     "valle d'aosta",
     "valle d aosta",
+    "valle daosta",
     "veneto",
 }
 
@@ -264,8 +266,9 @@ def _normalize_text(text: str) -> str:
     t = text.lower().strip()
     t = _html_unescape(t)
     t = _strip_accents(t)
-    # normalize dashes
+    # normalize dashes and quotes
     t = t.replace("–", "-").replace("—", "-").replace("_", " ").replace("  ", " ")
+    t = t.replace("`", "'").replace("`", "'")
     return t
 
 
@@ -315,6 +318,10 @@ def strip_territory_suffix(text: str) -> str:
     t = re.sub(r"\s+provincia\s+di\s+[a-z\s-]+$", "", t)
     # Strip trailing territory words like "regionale", "nazionale"
     t = re.sub(r"\s+(?:regionale|nazionale|provinciale)\s*$", "", t)
+    # Strip trailing region names (INAIL: "per data protocollo Piemonte" → "per data protocollo")
+    # Multi-word regions (emilia romagna, valle d'aosta) sorted by length for greedy match
+    _reg_sorted = sorted(REGIONI, key=len, reverse=True)
+    t = re.sub(r"\s+(" + "|".join(_reg_sorted) + r")\s*$", "", t, flags=re.IGNORECASE)
     return t.strip()
 
 

@@ -1,6 +1,6 @@
 {
   "source_id": "anac",
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-26T22:54:07+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting ANAC). I download raw vanno al portale diretto dati.anticorruzione.it con User-Agent browser (WAF blocca solo python-requests). 70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari, subappalti, varianti, PNRR indicatori, SOA. CC-BY-SA 4.0.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-07-26"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,84 +22,76 @@
   "inventory": {
     "total_items": 70,
     "method": "package_search",
-    "captured_at": "2026-07-27T06:47:09+00:00",
+    "captured_at": "2026-07-26T21:58:33+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-05-24",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.9,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
-      "JSON,CSV,TTL": 16,
-      "TTL,CSV,JSON": 10,
-      "CSV,JSON,TTL": 9,
+      "TTL,CSV,JSON": 14,
+      "CSV,JSON,TTL": 12,
+      "CSV,TTL,JSON": 11,
       "TTL,JSON,CSV": 9,
       "JSON": 9,
-      "CSV,TTL,JSON": 9,
-      "JSON,TTL,CSV": 4,
+      "JSON,CSV,TTL": 8,
+      "JSON,TTL,CSV": 3,
       "CSV": 1,
       "JSON,CSV": 1,
-      "CSV,JSON,TTL,ZIP": 1,
-      "CSV,JSON": 1
+      "CSV,JSON": 1,
+      "CSV,JSON,ZIP,TTL": 1
     }
   },
   "source_check": {
-    "last_run": "2026-07-27 06:49:15+00:00",
-    "total_scored": 66,
-    "reachable": 3,
-    "intake_candidates": 0,
-    "needs_review": 66,
+    "last_run": "2026-07-26T22:54:07Z",
+    "total_scored": 48,
+    "reachable": 47,
+    "csv_count": 47,
+    "with_csv_schema": 6,
+    "avg_readiness": 3.8,
     "top_items": [
       {
-        "name": "ocds-appalti-ordinari-anno-2025",
-        "score": 35.0,
-        "year_range": [
-          2025,
-          2025
-        ],
-        "format": "JSON",
-        "reachable": true
-      },
-      {
-        "name": "ocds-appalti-ordinari-anno-2024",
-        "score": 35.0,
-        "year_range": [
-          2024,
-          2024
-        ],
-        "format": "JSON",
-        "reachable": true
-      },
-      {
-        "name": "ocds-appalti-ordinari-anno-2022",
-        "score": 35.0,
-        "year_range": [
-          2022,
-          2022
-        ],
-        "format": "JSON",
-        "reachable": true
-      },
-      {
-        "name": "attestazioni-soa-v2",
-        "score": 25.0,
+        "name": "anac/48a28e5e-a010-4671-b1b3-ccbb1fbc149b",
+        "score": 10,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "csv,json,ttl",
+        "reachable": true
       },
       {
-        "name": "collaudo",
-        "score": 15.0,
+        "name": "anac/attestazioni-soa-v2",
+        "score": 10,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "csv",
+        "reachable": true
+      },
+      {
+        "name": "anac/pubblicazioni",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,json,ttl",
+        "reachable": true
+      },
+      {
+        "name": "anac/sospensioni",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,ttl,json",
+        "reachable": true
+      },
+      {
+        "name": "anac/stati-avanzamento",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,json,ttl",
+        "reachable": true
       }
     ],
-    "coverage_pct": 94.3,
+    "coverage_pct": 68.6,
     "formato_aperto": {
-      "score": 10.0,
-      "perc_aperto": 100.0,
-      "perc_reachable": 0.0,
-      "total": 61,
+      "score": 5.0,
+      "perc_aperto": 0.0,
+      "perc_reachable": 97.9,
+      "total": 48,
       "fonte": "source_check"
     }
   },
@@ -139,11 +131,9 @@
   ],
   "signals": [
     {
-      "type": "no signal",
+      "type": "validated_metrics",
       "result": "stabile",
-      "detail": "70 item (package_search), in linea con la baseline.",
-      "metric_value": 70,
-      "suggested_action": "nessuna"
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {

@@ -1,6 +1,6 @@
 {
   "source_id": "aci",
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-26T22:54:07+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. 35 dataset ACI su parco veicolare: prime iscrizioni autovetture (per comune, alimentazione, classe euro, 2017-2024), radiazioni per demolizione. CSV su lod.aci.it in formato tidy. Incrociabile con MIT incidentalità.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-07-26"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 35,
     "method": "package_search",
-    "captured_at": "2026-07-27T06:47:09+00:00",
+    "captured_at": "2026-07-26T21:58:33+00:00",
     "baseline_value": 35,
     "baseline_date": "2026-06-11",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.9,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -35,69 +35,55 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27 06:49:15+00:00",
-    "total_scored": 32,
-    "reachable": 29,
-    "intake_candidates": 32,
-    "needs_review": 0,
+    "last_run": "2026-07-26T22:54:07Z",
+    "total_scored": 5,
+    "reachable": 2,
+    "csv_count": 2,
+    "with_csv_schema": 2,
+    "avg_readiness": 4.0,
     "top_items": [
       {
-        "name": "prime-iscrizioni-veicoli-nuovi-nel-2024-autovetture-per-ente-territoriale-e-alimentazione",
-        "score": 80.0,
-        "year_range": [
-          2024,
-          2024
-        ],
-        "format": "CSV",
+        "name": "aci/prime-iscrizioni-veicoli-nuovi-autovetture-per-ente-territoriale",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,zip",
         "reachable": true
       },
       {
-        "name": "radiazioni-per-demolizione-nel-2022-autovetture-per-ente-territoriale",
-        "score": 80.0,
-        "year_range": [
-          2022,
-          2022
-        ],
-        "format": "CSV",
+        "name": "aci/radiazioni-per-demolizione-autovetture-per-ente-territoriale",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,zip",
         "reachable": true
       },
       {
-        "name": "prime-iscrizioni-veicoli-nuovi-nel-2022-autovetture-per-ente-territoriale",
-        "score": 80.0,
-        "year_range": [
-          2022,
-          2022
-        ],
-        "format": "CSV",
-        "reachable": true
+        "name": "aci/dataset-alimentazioni",
+        "score": 0,
+        "year_range": null,
+        "format": "zip",
+        "reachable": false
       },
       {
-        "name": "prime-iscrizioni-veicoli-nuovi-nel-2022-autovetture-per-ente-territoriale-e-alimentazione",
-        "score": 80.0,
-        "year_range": [
-          2022,
-          2022
-        ],
-        "format": "CSV",
-        "reachable": true
+        "name": "aci/dataset-classe-euro",
+        "score": 0,
+        "year_range": null,
+        "format": "zip",
+        "reachable": false
       },
       {
-        "name": "radiazioni-per-demolizione-nel-2020-autovetture-per-ente-territoriale",
-        "score": 80.0,
-        "year_range": [
-          2020,
-          2020
-        ],
-        "format": "CSV",
-        "reachable": true
+        "name": "aci/dataset-territorio",
+        "score": 0,
+        "year_range": null,
+        "format": "zip",
+        "reachable": false
       }
     ],
-    "coverage_pct": 91.4,
+    "coverage_pct": 14.3,
     "formato_aperto": {
-      "score": 90.0,
-      "perc_aperto": 100.0,
-      "perc_reachable": 90.6,
-      "total": 32,
+      "score": 15.0,
+      "perc_aperto": 0.0,
+      "perc_reachable": 40.0,
+      "total": 5,
       "fonte": "source_check"
     }
   },
@@ -109,19 +95,17 @@
   ],
   "signals": [
     {
-      "type": "no signal",
+      "type": "validated_metrics",
       "result": "stabile",
-      "detail": "35 item (package_search), in linea con la baseline.",
-      "metric_value": 35,
-      "suggested_action": "nessuna"
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {
-    "label": "STABLE",
-    "score": "stable",
+    "label": "PARTIALLY_SCOPED",
+    "score": "partial",
     "triggers": [
-      "all_green"
+      "source_check_partial"
     ],
-    "next_action": null
+    "next_action": "complete source-check"
   }
 }

@@ -7,7 +7,7 @@ Legge:
   - radar_summary.json
   - catalog_inventory_latest.parquet
   - catalog_inventory_report.json
-  - source_check_results.parquet
+  - validated.parquet
   - catalog_signals.json
 
 Produce:

@@ -1,6 +1,6 @@
 {
   "source_id": "opencoesione",
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-26T22:54:07+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting PCM-OpenCoesione). Sostituisce accesso diretto a opencoesione.gov.it (API REST instabile: 403/timeout). 561 dataset totali su dati.gov.it; i 3 core sono progetti, soggetti, pagamenti (CSV + Parquet). Licenza CC BY 4.0. File raw su opencoesione.gov.it. Ultimo aggiornamento contenuti: 2026-02-28.\n",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-07-26"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 561,
     "method": "package_search",
-    "captured_at": "2026-07-27T06:47:09+00:00",
+    "captured_at": "2026-07-26T21:58:33+00:00",
     "baseline_value": 561,
     "baseline_date": "2026-06-03",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.9,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -35,54 +35,55 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27 06:49:15+00:00",
-    "total_scored": 543,
-    "reachable": 2,
-    "intake_candidates": 150,
-    "needs_review": 299,
+    "last_run": "2026-07-26T22:54:07Z",
+    "total_scored": 248,
+    "reachable": 238,
+    "csv_count": 238,
+    "with_csv_schema": 211,
+    "avg_readiness": 7.0,
     "top_items": [
       {
-        "name": "progetti-con-tracciato-esteso-nel-programma-attuativo-speciale-fsc-comune-di-palermo",
-        "score": 55.0,
+        "name": "opencoesione/beneficiari-del-pon-fesr-iniziativa-pmi",
+        "score": 9,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "csv",
+        "reachable": true
       },
       {
-        "name": "progetti-con-tracciato-esteso-nel-infrastrutture-sociali-nei-comuni-del-sud",
-        "score": 55.0,
+        "name": "opencoesione/elenco-dei-processi-valutativi",
+        "score": 9,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "csv",
+        "reachable": true
       },
       {
-        "name": "progetti-con-tracciato-esteso-nel-efficientamento-energetico-nei-comuni",
-        "score": 55.0,
+        "name": "opencoesione/opportunita-di-finanziamento",
+        "score": 9,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "csv",
+        "reachable": true
       },
       {
-        "name": "progetti-con-tracciato-esteso-nel-contributi-ai-comuni-delle-aree-interne",
-        "score": 55.0,
+        "name": "opencoesione/bc467d34-9576-4cf9-b3e3-e77e804b6185",
+        "score": 8,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "csv,bin",
+        "reachable": true
       },
       {
-        "name": "progetti-con-tracciato-esteso-nel-risorse-fsc-assegnate-ai-comuni",
-        "score": 55.0,
+        "name": "opencoesione/impegni",
+        "score": 8,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "csv,bin",
+        "reachable": true
       }
     ],
-    "coverage_pct": 96.8,
+    "coverage_pct": 44.2,
     "formato_aperto": {
-      "score": 10.0,
-      "perc_aperto": 100.0,
-      "perc_reachable": 0.4,
-      "total": 543,
+      "score": 5.0,
+      "perc_aperto": 0.0,
+      "perc_reachable": 96.0,
+      "total": 248,
       "fonte": "source_check"
     }
   },
@@ -94,19 +95,17 @@
   ],
   "signals": [
     {
-      "type": "no signal",
+      "type": "validated_metrics",
       "result": "stabile",
-      "detail": "561 item (package_search), in linea con la baseline.",
-      "metric_value": 561,
-      "suggested_action": "nessuna"
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {
-    "label": "STABLE",
-    "score": "stable",
+    "label": "PARTIALLY_SCOPED",
+    "score": "partial",
     "triggers": [
-      "all_green"
+      "source_check_partial"
     ],
-    "next_action": null
+    "next_action": "complete source-check"
   }
 }

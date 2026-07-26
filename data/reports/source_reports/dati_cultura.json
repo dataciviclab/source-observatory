@@ -1,6 +1,6 @@
 {
   "source_id": "dati_cultura",
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-26T22:54:07+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check completato con verdict catalog-watch.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-07-26"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 213,
     "method": "sparql_query",
-    "captured_at": "2026-07-27T06:47:09+00:00",
+    "captured_at": "2026-07-26T21:58:33+00:00",
     "baseline_value": 150,
     "baseline_date": "2026-04-11",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.9,
     "delta": 63,
     "delta_pct": 42.0,
     "formats": {
@@ -33,64 +33,64 @@
     }
   },
   "source_check": {
-    "last_run": "2026-06-15 09:45:18+00:00",
+    "last_run": "2026-07-26T22:54:07Z",
     "total_scored": 213,
-    "reachable": 213,
-    "intake_candidates": 5,
-    "needs_review": 208,
+    "reachable": 0,
+    "csv_count": 0,
+    "with_csv_schema": 0,
+    "avg_readiness": 0.0,
     "top_items": [
       {
-        "name": "produttore-comune-citta_metropolitana-unione_di_comuni_sp",
-        "score": 55.0,
+        "name": "dati_cultura/anagrafe-degli-archivi-di-stato-icar",
+        "score": 0,
         "year_range": null,
-        "format": "",
-        "reachable": true
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": false
       },
       {
-        "name": "complessoArchivistico-BBBHO",
-        "score": 55.0,
+        "name": "dati_cultura/anagrafe-delle-biblioteche-italiane-iccu",
+        "score": 0,
         "year_range": null,
-        "format": "",
-        "reachable": true
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": false
       },
       {
-        "name": "fonte-BBBHO",
-        "score": 55.0,
+        "name": "dati_cultura/architetture-della-regione",
+        "score": 0,
         "year_range": null,
-        "format": "",
-        "reachable": true
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": false
       },
       {
-        "name": "conservatore-comune-citta_metropolitana-unione_di_comuni_conservatore",
-        "score": 55.0,
+        "name": "dati_cultura/archivi-fotografici-iccd",
+        "score": 0,
         "year_range": null,
-        "format": "",
-        "reachable": true
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": false
       },
       {
-        "name": "produttore-provincia-provincia_autonoma_sp",
-        "score": 45.0,
+        "name": "dati_cultura/archivio-storico-del-comune-di-bolzano",
+        "score": 0,
         "year_range": null,
-        "format": "",
-        "reachable": true
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": false
       }
     ],
     "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 20.0,
+      "score": 10.0,
       "perc_aperto": 0.0,
+      "perc_reachable": 0.0,
       "total": 213,
-      "fonte": "inventory"
+      "fonte": "source_check"
     }
   },
   "datasets_in_use": [],
   "signals": [
     {
-      "type": "no signal",
-      "result": "skipped",
-      "detail": "Connessione/endpoint coperti da radar_summary; nessun segnale inventariale affidabile in questo run.",
-      "metric_value": null,
-      "suggested_action": "nessuna"
+      "type": "validated_metrics",
+      "result": "stabile",
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {

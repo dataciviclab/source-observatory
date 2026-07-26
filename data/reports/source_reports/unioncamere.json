@@ -1,6 +1,6 @@
 {
   "source_id": "unioncamere",
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-26T22:54:07+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "radar-only",
     "verdict": "watchlist",
     "note": "Fonte via dati.gov.it (Unioncamere). 352 dataset su demografia d'impresa provincia-specifici, costo unione alto. Passato a radar-only: se il catalogo publlica dati aggregati nazionali, si rivaluta.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-07-26"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 384,
     "method": null,
-    "captured_at": "2026-07-27T06:47:09+00:00",
+    "captured_at": "2026-07-26T21:58:33+00:00",
     "baseline_value": null,
     "baseline_date": null,
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.9,
     "delta": null,
     "delta_pct": 0.0,
     "formats": {
@@ -33,80 +33,64 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27 06:49:15+00:00",
-    "total_scored": 384,
-    "reachable": 0,
-    "intake_candidates": 365,
-    "needs_review": 19,
+    "last_run": "2026-07-26T22:54:07Z",
+    "total_scored": 268,
+    "reachable": 268,
+    "csv_count": 268,
+    "with_csv_schema": 267,
+    "avg_readiness": 9.9,
     "top_items": [
       {
-        "name": "modena-focus-settore-terziario-delle-imprese-nella-provincia-di-modena-dal-1991-al-2023",
-        "score": 70.0,
-        "year_range": [
-          1991,
-          2023
-        ],
-        "format": "CSV",
-        "reachable": false
+        "name": "unioncamere/ab76e354-844d-459b-928a-fef2b295c4ff",
+        "score": 10,
+        "year_range": null,
+        "format": "csv",
+        "reachable": true
       },
       {
-        "name": "modena-focus-settore-grandi-settori-delle-imprese-nella-provincia-di-modena-dal-1988-al-2023",
-        "score": 70.0,
-        "year_range": [
-          1988,
-          2023
-        ],
-        "format": "CSV",
-        "reachable": false
+        "name": "unioncamere/addetti-in",
+        "score": 10,
+        "year_range": null,
+        "format": "csv",
+        "reachable": true
       },
       {
-        "name": "modena-focus-settore-industria-delle-imprese-nella-provincia-di-modena-dal-1991-al-2023",
-        "score": 70.0,
-        "year_range": [
-          1991,
-          2023
-        ],
-        "format": "CSV",
-        "reachable": false
+        "name": "unioncamere/arezzo-siena-imprese-artigiane-registrate",
+        "score": 10,
+        "year_range": null,
+        "format": "csv",
+        "reachable": true
       },
       {
-        "name": "modena-demografia-delle-imprese-della-provincia-di-modena-dal-1991-al-2023",
-        "score": 70.0,
-        "year_range": [
-          1991,
-          2023
-        ],
-        "format": "CSV",
-        "reachable": false
+        "name": "unioncamere/arezzo-siena-imprese-femminili-registrate",
+        "score": 10,
+        "year_range": null,
+        "format": "csv",
+        "reachable": true
       },
       {
-        "name": "modena-esportazioni-macchine-e-apparecchiature-meccaniche-provincia-di-modena-dal-1993-al-2023",
-        "score": 70.0,
-        "year_range": [
-          1993,
-          2023
-        ],
-        "format": "CSV",
-        "reachable": false
+        "name": "unioncamere/arezzo-siena-imprese-giovanili-registrate",
+        "score": 10,
+        "year_range": null,
+        "format": "csv",
+        "reachable": true
       }
     ],
-    "coverage_pct": 100.0,
+    "coverage_pct": 69.8,
     "formato_aperto": {
-      "score": 10.0,
-      "perc_aperto": 100.0,
-      "perc_reachable": 0.0,
-      "total": 384,
+      "score": 5.0,
+      "perc_aperto": 0.0,
+      "perc_reachable": 100.0,
+      "total": 268,
       "fonte": "source_check"
     }
   },
   "datasets_in_use": [],
   "signals": [
     {
-      "type": "no signal",
+      "type": "validated_metrics",
       "result": "stabile",
-      "detail": "384 item (package_search), in linea con la baseline.",
-      "metric_value": 384,
-      "suggested_action": "nessuna"
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {
