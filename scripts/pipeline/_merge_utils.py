@@ -268,7 +268,7 @@ def _normalize_text(text: str) -> str:
     t = _strip_accents(t)
     # normalize dashes and quotes
     t = t.replace("–", "-").replace("—", "-").replace("_", " ").replace("  ", " ")
-    t = t.replace("`", "'").replace("`", "'")
+    t = t.replace("`", "'").replace("\u2018", "'").replace("\u2019", "'")
     return t
 
 
@@ -422,13 +422,8 @@ def strip_territory_prefix_pattern(text: str) -> str:
         "alto piemonte",
         "arezzo-siena",
     }
-    # Also match region/province names via regex
-    if prefix in known_cities:
-        return parts[1].strip()
-
-    # Check if prefix looks like an Italian province
-    # (e.g., single word that could be a city name — 3-12 chars, ends with vowel)
-    if re.match(r"^[a-z]{3,12}$", prefix) and prefix[-1] in "aeio":
+    # Match città note o regioni/province
+    if prefix in known_cities or prefix in _TERRITORY_TOKENS:
         return parts[1].strip()
 
     return text

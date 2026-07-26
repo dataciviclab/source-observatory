@@ -234,7 +234,8 @@ def _write_catalog_signals(source_summaries: list[dict], captured_at: str | None
 
         signals.append(
             {
-                "source_id": s["source_id"],
+                "source": s["source_id"],
+                "protocol": s.get("protocol", ""),
                 "signal_type": "validated_metrics",
                 "result": s.get("verdict_score", "stable"),
                 "detail": "; ".join(metrics) if metrics else "no data",
@@ -244,9 +245,8 @@ def _write_catalog_signals(source_summaries: list[dict], captured_at: str | None
         )
 
     catalog_signals = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "report_version": 2,
-        "total_sources": len(signals),
+        "captured_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "sources_checked": len(signals),
         "signals": signals,
     }
 
