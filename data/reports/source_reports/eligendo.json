@@ -1,6 +1,6 @@
 {
   "source_id": "eligendo",
-  "generated_at": "2026-07-26T23:19:08+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "radar-only",
     "verdict": "go",
     "note": "Eligendo — Archivio storico elettorale del DAIT (Ministero dell'Interno).  Risultati elettorali per comune dal 1946: Camera (19 tornate 1948-2022),  Senato (19 tornate), Europee (10 tornate 1979-2024), Regionali (1970-),  Comunali, Referendum, Assemblea Costituente. 312 file in ZIP/CSV. radar-only perche' l'inventario e' embedded in JS, non in link HTML diretti. Issue intake #523 su dataset-incubator.\n",
-    "last_probed": "2026-07-26"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 0,
     "method": null,
-    "captured_at": "2026-07-26T21:58:33+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "delta": null,
@@ -32,9 +32,8 @@
     "last_run": null,
     "total_scored": 0,
     "reachable": 0,
-    "csv_count": 0,
-    "with_csv_schema": 0,
-    "avg_readiness": null,
+    "intake_candidates": 0,
+    "needs_review": 0,
     "top_items": [],
     "coverage_pct": null,
     "formato_aperto": {
@@ -62,13 +61,7 @@
       "status": "published"
     }
   ],
-  "signals": [
-    {
-      "type": "validated_metrics",
-      "result": "stabile",
-      "detail": "Metriche da validated.parquet."
-    }
-  ],
+  "signals": [],
   "operational_verdict": {
     "label": "STABLE",
     "score": "stable",

@@ -1,6 +1,6 @@
 {
   "source_id": "cortecostituzionale",
-  "generated_at": "2026-07-26T23:19:08+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale Open Data Corte Costituzionale — Pronunce (1956-oggi), Massime, Anagrafica Giudici, Atti di promovimento. CSV/XML/JSON in ZIP. Agg. giornaliero. Endpoint SPARQL disponibile.\n",
-    "last_probed": "2026-07-26"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 33,
     "method": null,
-    "captured_at": "2026-07-26T21:58:33+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": null,
     "baseline_date": null,
-    "freshness_hours": 1.3,
+    "freshness_hours": 0.3,
     "delta": null,
     "delta_pct": 0.0,
     "formats": {
@@ -37,79 +37,79 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-07-26T23:19:08Z",
-    "total_scored": 5,
+    "last_run": "2026-06-01 08:57:01+00:00",
+    "total_scored": 13,
     "reachable": 0,
-    "csv_count": 0,
-    "with_csv_schema": 0,
-    "avg_readiness": 0.0,
+    "intake_candidates": 0,
+    "needs_review": 13,
     "top_items": [
       {
-        "name": "cortecostituzionale/corte-costituzionale-open-data",
+        "name": "P",
+        "score": 15.0,
+        "year_range": [
+          1956,
+          1980
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "CC",
+        "score": 15.0,
+        "year_range": [
+          1956,
+          1980
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "P",
+        "score": 14.0,
+        "year_range": [
+          1981,
+          2000
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "CC",
+        "score": 14.0,
+        "year_range": [
+          1981,
+          2000
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "P",
         "score": 0,
         "year_range": [
-          2000,
+          2001,
           2001
-        ],
-        "format": "ZIP",
-        "reachable": false
-      },
-      {
-        "name": "cortecostituzionale/corte-costituzionale-open-data/cc-openmassime",
-        "score": 0,
-        "year_range": [
-          2000,
-          2000
-        ],
-        "format": "ZIP",
-        "reachable": false
-      },
-      {
-        "name": "cortecostituzionale/corte-costituzionale-open-data/cc-openpronunce",
-        "score": 0,
-        "year_range": [
-          2000,
-          2000
-        ],
-        "format": "ZIP",
-        "reachable": false
-      },
-      {
-        "name": "cortecostituzionale/corte-costituzionale-open-data/p-csv",
-        "score": 0,
-        "year_range": [
-          2000,
-          2000
-        ],
-        "format": "ZIP",
-        "reachable": false
-      },
-      {
-        "name": "cortecostituzionale/corte-costituzionale-open-data/p-json",
-        "score": 0,
-        "year_range": [
-          2000,
-          2000
         ],
         "format": "ZIP",
         "reachable": false
       }
     ],
-    "coverage_pct": 15.2,
+    "coverage_pct": 39.4,
     "formato_aperto": {
-      "score": 10.0,
+      "score": 20.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 0.0,
-      "total": 5,
-      "fonte": "source_check"
+      "total": 33,
+      "fonte": "inventory"
     }
   },
   "datasets_in_use": [],
   "signals": [
     {
-      "type": "validated_metrics",
-      "result": "stabile",
-      "detail": "Metriche da validated.parquet."
+      "type": "csv_magnet",
+      "result": "scan_completed",
+      "detail": "33 link data (ZIP 33), years 2000-2001 — top prefixes: Cc=15, CC=12, P=6",
+      "metric_value": 33,
+      "suggested_action": "catalog-watch-ready"
     }
   ],
   "operational_verdict": {
