@@ -450,11 +450,11 @@ class TestComputeDatasetGroup:
         g2 = compute_dataset_group("ministero_interno", "Attività residenti 2023", "b")
         assert g1 == g2
 
-    def test_inps_aliquote_agricoltura_stays_distinct(self):
-        """Aliquote Agricoltura I and II are genuinely different datasets."""
+    def test_inps_aliquote_agricoltura_merges(self):
+        """Aliquote Agricoltura I and II merge (Roman numerals stripped)."""
         g1 = compute_dataset_group("inps", "Aliquote contributive Agricoltura I", "a")
         g2 = compute_dataset_group("inps", "Aliquote contributive Agricoltura II", "b")
-        assert g1 != g2, "Different Roman numerals should NOT merge"
+        assert g1 == g2, "Roman numerals I/II should be stripped for merge"
 
     def test_sdmx_fallback(self):
         g = compute_dataset_group(

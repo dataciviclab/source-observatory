@@ -1,6 +1,6 @@
 {
   "source_id": "mim_opendata",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-26T23:19:08+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale Ministero Istruzione — csv_magnet scan via area_pages (no sitemap).",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-26"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 376,
     "method": "csv_magnet_homepage_area_pages",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-26T21:58:33+00:00",
     "baseline_value": 1116,
     "baseline_date": "2026-04-27",
-    "freshness_hours": 0.3,
+    "freshness_hours": 1.3,
     "delta": -740,
     "delta_pct": -66.3,
     "formats": {
@@ -37,69 +37,70 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
-    "total_scored": 511,
-    "reachable": 510,
-    "intake_candidates": 181,
-    "needs_review": 272,
+    "last_run": "2026-07-26T23:19:08Z",
+    "total_scored": 28,
+    "reachable": 28,
+    "csv_count": 28,
+    "with_csv_schema": 28,
+    "avg_readiness": 9.0,
     "top_items": [
       {
-        "name": "ALTFRIUL",
-        "score": 72.0,
+        "name": "mim_opendata/aluitast-istruzione",
+        "score": 9,
         "year_range": [
-          2026,
-          2026
+          2015,
+          2024
         ],
         "format": "CSV",
         "reachable": true
       },
       {
-        "name": "ALTTRENT",
-        "score": 72.0,
+        "name": "mim_opendata/alusecgr-istruzione",
+        "score": 9,
         "year_range": [
-          2026,
-          2026
+          2015,
+          2024
         ],
         "format": "CSV",
         "reachable": true
       },
       {
-        "name": "ALTEMILI",
-        "score": 72.0,
+        "name": "mim_opendata/alutempo-istruzione",
+        "score": 9,
         "year_range": [
-          2026,
-          2026
+          2015,
+          2024
         ],
         "format": "CSV",
         "reachable": true
       },
       {
-        "name": "ALTBASIL",
-        "score": 72.0,
+        "name": "mim_opendata/as1516at-istruzione",
+        "score": 9,
         "year_range": [
-          2026,
-          2026
+          2016,
+          2016
         ],
         "format": "CSV",
         "reachable": true
       },
       {
-        "name": "ALTLAZIO",
-        "score": 72.0,
+        "name": "mim_opendata/as1516do-istruzione",
+        "score": 9,
         "year_range": [
-          2026,
-          2026
+          2016,
+          2016
         ],
         "format": "CSV",
         "reachable": true
       }
     ],
-    "coverage_pct": 135.9,
+    "coverage_pct": 7.4,
     "formato_aperto": {
-      "score": 90.0,
-      "perc_aperto": 100.0,
+      "score": 5.0,
+      "perc_aperto": 0.0,
       "perc_reachable": 100.0,
-      "total": 436,
+      "total": 28,
       "fonte": "source_check"
     }
   },
@@ -119,18 +120,17 @@
   ],
   "signals": [
     {
-      "type": "csv_magnet",
-      "result": "scan_completed",
-      "detail": "1128 link data (CSV 376, JSON 376, XML 376), years 2015-2026 — top prefixes: INFANZIA=192, ALUCORSO=120, SCUANAGR=72, SCUANAAU=72, ALUITAST=60",
-      "metric_value": 1128,
-      "suggested_action": "catalog-watch-ready"
+      "type": "validated_metrics",
+      "result": "stabile",
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {
     "label": "INVENTORY_CHANGED",
     "score": "changed",
     "triggers": [
-      "inventory_changed"
+      "inventory_changed",
+      "source_check_partial"
     ],
     "next_action": "review inventory changes"
   }
