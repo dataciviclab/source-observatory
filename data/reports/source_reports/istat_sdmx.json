@@ -1,6 +1,6 @@
 {
   "source_id": "istat_sdmx",
-  "generated_at": "2026-07-26T22:54:07+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,21 +11,21 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Endpoint SDMX ricco e ad alto valore per scouting e source-check.",
-    "last_probed": "2026-07-26"
+    "last_probed": "2026-07-20"
   },
   "health": {
-    "radar_status": "YELLOW",
-    "http_code": "-",
-    "note": "Timeout (ReadTimeout)",
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
     "ssl_fallback": false
   },
   "inventory": {
     "total_items": 4884,
     "method": "dataflow_count",
-    "captured_at": "2026-07-26T21:58:33+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 4212,
     "baseline_date": "2026-04-10",
-    "freshness_hours": 0.9,
+    "freshness_hours": 0.3,
     "delta": 672,
     "delta_pct": 16.0,
     "formats": {
@@ -33,56 +33,60 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-26T22:54:07Z",
-    "total_scored": 3556,
-    "reachable": 3556,
-    "csv_count": 0,
-    "with_csv_schema": 0,
-    "avg_readiness": 5.0,
+    "last_run": "2026-06-22 09:30:07+00:00",
+    "total_scored": 3867,
+    "reachable": 0,
+    "intake_candidates": 16,
+    "needs_review": 3766,
     "top_items": [
       {
-        "name": "istat_sdmx/10-and-over-employee",
-        "score": 5,
-        "year_range": null,
+        "name": "DF_BULK_CEN2011_DICA_IPSTRIPCOM",
+        "score": 57.0,
+        "year_range": [
+          2011,
+          2015
+        ],
         "format": "SDMX",
-        "reachable": true
+        "reachable": false
       },
       {
-        "name": "istat_sdmx/10-and-over-employees",
-        "score": 5,
-        "year_range": null,
+        "name": "DF_BULK_CEN2011_DICA_IPSTRULCOM",
+        "score": 57.0,
+        "year_range": [
+          2011,
+          2015
+        ],
         "format": "SDMX",
-        "reachable": true
+        "reachable": false
       },
       {
-        "name": "istat_sdmx/101-1015",
-        "score": 5,
+        "name": "741_1099_DF_DICA_IPSTRULCOM_1",
+        "score": 55.0,
         "year_range": null,
-        "format": "SDMX",
-        "reachable": true
+        "format": "CSV",
+        "reachable": false
       },
       {
-        "name": "istat_sdmx/abortion-rate-values-per-1000-women-total-and-standardized",
-        "score": 5,
+        "name": "73_436_DF_DCCV_PROCEEDCRIME_M_9",
+        "score": 55.0,
         "year_range": null,
-        "format": "SDMX",
-        "reachable": true
+        "format": "CSV",
+        "reachable": false
       },
       {
-        "name": "istat_sdmx/absolute-poverty-indicators",
-        "score": 5,
+        "name": "73_440_DF_DCCV_PROCEEDCRIME_A_21",
+        "score": 55.0,
         "year_range": null,
-        "format": "SDMX",
-        "reachable": true
+        "format": "CSV",
+        "reachable": false
       }
     ],
-    "coverage_pct": 72.8,
+    "coverage_pct": 79.2,
     "formato_aperto": {
-      "score": 5.0,
+      "score": 20.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 100.0,
-      "total": 3556,
-      "fonte": "source_check"
+      "total": 4884,
+      "fonte": "inventory"
     }
   },
   "datasets_in_use": [
@@ -113,9 +117,11 @@
   ],
   "signals": [
     {
-      "type": "validated_metrics",
+      "type": "no signal",
       "result": "stabile",
-      "detail": "Metriche da validated.parquet."
+      "detail": "4884 item (dataflow_count), in linea con la baseline.",
+      "metric_value": 4884,
+      "suggested_action": "nessuna"
     }
   ],
   "operational_verdict": {

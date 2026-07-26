@@ -1,6 +1,6 @@
 {
   "source_id": "opencivitas",
-  "generated_at": "2026-07-26T22:54:07+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale OpenCivitas — csv_magnet scan via discovery=auto (sitemap alla root). ZIP con CSV/XLSX dentro.",
-    "last_probed": "2026-07-26"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 88,
     "method": "csv_magnet_area_pages_paginated",
-    "captured_at": "2026-07-26T21:58:33+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 1084,
     "baseline_date": "2026-05-07",
-    "freshness_hours": 0.9,
+    "freshness_hours": 0.3,
     "delta": -996,
     "delta_pct": -91.9,
     "formats": {
@@ -38,45 +38,24 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-07-26T22:54:07Z",
-    "total_scored": 26,
+    "last_run": "2026-06-01 08:57:01+00:00",
+    "total_scored": 384,
     "reachable": 0,
-    "csv_count": 0,
-    "with_csv_schema": 0,
-    "avg_readiness": 0.0,
+    "intake_candidates": 0,
+    "needs_review": 384,
     "top_items": [
       {
-        "name": "opencivitas/amministrazione-indicatori-determinanti-opencivitas",
+        "name": "2010",
         "score": 0,
         "year_range": [
-          2015,
-          2016
+          2010,
+          2010
         ],
         "format": "ZIP",
         "reachable": false
       },
       {
-        "name": "opencivitas/amministrazione-indicatori-e-determinanti-opencivitas",
-        "score": 0,
-        "year_range": [
-          2017,
-          2017
-        ],
-        "format": "ZIP",
-        "reachable": false
-      },
-      {
-        "name": "opencivitas/comuni-delle-regioni-a-statuto-ordinario-fondo-di-solidarieta-comunale-opencivit",
-        "score": 0,
-        "year_range": [
-          2017,
-          2022
-        ],
-        "format": "ZIP",
-        "reachable": false
-      },
-      {
-        "name": "opencivitas/fc01a-comuni-servizi-di-gestione-delle-entrate-tributarie-e-servizi-fiscali-spes",
+        "name": "2013",
         "score": 0,
         "year_range": [
           2013,
@@ -86,7 +65,7 @@
         "reachable": false
       },
       {
-        "name": "opencivitas/fc01a-unioni-servizi-di-gestione-delle-entrate-tributarie-e-servizi-fiscali-ques",
+        "name": "2009",
         "score": 0,
         "year_range": [
           2009,
@@ -94,15 +73,28 @@
         ],
         "format": "ZIP",
         "reachable": false
+      },
+      {
+        "name": "Ind",
+        "score": 0,
+        "year_range": null,
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "FC50B",
+        "score": 0,
+        "year_range": null,
+        "format": "ZIP",
+        "reachable": false
       }
     ],
-    "coverage_pct": 29.5,
+    "coverage_pct": 436.4,
     "formato_aperto": {
-      "score": 10.0,
+      "score": 20.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 0.0,
-      "total": 26,
-      "fonte": "source_check"
+      "total": 88,
+      "fonte": "inventory"
     }
   },
   "datasets_in_use": [
@@ -121,17 +113,18 @@
   ],
   "signals": [
     {
-      "type": "validated_metrics",
-      "result": "stabile",
-      "detail": "Metriche da validated.parquet."
+      "type": "csv_magnet",
+      "result": "scan_completed",
+      "detail": "794 link data (XLSX 1, ZIP 87), years 2009-2023 — top prefixes: Metadati=15, 2010=14, 2013=12, 2017=10, 2018=6",
+      "metric_value": 794,
+      "suggested_action": "catalog-watch-ready"
     }
   ],
   "operational_verdict": {
     "label": "INVENTORY_CHANGED",
     "score": "changed",
     "triggers": [
-      "inventory_changed",
-      "source_check_partial"
+      "inventory_changed"
     ],
     "next_action": "review inventory changes"
   }

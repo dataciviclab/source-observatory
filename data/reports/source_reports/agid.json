@@ -1,6 +1,6 @@
 {
   "source_id": "agid",
-  "generated_at": "2026-07-26T22:54:07+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. IPA — Indice delle PA: enti, unita organizzative, PEC, domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione elettronica, cloud. Codice_IPA chiave di join con ANAC.",
-    "last_probed": "2026-07-26"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 40,
     "method": "package_search",
-    "captured_at": "2026-07-26T21:58:33+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 40,
     "baseline_date": "2026-05-24",
-    "freshness_hours": 0.9,
+    "freshness_hours": 0.3,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -40,55 +40,63 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-26T22:54:07Z",
-    "total_scored": 40,
-    "reachable": 5,
-    "csv_count": 9,
-    "with_csv_schema": 5,
-    "avg_readiness": 2.0,
+    "last_run": "2026-07-20 06:31:02+00:00",
+    "total_scored": 16,
+    "reachable": 9,
+    "intake_candidates": 1,
+    "needs_review": 15,
     "top_items": [
       {
-        "name": "agid/casi-di-riutilizzo-portale-datigovit",
-        "score": 10,
-        "year_range": null,
-        "format": "csv,json",
+        "name": "elenco-open-data-accessibilita",
+        "score": 60.0,
+        "year_range": [
+          2025,
+          2025
+        ],
+        "format": "CSV",
         "reachable": true
       },
       {
-        "name": "agid/monitoraggio-dinamico-portale-datigovit",
-        "score": 10,
+        "name": "porte-di-dominio",
+        "score": 42.0,
         "year_range": null,
-        "format": "csv",
+        "format": "JSON",
         "reachable": true
       },
       {
-        "name": "agid/open-data-suapsue",
-        "score": 10,
+        "name": "elenco-delle-pec-attive-degli-enti",
+        "score": 42.0,
         "year_range": null,
-        "format": "csv",
+        "format": "JSON",
         "reachable": true
       },
       {
-        "name": "agid/elenco-open-data-accessibilita",
-        "score": 9,
-        "year_range": null,
-        "format": "csv,json,xml",
+        "name": "unita-organizzative-che-emettono-ordini-elettronici",
+        "score": 42.0,
+        "year_range": [
+          2017,
+          2017
+        ],
+        "format": "JSON",
         "reachable": true
       },
       {
-        "name": "agid/appalti-di-innovazione-censiti-piattaforma-appaltinnovativigov",
-        "score": 8,
-        "year_range": null,
-        "format": "csv",
+        "name": "open-data-suap-sue",
+        "score": 35.0,
+        "year_range": [
+          2024,
+          2024
+        ],
+        "format": "CSV",
         "reachable": true
       }
     ],
-    "coverage_pct": 100.0,
+    "coverage_pct": 40.0,
     "formato_aperto": {
-      "score": 10.0,
-      "perc_aperto": 0.0,
-      "perc_reachable": 12.5,
-      "total": 40,
+      "score": 15.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 44.4,
+      "total": 9,
       "fonte": "source_check"
     }
   },
@@ -102,23 +110,29 @@
       "status": "published"
     },
     {
+      "slug": "ipa_istat_mapping",
+      "status": "published"
+    },
+    {
       "slug": "ipa_unita_organizzative",
       "status": "published"
     }
   ],
   "signals": [
     {
-      "type": "validated_metrics",
+      "type": "no signal",
       "result": "stabile",
-      "detail": "Metriche da validated.parquet."
+      "detail": "40 item (package_search), in linea con la baseline.",
+      "metric_value": 40,
+      "suggested_action": "nessuna"
     }
   ],
   "operational_verdict": {
-    "label": "STABLE",
-    "score": "stable",
+    "label": "PARTIALLY_SCOPED",
+    "score": "partial",
     "triggers": [
-      "all_green"
+      "source_check_partial"
     ],
-    "next_action": null
+    "next_action": "complete source-check"
   }
 }

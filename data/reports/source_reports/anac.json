@@ -1,6 +1,6 @@
 {
   "source_id": "anac",
-  "generated_at": "2026-07-26T22:54:07+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting ANAC). I download raw vanno al portale diretto dati.anticorruzione.it con User-Agent browser (WAF blocca solo python-requests). 70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari, subappalti, varianti, PNRR indicatori, SOA. CC-BY-SA 4.0.",
-    "last_probed": "2026-07-26"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 70,
     "method": "package_search",
-    "captured_at": "2026-07-26T21:58:33+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-05-24",
-    "freshness_hours": 0.9,
+    "freshness_hours": 0.3,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -43,55 +43,63 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-26T22:54:07Z",
-    "total_scored": 48,
-    "reachable": 47,
-    "csv_count": 47,
-    "with_csv_schema": 6,
-    "avg_readiness": 3.8,
+    "last_run": "2026-07-20 06:31:02+00:00",
+    "total_scored": 66,
+    "reachable": 3,
+    "intake_candidates": 0,
+    "needs_review": 66,
     "top_items": [
       {
-        "name": "anac/48a28e5e-a010-4671-b1b3-ccbb1fbc149b",
-        "score": 10,
-        "year_range": null,
-        "format": "csv,json,ttl",
+        "name": "ocds-appalti-ordinari-anno-2025",
+        "score": 35.0,
+        "year_range": [
+          2025,
+          2025
+        ],
+        "format": "JSON",
         "reachable": true
       },
       {
-        "name": "anac/attestazioni-soa-v2",
-        "score": 10,
-        "year_range": null,
-        "format": "csv",
+        "name": "ocds-appalti-ordinari-anno-2022",
+        "score": 35.0,
+        "year_range": [
+          2022,
+          2022
+        ],
+        "format": "JSON",
         "reachable": true
       },
       {
-        "name": "anac/pubblicazioni",
-        "score": 10,
-        "year_range": null,
-        "format": "csv,json,ttl",
+        "name": "ocds-appalti-ordinari-anno-2024",
+        "score": 35.0,
+        "year_range": [
+          2024,
+          2024
+        ],
+        "format": "JSON",
         "reachable": true
       },
       {
-        "name": "anac/sospensioni",
-        "score": 10,
+        "name": "attestazioni-soa-v2",
+        "score": 25.0,
         "year_range": null,
-        "format": "csv,ttl,json",
-        "reachable": true
+        "format": "CSV",
+        "reachable": false
       },
       {
-        "name": "anac/stati-avanzamento",
-        "score": 10,
+        "name": "categorie-opera",
+        "score": 15.0,
         "year_range": null,
-        "format": "csv,json,ttl",
-        "reachable": true
+        "format": "CSV",
+        "reachable": false
       }
     ],
-    "coverage_pct": 68.6,
+    "coverage_pct": 94.3,
     "formato_aperto": {
-      "score": 5.0,
-      "perc_aperto": 0.0,
-      "perc_reachable": 97.9,
-      "total": 48,
+      "score": 10.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 0.0,
+      "total": 61,
       "fonte": "source_check"
     }
   },
@@ -109,19 +117,7 @@
       "status": "published"
     },
     {
-      "slug": "anac_collaudo",
-      "status": "published"
-    },
-    {
-      "slug": "anac_cup",
-      "status": "published"
-    },
-    {
       "slug": "anac_partecipanti",
-      "status": "published"
-    },
-    {
-      "slug": "anac_stati_avanzamento",
       "status": "published"
     },
     {
@@ -131,9 +127,11 @@
   ],
   "signals": [
     {
-      "type": "validated_metrics",
+      "type": "no signal",
       "result": "stabile",
-      "detail": "Metriche da validated.parquet."
+      "detail": "70 item (package_search), in linea con la baseline.",
+      "metric_value": 70,
+      "suggested_action": "nessuna"
     }
   ],
   "operational_verdict": {

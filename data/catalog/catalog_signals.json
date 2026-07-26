@@ -1,79 +1,15 @@
 {
-  "generated_at": "2026-07-26T22:54:07+00:00",
-  "report_version": 2,
+  "generated_at": "2026-07-26T13:12:48Z",
+  "report_version": 1,
   "total_sources": 36,
   "signals": [
     {
-      "source_id": "aci",
-      "signal_type": "validated_metrics",
-      "result": "partial",
-      "detail": "reachable=40.0%; readiness=4.0",
-      "metric_value": 5,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "adm_opendata",
+      "source_id": "inail_opendata",
       "signal_type": "validated_metrics",
       "result": "stable",
-      "detail": "reachable=100.0%; readiness=10.0",
-      "metric_value": 31,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "agcm",
-      "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=100.0%; readiness=7.7",
-      "metric_value": 16,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "agid",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=12.5%; readiness=2.0",
-      "metric_value": 40,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "aifa",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=96.7%; readiness=9.5",
-      "metric_value": 30,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "anac",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=97.9%; readiness=3.8",
-      "metric_value": 48,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "art_opendata",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=8.7",
-      "metric_value": 32,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "consip_open_data",
-      "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=100.0%; readiness=2.0",
-      "metric_value": 16,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "cortecostituzionale",
-      "signal_type": "validated_metrics",
-      "result": "partial",
-      "detail": "reachable=0.0%",
-      "metric_value": 5,
-      "suggested_action": "nessuna"
+      "detail": "reachable=47.6%",
+      "metric_value": 63,
+      "suggested_action": null
     },
     {
       "source_id": "dait",
@@ -81,31 +17,55 @@
       "result": "stable",
       "detail": "no data",
       "metric_value": 0,
-      "suggested_action": "nessuna"
+      "suggested_action": null
+    },
+    {
+      "source_id": "ministero_interno",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=100.0%",
+      "metric_value": 38,
+      "suggested_action": null
+    },
+    {
+      "source_id": "aifa",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=96.8%",
+      "metric_value": 62,
+      "suggested_action": null
     },
     {
       "source_id": "dati_camera",
       "signal_type": "validated_metrics",
       "result": "stable",
-      "detail": "reachable=100.0%; readiness=3.0",
-      "metric_value": 103,
-      "suggested_action": "nessuna"
+      "detail": "reachable=100.0%",
+      "metric_value": 104,
+      "suggested_action": null
     },
     {
-      "source_id": "dati_cultura",
+      "source_id": "inps",
       "signal_type": "validated_metrics",
-      "result": "changed",
+      "result": "stable",
+      "detail": "reachable=6.6%",
+      "metric_value": 2263,
+      "suggested_action": null
+    },
+    {
+      "source_id": "art_opendata",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=100.0%",
+      "metric_value": 32,
+      "suggested_action": null
+    },
+    {
+      "source_id": "noipa_sparql",
+      "signal_type": "validated_metrics",
+      "result": "stable",
       "detail": "reachable=0.0%",
-      "metric_value": 213,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "dati_senato",
-      "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=100.0%; readiness=3.0",
-      "metric_value": 80,
-      "suggested_action": "nessuna"
+      "metric_value": 19,
+      "suggested_action": null
     },
     {
       "source_id": "eligendo",
@@ -113,167 +73,7 @@
       "result": "stable",
       "detail": "no data",
       "metric_value": 0,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "giustizia_statistiche",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=0.0%",
-      "metric_value": 8,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "inail_opendata",
-      "signal_type": "validated_metrics",
-      "result": "partial",
-      "detail": "reachable=57.1%; readiness=5.3",
-      "metric_value": 7,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "inps",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=99.9%; readiness=7.8",
-      "metric_value": 1694,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "ispra_linked_data",
-      "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=100.0%; readiness=3.0",
-      "metric_value": 70,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "istat_sdmx",
-      "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=100.0%; readiness=5.0",
-      "metric_value": 3556,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "lavoro_opendata",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=0.0%; readiness=1.0",
-      "metric_value": 83,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "mef_irpef",
-      "signal_type": "validated_metrics",
-      "result": "partial",
-      "detail": "reachable=81.8%; readiness=8.2",
-      "metric_value": 11,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "mim_opendata",
-      "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=100.0%; readiness=9.0",
-      "metric_value": 28,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "mimit_rna",
-      "signal_type": "validated_metrics",
-      "result": "partial",
-      "detail": "reachable=0.0%; readiness=1.0",
-      "metric_value": 43,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "ministero_interno",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=9.7",
-      "metric_value": 34,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "ministero_salute",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=90.9%; readiness=8.2",
-      "metric_value": 44,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "ministero_turismo_opendata",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=2.0",
-      "metric_value": 14,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "mit_opendata",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=78.6%; readiness=6.1",
-      "metric_value": 56,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "mur_ustat",
-      "signal_type": "validated_metrics",
-      "result": "partial",
-      "detail": "reachable=100.0%; readiness=8.1",
-      "metric_value": 17,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "noipa_sparql",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=3.0",
-      "metric_value": 21,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "openbdap",
-      "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=3.0%; readiness=0.1",
-      "metric_value": 3753,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "opencivitas",
-      "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=0.0%",
-      "metric_value": 26,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "opencoesione",
-      "signal_type": "validated_metrics",
-      "result": "partial",
-      "detail": "reachable=96.0%; readiness=7.0",
-      "metric_value": 248,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "openga",
-      "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=9.0",
-      "metric_value": 405,
-      "suggested_action": "nessuna"
-    },
-    {
-      "source_id": "pagopa",
-      "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=100.0%; readiness=9.6",
-      "metric_value": 12,
-      "suggested_action": "nessuna"
+      "suggested_action": null
     },
     {
       "source_id": "terna_opendata",
@@ -281,15 +81,215 @@
       "result": "stable",
       "detail": "no data",
       "metric_value": 0,
-      "suggested_action": "nessuna"
+      "suggested_action": null
+    },
+    {
+      "source_id": "adm_opendata",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=100.0%",
+      "metric_value": 31,
+      "suggested_action": null
+    },
+    {
+      "source_id": "aci",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=90.6%",
+      "metric_value": 32,
+      "suggested_action": null
+    },
+    {
+      "source_id": "anac",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=4.5%",
+      "metric_value": 66,
+      "suggested_action": null
+    },
+    {
+      "source_id": "ministero_turismo_opendata",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=0.0%",
+      "metric_value": 16,
+      "suggested_action": null
+    },
+    {
+      "source_id": "dati_cultura",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=100.0%",
+      "metric_value": 213,
+      "suggested_action": "review inventory changes"
+    },
+    {
+      "source_id": "opencoesione",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=0.4%",
+      "metric_value": 543,
+      "suggested_action": null
+    },
+    {
+      "source_id": "mim_opendata",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=99.8%",
+      "metric_value": 511,
+      "suggested_action": "review inventory changes"
+    },
+    {
+      "source_id": "dati_senato",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "no data",
+      "metric_value": 0,
+      "suggested_action": "review inventory changes"
+    },
+    {
+      "source_id": "ispra_linked_data",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=0.0%",
+      "metric_value": 15,
+      "suggested_action": "review inventory changes"
+    },
+    {
+      "source_id": "pagopa",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=91.7%",
+      "metric_value": 12,
+      "suggested_action": "review inventory changes"
+    },
+    {
+      "source_id": "cortecostituzionale",
+      "signal_type": "validated_metrics",
+      "result": "partial",
+      "detail": "reachable=0.0%",
+      "metric_value": 13,
+      "suggested_action": "complete source-check"
+    },
+    {
+      "source_id": "mur_ustat",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=0.0%",
+      "metric_value": 69,
+      "suggested_action": null
+    },
+    {
+      "source_id": "openga",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=100.0%",
+      "metric_value": 436,
+      "suggested_action": null
+    },
+    {
+      "source_id": "ministero_salute",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=4.2%",
+      "metric_value": 48,
+      "suggested_action": null
+    },
+    {
+      "source_id": "lavoro_opendata",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=0.0%",
+      "metric_value": 83,
+      "suggested_action": null
+    },
+    {
+      "source_id": "mit_opendata",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=56.5%",
+      "metric_value": 62,
+      "suggested_action": null
+    },
+    {
+      "source_id": "mef_irpef",
+      "signal_type": "validated_metrics",
+      "result": "stable",
+      "detail": "reachable=68.1%",
+      "metric_value": 119,
+      "suggested_action": null
+    },
+    {
+      "source_id": "mimit_rna",
+      "signal_type": "validated_metrics",
+      "result": "partial",
+      "detail": "reachable=0.0%",
+      "metric_value": 85,
+      "suggested_action": "complete source-check"
+    },
+    {
+      "source_id": "agid",
+      "signal_type": "validated_metrics",
+      "result": "partial",
+      "detail": "reachable=56.2%",
+      "metric_value": 16,
+      "suggested_action": "complete source-check"
     },
     {
       "source_id": "unioncamere",
       "signal_type": "validated_metrics",
       "result": "stable",
-      "detail": "reachable=100.0%; readiness=9.9",
-      "metric_value": 268,
-      "suggested_action": "nessuna"
+      "detail": "reachable=0.0%",
+      "metric_value": 384,
+      "suggested_action": null
+    },
+    {
+      "source_id": "opencivitas",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=0.0%",
+      "metric_value": 384,
+      "suggested_action": "review inventory changes"
+    },
+    {
+      "source_id": "agcm",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=53.7%",
+      "metric_value": 54,
+      "suggested_action": "review inventory changes"
+    },
+    {
+      "source_id": "giustizia_statistiche",
+      "signal_type": "validated_metrics",
+      "result": "partial",
+      "detail": "reachable=75.0%",
+      "metric_value": 4,
+      "suggested_action": "complete source-check"
+    },
+    {
+      "source_id": "openbdap",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=0.7%",
+      "metric_value": 3570,
+      "suggested_action": "review inventory changes"
+    },
+    {
+      "source_id": "consip_open_data",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=0.0%",
+      "metric_value": 16,
+      "suggested_action": "review inventory changes"
+    },
+    {
+      "source_id": "istat_sdmx",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=0.0%",
+      "metric_value": 3867,
+      "suggested_action": "review inventory changes"
     }
   ]
 }

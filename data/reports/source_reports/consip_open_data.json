@@ -1,6 +1,6 @@
 {
   "source_id": "consip_open_data",
-  "generated_at": "2026-07-26T22:54:07+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN piccolo ma difendibile per catalog-watch. I source-check dataset-specifici hanno confermato che il catalogo contiene almeno due target primari e un support dataset utile per il filone Consip acquisti PA.",
-    "last_probed": "2026-07-26"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 16,
     "method": "package_list",
-    "captured_at": "2026-07-26T21:58:33+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 17,
     "baseline_date": "2026-04-10",
-    "freshness_hours": 0.9,
+    "freshness_hours": 0.3,
     "delta": -1,
     "delta_pct": -5.9,
     "formats": {
@@ -35,54 +35,53 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-26T22:54:07Z",
+    "last_run": "2026-07-20 06:31:02+00:00",
     "total_scored": 16,
-    "reachable": 16,
-    "csv_count": 16,
-    "with_csv_schema": 0,
-    "avg_readiness": 2.0,
+    "reachable": 0,
+    "intake_candidates": 0,
+    "needs_review": 16,
     "top_items": [
       {
-        "name": "consip_open_data/amministrazioni-del-programma",
-        "score": 2,
+        "name": "dataset-richieste-di-offerta-e-trattative-dirette-bandite-sul-mepa",
+        "score": 35.0,
         "year_range": null,
-        "format": "xlsx,json,csv",
-        "reachable": true
+        "format": "CSV",
+        "reachable": false
       },
       {
-        "name": "consip_open_data/appalti-specifici-banditi-su-accordi-quadro",
-        "score": 2,
+        "name": "dataset-ordini-diretti-di-acquisto-sul-mepa",
+        "score": 35.0,
         "year_range": null,
-        "format": "xlsx,json,csv",
-        "reachable": true
+        "format": "CSV",
+        "reachable": false
       },
       {
-        "name": "consip_open_data/appalti-specifici-banditi-su-sistema-dinamico-di-acquisizione",
-        "score": 2,
+        "name": "dataset-ordini-diretti-di-acquisto-in-convenzione",
+        "score": 35.0,
         "year_range": null,
-        "format": "xlsx,json,csv",
-        "reachable": true
+        "format": "CSV",
+        "reachable": false
       },
       {
-        "name": "consip_open_data/bandi-e-gare-del-programma",
-        "score": 2,
+        "name": "dataset-ordini-diretti-di-acquisto-su-accordi-quadro",
+        "score": 35.0,
         "year_range": null,
-        "format": "xlsx,ttl,json,csv",
-        "reachable": true
+        "format": "CSV",
+        "reachable": false
       },
       {
-        "name": "consip_open_data/beni-e-servizi-acquistati-tramite-rdotd-sul-mepa",
-        "score": 2,
+        "name": "dataset-appalti-specifici-banditi-su-sistema-dinamico-di-acquisizione",
+        "score": 35.0,
         "year_range": null,
-        "format": "xlsx,json,csv",
-        "reachable": true
+        "format": "CSV",
+        "reachable": false
       }
     ],
     "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 5.0,
-      "perc_aperto": 0.0,
-      "perc_reachable": 100.0,
+      "score": 10.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 0.0,
       "total": 16,
       "fonte": "source_check"
     }
@@ -90,9 +89,11 @@
   "datasets_in_use": [],
   "signals": [
     {
-      "type": "validated_metrics",
+      "type": "no signal",
       "result": "stabile",
-      "detail": "Metriche da validated.parquet."
+      "detail": "16 item (package_list), in linea con la baseline.",
+      "metric_value": 16,
+      "suggested_action": "nessuna"
     }
   ],
   "operational_verdict": {
