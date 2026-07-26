@@ -11,7 +11,9 @@ from pathlib import Path
 from typing import Any, cast
 
 import pandas as pd
-from _constants import (
+from lab_connectors.duckdb import safe_connect
+
+from scripts._constants import (
     CATALOG_INVENTORY_DIR_PATH,
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
@@ -19,19 +21,18 @@ from _constants import (
     load_registry,
     stale_reason_from_exception,
 )
-from collectors import dispatch, supported_protocols
-from collectors.base import inventory_cfg, now_utc_iso
-from collectors.ckan import (
+from scripts.collectors import dispatch, supported_protocols
+from scripts.collectors.base import inventory_cfg, now_utc_iso
+from scripts.collectors.ckan import (
     collect as _collect_ckan_inventory,
 )
-from collectors.ckan import (
+from scripts.collectors.ckan import (
     collect_ckan_inventory_via_package_list,
     collect_ckan_inventory_via_package_show_sample,
     collect_ckan_inventory_via_search,
 )
-from collectors.sdmx import collect as _collect_sdmx_inventory
-from collectors.sparql import collect as _collect_sparql_inventory
-from lab_connectors.duckdb import safe_connect
+from scripts.collectors.sdmx import collect as _collect_sdmx_inventory
+from scripts.collectors.sparql import collect as _collect_sparql_inventory
 
 # Backwards-compatible alias for tests
 _error_to_stale_reason = stale_reason_from_exception

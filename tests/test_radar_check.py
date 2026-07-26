@@ -7,9 +7,10 @@ from pathlib import Path
 
 import jsonschema
 import pytest
-import radar_check
 from lab_connectors.http import HttpFallbackError, HttpResult
 from lab_connectors.testing import FakeHttpClient, fake_response
+
+import scripts.radar_check as radar_check
 
 pytestmark = pytest.mark.contract
 

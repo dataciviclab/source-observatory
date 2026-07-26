@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import xml.etree.ElementTree as ET
 from typing import Any
 
@@ -94,3 +95,72 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             }
         )
     return CollectorResult(rows=rows)
+
+
+def validate_items(items: list[dict[str, Any]]) -> dict[str, Any]:
+    """Valida un gruppo di item SDMX.
+
+    SDMX non supporta HEAD/HTTP probe. La validazione si basa
+    sui metadati gia' raccolti dal collector durante l'inventory:
+    se ha api_base_url e distribution_url → raggiungibile.
+    """
+    if not items:
+        return {
+            "group_id": "unknown",
+            "source_id": "?",
+            "protocol": "sdmx",
+            "item_count": 0,
+            "reachable": False,
+            "error": "No items",
+        }
+
+    first = items[0]
+    api_base = first.get("api_base_url") or ""
+    dist_url = first.get("distribution_url") or ""
+    source_id = first.get("source_id", "?")
+    group = first.get("dataset_group", f"{source_id}/unknown")
+
+    has_api = bool(api_base)
+    has_url = bool(dist_url)
+    has_title = bool(first.get("title"))
+
+    issues: list[str] = []
+    if not has_title:
+        issues.append("missing title")
+    if not has_url:
+        issues.append("missing distribution_url")
+    if not has_api:
+        issues.append("missing api_base_url")
+
+    # Dimensioni dal titolo (per arricchimento metadati)
+    dimensions: list[str] = []
+    title_text = str(first.get("title") or "") + " " + str(first.get("notes_excerpt") or "")
+    tl = title_text.lower()
+    for pattern, dim_name in [
+        (r"\bsesso\b|\bsex\b|\bgender\b", "sesso"),
+        (r"\bet[àa]\b|\bage\b", "eta"),
+        (r"\bcittadinanza\b|\bpaese\b", "cittadinanza"),
+        (r"\bregion\b|\bprovincia\b|\bnuts\b", "territorio"),
+        (r"\bmese\b|\bmonth\b|\btrimestre\b|\bquarter\b", "tempo"),
+    ]:
+        if re.search(pattern, tl):
+            dimensions.append(dim_name)
+
+    reachable = has_api and has_url
+    return {
+        "dataset_group": group,
+        "source_id": source_id,
+        "protocol": "sdmx",
+        "item_count": len(items),
+        "reachable": reachable,
+        "readiness_score": 5 if reachable else 0,
+        "format": "SDMX",
+        "error": "; ".join(issues) if issues else None,
+        "validated_at": __import__("time").strftime(
+            "%Y-%m-%dT%H:%M:%SZ", __import__("time").gmtime()
+        ),
+        "endpoint": api_base,
+        "dataflow_id": first.get("item_id"),
+        "dimensions": dimensions or None,
+        "title": first.get("title"),
+    }

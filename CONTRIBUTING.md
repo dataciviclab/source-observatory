@@ -13,17 +13,18 @@ Risponde a una domanda: **questa fonte vale il tempo del Lab?**
 Il funnel del repo:
 
 ```
-radar ── gate ── catalog-watch ── catalog-inventory ── source-check
-             └── radar-only
+radar ── gate ── catalog-watch ── catalog-inventory ── pipeline (merge → validate)
+              └── radar-only
 ```
 
 Qui stanno:
 
 - `sources_registry.yaml` — registro di tutte le fonti osservate
-- `scripts/` — radar check, inventory, source-check, catalog diff
+- `scripts/` — radar check, inventory, pipeline, report
+- `scripts/pipeline/` — merge + validate (produce `validated.parquet`)
 - `skills/` — guide operative per agenti (source-check, inventory-triage, portal-scout)
 - `so_mcp/` — layer MCP read-only sugli artifact
-- `data/` — artifact versionati: radar_summary, radar_history, catalog_signals
+- `data/` — artifact versionati: radar_summary, radar_history
 - workflow CI: `radar.yml` (daily), `observatory.yml` (weekly)
 
 Qui non stanno:
@@ -42,7 +43,7 @@ il trattamento:
 | Modalità | Cosa succede | Frequenza |
 |---|---|---|
 | `radar-only` | Solo health check HTTP | Daily (radar.yml) |
-| `catalog-watch` | Radar + inventory + source-check | Daily radar + weekly observatory |
+| `catalog-watch` | Radar + inventory + pipeline (merge→validate) | Daily radar + weekly observatory |
 
 ### Radar (daily)
 
@@ -54,9 +55,9 @@ Probe HTTP leggero su ogni fonte. Produce:
 ### Observatory (weekly, lunedì)
 
 1. Build inventory parquet per fonti `catalog-watch`
-2. Calcola segnali di drift
-3. Scoring item-level (source-check)
-4. Upload su GCS + issue alert in caso di variazioni
+2. Pipeline merge + validate → `validated.parquet`
+3. Report per fonte + dashboard
+4. Upload su GCS
 
 ## Setup locale
 
@@ -75,13 +76,16 @@ pip install -e ../lab-connectors
 
 ```bash
 # Radar check manuale
-python scripts/radar_check.py
+so-radar-check
 
 # Catalog inventory
 python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/generated --workers 4
 
-# Source-check incrementale
-python scripts/bulk_source_check.py --skip-red-sources --max-items 200 --workers 8
+# Pipeline merge + validate
+so-run-pipeline --workers 4
+
+# Build reports
+so-build-reports
 
 # Test
 pytest tests/
@@ -121,9 +125,9 @@ Vedi [`.github`](https://github.com/dataciviclab/.github) per orientarti.
 ## Riferimenti
 
 - [README.md](README.md) — panoramica del repo
-- [docs/runbook.md](docs/runbook.md) — guida operativa radar, inventory, source-check
+- [docs/runbook.md](docs/runbook.md) — guida operativa radar, inventory, pipeline
 - [docs/architecture.md](docs/architecture.md) — architettura del sistema
 - [docs/catalog_watch_measurement_policy.md](docs/catalog_watch_measurement_policy.md) — policy di misura
 - [skills/](skills/) — guide operative per agenti
 - [`lab-connectors`](https://github.com/dataciviclab/lab-connectors) — dipendenza condivisa
-- [`dataset-incubator`](https://github.com/dataciviclab/dataset-incubator) — downstream: qui finiscono i source-check che diventano candidate
+- [`dataset-incubator`](https://github.com/dataciviclab/dataset-incubator) — downstream: qui finiscono i validated che diventano candidate

@@ -28,7 +28,8 @@ mcp = create_mcp_server(
     instructions=(
         "Read-only MCP per Source Observatory. "
         "Report per fonte (so_source_report), dashboard KPI (so_dashboard), "
-        "ricerca inventory (so_inventory_search, so_source_check) e URL (so_find_by_url)."
+        "ricerca inventory (so_inventory_search, so_source_check) "
+        "su validated.parquet (reachable + schema) e URL (so_find_by_url)."
     ),
 )
 
@@ -70,15 +71,15 @@ def so_inventory_search(
 
 
 @mcp.tool(
-    description="Interroga i risultati source-check. "
-    "Modalità: query= su source_check_results.parquet (con filtri source_id, min_score, ecc.), "
-    "oppure con include_diff=True per leggere inventario e delta item per fonte.",
+    description="Interroga i risultati della pipeline (validated.parquet). "
+    "Filtri: source_id, min_score (readiness_score 0-4), has_results (reachable). "
+    "Con grouped=True raggruppa per dataset logico. "
+    "Con include_diff=True mostra inventario e delta item per fonte.",
     structured_output=True,
 )
 def so_source_check(
     source_id: str | None = None,
     min_score: int | None = None,
-    min_paqa_score: int | None = None,
     limit: int = 50,
     has_results: bool | None = None,
     grouped: bool = False,
@@ -101,12 +102,11 @@ def so_source_check(
         _query_cache.set(cache_key, result)
         return result
 
-    # query mode
+    # query mode — min_paqa_score rimosso (non più calcolato)
     query_cache_key = (
         "source_check_query",
         source_id,
         min_score,
-        min_paqa_score,
         limit,
         has_results,
         grouped,
@@ -120,7 +120,7 @@ def so_source_check(
         "so_source_check",
         source_id,
         min_score,
-        min_paqa_score,
+        None,  # min_paqa_score — kept as None for backward compat
         limit,
         has_results,
         grouped,
@@ -133,7 +133,7 @@ def so_source_check(
 
 
 @mcp.tool(
-    description="Cerca un URL o testo in source_check_results (colonne URL) e catalog_inventory_latest "
+    description="Cerca un URL o testo in validated.parquet (colonne URL) e catalog_inventory_latest "
     "(URL + item_name, item_id, title, notes_excerpt). "
     "Usa LIKE %%query%% — utile per trovare item per URL, filename, ID o nome.",
     structured_output=True,

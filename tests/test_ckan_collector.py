@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from collectors.ckan import (
+
+from scripts.collectors.ckan import (
     _ckan_api_base,
     _ckan_search_params,
     _has_datastore_active,
@@ -171,7 +172,7 @@ class TestPackageShowSample:
 
     def test_package_show_timeout_forwarded(self, monkeypatch):
         """package_show_timeout dal registry arriva a ckan_get_json."""
-        from collectors import ckan as ckan_module
+        from scripts.collectors import ckan as ckan_module
 
         captured_timeouts: list[int] = []
 
@@ -210,7 +211,7 @@ class TestPackageShowSample:
             monkeypatch.setattr(ckan_module, "ckan_get_json", original)
 
     def test_package_show_sample_enriches_rows(self, monkeypatch):
-        from collectors import ckan as ckan_module
+        from scripts.collectors import ckan as ckan_module
 
         original = ckan_module.ckan_get_json
 
@@ -249,7 +250,7 @@ class TestPackageShowSample:
             monkeypatch.setattr(ckan_module, "ckan_get_json", original)
 
     def test_package_show_sample_partial_warning(self, monkeypatch):
-        from collectors import ckan as ckan_module
+        from scripts.collectors import ckan as ckan_module
 
         original = ckan_module.ckan_get_json
 
@@ -294,7 +295,7 @@ class TestPackageShowSample:
             monkeypatch.setattr(ckan_module, "ckan_get_json", original)
 
     def test_package_show_sample_empty_list(self, monkeypatch):
-        from collectors import ckan as ckan_module
+        from scripts.collectors import ckan as ckan_module
 
         original = ckan_module.ckan_get_json
 
@@ -362,7 +363,7 @@ class TestSearchWithFqPropagation:
             captured_params = kwargs.get("params")
             return {"success": True, "result": {"results": [], "count": 0}}
 
-        monkeypatch.setattr("collectors.ckan.ckan_get_json", fake_ckan_get_json)
+        monkeypatch.setattr("scripts.collectors.ckan.ckan_get_json", fake_ckan_get_json)
 
         source_cfg = {
             "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
@@ -388,7 +389,7 @@ class TestSearchWithFqPropagation:
             captured_params = kwargs.get("params")
             return {"success": True, "result": {"results": [], "count": 0}}
 
-        monkeypatch.setattr("collectors.ckan.ckan_get_json", fake_ckan_get_json)
+        monkeypatch.setattr("scripts.collectors.ckan.ckan_get_json", fake_ckan_get_json)
 
         source_cfg = {
             "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",

@@ -21,17 +21,14 @@ Utilizzo:
 from __future__ import annotations
 
 import json
-import sys
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
+from scripts._constants import load_registry
+from scripts.source_report import build_report
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(REPO_ROOT))
-
-from _constants import load_registry  # noqa: E402
-
-from scripts.source_report import build_report  # noqa: E402
 
 
 def _load_radar() -> dict[str, dict]:
@@ -78,11 +75,20 @@ def _load_inventory_report() -> dict:
 
 
 def _load_source_check() -> dict[str, list[dict]]:
-    """Carica source-check parquet → {source_id: [results]}."""
-    path = REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
+    """Carica validated.parquet → {source_id: [results]}."""
+    # Cerca prima il nuovo validated.parquet, poi fallback al vecchio
+    new_path = REPO_ROOT / "data" / "pipeline" / "validated.parquet"
+    old_path = (
+        REPO_ROOT / "data" / "catalog_inventory" / "generated" / "source_check_results.parquet"
+    )
+
+    path = new_path if new_path.exists() else old_path
     if not path.exists():
-        print("⚠️  source_check_results.parquet non trovato")
+        print(f"⚠️  Nessun parquet validato trovato (cercato: {new_path})")
         return {}
+
+    label = "validated" if path == new_path else "source_check_results"
+    print(f"📊 Caricato {label}.parquet: {path}")
     import duckdb
 
     con = duckdb.connect()
@@ -173,7 +179,9 @@ def main() -> int:
                 "radar": (radar_result or {}).get("status"),
                 "inventory_items": len(rows),
                 "scored_items": report.get("source_check", {}).get("total_scored", 0),
-                "intake_candidates": report.get("source_check", {}).get("intake_candidates", 0),
+                "reachable": report.get("source_check", {}).get("reachable", 0),
+                "csv_count": report.get("source_check", {}).get("csv_count", 0),
+                "avg_readiness": report.get("source_check", {}).get("avg_readiness"),
                 "datasets_in_use": len(cfg.get("datasets_in_use") or []),
                 "verdict": verdict.get("label"),
                 "verdict_score": verdict.get("score"),
@@ -184,14 +192,15 @@ def main() -> int:
     # 4. Dashboard index
     dashboard = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "report_version": 1,
+        "report_version": 2,
         "total_sources": len(reg),
         "summary": {
             "by_verdict": dict(Counter(s["verdict"] for s in source_summaries if s["verdict"])),
             "by_protocol": dict(Counter(s["protocol"] for s in source_summaries)),
             "tot_inventory_items": sum(s["inventory_items"] for s in source_summaries),
             "tot_scored_items": sum(s["scored_items"] for s in source_summaries),
-            "tot_intake_candidates": sum(s["intake_candidates"] for s in source_summaries),
+            "tot_reachable": sum(s["reachable"] for s in source_summaries),
+            "tot_csv_count": sum(s["csv_count"] for s in source_summaries),
             "tot_datasets_in_use": sum(s["datasets_in_use"] for s in source_summaries),
         },
         "sources": source_summaries,
@@ -200,6 +209,9 @@ def main() -> int:
     dashboard_path = REPO_ROOT / "data" / "reports" / "sources_dashboard.json"
     dashboard_path.write_text(json.dumps(dashboard, indent=2, ensure_ascii=False, default=str))
 
+    # 5. Catalog signals (per agent-context-builder)
+    _write_catalog_signals(source_summaries, captured_at)
+
     elapsed = (datetime.now() - t_start).total_seconds()
     print(f"\n✅ Report: {ok} generati, {skip} falliti  ({elapsed:.1f}s)")
     print(f"   Report:    {reports_dir}/")
@@ -207,5 +219,41 @@ def main() -> int:
     return 0 if skip == 0 else 1
 
 
-if __name__ == "__main__":
+def _write_catalog_signals(source_summaries: list[dict], captured_at: str | None) -> None:
+    """Genera catalog_signals.json per agent-context-builder (formato legacy compatibile)."""
+    signals = []
+    for s in source_summaries:
+        metrics = []
+        scored = s.get("scored_items", 0)
+        reachable = s.get("reachable", 0)
+        if scored > 0:
+            reach_pct = round(reachable / scored * 100, 1)
+            metrics.append(f"reachable={reach_pct}%")
+        if s.get("avg_readiness"):
+            metrics.append(f"readiness={s['avg_readiness']}")
+
+        signals.append(
+            {
+                "source_id": s["source_id"],
+                "signal_type": "validated_metrics",
+                "result": s.get("verdict_score", "stable"),
+                "detail": "; ".join(metrics) if metrics else "no data",
+                "metric_value": scored,
+                "suggested_action": "nessuna",
+            }
+        )
+
+    catalog_signals = {
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "report_version": 2,
+        "total_sources": len(signals),
+        "signals": signals,
+    }
+
+    signals_path = REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
+    signals_path.parent.mkdir(parents=True, exist_ok=True)
+    signals_path.write_text(json.dumps(catalog_signals, indent=2, ensure_ascii=False, default=str))
+
+
+if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(main())

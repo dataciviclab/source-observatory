@@ -5,9 +5,10 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 
 import pytest
-from collectors import sdmx as sdmx_collector
 from lab_connectors.http import HttpResult
 from lab_connectors.testing import fake_response
+
+from scripts.collectors import sdmx as sdmx_collector
 
 pytestmark = pytest.mark.pure_unit
 

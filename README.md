@@ -2,21 +2,19 @@
 
 Intelligence layer leggero per fonti pubbliche italiane — parte dell'ecosistema [DataCivicLab](https://github.com/dataciviclab).
 
-Risponde a una domanda sola: **questa fonte vale il tempo del Lab?**
-
 ## Il funnel
 
 ```
-radar ── gate ── catalog-watch ── catalog-inventory ── source-check
-             └── radar-only
+radar ── gate ── catalog-watch ── catalog-inventory ── pipeline (merge → validate)
+              └── radar-only
 ```
 
 1. **Radar** — probe leggero su tutte le fonti (health check, sempre)
 2. **Gate** — decide il regime di osservazione (`catalog-watch` o `radar-only`)
 3. **Catalog-inventory** — enumera gli item dei cataloghi ammessi
-4. **Source-check** — valuta qualità e granularità dei dataset
+4. **Pipeline** — merge (dedup logico per dataset) + validate (reachability + sniff CSV) → `readiness_score` 0-10
 
-Il funnel è alimentato dal `sources_registry.yaml`: ogni fonte ha un `source_id`, un `protocol` e un `observation_mode`. Le fonti nuove vengono aggiunte al registry manualmente.
+Il funnel è alimentato dal `sources_registry.yaml`: ogni fonte ha un `source_id`, un `protocol` e un `observation_mode`.
 
 ## CI / Workflow
 
@@ -25,7 +23,7 @@ Due workflow schedulati su GitHub Actions:
 | Workflow | Schedule | Cosa fa |
 |---|---|---|
 | `radar.yml` | **daily** 03:15 | Radar check su tutte le fonti + sync `datasets_in_use` da DI catalog |
-| `observatory.yml` | **weekly** (lunedì) 03:20 | Inventory → catalog signals → source-check → upload GCS |
+| `observatory.yml` | **weekly** (lunedì) 03:20 | Inventory → pipeline (merge+validate) → report → upload GCS |
 
 ### `radar.yml` (daily)
 
@@ -34,12 +32,11 @@ Probe leggero HTTP su ogni fonte nel registry. Aggiorna `radar_summary.json`, `r
 ### `observatory.yml` (weekly, lunedì)
 
 1. **Inventory** — build del parquet `catalog_inventory_latest.parquet` per le fonti `catalog-watch`
-2. **Catalog signals** — calcola segnali di drift/inventory, produce `catalog_signals.json`
-3. **Source-check** — scoring item-level sul parquet inventory (merge con risultati precedenti da GCS)
+2. **Pipeline** — merge (raggruppa item in dataset logici) + validate (HEAD probe + sniff CSV schema) → `validated.parquet`
+3. **Report** — genera report per fonte (`source_reports/*.json`) e dashboard (`sources_dashboard.json`)
 4. **Upload GCS** — parquet, report e snapshot su `gs://dataciviclab-clean/catalog_inventory/`
-5. **Issue alert** — crea/aggiorna automaticamente issue `catalog-alert` in caso di variazioni rilevanti
 
-I risultati vengono committati nel repo (signals), caricati su GCS e pubblicati come artifact Actions.
+I report vengono committati nel repo. I parquet operativi sono caricati su GCS.
 
 ## Script
 
@@ -48,23 +45,25 @@ I risultati vengono committati nel repo (signals), caricati su GCS e pubblicati 
 | `scripts/radar_check.py` | Health check delle fonti nel registry |
 | `scripts/sync_datasets_in_use.py` | Sincronizza `datasets_in_use` dal catalogo DI (`radar.yml`) |
 | `scripts/build_catalog_inventory.py` | Snapshot tabulare di tutti gli item enumerabili |
-| `scripts/build_catalog_signals.py` | Segnali drift/inventory del catalogo |
-| `scripts/bulk_source_check.py` | Scoring item-level (qualità, granularità, rilevanza) |
-| `scripts/source_check_analyze.py` | Logica di scoring e analisi (usata da `bulk_source_check.py`) |
-| `scripts/source_check_fetch.py` | Fetch HTTP e enrichment per source-check |
-| `scripts/catalog_diff.py` | Diff tra due report inventory per segnalare regressioni |
+| `scripts/pipeline/run_pipeline.py` | Merge + validate → `validated.parquet` |
+| `scripts/build_source_reports.py` | Report per fonte + dashboard |
+| `scripts/source_report.py` | Logica di aggregazione e scoring |
 | `scripts/collectors/` | Adapter per protocollo: CKAN, SDMX, SPARQL, HTML |
-| `scripts/gha/` | Helper per CI (issue body, publish summary) |
+| `scripts/collectors/_validate_base.py` | Validazione per gruppo tabulare (probe + sniff CSV) |
+| `scripts/gha/` | Helper per CI (gcs upload, publish summary) |
 
 ```bash
 # Radar (giornaliero)
-python scripts/radar_check.py
+so-radar-check
 
-# Catalog inventory (settimanale — lunedì o manuale)
+# Catalog inventory (settimanale)
 python scripts/build_catalog_inventory.py --out-dir data/catalog_inventory/generated --workers 4
 
-# Source-check (giornaliero, incrementale — skippa item già checkati)
-python scripts/bulk_source_check.py --skip-red-sources --max-items 200 --workers 8
+# Pipeline merge + validate
+so-run-pipeline --workers 4
+
+# Build reports
+so-build-reports
 ```
 
 ## Skills
@@ -81,7 +80,7 @@ Il layer MCP (`so_mcp/so_server.py`) è il modo consigliato per consultare gli a
 
 ## Output e artefatti
 
-Gli artifact strutturali (`radar_summary.json`, `radar_history.json`, `catalog_signals.json`, `STATUS.md`) sono versionati nel repo e aggiornati dalla CI. I parquet in `generated/` sono cache operative, sovrascritti a ogni run.
+Gli artifact strutturali (`radar_summary.json`, `radar_history.json`, `STATUS.md`) sono versionati nel repo e aggiornati dalla CI. I parquet in `generated/` sono cache operative, sovrascritti a ogni run.
 
 ```
 data/radar/
@@ -90,30 +89,31 @@ data/radar/
   radar_history.json          # storia probe per fonte
   sources_registry.yaml       # registro input/output
 
-data/catalog/
-  catalog_signals.json        # segnali drift/inventory per fonte
-
 data/reports/
-  sources_dashboard.json      # KPI riassuntivi di tutte le fonti (lunedì)
+  sources_dashboard.json      # KPI riassuntivi di tutte le fonti (report_version 2)
   source_reports/*.json       # report per singola fonte
+
+data/pipeline/
+  validated.parquet           # gruppi validati (merge + reachability + sniff)
+  summary.json                # riepilogo run pipeline
 
 data/catalog_inventory/generated/
   catalog_inventory_latest.parquet   # snapshot cumulativo item
   catalog_inventory_report.json      # stato run per fonte
-  source_check_results.parquet       # scoring item-level
 ```
 
-I JSON strutturali (`radar_summary`, `radar_history`, `catalog_signals`) sono consumati da **agent-context-builder** per il contesto operativo degli agenti.
+I JSON strutturali (`radar_summary`, `radar_history`) sono consumati da **agent-context-builder** per il contesto operativo degli agenti.
 
-Artifact su GCS (solo inventory e source-check — il radar vive su git + Actions artifacts):
+Artifact su GCS (solo inventory e pipeline — il radar vive su git + Actions artifacts):
 - `gs://dataciviclab-clean/catalog_inventory/` — parquet inventory + report
-- `gs://dataciviclab-clean/catalog_inventory/source-check/` — source-check results e snapshots
+- `gs://dataciviclab-clean/catalog_inventory/pipeline/` — validated parquet
 
 ## Struttura
 
 ```
-scripts/          codice runtime (radar, inventory, source-check, diff)
+scripts/          codice runtime (radar, inventory, pipeline, report)
 scripts/collectors/  adapter per protocollo (CKAN, SDMX, SPARQL, HTML)
+scripts/pipeline/    merge + validate
 data/             artifact versionati (radar, catalog, inventory)
 skills/           guide operative per agenti
 so_mcp/           layer MCP read-only sugli artifact
@@ -122,6 +122,22 @@ docs/             runbook, architettura, policy
 
 ## Documentazione
 
-- [runbook.md](docs/runbook.md) — guida operativa per radar, inventory, source-check
+- [runbook.md](docs/runbook.md) — guida operativa per radar, inventory, pipeline
 - [architecture.md](docs/architecture.md) — architettura del sistema
 - [catalog_watch_measurement_policy.md](docs/catalog_watch_measurement_policy.md)
+
+## Installazione
+
+```bash
+pip install -e ".[dev]"
+```
+
+Il pacchetto espone 5 entry point CLI:
+
+```
+so-observatory-mcp     # server MCP
+so-run-pipeline        # merge + validate
+so-build-reports       # report per fonte
+so-radar-check         # health check
+so-sync-datasets       # sync datasets_in_use
+```

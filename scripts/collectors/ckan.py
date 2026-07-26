@@ -136,12 +136,51 @@ def _landing_page(item: dict) -> str | None:
     return _resource_first_url(item)
 
 
-def _distribution_url(item: dict) -> str | None:
-    """Return the primary download/访问URL for this dataset.
+def _best_resource_url(item: dict) -> str | None:
+    """Return the URL of the resource with the most pipeline-friendly format.
 
-    Priority: first resource with url > item url field.
-    The distribution URL should be a direct link to download or access the data.
+    Iterates all resources, scores each by format, returns the URL
+    of the highest-scoring resource.  When two resources tie for
+    the same score, the first one wins (stable sort).
+
+    This fixes ANAC's issue: metadata says 'csv,json,ttl' but the
+    first resource URL pointed to TTL because resources weren't
+    ordered by format quality.
     """
+    resources = item.get("resources") or []
+    if not resources:
+        return None
+
+    best_url: str | None = None
+    best_score = -1
+
+    for r in resources:
+        url = r.get("url")
+        if not url or not isinstance(url, str) or not url.strip():
+            continue
+        fmt = r.get("format") or ""
+        from scripts._constants import format_score
+
+        score = format_score(fmt)
+        if score > best_score:
+            best_score = score
+            best_url = url.strip()
+
+    return best_url
+
+
+def _distribution_url(item: dict) -> str | None:
+    """Return the primary download URL for this dataset.
+
+    Picks the resource with the most pipeline-friendly format
+    (CSV > JSON > XML > ...) rather than blindly taking the first.
+
+    Fallback: first resource with a URL if no resource has a
+    recognizable format.
+    """
+    best = _best_resource_url(item)
+    if best:
+        return best
     return _resource_first_url(item)
 
 
@@ -590,3 +629,13 @@ def _ckan_standard_path(
         if search_exc is not None
         else "package_search skipped",
     }
+
+
+def validate_items(items: list[dict[str, Any]]) -> dict[str, Any]:
+    """Valida un gruppo di item CKAN.
+
+    Usa il validatore tabulare standard: pick_best_url → HEAD → sniff CSV.
+    """
+    from ._validate_base import validate_tabular_group
+
+    return validate_tabular_group(items)

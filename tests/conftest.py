@@ -1,29 +1,14 @@
 """Conftest per source-observatory.
 
-Aggiunge ``scripts/`` e ``so_mcp/`` a ``sys.path`` in modo che i test
-possano importare i moduli senza boilerplate.
-
-Fornisce anche fixture condivise per mock HTTP e artifact locali.
+Fornisce fixture condivise per mock HTTP e artifact locali.
+``scripts`` e ``so_mcp`` sono package installati — nessun sys.path.insert.
 """
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from typing import Any
 
 import pytest
-
-# Aggiungi percorsi di import prima di qualsiasi test
-# REPO_ROOT serve per importare so_mcp come package (from so_mcp._source_check import ...)
-# SCRIPTS_DIR serve per importare _constants da scripts/ (non è un package)
-_REPO_ROOT = Path(__file__).resolve().parent.parent
-_SCRIPTS_DIR = _REPO_ROOT / "scripts"
-
-for _p in (_REPO_ROOT, _SCRIPTS_DIR):
-    if str(_p) not in sys.path:
-        sys.path.insert(0, str(_p))
-
 
 # ------------------------------------------------------------------
 # Fixture: artifact backend locale (default per tutti i test)

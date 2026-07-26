@@ -28,41 +28,39 @@ def _write_parquet(path, rows: list[dict]) -> None:
 
 
 def test_query_inventory_filters_and_orders(tmp_path, monkeypatch) -> None:
-    parquet_path = tmp_path / "source_check_results.parquet"
+    parquet_path = tmp_path / "validated_groups.parquet"
     _write_parquet(
         parquet_path,
         [
-            {"source_id": "a", "item_id": "low", "intake_score": 20},
-            {"source_id": "a", "item_id": "high", "intake_score": 55},
-            {"source_id": "b", "item_id": "other", "intake_score": 90},
+            {"source_id": "a", "item_id": "low", "readiness_score": 2},
+            {"source_id": "a", "item_id": "high", "readiness_score": 5},
+            {"source_id": "b", "item_id": "other", "readiness_score": 9},
         ],
     )
-    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", parquet_path)
 
-    result = query_inventory(source_id="a", min_score=40, limit=10)
+    result = query_inventory(source_id="a", min_score=4, limit=10)
 
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "high"
     assert result["filters"]["source_id"] == "a"
-    assert result["filters"]["min_score"] == 40
+    assert result["filters"]["min_score"] == 4
     assert result["filters"]["limit"] == 10
     assert result["cache"]["source"] == "local_cache"
-    assert result["cache"]["source_of_truth"] == "GitHub Actions artifact or configured GCS prefix"
     assert result["cache"]["stale"] is False
 
 
 def test_query_inventory_falls_back_to_local_when_remote_unreachable(tmp_path, monkeypatch) -> None:
     """Parquet con auto backend, S3 non raggiungibile → fallback a locale."""
-    parquet_path = _artifact._CHECK_PARQUET
-    parquet_path.parent.mkdir(parents=True, exist_ok=True)
+    parquet_path = tmp_path / "validated_groups.parquet"
     _write_parquet(
         parquet_path,
-        [{"source_id": "local_src", "item_id": "cached", "intake_score": 80}],
+        [{"source_id": "local_src", "item_id": "cached", "readiness_score": 8}],
     )
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", parquet_path)
 
     monkeypatch.setenv("SO_ARTIFACT_BACKEND", "auto")
     monkeypatch.setenv("CATALOG_INVENTORY_GCS_PREFIX", "gs://any-bucket")
-    # Simula S3 non raggiungibile
     monkeypatch.setattr(_artifact, "_probe_s3_parquet", lambda _: False)
 
     result = query_inventory(source_id="local_src", limit=10)
@@ -72,15 +70,18 @@ def test_query_inventory_falls_back_to_local_when_remote_unreachable(tmp_path, m
     assert result["cache"]["source"] == "local_cache"
 
 
-def test_resolved_parquet_gcs_direct_no_download(monkeypatch) -> None:
+def test_resolved_parquet_gcs_direct_no_download(tmp_path, monkeypatch) -> None:
     """Parquet artifact con GCS backend → S3 URI diretto, nessun download."""
+    validated_path = tmp_path / "validated.parquet"
+    validated_path.write_text("dummy")
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", validated_path)
     monkeypatch.setenv("SO_ARTIFACT_BACKEND", "gcs")
     monkeypatch.setenv("CATALOG_INVENTORY_GCS_PREFIX", "gs://test-bucket")
 
     artifact = _artifact._source_check_parquet()
     with _artifact._resolved_parquet(artifact) as (path, cache):
         assert cache["source"] == "gcs_direct"
-        assert str(path) == "s3://test-bucket/source-check/source_check_results.parquet"
+        assert str(path) == "s3://test-bucket/pipeline/validated.parquet"
         assert "S3" in cache["note"]
 
 
@@ -107,11 +108,10 @@ def test_inventory_status_summarizes_report(tmp_path, monkeypatch) -> None:
         json.dumps(
             {
                 "captured_at": "2026-04-30T00:00:00+00:00",
-                "registry_path": "data/radar/sources_registry.yaml",
-                "sources": {
-                    "a": {"status": "ok", "protocol": "ckan", "rows": 10},
-                    "b": {"status": "error", "protocol": "sdmx", "error": "HTTP 500"},
-                },
+                "sources": [
+                    {"source_id": "a", "status": "ok", "protocol": "ckan", "total": 10},
+                    {"source_id": "b", "status": "error", "protocol": "sdmx", "error": "HTTP 500"},
+                ],
             }
         ),
         encoding="utf-8",
@@ -121,9 +121,10 @@ def test_inventory_status_summarizes_report(tmp_path, monkeypatch) -> None:
     summary = inventory_status()
     filtered = inventory_status(source_id="b")
 
-    assert summary["status_counts"] == {"ok": 1, "error": 1}
-    assert summary["rows_total"] == 10
-    assert filtered["source"]["error"] == "HTTP 500"
+    assert len(summary["sources"]) == 2
+    assert summary["captured_at"] == "2026-04-30T00:00:00+00:00"
+    assert len(filtered["sources"]) == 1
+    assert filtered["sources"][0]["error"] == "HTTP 500"
 
 
 def test_inventory_search_filters_rows(tmp_path, monkeypatch) -> None:
@@ -269,79 +270,46 @@ def test_inventory_diff(tmp_path, monkeypatch) -> None:
         json.dumps(
             {
                 "captured_at": "2026-04-30T00:00:00+00:00",
-                "sources": {
-                    "inps": {
+                "sources": [
+                    {
+                        "source_id": "inps",
                         "status": "ok",
                         "protocol": "ckan",
-                        "rows": 2323,
+                        "total": 2323,
+                        "since_last": 2,
                         "method": "package_list",
                     }
-                },
+                ],
             }
         ),
         encoding="utf-8",
     )
-    inventory_path = tmp_path / "catalog_inventory_latest.parquet"
-    _write_parquet(
-        inventory_path,
-        [
-            {
-                "source_id": "inps",
-                "protocol": "ckan",
-                "item_id": f"item_{i}",
-                "item_name": f"item_{i}",
-                "title": f"Item {i}",
-                "organization": "INPS",
-                "tags": "",
-                "notes_excerpt": "",
-                "landing_page": "",
-                "distribution_url": "",
-                "format": "csv",
-                "source_status": "",
-                "inventory_method": "package_list",
-                "item_kind": "dataset",
-                "api_base_url": "https://example.test/api",
-                "captured_at": "2026-04-30",
-                "topic": "",
-                "theme": "",
-            }
-            for i in range(2325)
-        ],
-    )
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
-    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inventory_path)
 
     result = inventory_diff("inps")
 
     assert result["source_id"] == "inps"
-    assert result["baseline_value"] == 2323
-    assert result["current_count"] == 2325
-    assert result["delta"] == 2
+    assert result["inventory_total"] == 2323
+    assert result["delta_since_last"] == 2
 
 
 def test_inventory_diff_source_not_in_report(tmp_path, monkeypatch) -> None:
     report_path = tmp_path / "catalog_inventory_report.json"
-    report_path.write_text(json.dumps({"sources": {}}), encoding="utf-8")
+    report_path.write_text(json.dumps({"sources": []}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
 
     result = inventory_diff("unknown_source")
 
-    assert result["error"] == "source_not_in_report"
+    assert result["error"] == "Source 'unknown_source' non trovato"
 
 
-def test_inventory_diff_parquet_not_found(tmp_path, monkeypatch) -> None:
-    report_path = tmp_path / "catalog_inventory_report.json"
-    report_path.write_text(
-        json.dumps({"sources": {"inps": {"status": "ok", "rows": 100, "method": "package_list"}}}),
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
-    # Point to non-existent parquet
-    monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", tmp_path / "nonexistent.parquet")
+def test_inventory_diff_report_not_found(tmp_path, monkeypatch) -> None:
+    """Report JSON non trovato → errore propagato da inventory_status."""
+    monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", tmp_path / "nonexistent.json")
 
     result = inventory_diff("inps")
 
-    assert result["error"] == "artifact_not_found"
+    assert result["error"] == "catalog_inventory_report.json non trovato"
 
 
 # ─── _source_radar_context tests (GAP-7: real radar_summary.json schema) ────
@@ -351,7 +319,7 @@ def test_inventory_diff_parquet_not_found(tmp_path, monkeypatch) -> None:
 
 
 def _write_source_check_parquet(path, rows: list[dict]) -> None:
-    """Write minimal columns matching source_check_results schema."""
+    """Write minimal columns matching validated_groups schema."""
     _write_parquet(path, rows)
 
 
@@ -361,34 +329,33 @@ def _write_catalog_inventory_parquet(path, rows: list[dict]) -> None:
 
 
 def test_find_by_url_finds_by_url_in_source_check(tmp_path, monkeypatch) -> None:
-    """Search by download URL in source_check_results."""
-    check_path = tmp_path / "source_check_results.parquet"
+    """Search by download URL in validated_groups."""
+    check_path = tmp_path / "validated_groups.parquet"
     _write_source_check_parquet(
         check_path,
         [
             {
                 "url": "https://inps.example/download/PENSIONI-2024.csv",
-                "url_checked": "",
                 "item_id": "id1",
             },
-            {"url": "https://inps.example/download/ALTRO.csv", "url_checked": "", "item_id": "id2"},
+            {"url": "https://inps.example/download/ALTRO.csv", "item_id": "id2"},
         ],
     )
     inv_path = tmp_path / "catalog_inventory_latest.parquet"
     _write_catalog_inventory_parquet(inv_path, [{"dummy": 0}])
-    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", check_path)
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", check_path)
     monkeypatch.setattr(_artifact, "_INVENTORY_PARQUET", inv_path)
 
     result = find_by_url("PENSIONI-2024.csv")
 
     assert result["query_url"] == "PENSIONI-2024.csv"
-    assert len(result["source_check_results"]) == 1
-    assert result["source_check_results"][0]["item_id"] == "id1"
+    assert len(result["validated_groups"]) == 1
+    assert result["validated_groups"][0]["item_id"] == "id1"
 
 
 def test_find_by_url_finds_by_item_name_in_inventory(tmp_path, monkeypatch) -> None:
     """Search by item_name should match in catalog_inventory expanded columns."""
-    check_path = tmp_path / "source_check_results.parquet"
+    check_path = tmp_path / "validated_groups.parquet"
     _write_source_check_parquet(check_path, [{"url": "", "url_checked": "", "item_id": "none"}])
     inv_path = tmp_path / "catalog_inventory_latest.parquet"
     _write_catalog_inventory_parquet(
@@ -419,7 +386,7 @@ def test_find_by_url_finds_by_item_name_in_inventory(tmp_path, monkeypatch) -> N
 
 def test_find_by_url_finds_by_item_id_in_inventory(tmp_path, monkeypatch) -> None:
     """Search by item_id should match in catalog_inventory expanded columns."""
-    check_path = tmp_path / "source_check_results.parquet"
+    check_path = tmp_path / "validated_groups.parquet"
     _write_source_check_parquet(check_path, [{"url": "", "url_checked": "", "item_id": "none"}])
     inv_path = tmp_path / "catalog_inventory_latest.parquet"
     _write_catalog_inventory_parquet(
@@ -449,7 +416,7 @@ def test_find_by_url_finds_by_item_id_in_inventory(tmp_path, monkeypatch) -> Non
 
 def test_find_by_url_returns_empty_when_no_match(tmp_path, monkeypatch) -> None:
     """No match should return empty lists, not errors."""
-    check_path = tmp_path / "source_check_results.parquet"
+    check_path = tmp_path / "validated_groups.parquet"
     _write_source_check_parquet(
         check_path,
         [{"url": "https://example.test/other.csv", "url_checked": "", "item_id": "none"}],
@@ -463,9 +430,9 @@ def test_find_by_url_returns_empty_when_no_match(tmp_path, monkeypatch) -> None:
 
     result = find_by_url("nonexistent-filename.csv")
 
-    assert result["source_check_results"] == []
+    assert result["validated_groups"] == []
     assert result["catalog_inventory"] == []
-    assert "source_check_error" not in result
+    assert "validated_error" not in result
     assert "catalog_inventory_error" not in result
 
 
@@ -485,52 +452,58 @@ def test_inventory_status_report_not_found(tmp_path, monkeypatch) -> None:
     assert "error" in result
 
 
-def test_inventory_status_sources_not_a_dict(tmp_path, monkeypatch) -> None:
+def test_inventory_status_sources_not_a_list(tmp_path, monkeypatch) -> None:
     report_path = tmp_path / "inventory_report.json"
-    report_path.write_text(json.dumps({"sources": "not_a_dict"}), encoding="utf-8")
+    report_path.write_text(json.dumps({"sources": "not_a_list"}), encoding="utf-8")
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
     result = inventory_status()
-    assert result["returned"] == 0
+    assert result["sources"] == "not_a_list"
 
 
-def test_inventory_status_source_info_not_a_dict(tmp_path, monkeypatch) -> None:
-    """Un item in sources che non e' dict (es. lista) non rompe il loop."""
+def test_inventory_status_source_items_mixed_types(tmp_path, monkeypatch) -> None:
+    """Item in sources che non e' dict non rompe il loop."""
     report_path = tmp_path / "inventory_report.json"
     report_path.write_text(
-        json.dumps({"sources": {"s1": "not_a_dict", "s2": {"status": "ok", "rows": 100}}}),
+        json.dumps(
+            {
+                "sources": [
+                    "not_a_dict",
+                    {"source_id": "s2", "status": "ok", "total": 100},
+                ]
+            }
+        ),
         encoding="utf-8",
     )
     monkeypatch.setattr(_artifact, "_INVENTORY_REPORT", report_path)
     result = inventory_status()
-    assert result["returned"] == 1
-    assert result["sources"][0]["source_id"] == "s2"
+    assert len(result["sources"]) == 2
 
 
 def test_query_inventory_has_results_true(tmp_path, monkeypatch) -> None:
-    parquet_path = tmp_path / "source_check_results.parquet"
+    parquet_path = tmp_path / "validated_groups.parquet"
     _write_parquet(
         parquet_path,
         [
-            {"source_id": "a", "item_id": "x1", "intake_score": 45},
-            {"source_id": "a", "item_id": "x2", "intake_score": None},
+            {"source_id": "a", "item_id": "x1", "reachable": True, "readiness_score": 5},
+            {"source_id": "a", "item_id": "x2", "reachable": False, "readiness_score": 5},
         ],
     )
-    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", parquet_path)
     result = query_inventory(source_id="a", has_results=True)
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "x1"
 
 
 def test_query_inventory_has_results_false(tmp_path, monkeypatch) -> None:
-    parquet_path = tmp_path / "source_check_results.parquet"
+    parquet_path = tmp_path / "validated_groups.parquet"
     _write_parquet(
         parquet_path,
         [
-            {"source_id": "a", "item_id": "x1", "intake_score": 45},
-            {"source_id": "a", "item_id": "x2", "intake_score": None},
+            {"source_id": "a", "item_id": "x1", "reachable": True, "readiness_score": 5},
+            {"source_id": "a", "item_id": "x2", "reachable": False, "readiness_score": 5},
         ],
     )
-    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", parquet_path)
     result = query_inventory(source_id="a", has_results=False)
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "x2"
@@ -538,139 +511,126 @@ def test_query_inventory_has_results_false(tmp_path, monkeypatch) -> None:
 
 def test_query_inventory_grouped_when_dataset_group_missing(tmp_path, monkeypatch) -> None:
     """grouped=True senza colonna dataset_group → warning."""
-    parquet_path = tmp_path / "source_check_results.parquet"
+    parquet_path = tmp_path / "validated_groups.parquet"
     _write_parquet(
         parquet_path,
         [
-            {"source_id": "a", "item_id": "x1", "intake_score": 45},
+            {"source_id": "a", "item_id": "x1", "readiness_score": 4},
         ],
     )
-    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
-    # Forza backend locale per evitare GCS
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", parquet_path)
     monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
     result = query_inventory(grouped=True)
-    assert result["returned"] == 0
+    assert result["results"] == []
     assert "warning" in result
     assert "dataset_group" in result["warning"]
 
 
 def test_query_inventory_grouped_aggregates(tmp_path, monkeypatch) -> None:
     """grouped=True con colonna dataset_group → aggregazione per gruppo."""
-    parquet_path = tmp_path / "source_check_results.parquet"
+    parquet_path = tmp_path / "validated_groups.parquet"
     _write_parquet(
         parquet_path,
         [
             {
                 "source_id": "s1",
                 "item_id": "a",
-                "intake_score": 60,
+                "readiness_score": 6,
                 "dataset_group": "s1/gruppo-a",
-                "dataset_group_size": 2,
-                "dataset_group_year_min": 2020,
-                "dataset_group_year_max": 2024,
+                "item_count": 2,
             },
             {
                 "source_id": "s1",
                 "item_id": "b",
-                "intake_score": 80,
+                "readiness_score": 8,
                 "dataset_group": "s1/gruppo-a",
-                "dataset_group_size": 2,
-                "dataset_group_year_min": 2020,
-                "dataset_group_year_max": 2024,
+                "item_count": 2,
             },
             {
                 "source_id": "s1",
                 "item_id": "c",
-                "intake_score": 50,
+                "readiness_score": 5,
                 "dataset_group": "s1/gruppo-b",
-                "dataset_group_size": 1,
-                "dataset_group_year_min": 2022,
-                "dataset_group_year_max": 2022,
+                "item_count": 1,
             },
         ],
     )
-    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", parquet_path)
     monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
     result = query_inventory(source_id="s1", grouped=True)
     assert result["returned"] == 2  # 2 gruppi
-    assert result["grouped"] is True
     results = sorted(result["results"], key=lambda r: r["dataset_group"])
     assert results[0]["dataset_group"] == "s1/gruppo-a"
     assert results[0]["item_count"] == 2
-    assert results[0]["best_score"] == 80
+    assert results[0]["best_score"] == 8
     assert results[1]["dataset_group"] == "s1/gruppo-b"
     assert results[1]["item_count"] == 1
-    assert results[1]["best_score"] == 50
+    assert results[1]["best_score"] == 5
 
 
 # ─── PAQA: min_paqa_score ─────────────────────────────────────────────────────
 
 
-def test_query_inventory_min_paqa_score_filters(tmp_path, monkeypatch) -> None:
-    """min_paqa_score filtra quando paqa_score esiste."""
-    parquet_path = tmp_path / "source_check_results.parquet"
+def test_query_inventory_min_score_filters(tmp_path, monkeypatch) -> None:
+    """min_score filtra quando readiness_score esiste."""
+    parquet_path = tmp_path / "validated_groups.parquet"
     _write_parquet(
         parquet_path,
         [
-            {"source_id": "a", "item_id": "x1", "intake_score": 50, "paqa_score": 80},
-            {"source_id": "a", "item_id": "x2", "intake_score": 50, "paqa_score": 60},
-            {"source_id": "a", "item_id": "x3", "intake_score": 50, "paqa_score": None},
+            {"source_id": "a", "item_id": "x1", "readiness_score": 8},
+            {"source_id": "a", "item_id": "x2", "readiness_score": 5},
+            {"source_id": "a", "item_id": "x3", "readiness_score": None},
         ],
     )
-    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", parquet_path)
     monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
-    result = query_inventory(source_id="a", min_paqa_score=70)
+    result = query_inventory(source_id="a", min_score=7)
     assert result["returned"] == 1
     assert result["results"][0]["item_id"] == "x1"
 
 
-def test_query_inventory_min_paqa_score_no_column(tmp_path, monkeypatch) -> None:
-    """min_paqa_score su artifact senza paqa_score → zero risultati."""
-    parquet_path = tmp_path / "source_check_results.parquet"
+def test_query_inventory_min_score_low_threshold(tmp_path, monkeypatch) -> None:
+    """min_score=0 (soglia minima) restituisce tutti i risultati."""
+    parquet_path = tmp_path / "validated_groups.parquet"
     _write_parquet(
         parquet_path,
         [
-            {"source_id": "a", "item_id": "x1", "intake_score": 50},
+            {"source_id": "a", "item_id": "x1", "readiness_score": 1},
+            {"source_id": "a", "item_id": "x2", "readiness_score": 5},
         ],
     )
-    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", parquet_path)
     monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
-    result = query_inventory(source_id="a", min_paqa_score=70)
-    assert result["returned"] == 0  # colonna mancante → nessun risultato
+    result = query_inventory(source_id="a", min_score=0)
+    assert result["returned"] == 2
 
 
-def test_query_inventory_min_paqa_score_grouped(tmp_path, monkeypatch) -> None:
-    """min_paqa_score in grouped mode esclude gruppi sotto soglia."""
-    parquet_path = tmp_path / "source_check_results.parquet"
+def test_query_inventory_min_score_grouped(tmp_path, monkeypatch) -> None:
+    """min_score in grouped mode esclude gruppi sotto soglia."""
+    parquet_path = tmp_path / "validated_groups.parquet"
     _write_parquet(
         parquet_path,
         [
             {
                 "source_id": "s1",
                 "item_id": "a",
-                "intake_score": 50,
-                "paqa_score": 90,
+                "readiness_score": 9,
                 "dataset_group": "s1/g1",
-                "dataset_group_size": 1,
-                "dataset_group_year_min": 2020,
-                "dataset_group_year_max": 2024,
+                "item_count": 1,
             },
             {
                 "source_id": "s1",
                 "item_id": "b",
-                "intake_score": 50,
-                "paqa_score": 60,
+                "readiness_score": 6,
                 "dataset_group": "s1/g2",
-                "dataset_group_size": 1,
-                "dataset_group_year_min": 2020,
-                "dataset_group_year_max": 2024,
+                "item_count": 1,
             },
         ],
     )
-    monkeypatch.setattr(_artifact, "_CHECK_PARQUET", parquet_path)
+    monkeypatch.setattr(_artifact, "_VALIDATED_PARQUET", parquet_path)
     monkeypatch.setattr(_artifact, "_artifact_backend", lambda: "local")
-    result = query_inventory(source_id="s1", grouped=True, min_paqa_score=80)
-    assert result["returned"] == 1  # solo g1 (paqa_score=90) supera 80
+    result = query_inventory(source_id="s1", grouped=True, min_score=8)
+    assert result["returned"] == 1  # solo g1 (score=9) supera 8
     assert result["results"][0]["dataset_group"] == "s1/g1"
 
 
