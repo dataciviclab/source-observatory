@@ -239,6 +239,25 @@ _TEMPORAL_STOPWORDS: Final[list[str]] = [
     "anni",
     "dal al",
     "dal all",
+    # Mesi
+    "gennaio",
+    "febbraio",
+    "marzo",
+    "aprile",
+    "maggio",
+    "giugno",
+    "luglio",
+    "agosto",
+    "settembre",
+    "ottobre",
+    "novembre",
+    "dicembre",
+    # Numerali romani (I, II, III, IV, V)
+    "i",
+    "ii",
+    "iii",
+    "iv",
+    "v",
 ]
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
@@ -448,6 +467,8 @@ def strip_temporal_stopwords(text: str) -> str:
         # At end
         if t.endswith(" " + sw):
             t = t[: -(len(sw) + 1)].strip()
+    # Strip month names inside parentheses: "(mese anno)" → "( )" → ""
+    t = re.sub(r"\(\s*(?:gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s*\)", "", t)
     # Also handle "nel -" pattern specifically (year was stripped leaving "nel -")
     t = re.sub(r"\b(?:nel|nella|nell|dal|dall|al)\s*[-–]\s*", "", t)
     # Clean "- " artifacts
