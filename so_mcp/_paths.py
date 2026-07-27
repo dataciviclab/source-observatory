@@ -23,6 +23,9 @@ INVENTORY_PARQUET_PATH = CATALOG_INVENTORY_DIR_PATH / "catalog_inventory_latest.
 CATALOG_INVENTORY_REPORT_PATH = CATALOG_INVENTORY_DIR_PATH / "catalog_inventory_report.json"
 CHECK_PARQUET_PATH = CATALOG_INVENTORY_DIR_PATH / "source_check_results.parquet"
 
+# ── Pipeline (nuovo) ───────────────────────────────────────────────────────────
+VALIDATED_PARQUET_PATH = _REPO_ROOT / "data" / "pipeline" / "validated.parquet"
+
 # ── Signals ───────────────────────────────────────────────────────────────────
 CATALOG_SIGNALS_PATH = _REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
 

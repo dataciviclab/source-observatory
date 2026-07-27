@@ -1,6 +1,6 @@
 {
   "source_id": "inps",
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN INPS — inventory via package_list + package_show_sample (current_package_list_with_resources lento a offset alti).",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 2323,
     "method": "package_list",
-    "captured_at": "2026-07-27T06:47:09+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 2323,
     "baseline_date": "2026-04-02",
     "freshness_hours": 0.3,
@@ -39,9 +39,9 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27 06:49:15+00:00",
+    "last_run": "2026-07-20 06:31:02+00:00",
     "total_scored": 2263,
-    "reachable": 167,
+    "reachable": 150,
     "intake_candidates": 484,
     "needs_review": 1729,
     "top_items": [
@@ -100,7 +100,7 @@
     "formato_aperto": {
       "score": 10.0,
       "perc_aperto": 100.0,
-      "perc_reachable": 5.0,
+      "perc_reachable": 4.2,
       "total": 2198,
       "fonte": "source_check"
     }

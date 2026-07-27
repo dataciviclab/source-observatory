@@ -9,7 +9,11 @@ from datetime import date, datetime, timezone
 from typing import Any, Literal
 
 import requests
-from _constants import (
+from lab_connectors.http import HttpClient, HttpFallbackError
+from lab_connectors.http.types import ResponseLike
+from toolkit.scout.http import is_sdmx_url
+
+from scripts._constants import (
     RADAR_HISTORY_PATH,
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
@@ -21,9 +25,6 @@ from _constants import (
     save_registry,
     validate_schema,
 )
-from lab_connectors.http import HttpClient, HttpFallbackError
-from lab_connectors.http.types import ResponseLike
-from toolkit.scout.http import is_sdmx_url
 
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 TIMEOUT_SECONDS = 10

@@ -1,6 +1,6 @@
 {
   "source_id": "mur_ustat",
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting MUR). Sostituisce fonte diretta dati-ustat.mur.gov.it che aveva ConnectTimeout. 69 dataset su istruzione universitaria (contribuzione atenei, DSU regionale, collegi, AFAM).",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 69,
     "method": "package_search",
-    "captured_at": "2026-07-27T06:47:09+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 69,
     "baseline_date": "2026-05-24",
     "freshness_hours": 0.3,
@@ -55,7 +55,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27 06:49:15+00:00",
+    "last_run": "2026-07-20 06:31:02+00:00",
     "total_scored": 69,
     "reachable": 0,
     "intake_candidates": 0,
@@ -82,11 +82,11 @@
         "reachable": false
       },
       {
-        "name": "2013-diritto-allo-studio-universitario-dsu-regionale",
+        "name": "2023-contribuzione-e-interventi-afam",
         "score": 30.0,
         "year_range": [
-          2013,
-          2013
+          2023,
+          2023
         ],
         "format": "CSV",
         "reachable": false
@@ -102,11 +102,11 @@
         "reachable": false
       },
       {
-        "name": "serie-storica-sul-personale-universitario",
+        "name": "2022-contribuzione-e-interventi-afam",
         "score": 30.0,
         "year_range": [
-          1997,
-          1997
+          2022,
+          2022
         ],
         "format": "CSV",
         "reachable": false

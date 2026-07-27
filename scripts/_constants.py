@@ -44,6 +44,9 @@ from so_mcp._paths import (
 from so_mcp._paths import (
     STATUS_MD_PATH as STATUS_MD_PATH,  # noqa: F401
 )
+from so_mcp._paths import (
+    VALIDATED_PARQUET_PATH as VALIDATED_PARQUET_PATH,  # noqa: F401
+)
 
 # Repo root per path non esportati da so_mcp._paths (solo script).
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +67,48 @@ def validate_schema(instance: dict, schema_name: str) -> None:
     except jsonschema.ValidationError as exc:
         print(f"❌ Validazione fallita ({schema_name}): {exc.message}")
         raise
+
+
+# ── Format priority ranking ──────────────────────────────────────────────────
+# Usato da collector CKAN (_best_resource_url) e validatori (_validate_base).
+# Unico punto di definizione: aggiungere/formati qui.
+
+FORMAT_PRIORITY: dict[str, int] = {
+    "csv": 10,
+    "tsv": 10,
+    "json": 9,
+    "parquet": 8,
+    "xml": 7,
+    "xlsx": 6,
+    "xls": 5,
+    "ods": 4,
+    "zip": 3,
+    "ttl": 2,
+    "rdf": 2,
+    "pdf": 1,
+}
+
+FORMAT_CSV_KEYWORDS = {"csv", "tsv"}
+
+
+def format_score(fmt: str | float | None) -> int:
+    """Score format: piu' alto = piu' facile da pipeline."""
+    if fmt is None or not isinstance(fmt, str):
+        return 0
+    key = fmt.strip().lower()
+    if key in FORMAT_PRIORITY:
+        return FORMAT_PRIORITY[key]
+    if any(kw in key for kw in FORMAT_CSV_KEYWORDS):
+        return 10
+    if "json" in key:
+        return 9
+    if "xml" in key:
+        return 7
+    if "zip" in key:
+        return 3
+    if "ttl" in key or "rdf" in key:
+        return 2
+    return 1
 
 
 # Canonical stale_reason taxonomy for catalog-inventory error classification.
@@ -189,166 +234,3 @@ def get_red_source_ids(radar_path: Path | None = None) -> list[str]:
         return [s["id"] for s in radar.get("sources", []) if s.get("status") == "RED"]
     except Exception:
         return []
-
-
-# ── Join key patterns (condivisi tra source_check_analyze e joinability_scan) ──
-# Ogni entry: (chiave_semantica, regex, descrizione)
-
-JOIN_KEY_PATTERNS: list[tuple[str, str, str]] = [
-    (
-        "istat_comune",
-        r"(?i)(codice_istat_comune|codice_comune_istat|^codice_comune$|^pro_com$|^comune$)",
-        "Codice ISTAT comune (8 digit alfanumerico)",
-    ),
-    (
-        "istat_regione",
-        r"(?i)(codice_istat_regione|^codice_regione$|^codreg$|regione_istat_cod|^cod_reg$|^regione$)",
-        "Codice ISTAT regione",
-    ),
-    (
-        "anno",
-        r"(?i)^(anno(_|$)|anno_di_imposta$|anno_scolastico$|annoscolastico$|anno_riferimento$|"
-        r"anno_presentazione$|esercizio_finanziario$)",
-        "Anno / esercizio",
-    ),
-    (
-        "provincia",
-        r"(?i)(sigla_provincia|^provincia(_|$)|codice_provincia|sigla_prov|^prov$|^cod_prov$)",
-        "Provincia (sigla o codice)",
-    ),
-    (
-        "codice_catastale",
-        r"(?i)(codice_catastale|cod_catastale|catastale)",
-        "Codice catastale comune",
-    ),
-    (
-        "codice_ente",
-        r"(?i)(codice_ente_ipa|^id_ente$|codice_ente_siope|codice_istituzione|"
-        r"codice_ente_bdap|codice_ente_ssn|^codice_ente$|^cod_ente$)",
-        "Codice ente pubblico (IPA/SIOPE/BDAP/SSN)",
-    ),
-    (
-        "codice_scuola",
-        r"(?i)(codice_scuola|codicescuola|codice_meccanografico|^codice_scuola$|^cod_scuola$)",
-        "Codice scuola (MIM)",
-    ),
-    (
-        "atc",
-        r"(?i)(^atc[1-5]$|^atc$|^atc1$|^atc2$|^atc3$|^atc4$|^atc5$)",
-        "Classificazione ATC farmaceutica",
-    ),
-    (
-        "ateco",
-        r"(?i)(codice_ateco|^ateco$|sezione_ateco)",
-        "Classificazione ATECO attività economica",
-    ),
-    ("mese", r"(?i)^(mese|month)$", "Mese (1-12)"),
-    (
-        "cf_ente",
-        r"(?i)(codice_fiscale_ente|^cf_ente$|^codice_fiscale$|^cf$|^partita_iva$|^p_iva$)",
-        "Codice fiscale / partita IVA ente",
-    ),
-    (
-        "sesso",
-        r"(?i)^(sesso|genere|gender)$",
-        "Sesso / genere",
-    ),
-    (
-        "eta",
-        r"(?i)^(eta|età|eta_|fascia_eta|classe_eta|classe_di_eta|fascia_di_eta$)",
-        "Età / fascia età",
-    ),
-    (
-        "cittadinanza",
-        r"(?i)(cittadinanza|cittadino|nazionalità|nazionalita)",
-        "Cittadinanza / nazionalità",
-    ),
-    (
-        "codice_comune_anagrafe",
-        r"(?i)(^codice_comune$|^comune_istat$|^comune_codice$)",
-        "Codice comune (generico, forse ISTAT)",
-    ),
-]
-
-JOIN_KEY_WEIGHTS: dict[str, int] = {
-    "istat_comune": 30,
-    "istat_regione": 20,
-    "anno": 15,
-    "provincia": 10,
-    "codice_catastale": 15,
-    "codice_ente": 10,
-    "codice_scuola": 8,
-    "atc": 5,
-    "ateco": 5,
-    "mese": 3,
-    "cf_ente": 10,
-    "sesso": 3,
-    "eta": 3,
-    "cittadinanza": 5,
-    "codice_comune_anagrafe": 5,
-}
-
-
-def parse_columns(raw: str | None) -> list[str]:
-    """Parse a JSON-encoded columns field into a list of column names.
-
-    Handles None, NaN, JSON list, JSON dict (keys as columns), and
-    scalar fallback.  Canonical version shared by source_check_analyze
-    and joinability_scan.
-    """
-    import math
-
-    if raw is None or (isinstance(raw, float) and math.isnan(raw)):
-        return []
-    if not isinstance(raw, str):
-        return []
-    try:
-        parsed = json.loads(raw)
-    except (json.JSONDecodeError, TypeError):
-        return [str(raw)]
-    if isinstance(parsed, list):
-        return [str(c) if not isinstance(c, dict) else str(c.get("name", "")) for c in parsed]
-    if isinstance(parsed, dict):
-        return list(parsed.keys())
-    return [str(parsed)]
-
-
-def detect_join_keys(
-    columns_raw: str | None, columns: list[str] | None = None
-) -> dict[str, list[str]]:
-    """Match column names against join key patterns.
-
-    Args:
-        columns_raw: JSON-encoded columns field (list or dict).
-        columns: Already-parsed list (avoids double parse).
-
-    Returns:
-        Dict {chiave_semantica: [colonne_matched]}.
-    """
-    import re
-
-    col_names = columns if columns is not None else parse_columns(columns_raw)
-    if not col_names:
-        return {}
-    found: dict[str, list[str]] = {}
-    for key_name, pattern, _desc in JOIN_KEY_PATTERNS:
-        matched = [c for c in col_names if re.search(pattern, c.strip())]
-        if matched:
-            found[key_name] = matched
-    return found
-
-
-def compute_joinability_score(found_keys: dict[str, list[str]]) -> float:
-    """Score 0-100 based on found join keys.
-
-    Uses JOIN_KEY_WEIGHTS.  Does not include catalog cross-reference
-    (that is added by joinability_scan.py).
-    """
-    if not found_keys:
-        return 0.0
-    score = sum(JOIN_KEY_WEIGHTS.get(k, 5) for k in found_keys)
-    if len(found_keys) >= 3:
-        score += 10
-    elif len(found_keys) >= 2:
-        score += 5
-    return min(score, 100)

@@ -1,6 +1,6 @@
 {
   "source_id": "istat_sdmx",
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,25 +11,25 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Endpoint SDMX ricco e ad alto valore per scouting e source-check.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-07-20"
   },
   "health": {
-    "radar_status": "YELLOW",
-    "http_code": "-",
-    "note": "Timeout (ReadTimeout)",
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 4899,
+    "total_items": 4884,
     "method": "dataflow_count",
-    "captured_at": "2026-07-27T06:47:09+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 4212,
     "baseline_date": "2026-04-10",
     "freshness_hours": 0.3,
-    "delta": 687,
-    "delta_pct": 16.3,
+    "delta": 672,
+    "delta_pct": 16.0,
     "formats": {
-      "SDMX": 4899
+      "SDMX": 4884
     }
   },
   "source_check": {
@@ -60,7 +60,7 @@
         "reachable": false
       },
       {
-        "name": "73_440_DF_DCCV_PROCEEDCRIME_A_21",
+        "name": "741_1099_DF_DICA_IPSTRULCOM_1",
         "score": 55.0,
         "year_range": null,
         "format": "CSV",
@@ -74,18 +74,18 @@
         "reachable": false
       },
       {
-        "name": "73_440_DF_DCCV_PROCEEDCRIME_A_1",
+        "name": "73_440_DF_DCCV_PROCEEDCRIME_A_21",
         "score": 55.0,
         "year_range": null,
         "format": "CSV",
         "reachable": false
       }
     ],
-    "coverage_pct": 78.9,
+    "coverage_pct": 79.2,
     "formato_aperto": {
       "score": 20.0,
       "perc_aperto": 0.0,
-      "total": 4899,
+      "total": 4884,
       "fonte": "inventory"
     }
   },
@@ -117,11 +117,11 @@
   ],
   "signals": [
     {
-      "type": "inventory change",
-      "result": "inventory change",
-      "detail": "4899 item (dataflow_count), delta +15 rispetto al run precedente (4884).",
-      "metric_value": 4899,
-      "suggested_action": "verificare se variazione attesa; avviare inventory-triage se nuovi dataset"
+      "type": "no signal",
+      "result": "stabile",
+      "detail": "4884 item (dataflow_count), in linea con la baseline.",
+      "metric_value": 4884,
+      "suggested_action": "nessuna"
     }
   ],
   "operational_verdict": {

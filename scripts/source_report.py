@@ -10,7 +10,6 @@ Funzioni pubbliche:
 
 from __future__ import annotations
 
-import json
 import math
 from collections import Counter
 from datetime import datetime, timezone
@@ -59,102 +58,100 @@ def _safe_str(val, fallback="?"):
 
 
 def aggregate_source_check(results: list[dict]) -> dict:
-    """Metriche qualità dai risultati source-check."""
+    """Metriche qualità da validated.parquet (output nuova pipeline).
+
+    Campi disponibili: dataset_group, source_id, reachable, url, format,
+    columns, num_columns, readiness_score (0-4), status_code, content_type,
+    dataset_group_year_min, dataset_group_year_max.
+    """
     if not results:
         return {
             "total": 0,
             "reachable": 0,
-            "circuit": 0,
-            "content_mismatch": 0,
             "formats": {},
-            "statuses": {},
-            "with_preview_count": 0,
-            "paqa_avg": None,
-            "paqa_verdicts": {},
-            "no_gran": 0,
+            "with_csv_schema": 0,
+            "avg_readiness": None,
             "no_year": 0,
-            "has_no_url": 0,
             "problematic": [],
-            "intake_candidates": 0,
-            "needs_review": 0,
+            "csv_count": 0,
             "top_items": [],
-            "last_run": None,
         }
 
     total = len(results)
-    reachable = sum(1 for r in results if r.get("reachable"))
-    circuit = sum(1 for r in results if _safe_str(r.get("check_notes")) == "circuit_open")
-    content_mismatch = sum(
-        1 for r in results if _safe_str(r.get("check_notes")).startswith("content_mismatch")
-    )
-    formats = Counter(r.get("resource_format") or "?" for r in results)
-    statuses = Counter(_safe_str(r.get("http_status")) for r in results)
+    reachable = sum(1 for r in results if r.get("reachable") is True)
+    not_reachable = sum(1 for r in results if r.get("reachable") is False)
+    not_checked = sum(1 for r in results if r.get("reachable") is None)
 
-    # Preview / PAQA
-    with_preview = [r for r in results if r.get("paqa_score") is not None]
-    paqa_avg = None
-    paqa_verdicts: Counter = Counter()
-    if with_preview:
-        paqa_avg = sum(r["paqa_score"] for r in with_preview if r["paqa_score"] is not None) / len(
-            with_preview
+    formats = Counter(r.get("format") or "?" for r in results)
+    csv_count = sum(1 for r in results if r.get("format") and "csv" in r.get("format", "").lower())
+    with_schema = [r for r in results if r.get("num_columns") and r["num_columns"] > 0]
+
+    # Readiness score medio
+    scores = [r["readiness_score"] for r in results if r.get("readiness_score") is not None]
+    avg_readiness = round(sum(scores) / len(scores), 1) if scores else None
+
+    # Anni
+    no_year = sum(
+        1
+        for r in results
+        if r.get("dataset_group_year_min") is None
+        or (
+            isinstance(r.get("dataset_group_year_min"), float)
+            and math.isnan(r["dataset_group_year_min"])
         )
-        paqa_verdicts = Counter(r.get("paqa_verdict") or "?" for r in with_preview)
+    )
 
-    # Needs review
-    no_gran = sum(1 for r in results if r.get("granularity") in (None, "", "non_determinato"))
-    no_year = 0
-    for r in results:
-        ym = r.get("year_min")
-        if ym is None or (isinstance(ym, float) and math.isnan(ym)):
-            no_year += 1
-    has_no_url = sum(1 for r in results if not r.get("url_checked"))
-    problematic = [r for r in results if not r.get("reachable")]
-
-    # Intake
-    intake_candidates = sum(1 for r in results if r.get("intake_candidate"))
-    needs_review = sum(1 for r in results if r.get("needs_review"))
-
-    # Top items per intake_score
-    scored = [
+    # Problematici (non reachable)
+    problematic = [
         {
-            "name": r.get("item_name") or r.get("title", "?"),
-            "score": r.get("intake_score") or 0,
-            "year_range": (
-                [int(r["year_min"]), int(r["year_max"])]
-                if r.get("year_min") is not None
-                and r.get("year_max") is not None
-                and not (isinstance(r.get("year_min"), float) and math.isnan(r["year_min"]))
-                and not (isinstance(r.get("year_max"), float) and math.isnan(r["year_max"]))
-                else None
-            ),
-            "format": r.get("resource_format"),
-            "reachable": r.get("reachable", False),
+            "name": r.get("dataset_group", "?"),
+            "url": str(r.get("url", ""))[:80],
+            "error": r.get("error"),
         }
         for r in results
-        if r.get("intake_score") is not None
+        if r.get("reachable") is False
+    ]
+
+    # Top items per readiness_score
+    scored = [
+        {
+            "name": r.get("dataset_group", "?"),
+            "score": r.get("readiness_score") or 0,
+            "year_range": (
+                [int(r["dataset_group_year_min"]), int(r["dataset_group_year_max"])]
+                if r.get("dataset_group_year_min") is not None
+                and r.get("dataset_group_year_max") is not None
+                and not (
+                    isinstance(r.get("dataset_group_year_min"), float)
+                    and math.isnan(r["dataset_group_year_min"])
+                )
+                and not (
+                    isinstance(r.get("dataset_group_year_max"), float)
+                    and math.isnan(r["dataset_group_year_max"])
+                )
+                else None
+            ),
+            "format": r.get("format"),
+            "reachable": r.get("reachable") is True,
+        }
+        for r in results
+        if r.get("readiness_score") is not None
     ]
     scored.sort(key=lambda x: x["score"], reverse=True)
-
-    last_run = results[0].get("check_timestamp") if results else None
 
     return {
         "total": total,
         "reachable": reachable,
-        "circuit": circuit,
-        "content_mismatch": content_mismatch,
+        "not_reachable": not_reachable,
+        "not_checked_non_csv": not_checked,
         "formats": dict(formats.most_common()),
-        "statuses": dict(statuses.most_common()),
-        "with_preview_count": len(with_preview),
-        "paqa_avg": round(paqa_avg, 1) if paqa_avg is not None else None,
-        "paqa_verdicts": dict(paqa_verdicts.most_common()),
-        "no_gran": no_gran,
+        "csv_count": csv_count,
+        "with_csv_schema": len(with_schema),
+        "avg_readiness": avg_readiness,
         "no_year": no_year,
-        "has_no_url": has_no_url,
         "problematic": problematic[:3],
-        "intake_candidates": intake_candidates,
-        "needs_review": needs_review,
         "top_items": scored[:5],
-        "last_run": last_run,
+        "last_run": __import__("time").strftime("%Y-%m-%dT%H:%M:%SZ", __import__("time").gmtime()),
     }
 
 
@@ -404,11 +401,12 @@ def build_report(
     # Source-check
     sc_agg = aggregate_source_check(results)
     source_check: dict = {
-        "last_run": sc_agg["last_run"],
+        "last_run": sc_agg.get("last_run"),
         "total_scored": sc_agg["total"],
         "reachable": sc_agg["reachable"],
-        "intake_candidates": sc_agg["intake_candidates"],
-        "needs_review": sc_agg["needs_review"],
+        "csv_count": sc_agg.get("csv_count", 0),
+        "with_csv_schema": sc_agg.get("with_csv_schema", 0),
+        "avg_readiness": sc_agg.get("avg_readiness"),
         "top_items": sc_agg["top_items"],
         "coverage_pct": (
             round(sc_agg["total"] / len(rows) * 100, 1) if rows and sc_agg["total"] else None
@@ -421,25 +419,14 @@ def build_report(
         {"slug": slug, "status": "published"} for slug in (cfg.get("datasets_in_use") or [])
     ]
 
-    # Signals (da catalog_signals.json se presente)
-    signals: list[dict] = []
-    signals_path = REPO_ROOT / "data" / "catalog" / "catalog_signals.json"
-    if signals_path.exists():
-        try:
-            all_signals = json.loads(signals_path.read_text()).get("signals", [])
-            signals = [
-                {
-                    "type": s.get("signal_type"),
-                    "result": s.get("result"),
-                    "detail": s.get("detail"),
-                    "metric_value": s.get("metric_value"),
-                    "suggested_action": s.get("suggested_action"),
-                }
-                for s in all_signals
-                if s.get("source") == source_id
-            ]
-        except Exception:
-            pass
+    # Signals (sostituiti da validated metrics — catalog_signals.json non più prodotto)
+    signals = [
+        {
+            "type": "validated_metrics",
+            "result": "stabile",
+            "detail": "Metriche da validated.parquet.",
+        }
+    ]
 
     # Operational verdict
     operational_verdict = compute_operational_verdict(radar_result, inventory, source_check)

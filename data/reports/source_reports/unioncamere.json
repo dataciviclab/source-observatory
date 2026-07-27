@@ -1,6 +1,6 @@
 {
   "source_id": "unioncamere",
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "radar-only",
     "verdict": "watchlist",
     "note": "Fonte via dati.gov.it (Unioncamere). 352 dataset su demografia d'impresa provincia-specifici, costo unione alto. Passato a radar-only: se il catalogo publlica dati aggregati nazionali, si rivaluta.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 384,
     "method": null,
-    "captured_at": "2026-07-27T06:47:09+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "freshness_hours": 0.3,
@@ -33,32 +33,12 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27 06:49:15+00:00",
+    "last_run": "2026-07-20 06:31:02+00:00",
     "total_scored": 384,
     "reachable": 0,
     "intake_candidates": 365,
     "needs_review": 19,
     "top_items": [
-      {
-        "name": "modena-focus-settore-terziario-delle-imprese-nella-provincia-di-modena-dal-1991-al-2023",
-        "score": 70.0,
-        "year_range": [
-          1991,
-          2023
-        ],
-        "format": "CSV",
-        "reachable": false
-      },
-      {
-        "name": "modena-focus-settore-grandi-settori-delle-imprese-nella-provincia-di-modena-dal-1988-al-2023",
-        "score": 70.0,
-        "year_range": [
-          1988,
-          2023
-        ],
-        "format": "CSV",
-        "reachable": false
-      },
       {
         "name": "modena-focus-settore-industria-delle-imprese-nella-provincia-di-modena-dal-1991-al-2023",
         "score": 70.0,
@@ -80,10 +60,30 @@
         "reachable": false
       },
       {
-        "name": "modena-esportazioni-macchine-e-apparecchiature-meccaniche-provincia-di-modena-dal-1993-al-2023",
+        "name": "modena-esportazioni-settore-agroalimentare-provincia-di-modena-dal-1993-al-2023",
         "score": 70.0,
         "year_range": [
           1993,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "modena-focus-settore-grandi-settori-delle-imprese-nella-provincia-di-modena-dal-1988-al-2023",
+        "score": 70.0,
+        "year_range": [
+          1988,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "modena-focus-settore-terziario-delle-imprese-nella-provincia-di-modena-dal-1991-al-2023",
+        "score": 70.0,
+        "year_range": [
+          1991,
           2023
         ],
         "format": "CSV",

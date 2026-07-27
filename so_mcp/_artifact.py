@@ -35,12 +35,14 @@ from ._paths import (
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
     STATUS_MD_PATH,
+    VALIDATED_PARQUET_PATH,
 )
 
 # Repo root for relative path display and env file resolution.
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
-_CHECK_PARQUET = CHECK_PARQUET_PATH
+_CHECK_PARQUET = CHECK_PARQUET_PATH  # old path, kept for fallback
+_VALIDATED_PARQUET = VALIDATED_PARQUET_PATH
 _INVENTORY_PARQUET = INVENTORY_PARQUET_PATH
 _INVENTORY_REPORT = CATALOG_INVENTORY_REPORT_PATH
 _SIGNALS_JSON = CATALOG_SIGNALS_PATH
@@ -146,11 +148,19 @@ class _JsonArtifact:
 
 
 def _source_check_parquet() -> _ParquetArtifact:
+    """Nuovo validated.parquet, con fallback al vecchio source_check_results."""
+    path = _VALIDATED_PARQUET if _VALIDATED_PARQUET.exists() else _CHECK_PARQUET
+    artifact_name = "validated.parquet" if _VALIDATED_PARQUET.exists() else _SOURCE_CHECK_ARTIFACT
+    gcs_key = (
+        "pipeline/validated.parquet"
+        if _VALIDATED_PARQUET.exists()
+        else "source-check/source_check_results.parquet"
+    )
     return _ParquetArtifact(
-        name=_SOURCE_CHECK_ARTIFACT,
-        local_path=_CHECK_PARQUET,
+        name=artifact_name,
+        local_path=path,
         gcs_env="CATALOG_INVENTORY_GCS_PREFIX",
-        gcs_key="source-check/source_check_results.parquet",
+        gcs_key=gcs_key,
     )
 
 

@@ -9,8 +9,9 @@ import sys
 from pathlib import Path
 from urllib.request import urlopen
 
-from _constants import REGISTRY_PATH
 from ruamel.yaml import YAML
+
+from scripts._constants import REGISTRY_PATH
 
 DI_CATALOG_URL = (
     "https://raw.githubusercontent.com/dataciviclab/dataset-incubator/"
@@ -88,5 +89,5 @@ def main() -> int:
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

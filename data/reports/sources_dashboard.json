@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "total_sources": 36,
   "summary": {
@@ -15,10 +15,10 @@
       "sdmx": 1,
       "rest": 1
     },
-    "tot_inventory_items": 14738,
-    "tot_scored_items": 13252,
-    "tot_intake_candidates": 2814,
-    "tot_datasets_in_use": 71
+    "tot_inventory_items": 14717,
+    "tot_scored_items": 13230,
+    "tot_intake_candidates": 2796,
+    "tot_datasets_in_use": 63
   },
   "sources": [
     {
@@ -31,7 +31,7 @@
       "datasets_in_use": 1,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "adm_opendata",
@@ -43,7 +43,7 @@
       "datasets_in_use": 0,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "agcm",
@@ -55,7 +55,7 @@
       "datasets_in_use": 0,
       "verdict": "INVENTORY_CHANGED",
       "verdict_score": "changed",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "agid",
@@ -64,22 +64,22 @@
       "inventory_items": 40,
       "scored_items": 16,
       "intake_candidates": 1,
-      "datasets_in_use": 3,
+      "datasets_in_use": 4,
       "verdict": "PARTIALLY_SCOPED",
       "verdict_score": "partial",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "aifa",
       "protocol": "html",
       "radar": "GREEN",
       "inventory_items": 38,
-      "scored_items": 65,
+      "scored_items": 62,
       "intake_candidates": 11,
       "datasets_in_use": 1,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "anac",
@@ -88,10 +88,10 @@
       "inventory_items": 70,
       "scored_items": 66,
       "intake_candidates": 0,
-      "datasets_in_use": 8,
+      "datasets_in_use": 5,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "art_opendata",
@@ -103,7 +103,7 @@
       "datasets_in_use": 0,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "consip_open_data",
@@ -115,7 +115,7 @@
       "datasets_in_use": 0,
       "verdict": "INVENTORY_CHANGED",
       "verdict_score": "changed",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "cortecostituzionale",
@@ -127,7 +127,7 @@
       "datasets_in_use": 0,
       "verdict": "PARTIALLY_SCOPED",
       "verdict_score": "partial",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "dait",
@@ -139,7 +139,7 @@
       "datasets_in_use": 1,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "dati_camera",
@@ -151,7 +151,7 @@
       "datasets_in_use": 3,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "dati_cultura",
@@ -163,7 +163,7 @@
       "datasets_in_use": 0,
       "verdict": "INVENTORY_CHANGED",
       "verdict_score": "changed",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "dati_senato",
@@ -175,7 +175,7 @@
       "datasets_in_use": 0,
       "verdict": "INVENTORY_CHANGED",
       "verdict_score": "changed",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "eligendo",
@@ -187,7 +187,7 @@
       "datasets_in_use": 4,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "giustizia_statistiche",
@@ -196,10 +196,10 @@
       "inventory_items": 9,
       "scored_items": 4,
       "intake_candidates": 0,
-      "datasets_in_use": 5,
+      "datasets_in_use": 2,
       "verdict": "PARTIALLY_SCOPED",
       "verdict_score": "partial",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "inail_opendata",
@@ -211,7 +211,7 @@
       "datasets_in_use": 0,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "inps",
@@ -223,7 +223,7 @@
       "datasets_in_use": 2,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "ispra_linked_data",
@@ -235,19 +235,19 @@
       "datasets_in_use": 4,
       "verdict": "INVENTORY_CHANGED",
       "verdict_score": "changed",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "istat_sdmx",
       "protocol": "sdmx",
-      "radar": "YELLOW",
-      "inventory_items": 4899,
+      "radar": "GREEN",
+      "inventory_items": 4884,
       "scored_items": 3867,
       "intake_candidates": 16,
       "datasets_in_use": 6,
       "verdict": "INVENTORY_CHANGED",
       "verdict_score": "changed",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "lavoro_opendata",
@@ -259,7 +259,7 @@
       "datasets_in_use": 0,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "mef_irpef",
@@ -271,19 +271,19 @@
       "datasets_in_use": 2,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "mim_opendata",
       "protocol": "html",
       "radar": "GREEN",
       "inventory_items": 376,
-      "scored_items": 530,
-      "intake_candidates": 199,
+      "scored_items": 511,
+      "intake_candidates": 181,
       "datasets_in_use": 3,
       "verdict": "INVENTORY_CHANGED",
       "verdict_score": "changed",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "mimit_rna",
@@ -295,7 +295,7 @@
       "datasets_in_use": 2,
       "verdict": "PARTIALLY_SCOPED",
       "verdict_score": "partial",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "ministero_interno",
@@ -307,7 +307,7 @@
       "datasets_in_use": 0,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "ministero_salute",
@@ -319,7 +319,7 @@
       "datasets_in_use": 5,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "ministero_turismo_opendata",
@@ -331,7 +331,7 @@
       "datasets_in_use": 0,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "mit_opendata",
@@ -343,7 +343,7 @@
       "datasets_in_use": 2,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "mur_ustat",
@@ -355,7 +355,7 @@
       "datasets_in_use": 3,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "noipa_sparql",
@@ -367,7 +367,7 @@
       "datasets_in_use": 0,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "openbdap",
@@ -379,19 +379,19 @@
       "datasets_in_use": 5,
       "verdict": "INVENTORY_CHANGED",
       "verdict_score": "changed",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "opencivitas",
       "protocol": "html",
       "radar": "GREEN",
-      "inventory_items": 94,
+      "inventory_items": 88,
       "scored_items": 384,
       "intake_candidates": 0,
       "datasets_in_use": 3,
       "verdict": "INVENTORY_CHANGED",
       "verdict_score": "changed",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "opencoesione",
@@ -403,7 +403,7 @@
       "datasets_in_use": 1,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "openga",
@@ -412,10 +412,10 @@
       "inventory_items": 436,
       "scored_items": 436,
       "intake_candidates": 356,
-      "datasets_in_use": 5,
+      "datasets_in_use": 2,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "pagopa",
@@ -427,7 +427,7 @@
       "datasets_in_use": 0,
       "verdict": "INVENTORY_CHANGED",
       "verdict_score": "changed",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "terna_opendata",
@@ -439,7 +439,7 @@
       "datasets_in_use": 2,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     },
     {
       "source_id": "unioncamere",
@@ -451,7 +451,7 @@
       "datasets_in_use": 0,
       "verdict": "STABLE",
       "verdict_score": "stable",
-      "last_inventory": "2026-07-27T06:47:09+00:00"
+      "last_inventory": "2026-07-20T06:29:09+00:00"
     }
   ]
 }

@@ -11,11 +11,9 @@ Uso:
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from _constants import RADAR_SUMMARY_PATH
+from scripts._constants import RADAR_SUMMARY_PATH
 
 
 def main() -> None:
@@ -39,5 +37,5 @@ def main() -> None:
     Path("radar_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()

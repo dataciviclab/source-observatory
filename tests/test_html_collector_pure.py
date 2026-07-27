@@ -5,14 +5,15 @@ Qui testiamo l'orchestrazione SO e le deleghe.
 """
 
 import pytest
-from collectors.html import (
+from toolkit.scout.link_extractor import DataLink
+
+from scripts.collectors.html import (
     _build_row,
     _compute_summary,
     _extract_page_meta,
     _extract_prefix,
     _extract_years,
 )
-from toolkit.scout.link_extractor import DataLink
 
 pytestmark = pytest.mark.pure_unit
 

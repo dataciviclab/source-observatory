@@ -50,12 +50,16 @@ dev = [
 
 [project.scripts]
 source-observatory-mcp = "so_mcp.so_server:main"
+so-build-reports = "scripts.build_source_reports:main"
+so-run-pipeline = "scripts.pipeline.run_pipeline:main"
+so-radar-check = "scripts.radar_check:main"
+so-sync-datasets = "scripts.sync_datasets_in_use:main"
 
 [project.urls]
 Repository = "https://github.com/dataciviclab/source-observatory"
 
 [tool.setuptools.packages.find]
-include = ["so_mcp", "so_mcp.*"]
+include = ["so_mcp", "so_mcp.*", "scripts", "scripts.*"]
 exclude = ["tests*"]
 
 [tool.setuptools.dynamic]

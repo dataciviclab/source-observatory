@@ -2,19 +2,22 @@
 
 Layer MCP read-only sugli artifact prodotti da Source Observatory.
 
-Il server non sostituisce gli script di build e non scrive nello workspace: espone agli agenti una vista interrogabile degli artifact già generati da CI o run locali.
+Il server espone agli agenti una vista interrogabile degli artifact generati da CI o run locali.
+Non scrive nello workspace.
 
-Gli artifact di catalog-inventory sono cache locali sotto `data/catalog_inventory/generated/`. Gli altri artifact (catalog_signals, radar, registry) sono sotto `data/catalog/` e `data/radar/`. Le risposte sui parquet includono un blocco `cache` con `source`, `uri`, `modified_at`, `age_hours`, soglia `max_age_hours` e warning quando la cache locale supera 24 ore.
+Gli artifact di catalog-inventory sono cache locali sotto `data/catalog_inventory/generated/`.
+Il nuovo `validated.parquet` (output della pipeline merge+validate) e' in `data/pipeline/`.
+Le risposte sui parquet includono un blocco `cache` con scadenza configurabile.
 
 ## Workflow sorgente
 
 | Workflow | Schedule | Prodotto principale | Dove finisce |
 |---|---|---|---|
 | `radar.yml` | **daily** 03:15 | `radar_summary.json`, `radar_history.json`, `sources_registry.yaml`, `STATUS.md` | commit su git |
-| `observatory.yml` | **weekly** lun 03:20 | inventory parquet, source-check parquet, `catalog_signals.json`, source reports (33 JSON) | upload GCS + commit signals e report su git. Crea/aggiorna issue `catalog-alert` in caso di variazioni |
-| `ci.yml` | PR/push su main | test, lint, mypy, smoke test | solo CI — non produce artifact |
+| `observatory.yml` | **weekly** lun 03:20 | inventory parquet, validated parquet (pipeline), source reports (33 JSON) | upload GCS + commit report su git |
+| `ci.yml` | PR/push su main | test, lint, mypy | solo CI |
 
-Il server MCP legge i dati in `auto` (default) con priorità: **locale (git) → GCS**. I report JSON e radar/signals sono letti da git. I parquet operativi sono letti dal file locale (se in git) o dal prefisso GCS configurato (`CATALOG_INVENTORY_GCS_PREFIX`).
+Il server MCP legge i dati in `auto` (default) con priorità: **locale (git) → GCS**.
 
 ## Avvio
 
@@ -51,12 +54,12 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 ## Tool — 5 strumenti
 
 | # | Tool | Cosa fa | Legge da |
-|---|------|---------|----------|
-| 1 | `so_source_report` | 📋 Report completo per fonte (health, inventory, source_check, signals, verdict) | `data/reports/source_reports/{id}.json` (git) |
+|---|---|---|---|
+| 1 | `so_source_report` | 📋 Report completo per fonte (health, inventory, validated, verdict) | `data/reports/source_reports/{id}.json` (git) |
 | 2 | `so_dashboard` | 📊 KPI riassuntivi di tutte le fonti | `data/reports/sources_dashboard.json` (git) |
 | 3 | `so_inventory_search` | Cerca in `catalog_inventory_latest.parquet`: 3 modalità | parquet (locale → GCS) |
-| 4 | `so_source_check` | Query `source_check_results.parquet` + inventory status/diff | parquet (locale → GCS) |
-| 5 | `so_find_by_url` | Cerca URL su source_check + catalog_inventory (cross-parquet) | parquet (locale → GCS) |
+| 4 | `so_source_check` | Query `validated.parquet` + inventory status/diff | parquet (locale → GCS) |
+| 5 | `so_find_by_url` | Cerca URL su validated + catalog_inventory (cross-parquet) | parquet (locale → GCS) |
 
 ### Modalità `so_inventory_search`
 
@@ -71,7 +74,7 @@ In `auto`, il server prova i prefissi GCS pubblici; se il read GCS fallisce, usa
 | Parametro | Modalità |
 |---|---|
 | `include_diff=True` | Inventory status + delta item count per fonte |
-| Default (senza `include_diff`) | Query source_check_results.parquet con filtri |
+| Default | Query validated.parquet con filtri (source_id, min_score, has_results, grouped) |
 
 ### Caching
 
@@ -100,14 +103,13 @@ Non deve:
 
 | Artifact | Uso MCP |
 |---|---|---|
-| `data/reports/source_reports/{id}.json` | 🆕 report completo per fonte (consumo standard) |
-| `data/reports/sources_dashboard.json` | 🆕 KPI riassuntivi di tutte le fonti |
+| `data/reports/source_reports/{id}.json` | report completo per fonte (consumo standard) |
+| `data/reports/sources_dashboard.json` | KPI riassuntivi di tutte le fonti |
 | `data/radar/radar_summary.json` | stato fonte radar |
 | `data/radar/radar_history.json` | storia probes e streak RED |
 | `data/radar/STATUS.md` | sommario umano radar |
 | `data/radar/sources_registry.yaml` | query fonti per protocol/kind/mode |
-| `data/catalog/catalog_signals.json` | segnali catalog-watch |
-| `data/catalog_inventory/generated/source_check_results.parquet` | risultati source-check item-level |
+| `data/pipeline/validated.parquet` | ✅ **nuovo** — gruppi validati (reachable + schema colonne) |
 | `data/catalog_inventory/generated/catalog_inventory_latest.parquet` | inventory cataloghi enumerabili |
 | `data/catalog_inventory/generated/catalog_inventory_report.json` | stato per fonte del run inventory |
 | GCS: `gs://dataciviclab-clean/catalog_inventory/` | percorso base parquet operativi (fallback) |

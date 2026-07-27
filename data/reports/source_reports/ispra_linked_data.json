@@ -1,6 +1,6 @@
 {
   "source_id": "ispra_linked_data",
-  "generated_at": "2026-07-27T07:04:02+00:00",
+  "generated_at": "2026-07-20T06:45:41+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline tabellari.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-07-20"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 70,
     "method": "sparql_query",
-    "captured_at": "2026-07-27T06:47:09+00:00",
+    "captured_at": "2026-07-20T06:29:09+00:00",
     "baseline_value": 66,
     "baseline_date": "2026-04-11",
     "freshness_hours": 0.3,
@@ -37,7 +37,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27 06:49:15+00:00",
+    "last_run": "2026-07-20 06:31:02+00:00",
     "total_scored": 15,
     "reachable": 0,
     "intake_candidates": 0,
@@ -58,21 +58,21 @@
         "reachable": false
       },
       {
-        "name": "bodies",
+        "name": "certainty",
         "score": 15.0,
         "year_range": null,
         "format": "CSV",
         "reachable": false
       },
       {
-        "name": "datastation_types",
+        "name": "implementation-plan-steps",
         "score": 15.0,
         "year_range": null,
         "format": "CSV",
         "reachable": false
       },
       {
-        "name": "instability-types",
+        "name": "instability-categories",
         "score": 15.0,
         "year_range": null,
         "format": "CSV",
