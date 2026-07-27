@@ -1,6 +1,6 @@
 {
   "source_id": "mimit_rna",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T08:09:47+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. RNA — Registro Nazionale Aiuti di Stato. 133 dataset mensili Aiuti (2017-2026, XML, ~14.500 record/mese) + 237 dataset Misure (1994-2023). File su www.rna.gov.it scaricabili (200 MB/mese, XML strutturato). Altissimo valore civico: tracciamento aiuti pubblici alle imprese con beneficiario, CF, importo, regione, CUP.",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 370,
     "method": "package_search",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T07:59:44+00:00",
     "baseline_value": 370,
     "baseline_date": "2026-05-24",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.2,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -33,69 +33,56 @@
     }
   },
   "source_check": {
-    "last_run": "2026-06-01 08:57:01+00:00",
-    "total_scored": 85,
+    "last_run": "2026-07-27T08:09:47Z",
+    "total_scored": 43,
     "reachable": 0,
-    "intake_candidates": 0,
-    "needs_review": 85,
+    "csv_count": 0,
+    "with_csv_schema": 0,
+    "avg_readiness": 1.0,
     "top_items": [
       {
-        "name": "open-data-rna-aiuti-2023-04-parte-002",
-        "score": 3.0,
-        "year_range": [
-          2023,
-          2023
-        ],
-        "format": "XML",
+        "name": "mimit_rna/open-data-rna-aiuti-01",
+        "score": 1,
+        "year_range": null,
+        "format": "xml",
         "reachable": false
       },
       {
-        "name": "open-data-rna-aiuti-2023-05-parte-007",
-        "score": 3.0,
-        "year_range": [
-          2023,
-          2023
-        ],
-        "format": "XML",
+        "name": "mimit_rna/open-data-rna-aiuti-01-parte-002",
+        "score": 1,
+        "year_range": null,
+        "format": "xml",
         "reachable": false
       },
       {
-        "name": "open-data-rna-misura-2011-05",
-        "score": 3.0,
-        "year_range": [
-          2011,
-          2011
-        ],
-        "format": "XML",
+        "name": "mimit_rna/open-data-rna-aiuti-02",
+        "score": 1,
+        "year_range": null,
+        "format": "xml",
         "reachable": false
       },
       {
-        "name": "open-data-rna-misura-2018-06",
-        "score": 3.0,
-        "year_range": [
-          2018,
-          2018
-        ],
-        "format": "XML",
+        "name": "mimit_rna/open-data-rna-aiuti-02-parte-002",
+        "score": 1,
+        "year_range": null,
+        "format": "xml",
         "reachable": false
       },
       {
-        "name": "open-data-rna-aiuti-2022-02",
-        "score": 3.0,
-        "year_range": [
-          2022,
-          2022
-        ],
-        "format": "XML",
+        "name": "mimit_rna/open-data-rna-aiuti-02-parte-003",
+        "score": 1,
+        "year_range": null,
+        "format": "xml",
         "reachable": false
       }
     ],
-    "coverage_pct": 23.0,
+    "coverage_pct": 11.6,
     "formato_aperto": {
-      "score": 90.0,
-      "perc_aperto": 100.0,
-      "total": 370,
-      "fonte": "inventory"
+      "score": 10.0,
+      "perc_aperto": 0.0,
+      "perc_reachable": 0.0,
+      "total": 43,
+      "fonte": "source_check"
     }
   },
   "datasets_in_use": [
@@ -110,11 +97,9 @@
   ],
   "signals": [
     {
-      "type": "no signal",
+      "type": "validated_metrics",
       "result": "stabile",
-      "detail": "370 item (package_search), in linea con la baseline.",
-      "metric_value": 370,
-      "suggested_action": "nessuna"
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {

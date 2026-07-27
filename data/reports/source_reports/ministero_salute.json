@@ -1,6 +1,6 @@
 {
   "source_id": "ministero_salute",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T08:09:47+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. Anagrafiche sanitarie nazionali: farmacie, parafarmacie, posti letto, personale SSN, ASL, dispositivi medici, fitosanitari. I file raw puntano a dati.salute.gov.it (portale in migrazione a Gatsby, alcuni URL aggiornati). Complementare a dati_salute (csv_magnet) per il catalogo completo del portale diretto.",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 51,
     "method": "package_search",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T07:59:44+00:00",
     "baseline_value": 51,
     "baseline_date": "2026-05-24",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.2,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -35,60 +35,55 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
-    "total_scored": 48,
+    "last_run": "2026-07-27T08:09:47Z",
+    "total_scored": 44,
     "reachable": 2,
-    "intake_candidates": 0,
-    "needs_review": 39,
+    "csv_count": 40,
+    "with_csv_schema": 2,
+    "avg_readiness": 1.3,
     "top_items": [
       {
-        "name": "dispositivi-medici-anno-2017",
-        "score": 35.0,
-        "year_range": [
-          2012,
-          2017
-        ],
-        "format": "CSV",
-        "reachable": false
-      },
-      {
-        "name": "elenco-nazionale-direttori",
-        "score": 35.0,
+        "name": "ministero_salute/dgc-acquisiti",
+        "score": 10,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
-      },
-      {
-        "name": "dgc-acquisiti",
-        "score": 35.0,
-        "year_range": null,
-        "format": "CSV",
+        "format": "csv,json",
         "reachable": true
       },
       {
-        "name": "dgc-emessi",
-        "score": 35.0,
+        "name": "ministero_salute/dgc-emessi",
+        "score": 10,
         "year_range": null,
-        "format": "CSV",
+        "format": "csv,json",
         "reachable": true
       },
       {
-        "name": "dispositivi-medici-anno-2016",
-        "score": 34.0,
-        "year_range": [
-          2012,
-          2016
-        ],
-        "format": "CSV",
+        "name": "ministero_salute/apparecchiature-sanitarie",
+        "score": 1,
+        "year_range": null,
+        "format": "csv",
+        "reachable": false
+      },
+      {
+        "name": "ministero_salute/atti-di-concessione",
+        "score": 1,
+        "year_range": null,
+        "format": "csv",
+        "reachable": false
+      },
+      {
+        "name": "ministero_salute/aziende-sanitarie-locali",
+        "score": 1,
+        "year_range": null,
+        "format": "csv",
         "reachable": false
       }
     ],
-    "coverage_pct": 94.1,
+    "coverage_pct": 86.3,
     "formato_aperto": {
       "score": 10.0,
-      "perc_aperto": 100.0,
-      "perc_reachable": 9.1,
-      "total": 22,
+      "perc_aperto": 0.0,
+      "perc_reachable": 4.5,
+      "total": 44,
       "fonte": "source_check"
     }
   },
@@ -116,11 +111,9 @@
   ],
   "signals": [
     {
-      "type": "no signal",
+      "type": "validated_metrics",
       "result": "stabile",
-      "detail": "51 item (package_search), in linea con la baseline.",
-      "metric_value": 51,
-      "suggested_action": "nessuna"
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {

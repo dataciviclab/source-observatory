@@ -1,0 +1,170 @@
+{
+  "pipeline_version": 1,
+  "generated_at": "2026-07-27T08:09:45Z",
+  "total_groups": 11129,
+  "reachable": 7004,
+  "unreachable": 4125,
+  "csv_with_schema": 2914,
+  "by_source": {
+    "openbdap": {
+      "total": 3838,
+      "reachable": 7,
+      "csv": 0
+    },
+    "istat_sdmx": {
+      "total": 3574,
+      "reachable": 3574,
+      "csv": 0
+    },
+    "inps": {
+      "total": 1809,
+      "reachable": 1807,
+      "csv": 1736
+    },
+    "openga": {
+      "total": 405,
+      "reachable": 405,
+      "csv": 405
+    },
+    "unioncamere": {
+      "total": 256,
+      "reachable": 256,
+      "csv": 255
+    },
+    "opencoesione": {
+      "total": 248,
+      "reachable": 238,
+      "csv": 211
+    },
+    "dati_cultura": {
+      "total": 213,
+      "reachable": 213,
+      "csv": 0
+    },
+    "dati_senato": {
+      "total": 100,
+      "reachable": 100,
+      "csv": 0
+    },
+    "lavoro_opendata": {
+      "total": 83,
+      "reachable": 0,
+      "csv": 0
+    },
+    "ispra_linked_data": {
+      "total": 70,
+      "reachable": 70,
+      "csv": 0
+    },
+    "mit_opendata": {
+      "total": 56,
+      "reachable": 44,
+      "csv": 44
+    },
+    "anac": {
+      "total": 48,
+      "reachable": 47,
+      "csv": 47
+    },
+    "ministero_salute": {
+      "total": 44,
+      "reachable": 2,
+      "csv": 2
+    },
+    "mimit_rna": {
+      "total": 43,
+      "reachable": 0,
+      "csv": 0
+    },
+    "agid": {
+      "total": 40,
+      "reachable": 5,
+      "csv": 5
+    },
+    "ministero_interno": {
+      "total": 33,
+      "reachable": 33,
+      "csv": 29
+    },
+    "art_opendata": {
+      "total": 32,
+      "reachable": 32,
+      "csv": 32
+    },
+    "adm_opendata": {
+      "total": 31,
+      "reachable": 31,
+      "csv": 31
+    },
+    "aifa": {
+      "total": 30,
+      "reachable": 29,
+      "csv": 29
+    },
+    "mim_opendata": {
+      "total": 28,
+      "reachable": 28,
+      "csv": 28
+    },
+    "opencivitas": {
+      "total": 27,
+      "reachable": 0,
+      "csv": 0
+    },
+    "noipa_sparql": {
+      "total": 21,
+      "reachable": 21,
+      "csv": 0
+    },
+    "mur_ustat": {
+      "total": 17,
+      "reachable": 0,
+      "csv": 0
+    },
+    "consip_open_data": {
+      "total": 16,
+      "reachable": 16,
+      "csv": 16
+    },
+    "ministero_turismo_opendata": {
+      "total": 14,
+      "reachable": 14,
+      "csv": 14
+    },
+    "pagopa": {
+      "total": 12,
+      "reachable": 12,
+      "csv": 11
+    },
+    "mef_irpef": {
+      "total": 11,
+      "reachable": 9,
+      "csv": 9
+    },
+    "giustizia_statistiche": {
+      "total": 8,
+      "reachable": 0,
+      "csv": 0
+    },
+    "inail_opendata": {
+      "total": 7,
+      "reachable": 4,
+      "csv": 4
+    },
+    "aci": {
+      "total": 5,
+      "reachable": 2,
+      "csv": 2
+    },
+    "agcm": {
+      "total": 5,
+      "reachable": 5,
+      "csv": 4
+    },
+    "cortecostituzionale": {
+      "total": 5,
+      "reachable": 0,
+      "csv": 0
+    }
+  }
+}

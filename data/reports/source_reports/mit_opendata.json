@@ -1,6 +1,6 @@
 {
   "source_id": "mit_opendata",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T08:09:47+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Dataset del Ministero Infrastrutture e Trasporti via dati.gov.it (portale MIT dati.mit.gov.it non raggiungibile da 2026-05). 70 dataset: contratti pubblici, incidentalità, trasporti, opere pubbliche. CC-BY-4.0.",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 70,
     "method": "package_search",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T07:59:44+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-06-22",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.2,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -49,66 +49,55 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
-    "total_scored": 62,
-    "reachable": 35,
-    "intake_candidates": 22,
-    "needs_review": 38,
+    "last_run": "2026-07-27T08:09:47Z",
+    "total_scored": 56,
+    "reachable": 44,
+    "csv_count": 46,
+    "with_csv_schema": 44,
+    "avg_readiness": 7.9,
     "top_items": [
       {
-        "name": "contratti-di-programma-rfi-e-anas",
-        "score": 100.0,
-        "year_range": [
-          1988,
-          2015
-        ],
-        "format": "CSV",
-        "reachable": true
-      },
-      {
-        "name": "posti-barca",
-        "score": 100.0,
-        "year_range": [
-          2016,
-          2098
-        ],
-        "format": "CSV",
-        "reachable": true
-      },
-      {
-        "name": "storico-interventi-previsti-dai-contratti-di-programma-rfi-e-anas",
-        "score": 100.0,
-        "year_range": [
-          1988,
-          2015
-        ],
-        "format": "CSV",
-        "reachable": true
-      },
-      {
-        "name": "interventi-autorita-portuali",
-        "score": 98.0,
-        "year_range": [
-          1997,
-          2015
-        ],
-        "format": "CSV",
-        "reachable": true
-      },
-      {
-        "name": "interventi-di-recupero-di-edilizia-residenziale-pubblica",
-        "score": 75.0,
+        "name": "mit_opendata/72d632e5-56d9-4d00-810e-89c24002943f",
+        "score": 10,
         "year_range": null,
-        "format": "CSV",
+        "format": "csv,json,pdf",
+        "reachable": true
+      },
+      {
+        "name": "mit_opendata/aeroporti-certificati",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,json",
+        "reachable": true
+      },
+      {
+        "name": "mit_opendata/autorita-di-sistema-portuale-adsp",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,json",
+        "reachable": true
+      },
+      {
+        "name": "mit_opendata/banca-dati-servizio-contratti-pubblici-scp",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,json",
+        "reachable": true
+      },
+      {
+        "name": "mit_opendata/concessioni-demaniali-marittime-a",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,zip",
         "reachable": true
       }
     ],
-    "coverage_pct": 88.6,
+    "coverage_pct": 80.0,
     "formato_aperto": {
-      "score": 90.0,
-      "perc_aperto": 100.0,
-      "perc_reachable": 57.6,
-      "total": 59,
+      "score": 5.0,
+      "perc_aperto": 0.0,
+      "perc_reachable": 78.6,
+      "total": 56,
       "fonte": "source_check"
     }
   },
@@ -124,11 +113,9 @@
   ],
   "signals": [
     {
-      "type": "no signal",
+      "type": "validated_metrics",
       "result": "stabile",
-      "detail": "70 item (package_search), in linea con la baseline.",
-      "metric_value": 70,
-      "suggested_action": "nessuna"
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {

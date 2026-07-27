@@ -1,6 +1,6 @@
 {
   "source_id": "mur_ustat",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T08:09:47+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting MUR). Sostituisce fonte diretta dati-ustat.mur.gov.it che aveva ConnectTimeout. 69 dataset su istruzione universitaria (contribuzione atenei, DSU regionale, collegi, AFAM).",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 69,
     "method": "package_search",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T07:59:44+00:00",
     "baseline_value": 69,
     "baseline_date": "2026-05-24",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.2,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -55,69 +55,55 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
-    "total_scored": 69,
+    "last_run": "2026-07-27T08:09:47Z",
+    "total_scored": 17,
     "reachable": 0,
-    "intake_candidates": 0,
-    "needs_review": 49,
+    "csv_count": 17,
+    "with_csv_schema": 0,
+    "avg_readiness": 1.0,
     "top_items": [
       {
-        "name": "2006-2015-contribuzione-e-interventi-afam",
-        "score": 39.0,
-        "year_range": [
-          2006,
-          2015
-        ],
-        "format": "CSV",
+        "name": "mur_ustat/analisi-dati-e-indicatori",
+        "score": 1,
+        "year_range": null,
+        "format": "pdf,csv",
         "reachable": false
       },
       {
-        "name": "2019-contribuzione-e-interventi-afam",
-        "score": 30.0,
-        "year_range": [
-          2019,
-          2019
-        ],
-        "format": "CSV",
+        "name": "mur_ustat/collegi-universitari",
+        "score": 1,
+        "year_range": null,
+        "format": "xlsx,csv,arc,pdf",
         "reachable": false
       },
       {
-        "name": "2023-contribuzione-e-interventi-afam",
-        "score": 30.0,
-        "year_range": [
-          2023,
-          2023
-        ],
-        "format": "CSV",
+        "name": "mur_ustat/contribuzione-e-interventi-afam",
+        "score": 1,
+        "year_range": null,
+        "format": "xlsx,pdf,csv",
         "reachable": false
       },
       {
-        "name": "2012-diritto-allo-studio-universitario-dsu-regionale",
-        "score": 30.0,
-        "year_range": [
-          2012,
-          2012
-        ],
-        "format": "CSV",
+        "name": "mur_ustat/contribuzione-e-interventi-atenei",
+        "score": 1,
+        "year_range": null,
+        "format": "csv,xlsx,pdf",
         "reachable": false
       },
       {
-        "name": "2022-contribuzione-e-interventi-afam",
-        "score": 30.0,
-        "year_range": [
-          2022,
-          2022
-        ],
-        "format": "CSV",
+        "name": "mur_ustat/dati-per-bilancio-di-genere",
+        "score": 1,
+        "year_range": null,
+        "format": "csv,arc,xlsx",
         "reachable": false
       }
     ],
-    "coverage_pct": 100.0,
+    "coverage_pct": 24.6,
     "formato_aperto": {
       "score": 10.0,
-      "perc_aperto": 100.0,
+      "perc_aperto": 0.0,
       "perc_reachable": 0.0,
-      "total": 69,
+      "total": 17,
       "fonte": "source_check"
     }
   },
@@ -137,19 +123,17 @@
   ],
   "signals": [
     {
-      "type": "no signal",
+      "type": "validated_metrics",
       "result": "stabile",
-      "detail": "69 item (package_search), in linea con la baseline.",
-      "metric_value": 69,
-      "suggested_action": "nessuna"
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {
-    "label": "STABLE",
-    "score": "stable",
+    "label": "PARTIALLY_SCOPED",
+    "score": "partial",
     "triggers": [
-      "all_green"
+      "source_check_partial"
     ],
-    "next_action": null
+    "next_action": "complete source-check"
   }
 }

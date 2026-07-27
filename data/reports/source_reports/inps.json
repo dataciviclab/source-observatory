@@ -1,17 +1,17 @@
 {
   "source_id": "inps",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T08:09:47+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
     "source_id": "inps",
     "protocol": "ckan",
-    "base_url": "https://serviziweb2.inps.it/odapi/package_list?limit=1",
+    "base_url": "https://opendata.inps.it/opendata/api/3/action/package_list?limit=1",
     "source_kind": "catalog",
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN INPS — inventory via package_list + package_show_sample (current_package_list_with_resources lento a offset alti).",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,88 +20,84 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 2323,
-    "method": "package_list",
-    "captured_at": "2026-07-20T06:29:09+00:00",
-    "baseline_value": 2323,
-    "baseline_date": "2026-04-02",
-    "freshness_hours": 0.3,
+    "total_items": 2499,
+    "method": "package_search",
+    "captured_at": "2026-07-27T07:59:44+00:00",
+    "baseline_value": 2499,
+    "baseline_date": "2026-07-18",
+    "freshness_hours": 0.2,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
-      "XLS,CSV,XML": 1378,
-      "CSV,XML": 807,
-      "XML,CSV,XLS": 121,
-      "XML,XLS,CSV": 11,
-      "XLS,XML": 3,
-      "XML,CSV": 2,
-      "XLS,CSV": 1
+      "CSV,JSON,XLS,XML": 942,
+      "CSV": 656,
+      "CSV,JSON,OWL,XLS,XML": 409,
+      "CSV,JSON,XML": 131,
+      "CSV,OWL,JSON,XLS,XML": 117,
+      "CSV,XML,RDF_TURTLE,JSON": 104,
+      "CSV,JSON,OWL,XML": 83,
+      "CSV,JSON,XLS": 13,
+      "CSV,JSON,XML,RDF_TURTLE": 12,
+      "CSV,JSON,XLSX,XML": 6,
+      "CSV,RDF_TURTLE,XML,JSON": 6,
+      "CSV,RDF_TURTLE,XML": 6,
+      "CSV,XLS,XML,JSON,OWL": 5,
+      "CSV,OWL,XLS,XML": 4,
+      "JSON": 3,
+      "JSON,CSV,XLS,XML": 1,
+      "CSV,JSON": 1
     }
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
-    "total_scored": 2263,
-    "reachable": 150,
-    "intake_candidates": 484,
-    "needs_review": 1729,
+    "last_run": "2026-07-27T08:09:47Z",
+    "total_scored": 1809,
+    "reachable": 1807,
+    "csv_count": 1807,
+    "with_csv_schema": 1736,
+    "avg_readiness": 9.9,
     "top_items": [
       {
-        "name": "prestazioni-sostegno-alla-famiglia-(assegni-maternit&#224;-del-comune)",
-        "score": 92.0,
-        "year_range": [
-          2018,
-          2018
-        ],
-        "format": "CSV",
+        "name": "inps/accertato-lordo-programmato-e-consuntivo",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,json,xls,xml",
         "reachable": true
       },
       {
-        "name": "stipendi-dipendenti-italiani-e-stranieri--per-comune,-anno-2007",
-        "score": 83.0,
-        "year_range": [
-          2006,
-          2009
-        ],
-        "format": "CSV",
+        "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-categoria-e-reddito",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,json,xls,xml",
         "reachable": true
       },
       {
-        "name": "stipendi-dipendenti-italiani-e-stranieri-per-comune,-anno-2009",
-        "score": 83.0,
-        "year_range": [
-          2006,
-          2009
-        ],
-        "format": "CSV",
+        "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-area-geografica",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,json,xls,xml",
         "reachable": true
       },
       {
-        "name": "stipendi-dipendenti-italiani-e-stranieri-per-comune,-anno-2008",
-        "score": 83.0,
-        "year_range": [
-          2006,
-          2009
-        ],
-        "format": "CSV",
+        "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-categoria",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,json,xls,xml",
         "reachable": true
       },
       {
-        "name": "stipendi-dipendenti-italiani-e-stranieri-per-comune,-anno-2010",
-        "score": 82.0,
-        "year_range": [
-          2010,
-          2012
-        ],
-        "format": "CSV",
+        "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-reddito",
+        "score": 10,
+        "year_range": null,
+        "format": "csv,json,xls,xml",
         "reachable": true
       }
     ],
-    "coverage_pct": 97.4,
+    "coverage_pct": 72.4,
     "formato_aperto": {
-      "score": 10.0,
-      "perc_aperto": 100.0,
-      "perc_reachable": 4.2,
-      "total": 2198,
+      "score": 5.0,
+      "perc_aperto": 0.0,
+      "perc_reachable": 99.9,
+      "total": 1809,
       "fonte": "source_check"
     }
   },
@@ -117,11 +113,9 @@
   ],
   "signals": [
     {
-      "type": "no signal",
+      "type": "validated_metrics",
       "result": "stabile",
-      "detail": "2323 item (package_list), in linea con la baseline.",
-      "metric_value": 2323,
-      "suggested_action": "nessuna"
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {

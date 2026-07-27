@@ -1,6 +1,6 @@
 {
   "source_id": "ispra_linked_data",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T08:09:47+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline tabellari.",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 70,
     "method": "sparql_query",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T07:59:44+00:00",
     "baseline_value": 66,
     "baseline_date": "2026-04-11",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.2,
     "delta": 4,
     "delta_pct": 6.1,
     "formats": {
@@ -37,54 +37,56 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
-    "total_scored": 15,
-    "reachable": 0,
-    "intake_candidates": 0,
-    "needs_review": 15,
+    "last_run": "2026-07-27T08:09:47Z",
+    "total_scored": 70,
+    "reachable": 70,
+    "csv_count": 0,
+    "with_csv_schema": 0,
+    "avg_readiness": 3.0,
     "top_items": [
       {
-        "name": "typologies",
-        "score": 55.0,
+        "name": "ispra_linked_data/bathing-waters-dataset",
+        "score": 3,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
       },
       {
-        "name": "capture_types",
-        "score": 20.0,
+        "name": "ispra_linked_data/contact-types",
+        "score": 3,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
       },
       {
-        "name": "certainty",
-        "score": 15.0,
+        "name": "ispra_linked_data/controlled-vocabulary-on-euring-data",
+        "score": 3,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
       },
       {
-        "name": "implementation-plan-steps",
-        "score": 15.0,
+        "name": "ispra_linked_data/dataset-dei-luoghi-amministrativi-e-ambientali",
+        "score": 3,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
       },
       {
-        "name": "instability-categories",
-        "score": 15.0,
+        "name": "ispra_linked_data/dataset-euring-protocol-engine-dati-dellattivita-di-inanellamento-degli-uccelli-",
+        "score": 3,
         "year_range": null,
-        "format": "CSV",
-        "reachable": false
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
       }
     ],
-    "coverage_pct": 21.4,
+    "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 90.0,
-      "perc_aperto": 100.0,
+      "score": 5.0,
+      "perc_aperto": 0.0,
+      "perc_reachable": 100.0,
       "total": 70,
-      "fonte": "inventory"
+      "fonte": "source_check"
     }
   },
   "datasets_in_use": [
@@ -107,19 +109,16 @@
   ],
   "signals": [
     {
-      "type": "no signal",
+      "type": "validated_metrics",
       "result": "stabile",
-      "detail": "70 item (sparql_query), in linea con la baseline.",
-      "metric_value": 70,
-      "suggested_action": "nessuna"
+      "detail": "Metriche da validated.parquet."
     }
   ],
   "operational_verdict": {
     "label": "INVENTORY_CHANGED",
     "score": "changed",
     "triggers": [
-      "inventory_changed",
-      "source_check_partial"
+      "inventory_changed"
     ],
     "next_action": "review inventory changes"
   }
