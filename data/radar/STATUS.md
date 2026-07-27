@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-07-26
+Ultimo run: 2026-07-27
 
 ## Sommario
 
@@ -32,7 +32,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
 | istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
-| anac | catalog | ckan | catalog-watch | GREEN | 200 | anac_aggiudicatari, anac_aggiudicazioni, anac_bandi_gara, anac_partecipanti, anac_subappalti |
+| anac | catalog | ckan | catalog-watch | GREEN | 200 | anac_aggiudicatari, anac_aggiudicazioni, anac_bandi_gara, anac_collaudo, anac_cup, anac_partecipanti, anac_stati_avanzamento, anac_subappalti |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_entrate_stato, bdap_lea, bdap_spese_stato, dipendenti_pubblici |
 | inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
@@ -56,7 +56,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | cortecostituzionale | catalog | html | catalog-watch | GREEN | 200 | - |
 | terna_opendata | catalog | rest | radar-only | GREEN | 200 | terna_electrical_energy_by_sector, terna_electricity_by_source |
 | ministero_interno | catalog | ckan | catalog-watch | GREEN | 200 | - |
-| agid | catalog | ckan | catalog-watch | GREEN | 200 | ipa_aree_organizzative_omogenee, ipa_enti, ipa_istat_mapping, ipa_unita_organizzative |
+| agid | catalog | ckan | catalog-watch | GREEN | 200 | ipa_aree_organizzative_omogenee, ipa_enti, ipa_unita_organizzative |
 | noipa_sparql | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | mimit_rna | catalog | ckan | catalog-watch | GREEN | 200 | rna_aiuti_stato, rna_misure |
 | ministero_turismo_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
