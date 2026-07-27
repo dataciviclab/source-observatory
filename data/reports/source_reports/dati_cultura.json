@@ -1,6 +1,6 @@
 {
   "source_id": "dati_cultura",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T07:04:02+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check completato con verdict catalog-watch.",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 213,
     "method": "sparql_query",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T06:47:09+00:00",
     "baseline_value": 150,
     "baseline_date": "2026-04-11",
     "freshness_hours": 0.3,
@@ -39,13 +39,6 @@
     "intake_candidates": 5,
     "needs_review": 208,
     "top_items": [
-      {
-        "name": "conservatore-comune-citta_metropolitana-unione_di_comuni_conservatore",
-        "score": 55.0,
-        "year_range": null,
-        "format": "",
-        "reachable": true
-      },
       {
         "name": "produttore-comune-citta_metropolitana-unione_di_comuni_sp",
         "score": 55.0,
@@ -68,7 +61,14 @@
         "reachable": true
       },
       {
-        "name": "beniCulturali",
+        "name": "conservatore-comune-citta_metropolitana-unione_di_comuni_conservatore",
+        "score": 55.0,
+        "year_range": null,
+        "format": "",
+        "reachable": true
+      },
+      {
+        "name": "produttore-provincia-provincia_autonoma_sp",
         "score": 45.0,
         "year_range": null,
         "format": "",

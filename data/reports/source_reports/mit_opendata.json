@@ -1,6 +1,6 @@
 {
   "source_id": "mit_opendata",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T07:04:02+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Dataset del Ministero Infrastrutture e Trasporti via dati.gov.it (portale MIT dati.mit.gov.it non raggiungibile da 2026-05). 70 dataset: contratti pubblici, incidentalità, trasporti, opere pubbliche. CC-BY-4.0.",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 70,
     "method": "package_search",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T06:47:09+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-06-22",
     "freshness_hours": 0.3,
@@ -49,22 +49,12 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
+    "last_run": "2026-07-27 06:49:15+00:00",
     "total_scored": 62,
     "reachable": 35,
     "intake_candidates": 22,
     "needs_review": 38,
     "top_items": [
-      {
-        "name": "contratti-di-programma-rfi-e-anas",
-        "score": 100.0,
-        "year_range": [
-          1988,
-          2015
-        ],
-        "format": "CSV",
-        "reachable": true
-      },
       {
         "name": "posti-barca",
         "score": 100.0,
@@ -77,6 +67,16 @@
       },
       {
         "name": "storico-interventi-previsti-dai-contratti-di-programma-rfi-e-anas",
+        "score": 100.0,
+        "year_range": [
+          1988,
+          2015
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "contratti-di-programma-rfi-e-anas",
         "score": 100.0,
         "year_range": [
           1988,

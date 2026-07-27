@@ -1,6 +1,6 @@
 {
   "source_id": "dati_camera",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T07:04:02+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 104,
     "method": "sparql_query",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T06:47:09+00:00",
     "baseline_value": 104,
     "baseline_date": "2026-04-11",
     "freshness_hours": 0.3,
@@ -40,16 +40,6 @@
     "needs_review": 102,
     "top_items": [
       {
-        "name": "riforma-elettorale-collegi-uninominali",
-        "score": 60.0,
-        "year_range": [
-          2015,
-          2015
-        ],
-        "format": "",
-        "reachable": true
-      },
-      {
         "name": "riforma-elettorale-collegi-plurinominali",
         "score": 60.0,
         "year_range": [
@@ -60,14 +50,24 @@
         "reachable": true
       },
       {
-        "name": "relatori-e-relazioni",
+        "name": "riforma-elettorale-collegi-uninominali",
+        "score": 60.0,
+        "year_range": [
+          2015,
+          2015
+        ],
+        "format": "",
+        "reachable": true
+      },
+      {
+        "name": "relatori-e-relazioni-19",
         "score": 35.0,
         "year_range": null,
         "format": "",
         "reachable": true
       },
       {
-        "name": "relatori-e-relazioni-19",
+        "name": "relatori-e-relazioni",
         "score": 35.0,
         "year_range": null,
         "format": "",

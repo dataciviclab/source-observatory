@@ -1,6 +1,6 @@
 {
   "source_id": "adm_opendata",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T07:04:02+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (ADM). 31 dataset CSV su vigilanza giochi (scommesse, lotto, bingo, online, apparecchi), fiscalità giochi (raccolta, vincite, spesa), conti gioco attivi per regione/età/genere, vendite tabacchi, rete vendita, accise (energetici, gas, elettricità, alcolici), personale ADM. Copertura 2022-2023, granularità regionale. CSV su dati.gov.it. FOIA #16 aperta per catalogo completo.",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 31,
     "method": "package_search",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T06:47:09+00:00",
     "baseline_value": 31,
     "baseline_date": "2026-07-16",
     "freshness_hours": 0.3,
@@ -33,12 +33,22 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
+    "last_run": "2026-07-27 06:49:15+00:00",
     "total_scored": 31,
     "reachable": 31,
     "intake_candidates": 24,
     "needs_review": 7,
     "top_items": [
+      {
+        "name": "bcde001eef9247887f1fe48afbb8649a0c12084116795b2138d797aabbfbbb9c",
+        "score": 61.0,
+        "year_range": [
+          2022,
+          2023
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
       {
         "name": "ffd893911d3e1d0b500c1c4634c005cc5715d302598de70742da8d821b27ac8a",
         "score": 61.0,
@@ -60,7 +70,7 @@
         "reachable": true
       },
       {
-        "name": "5dce81d0aa20e168c3ddb7f4972dd196f0b53f7085c805f614ea655c5bf9f996",
+        "name": "bf46ac6879b0657d93ca650486e0718beb4f95fdadde2220d013e897f766f602",
         "score": 61.0,
         "year_range": [
           2022,
@@ -70,17 +80,7 @@
         "reachable": true
       },
       {
-        "name": "38b1f236f469c8290ecdd01c2f89ea30c3be2c3adeb34e9eaed89825830f4c80",
-        "score": 61.0,
-        "year_range": [
-          2022,
-          2023
-        ],
-        "format": "CSV",
-        "reachable": true
-      },
-      {
-        "name": "2576ed5ea84db40e6ed29cb371d436d7b5134e7719162b6fb0cc7b7b8abbb177",
+        "name": "3b44426f6f54180ebf5f9729036c01b02e1fc7e1dd3a129f3b8b2c4169c600a7",
         "score": 61.0,
         "year_range": [
           2022,

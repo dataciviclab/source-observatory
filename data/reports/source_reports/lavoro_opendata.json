@@ -1,6 +1,6 @@
 {
   "source_id": "lavoro_opendata",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T07:04:02+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting Ministero del Lavoro). Sostituisce fonte diretta dati.lavoro.gov.it che aveva WAF. 83 dataset su lavoro (rapporti attivati/cessati, missioni, qualifiche professionali, genere, settore ATECO, ripartizione geografica).",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 83,
     "method": "package_search",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T06:47:09+00:00",
     "baseline_value": 83,
     "baseline_date": "2026-05-24",
     "freshness_hours": 0.3,
@@ -35,7 +35,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
+    "last_run": "2026-07-27 06:49:15+00:00",
     "total_scored": 83,
     "reachable": 0,
     "intake_candidates": 2,
@@ -62,14 +62,7 @@
         "reachable": false
       },
       {
-        "name": "rapporto_annuale___tabella_05_02___rapporti_di_lavoro_cessati_per_regione_e_classe_di_durata_ef",
-        "score": 35.0,
-        "year_range": null,
-        "format": "CSV",
-        "reachable": false
-      },
-      {
-        "name": "rapporto_annuale___tabella_05_03___rapporti_di_lavoro_cessati_per_regione_e_classe_di_durata_ef",
+        "name": "rapporto_annuale___tabella_06_03___attivazioni_di_tirocini_extracurriculari_per_regione__valori",
         "score": 35.0,
         "year_range": null,
         "format": "CSV",
@@ -77,6 +70,13 @@
       },
       {
         "name": "rapporto_annuale___tabella_05_05___rapporti_di_lavoro_cessati_per_regione_e_motivo_di_cessazion",
+        "score": 35.0,
+        "year_range": null,
+        "format": "CSV",
+        "reachable": false
+      },
+      {
+        "name": "rapporto_annuale___tabella_05_03___rapporti_di_lavoro_cessati_per_regione_e_classe_di_durata_ef",
         "score": 35.0,
         "year_range": null,
         "format": "CSV",

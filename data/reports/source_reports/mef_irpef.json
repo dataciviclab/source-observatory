@@ -1,6 +1,6 @@
 {
   "source_id": "mef_irpef",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T07:04:02+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale MEF Dipartimento Finanze — Open Data IRPEF comunale. Dati fiscali regionali per tipo reddito, classi, sesso. Alta rilevanza civica per analisi disuguaglianza e gettito regionale.",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 147,
     "method": "csv_magnet_homepage_direct",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T06:47:09+00:00",
     "baseline_value": 147,
     "baseline_date": "2026-05-03",
     "freshness_hours": 0.3,
@@ -38,22 +38,12 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
+    "last_run": "2026-07-27 06:49:15+00:00",
     "total_scored": 119,
     "reachable": 81,
     "intake_candidates": 27,
     "needs_review": 92,
     "top_items": [
-      {
-        "name": "REG",
-        "score": 60.0,
-        "year_range": [
-          2021,
-          2021
-        ],
-        "format": "CSV",
-        "reachable": true
-      },
       {
         "name": "REG",
         "score": 60.0,
@@ -90,6 +80,16 @@
         "year_range": [
           2018,
           2018
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "REG",
+        "score": 60.0,
+        "year_range": [
+          2021,
+          2021
         ],
         "format": "CSV",
         "reachable": true

@@ -1,6 +1,6 @@
 {
   "source_id": "agcm",
-  "generated_at": "2026-07-20T06:45:41+00:00",
+  "generated_at": "2026-07-27T07:04:02+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (AGCM). 53 dataset su concorrenza e mercato: rating di legalita' (elenchi settimanali imprese con rating), operazioni di concentrazione 2021-2025.\n",
-    "last_probed": "2026-07-20"
+    "last_probed": "2026-07-27"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 54,
     "method": "package_search",
-    "captured_at": "2026-07-20T06:29:09+00:00",
+    "captured_at": "2026-07-27T06:47:09+00:00",
     "baseline_value": 53,
     "baseline_date": "2026-06-04",
     "freshness_hours": 0.3,
@@ -34,7 +34,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-20 06:31:02+00:00",
+    "last_run": "2026-07-27 06:49:15+00:00",
     "total_scored": 54,
     "reachable": 29,
     "intake_candidates": 3,
