@@ -88,7 +88,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/reports/ data/pipeline/validated.parquet data/pipeline/summary.json
+          git add -f data/reports/ data/pipeline/validated.parquet data/pipeline/summary.json
           git add -f data/catalog_inventory/generated/catalog_inventory_latest.parquet \
                      data/catalog_inventory/generated/catalog_inventory_report.json
           if git diff --cached --quiet; then
