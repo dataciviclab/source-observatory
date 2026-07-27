@@ -60,22 +60,17 @@ inps:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
-  base_url: https://serviziweb2.inps.it/odapi/package_list?limit=1
+  base_url: https://opendata.inps.it/opendata/api/3/action/package_list?limit=1
   inventory:
     timeout: 180
-    package_show_sample: true
-    package_show_timeout: 5
-    sample_size: 10000
   last_probed: '2026-07-27'
   catalog_baseline:
-    captured_at: '2026-04-02'
+    captured_at: '2026-07-18'
     metric: package_count
-    value: 2323
-    method: package_list
+    value: 2499
+    method: package_search
     reliability: high
-    note: Inventory via package_list + package_show_sample (16 workers). 
-      current_package_list_with_resources testato ma scartato per lentezza a 
-      offset alti. package_show_sample più veloce.
+    note: NUOVO portale opendata.inps.it. Sostituisce il vecchio serviziweb2.inps.it/odapi/
   verdict: go
   note: Catalogo CKAN INPS — inventory via package_list + package_show_sample 
     (current_package_list_with_resources lento a offset alti).
