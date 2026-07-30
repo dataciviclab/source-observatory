@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-07-29
+Ultimo run: 2026-07-30
 
 ## Sommario
 
 - Fonti controllate: 36
-- GREEN: 36
-- YELLOW: 0
+- GREEN: 35
+- YELLOW: 1
 - RED: 0
 
 ## Tipi sorgente
@@ -46,7 +46,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | mur_ustat | catalog | ckan | catalog-watch | GREEN | 200 | mur_contribuzione_universitaria, mur_immatricolati, mur_iscritti |
 | opencoesione | catalog | ckan | catalog-watch | GREEN | 200 | opencoesione_progetti |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
-| opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso, opencivitas_glossario, opencivitas_indicatori |
+| opencivitas | catalog | html | catalog-watch | YELLOW | - | opencivitas_fsc_2025_rso, opencivitas_glossario, opencivitas_indicatori |
 | aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
 | dait | catalog | html | radar-only | GREEN | 200 | dait_amministratori_locali |
 | eligendo | catalog | html | radar-only | GREEN | 200 | elezioni_comunali, elezioni_europee, elezioni_referendum, elezioni_regionali |
@@ -70,5 +70,5 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
-- `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
+- `opencivitas`: Retry timeout/connection: Timeout (ConnectTimeout)
 - `aifa`: HTTP 200 | content-type: text/html;charset=UTF-8 | url finale: https://www.aifa.gov.it/dati-aifa | SSL verify failed; fallback verify=False used (SSLError)
