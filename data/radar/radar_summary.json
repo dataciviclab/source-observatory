@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-07-30T05:52:20.163072+00:00",
-  "probe_date": "2026-07-30",
+  "generated_at": "2026-07-31T06:22:13.418651+00:00",
+  "probe_date": "2026-07-31",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 35,
-    "YELLOW": 1,
+    "GREEN": 34,
+    "YELLOW": 2,
     "RED": 0
   },
   "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
