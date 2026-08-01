@@ -13,6 +13,8 @@ import pytest
 
 from scripts._constants import format_score as _format_score
 from scripts.collectors._validate_base import (
+    _extract_year_range,
+    _is_year_column,
     pick_best_url,
     probe_reachability,
     sniff_csv_schema,
@@ -211,3 +213,55 @@ class TestValidateGroup:
         assert result["reachable"] is None
         assert "note" in result
         assert "Non-CSV" in result["note"]
+
+
+# ── Unit: year extraction (_extract_year_range) ───────────────────────────────
+
+
+class TestExtractYearRange:
+    def test_year_from_column_names(self):
+        """Anni nei nomi colonna (es. anno_2020)."""
+        ymin, ymax = _extract_year_range(
+            raw=None,
+            columns=["comune", "anno_2018", "valore"],
+            sample=[],
+            url="https://example.test/data.csv",
+        )
+        assert (ymin, ymax) == (2018, 2018)
+
+    def test_year_from_filename(self):
+        """Anni nel filename (es. beneficiari_2007-2013.zip)."""
+        ymin, ymax = _extract_year_range(
+            raw=None,
+            columns=["comune", "valore"],
+            sample=[],
+            url="https://example.test/beneficiari_2007-2013.zip",
+        )
+        assert (ymin, ymax) == (2007, 2013)
+
+    def test_year_from_values_via_duckdb(self):
+        """Anni dai valori di una colonna-anno (ANNO), tipizzati via DuckDB."""
+        csv_bytes = b"ANNO,REGIONE,VALORE\n2018,Lazio,1\n2019,Lazio,2\n2020,Lazio,3\n"
+        ymin, ymax = _extract_year_range(
+            raw=csv_bytes,
+            columns=["ANNO", "REGIONE", "VALORE"],
+            sample=[],
+            url="https://example.test/data.csv",
+        )
+        assert (ymin, ymax) == (2018, 2020)
+
+    def test_no_year_returns_none(self):
+        ymin, ymax = _extract_year_range(
+            raw=b"COMUNE,VALORE\nRoma,1\n",
+            columns=["COMUNE", "VALORE"],
+            sample=[],
+            url="https://example.test/data.csv",
+        )
+        assert (ymin, ymax) == (None, None)
+
+    def test_is_year_column(self):
+        assert _is_year_column("ANNO")
+        assert _is_year_column("time_period")
+        assert _is_year_column("anno di riferimento")
+        assert not _is_year_column("comune")
+        assert not _is_year_column("valore")

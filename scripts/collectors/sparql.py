@@ -82,10 +82,15 @@ def collect(source_id: str, source_cfg: dict, captured_at: str) -> CollectorResu
     return CollectorResult(rows=rows)
 
 
-def validate_items(items: list[dict]) -> dict[str, Any]:
+def validate_items(
+    items: list[dict],
+    client: Any | None = None,  # noqa: ARG001 — SPARQL non riusa il client HTTP tabulare
+) -> dict[str, Any]:
     """Validate a group of SPARQL items.
 
     Checks endpoint reachability and runs a simple COUNT query.
+    ``client`` accettato per firma uniforme col validatore tabulare,
+    ma ignorato (SPARQL usa il proprio path HTTP).
     """
     if not items:
         return {

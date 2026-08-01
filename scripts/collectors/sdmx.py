@@ -97,12 +97,17 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     return CollectorResult(rows=rows)
 
 
-def validate_items(items: list[dict[str, Any]]) -> dict[str, Any]:
+def validate_items(
+    items: list[dict[str, Any]],
+    client: Any | None = None,  # noqa: ARG001 — SDMX non fa probe HTTP
+) -> dict[str, Any]:
     """Valida un gruppo di item SDMX.
 
     SDMX non supporta HEAD/HTTP probe. La validazione si basa
     sui metadati gia' raccolti dal collector durante l'inventory:
     se ha api_base_url e distribution_url → raggiungibile.
+    ``client`` accettato per firma uniforme col validatore tabulare,
+    ma ignorato (SDMX non fa HTTP qui).
     """
     if not items:
         return {
