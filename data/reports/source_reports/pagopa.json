@@ -1,6 +1,6 @@
 {
   "source_id": "pagopa",
-  "generated_at": "2026-07-27T08:09:47+00:00",
+  "generated_at": "2026-08-01T14:09:21+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. 8 dataset: pagoPA (transazioni per anno, mese, fascia importo, categoria ente), IO App (messaggi, geografia enti e servizi), SEND (notifiche per ambito, geografia comuni, numero notifiche). Dati su digitalizzazione pagamenti PA e adozione piattaforme digitali (IO, SEND).",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-08-01"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 12,
     "method": "package_search",
-    "captured_at": "2026-07-27T07:59:44+00:00",
+    "captured_at": "2026-08-01T13:59:26+00:00",
     "baseline_value": 8,
     "baseline_date": "2026-06-11",
     "freshness_hours": 0.2,
@@ -33,44 +33,44 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27T08:09:47Z",
+    "last_run": "2026-08-01T14:09:21Z",
     "total_scored": 12,
     "reachable": 12,
     "csv_count": 12,
-    "with_csv_schema": 11,
-    "avg_readiness": 9.6,
+    "with_csv_schema": 12,
+    "avg_readiness": 8.8,
     "top_items": [
       {
         "name": "pagopa/io-distribuzione-geografica-enti-e-servizi",
-        "score": 10,
+        "score": 9,
         "year_range": null,
         "format": "csv,json",
         "reachable": true
       },
       {
         "name": "pagopa/pagopa-distribuzione-del-numero-di-transazioni-per-fascia-di-importo-e-categoria",
-        "score": 10,
+        "score": 9,
         "year_range": null,
         "format": "csv,json",
         "reachable": true
       },
       {
         "name": "pagopa/pagopa-distribuzione-del-numero-di-transazioni-valore-economico-ed-enti-creditor",
-        "score": 10,
+        "score": 9,
         "year_range": null,
         "format": "csv,json",
         "reachable": true
       },
       {
         "name": "pagopa/pagopa-distribuzione-mensile-del-numero-di-transazioni-per-categoria-di-ente-cre",
-        "score": 10,
+        "score": 9,
         "year_range": null,
         "format": "csv,json",
         "reachable": true
       },
       {
         "name": "pagopa/send-andamento-del-numero-di-avvisi-inviati",
-        "score": 10,
+        "score": 9,
         "year_range": null,
         "format": "csv,json",
         "reachable": true

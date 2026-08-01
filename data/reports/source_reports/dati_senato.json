@@ -1,6 +1,6 @@
 {
   "source_id": "dati_senato",
-  "generated_at": "2026-07-27T08:09:47+00:00",
+  "generated_at": "2026-08-01T14:09:21+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale Open Data Senato. SPARQL endpoint Virtuoso (GET). Inventory via enumerazione named graphs (~98 grafi categoria/legislatura). Download CSV/JSON via POST form autenticato (non crawlabile). CC BY 3.0. Speculare a dati_camera ma senza DCAT catalog.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-08-01"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 100,
     "method": "named_graphs",
-    "captured_at": "2026-07-27T07:59:44+00:00",
+    "captured_at": "2026-08-01T13:59:26+00:00",
     "baseline_value": 98,
     "baseline_date": "2026-05-31",
     "freshness_hours": 0.2,
@@ -33,12 +33,12 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27T08:09:47Z",
+    "last_run": "2026-08-01T14:09:21Z",
     "total_scored": 100,
-    "reachable": 100,
+    "reachable": 98,
     "csv_count": 0,
     "with_csv_schema": 0,
-    "avg_readiness": 3.0,
+    "avg_readiness": 2.9,
     "top_items": [
       {
         "name": "dati_senato/composizione-legislatura-01",
@@ -80,7 +80,7 @@
     "formato_aperto": {
       "score": 5.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 100.0,
+      "perc_reachable": 98.0,
       "total": 100,
       "fonte": "source_check"
     }

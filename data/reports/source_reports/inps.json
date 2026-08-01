@@ -1,6 +1,6 @@
 {
   "source_id": "inps",
-  "generated_at": "2026-07-27T08:09:47+00:00",
+  "generated_at": "2026-08-01T14:09:21+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN INPS — inventory via package_list + package_show_sample (current_package_list_with_resources lento a offset alti).",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-08-01"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 2499,
     "method": "package_search",
-    "captured_at": "2026-07-27T07:59:44+00:00",
+    "captured_at": "2026-08-01T13:59:26+00:00",
     "baseline_value": 2499,
     "baseline_date": "2026-07-18",
     "freshness_hours": 0.2,
@@ -30,9 +30,9 @@
     "delta_pct": 0.0,
     "formats": {
       "CSV,JSON,XLS,XML": 942,
-      "CSV": 656,
-      "CSV,JSON,OWL,XLS,XML": 409,
-      "CSV,JSON,XML": 131,
+      "CSV": 529,
+      "CSV,JSON,OWL,XLS,XML": 411,
+      "CSV,JSON,XML": 256,
       "CSV,OWL,JSON,XLS,XML": 117,
       "CSV,XML,RDF_TURTLE,JSON": 104,
       "CSV,JSON,OWL,XML": 83,
@@ -49,45 +49,60 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27T08:09:47Z",
+    "last_run": "2026-08-01T14:09:21Z",
     "total_scored": 1809,
     "reachable": 1807,
     "csv_count": 1807,
-    "with_csv_schema": 1736,
+    "with_csv_schema": 1771,
     "avg_readiness": 9.9,
     "top_items": [
       {
         "name": "inps/accertato-lordo-programmato-e-consuntivo",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2014,
+          2015
+        ],
         "format": "csv,json,xls,xml",
         "reachable": true
       },
       {
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-categoria-e-reddito",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2015,
+          2015
+        ],
         "format": "csv,json,xls,xml",
         "reachable": true
       },
       {
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-area-geografica",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2015,
+          2015
+        ],
         "format": "csv,json,xls,xml",
         "reachable": true
       },
       {
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-categoria",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2015,
+          2015
+        ],
         "format": "csv,json,xls,xml",
         "reachable": true
       },
       {
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-reddito",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2015,
+          2015
+        ],
         "format": "csv,json,xls,xml",
         "reachable": true
       }

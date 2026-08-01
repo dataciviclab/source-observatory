@@ -1,6 +1,6 @@
 {
   "source_id": "openga",
-  "generated_at": "2026-07-27T08:09:47+00:00",
+  "generated_at": "2026-08-01T14:09:21+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale CKAN Giustizia Amministrativa — ~270 dataset su ricorsi TAR+CDS, sentenze, ordinanze, pareri. CC-BY 4.0. Aggiornamento mensile. Si incastra con civile_flussi (giustizia ordinaria).\n",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-08-01"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 436,
     "method": null,
-    "captured_at": "2026-07-27T07:59:44+00:00",
+    "captured_at": "2026-08-01T13:59:26+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "freshness_hours": 0.2,
@@ -33,7 +33,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27T08:09:47Z",
+    "last_run": "2026-08-01T14:09:21Z",
     "total_scored": 405,
     "reachable": 405,
     "csv_count": 405,
@@ -43,35 +43,50 @@
       {
         "name": "openga/tar-valle-daosta-ricorsi-pervenuti-in-materia-dappalto",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv,json,ods",
         "reachable": true
       },
       {
         "name": "openga/trga-trento-decreti",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv,json,ods",
         "reachable": true
       },
       {
         "name": "openga/cds-calendario-udienze",
         "score": 9,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv,json,ods",
         "reachable": true
       },
       {
         "name": "openga/cds-decreti",
         "score": 9,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv,json,ods",
         "reachable": true
       },
       {
         "name": "openga/cds-ordinanze",
         "score": 9,
-        "year_range": null,
+        "year_range": [
+          2024,
+          2024
+        ],
         "format": "csv,json,ods",
         "reachable": true
       }

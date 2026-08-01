@@ -1,6 +1,6 @@
 {
   "source_id": "anac",
-  "generated_at": "2026-07-27T08:09:47+00:00",
+  "generated_at": "2026-08-01T14:09:21+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting ANAC). I download raw vanno al portale diretto dati.anticorruzione.it con User-Agent browser (WAF blocca solo python-requests). 70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari, subappalti, varianti, PNRR indicatori, SOA. CC-BY-SA 4.0.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-08-01"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 70,
     "method": "package_search",
-    "captured_at": "2026-07-27T07:59:44+00:00",
+    "captured_at": "2026-08-01T13:59:26+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-05-24",
     "freshness_hours": 0.2,
@@ -43,46 +43,61 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27T08:09:47Z",
+    "last_run": "2026-08-01T14:09:21Z",
     "total_scored": 48,
     "reachable": 47,
     "csv_count": 47,
     "with_csv_schema": 47,
-    "avg_readiness": 7.9,
+    "avg_readiness": 7.5,
     "top_items": [
-      {
-        "name": "anac/1414d5b0-56b1-4702-9115-8efeecb020a3",
-        "score": 8,
-        "year_range": null,
-        "format": "ttl,json,csv",
-        "reachable": true
-      },
       {
         "name": "anac/1fd421d9-691f-4fa7-bd9f-b5ac72d8b0af",
         "score": 8,
-        "year_range": null,
+        "year_range": [
+          2016,
+          2016
+        ],
         "format": "csv,json,ttl",
         "reachable": true
       },
       {
         "name": "anac/2b188f40-94ce-49fb-9213-93e5d57d027a",
         "score": 8,
-        "year_range": null,
+        "year_range": [
+          2013,
+          2013
+        ],
         "format": "ttl,json,csv",
         "reachable": true
       },
       {
         "name": "anac/3251cd5b-10fa-495c-943a-c6f67df8b23b",
         "score": 8,
-        "year_range": null,
+        "year_range": [
+          2021,
+          2021
+        ],
         "format": "csv,ttl,json",
         "reachable": true
       },
       {
         "name": "anac/3932ba46-4153-4114-8f27-6d6ecc678fb9",
         "score": 8,
-        "year_range": null,
+        "year_range": [
+          2007,
+          2007
+        ],
         "format": "json,csv,ttl",
+        "reachable": true
+      },
+      {
+        "name": "anac/48a28e5e-a010-4671-b1b3-ccbb1fbc149b",
+        "score": 8,
+        "year_range": [
+          2020,
+          2020
+        ],
+        "format": "csv,json,ttl",
         "reachable": true
       }
     ],

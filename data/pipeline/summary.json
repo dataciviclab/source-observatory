@@ -1,14 +1,14 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-07-27T08:09:45Z",
-  "total_groups": 11129,
-  "reachable": 7004,
-  "unreachable": 4125,
-  "csv_with_schema": 2914,
+  "generated_at": "2026-08-01T14:09:19Z",
+  "total_groups": 11136,
+  "reachable": 7038,
+  "unreachable": 4098,
+  "csv_with_schema": 2993,
   "by_source": {
     "openbdap": {
-      "total": 3838,
-      "reachable": 7,
+      "total": 3845,
+      "reachable": 5,
       "csv": 0
     },
     "istat_sdmx": {
@@ -19,7 +19,7 @@
     "inps": {
       "total": 1809,
       "reachable": 1807,
-      "csv": 1736
+      "csv": 1771
     },
     "openga": {
       "total": 405,
@@ -29,7 +29,7 @@
     "unioncamere": {
       "total": 256,
       "reachable": 256,
-      "csv": 255
+      "csv": 256
     },
     "opencoesione": {
       "total": 248,
@@ -43,7 +43,7 @@
     },
     "dati_senato": {
       "total": 100,
-      "reachable": 100,
+      "reachable": 98,
       "csv": 0
     },
     "lavoro_opendata": {
@@ -68,8 +68,8 @@
     },
     "ministero_salute": {
       "total": 44,
-      "reachable": 2,
-      "csv": 2
+      "reachable": 40,
+      "csv": 40
     },
     "mimit_rna": {
       "total": 43,
@@ -84,7 +84,7 @@
     "ministero_interno": {
       "total": 33,
       "reachable": 33,
-      "csv": 29
+      "csv": 33
     },
     "art_opendata": {
       "total": 32,
@@ -134,7 +134,7 @@
     "pagopa": {
       "total": 12,
       "reachable": 12,
-      "csv": 11
+      "csv": 12
     },
     "mef_irpef": {
       "total": 11,

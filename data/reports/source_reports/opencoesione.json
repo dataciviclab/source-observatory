@@ -1,6 +1,6 @@
 {
   "source_id": "opencoesione",
-  "generated_at": "2026-07-27T08:09:47+00:00",
+  "generated_at": "2026-08-01T14:09:21+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting PCM-OpenCoesione). Sostituisce accesso diretto a opencoesione.gov.it (API REST instabile: 403/timeout). 561 dataset totali su dati.gov.it; i 3 core sono progetti, soggetti, pagamenti (CSV + Parquet). Licenza CC BY 4.0. File raw su opencoesione.gov.it. Ultimo aggiornamento contenuti: 2026-02-28.\n",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-08-01"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 561,
     "method": "package_search",
-    "captured_at": "2026-07-27T07:59:44+00:00",
+    "captured_at": "2026-08-01T13:59:26+00:00",
     "baseline_value": 561,
     "baseline_date": "2026-06-03",
     "freshness_hours": 0.2,
@@ -35,45 +35,60 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27T08:09:47Z",
+    "last_run": "2026-08-01T14:09:21Z",
     "total_scored": 248,
     "reachable": 238,
     "csv_count": 238,
     "with_csv_schema": 211,
-    "avg_readiness": 7.0,
+    "avg_readiness": 6.9,
     "top_items": [
       {
         "name": "opencoesione/beneficiari-del-pon-fesr-iniziativa-pmi",
         "score": 9,
-        "year_range": null,
+        "year_range": [
+          2014,
+          2020
+        ],
         "format": "csv",
         "reachable": true
       },
       {
         "name": "opencoesione/elenco-dei-processi-valutativi",
         "score": 9,
-        "year_range": null,
+        "year_range": [
+          2014,
+          2014
+        ],
         "format": "csv",
         "reachable": true
       },
       {
         "name": "opencoesione/opportunita-di-finanziamento",
         "score": 9,
-        "year_range": null,
+        "year_range": [
+          2014,
+          2020
+        ],
         "format": "csv",
         "reachable": true
       },
       {
         "name": "opencoesione/bc467d34-9576-4cf9-b3e3-e77e804b6185",
         "score": 8,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv,bin",
         "reachable": true
       },
       {
         "name": "opencoesione/impegni",
         "score": 8,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv,bin",
         "reachable": true
       }

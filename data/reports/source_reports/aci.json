@@ -1,6 +1,6 @@
 {
   "source_id": "aci",
-  "generated_at": "2026-07-27T08:09:47+00:00",
+  "generated_at": "2026-08-01T14:09:21+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. 35 dataset ACI su parco veicolare: prime iscrizioni autovetture (per comune, alimentazione, classe euro, 2017-2024), radiazioni per demolizione. CSV su lod.aci.it in formato tidy. Incrociabile con MIT incidentalità.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-08-01"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,22 +20,22 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 35,
+    "total_items": 39,
     "method": "package_search",
-    "captured_at": "2026-07-27T07:59:44+00:00",
+    "captured_at": "2026-08-01T13:59:26+00:00",
     "baseline_value": 35,
     "baseline_date": "2026-06-11",
     "freshness_hours": 0.2,
-    "delta": 0,
-    "delta_pct": 0.0,
+    "delta": 4,
+    "delta_pct": 11.4,
     "formats": {
-      "CSV,ZIP": 29,
+      "CSV,ZIP": 33,
       "ZIP,CSV": 3,
       "ZIP": 3
     }
   },
   "source_check": {
-    "last_run": "2026-07-27T08:09:47Z",
+    "last_run": "2026-08-01T14:09:21Z",
     "total_scored": 5,
     "reachable": 2,
     "csv_count": 2,
@@ -45,14 +45,20 @@
       {
         "name": "aci/prime-iscrizioni-veicoli-nuovi-autovetture-per-ente-territoriale",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv,zip",
         "reachable": true
       },
       {
         "name": "aci/radiazioni-per-demolizione-autovetture-per-ente-territoriale",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv,zip",
         "reachable": true
       },
@@ -78,7 +84,7 @@
         "reachable": false
       }
     ],
-    "coverage_pct": 14.3,
+    "coverage_pct": 12.8,
     "formato_aperto": {
       "score": 15.0,
       "perc_aperto": 0.0,
@@ -101,11 +107,12 @@
     }
   ],
   "operational_verdict": {
-    "label": "PARTIALLY_SCOPED",
-    "score": "partial",
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
     "triggers": [
+      "inventory_changed",
       "source_check_partial"
     ],
-    "next_action": "complete source-check"
+    "next_action": "review inventory changes"
   }
 }

@@ -1,6 +1,6 @@
 {
   "source_id": "unioncamere",
-  "generated_at": "2026-07-27T08:09:47+00:00",
+  "generated_at": "2026-08-01T14:09:21+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "radar-only",
     "verdict": "watchlist",
     "note": "Fonte via dati.gov.it (Unioncamere). 352 dataset su demografia d'impresa provincia-specifici, costo unione alto. Passato a radar-only: se il catalogo publlica dati aggregati nazionali, si rivaluta.",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-08-01"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 384,
     "method": null,
-    "captured_at": "2026-07-27T07:59:44+00:00",
+    "captured_at": "2026-08-01T13:59:26+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "freshness_hours": 0.2,
@@ -33,45 +33,60 @@
     }
   },
   "source_check": {
-    "last_run": "2026-07-27T08:09:47Z",
+    "last_run": "2026-08-01T14:09:21Z",
     "total_scored": 256,
     "reachable": 256,
     "csv_count": 256,
-    "with_csv_schema": 255,
-    "avg_readiness": 9.9,
+    "with_csv_schema": 256,
+    "avg_readiness": 9.4,
     "top_items": [
       {
         "name": "unioncamere/arezzo-siena-imprese-artigiane-registrate",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv",
         "reachable": true
       },
       {
         "name": "unioncamere/arezzo-siena-imprese-femminili-registrate",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2027
+        ],
         "format": "csv",
         "reachable": true
       },
       {
         "name": "unioncamere/arezzo-siena-imprese-giovanili-registrate",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv",
         "reachable": true
       },
       {
         "name": "unioncamere/arezzo-siena-imprese-registrate",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv",
         "reachable": true
       },
       {
         "name": "unioncamere/arezzo-siena-imprese-straniere-registrate",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2025,
+          2025
+        ],
         "format": "csv",
         "reachable": true
       }

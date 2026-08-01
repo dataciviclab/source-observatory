@@ -1,6 +1,6 @@
 {
   "source_id": "agcm",
-  "generated_at": "2026-07-27T08:09:47+00:00",
+  "generated_at": "2026-08-01T14:09:21+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (AGCM). 53 dataset su concorrenza e mercato: rating di legalita' (elenchi settimanali imprese con rating), operazioni di concentrazione 2021-2025.\n",
-    "last_probed": "2026-07-27"
+    "last_probed": "2026-08-01"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,64 +20,76 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 54,
+    "total_items": 55,
     "method": "package_search",
-    "captured_at": "2026-07-27T07:59:44+00:00",
+    "captured_at": "2026-08-01T13:59:26+00:00",
     "baseline_value": 53,
     "baseline_date": "2026-06-04",
     "freshness_hours": 0.2,
-    "delta": 1,
-    "delta_pct": 1.9,
+    "delta": 2,
+    "delta_pct": 3.8,
     "formats": {
-      "CSV,JSON": 30,
+      "CSV,JSON": 31,
       "JSON,CSV": 24
     }
   },
   "source_check": {
-    "last_run": "2026-07-27T08:09:47Z",
+    "last_run": "2026-08-01T14:09:21Z",
     "total_scored": 5,
     "reachable": 5,
     "csv_count": 5,
     "with_csv_schema": 4,
-    "avg_readiness": 8.2,
+    "avg_readiness": 8.0,
     "top_items": [
       {
         "name": "agcm/istruttorie-tutela-del-consumatore",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2021,
+          2025
+        ],
         "format": "json,csv",
         "reachable": true
       },
       {
         "name": "agcm/operazioni-di-concentrazione",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2021,
+          2025
+        ],
         "format": "json,csv",
         "reachable": true
       },
       {
         "name": "agcm/pareri-e-segnalazioni",
         "score": 10,
-        "year_range": null,
+        "year_range": [
+          2019,
+          2023
+        ],
         "format": "csv,json",
         "reachable": true
       },
       {
         "name": "agcm/rating-di-legalita",
         "score": 9,
-        "year_range": null,
+        "year_range": [
+          2023,
+          2023
+        ],
         "format": "json,csv",
         "reachable": true
       },
       {
         "name": "agcm/istruttorie-concorrenza-dati-di-sintesi",
-        "score": 2,
+        "score": 1,
         "year_range": null,
         "format": "csv,json",
         "reachable": true
       }
     ],
-    "coverage_pct": 9.3,
+    "coverage_pct": 9.1,
     "formato_aperto": {
       "score": 5.0,
       "perc_aperto": 0.0,
