@@ -631,11 +631,16 @@ def _ckan_standard_path(
     }
 
 
-def validate_items(items: list[dict[str, Any]]) -> dict[str, Any]:
+def validate_items(
+    items: list[dict[str, Any]],
+    client: Any | None = None,
+) -> dict[str, Any]:
     """Valida un gruppo di item CKAN.
 
     Usa il validatore tabulare standard: pick_best_url → HEAD → sniff CSV.
+    ``client`` opzionale: HttpClient condiviso con circuit breaker, passato
+    al validatore tabulare per mantenere lo stato breaker tra gruppi.
     """
     from ._validate_base import validate_tabular_group
 
-    return validate_tabular_group(items)
+    return validate_tabular_group(items, client=client)

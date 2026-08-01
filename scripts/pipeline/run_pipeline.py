@@ -87,12 +87,12 @@ def run_merge(df: pd.DataFrame, dry_run: bool = False) -> pd.DataFrame:
 # ── Step 3: Validate ──────────────────────────────────────────────────────────
 
 
-def _validate_one(group_df: pd.DataFrame) -> dict:
+def _validate_one(group_df: pd.DataFrame, client=None) -> dict:
     """Validate a single group: pick protocol, dispatch validator."""
     items = group_df.to_dict("records")
     protocol = str(items[0].get("protocol", "")) if items else ""
     validator = dispatch_validate(protocol)
-    return validator(items)
+    return validator(items, client=client)
 
 
 def run_validate(
@@ -116,10 +116,20 @@ def run_validate(
     csv_ok = 0
     t0 = time.time()
 
+    # Client condiviso con circuit breaker: se un host fallisce N volte
+    # consecutive (es. lavoro_opendata giu'), i gruppi successivi della
+    # stessa fonte non ritentano la rete — CircuitOpenError immediato.
+    # Un solo client per tutta la run => il breaker e' cross-gruppo.
+    # timeout=5 coerente con _validate_base: il default del client (60s)
+    # farebbe bruciare ~114s per fallimento prima che il breaker apra.
+    from lab_connectors.http import HttpClient
+
+    http_client = HttpClient(timeout=5, circuit_threshold=3)
+
     if workers <= 1:
         # Sequenziale
         for i, (group_name, group_df) in enumerate(groups):
-            result = _validate_one(group_df)
+            result = _validate_one(group_df, client=http_client)
             results[i] = result
             if result.get("reachable"):
                 ok += 1
@@ -132,7 +142,8 @@ def run_validate(
         # Parallelo con ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=workers) as pool:
             future_map = {
-                pool.submit(_validate_one, group_df): i for i, (_, group_df) in enumerate(groups)
+                pool.submit(_validate_one, group_df, http_client): i
+                for i, (_, group_df) in enumerate(groups)
             }
             for future in as_completed(future_map):
                 i = future_map[future]
