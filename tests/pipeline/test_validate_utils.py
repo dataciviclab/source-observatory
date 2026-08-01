@@ -339,15 +339,44 @@ class TestValidateGroup:
 # ── Smoke: verifica su URL reali (richiede rete, NON nel gate CI) ────────────
 
 
+def _maybe_skip_unreachable(result: dict | None = None, exc_info=None):
+    """Salta i test smoke se la rete/fonte esterna non risponde.
+
+    I test smoke verificano fonti reali (MEF, ACI) che possono essere giu'
+    in CI: in quel caso SKIP, non FAIL — la CI non deve dipendere da fonti
+    esterne. Il fallimento reale del codice si vede nei test deterministici.
+    """
+    err = ""
+    if exc_info is not None:
+        err = str(exc_info.value)
+    elif result is not None:
+        err = str(result.get("error") or "")
+    if any(
+        k in err.lower()
+        for k in ("timeout", "timed out", "connection", "max retries", "connecttimeout")
+    ):
+        pytest.skip(f"fonte esterna non raggiungibile: {err[:80]}")
+
+
 @pytest.mark.smoke
 class TestSmokeNetwork:
     def test_reachable_url(self):
-        result = probe_reachability(MEF_URL)
+        try:
+            result = probe_reachability(MEF_URL)
+        except Exception as exc:
+            _maybe_skip_unreachable(exc_info=exc)
+            raise
+        _maybe_skip_unreachable(result=result)
         assert result["reachable"] is True
         assert result["status_code"] == 200
 
     def test_real_csv_from_mef(self):
-        result = sniff_csv_schema(MEF_URL)
+        try:
+            result = sniff_csv_schema(MEF_URL)
+        except Exception as exc:
+            _maybe_skip_unreachable(exc_info=exc)
+            raise
+        _maybe_skip_unreachable(result=result)
         assert result["error"] is None, f"Sniff error: {result['error']}"
         assert len(result["columns"]) > 0
         assert result["num_columns"] > 0
@@ -363,7 +392,12 @@ class TestSmokeNetwork:
                 "year_signal": 2025,
             },
         ]
-        result = validate_group(items)
+        try:
+            result = validate_group(items)
+        except Exception as exc:
+            _maybe_skip_unreachable(exc_info=exc)
+            raise
+        _maybe_skip_unreachable(result=result)
         assert result["reachable"] is True
         assert result["url"] is not None
         assert "2025" in result["url"]

@@ -68,7 +68,10 @@ def test_validate_one_without_client_creates_own(monkeypatch, fake_http):
     fake_http.responses[MEF_URL_NO_QUERY] = HttpResult(
         response=fake_response(200, csv_body), err=None
     )
-    monkeypatch.setattr("lab_connectors.http.HttpClient", lambda **kw: fake_http)
+    # _validate_base importa HttpClient a livello modulo: patchiamo il nome
+    # bindato nel modulo consumer (il path lab_connectors.http non basta quando
+    # il pacchetto e' installato, non editable)
+    monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
 
     df = _make_group_df()
     result = run_pipeline._validate_one(df)
