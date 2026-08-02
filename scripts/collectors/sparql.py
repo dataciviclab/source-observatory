@@ -29,6 +29,19 @@ def _group_sparql_bindings(bindings: list[dict]) -> dict[str, dict]:
     return grouped
 
 
+def _binding_val(binding: dict, var: str) -> str:
+    """Valore di un binding SPARQL come stringa.
+
+    Gli endpoint che rispondono JSON (es. dati.camera.it) restituiscono il
+    formato SPARQL standard ``{var: {"type": ..., "value": ...}}``; quelli
+    XML (es. noipa) valori stringa semplici. Normalizza entrambi.
+    """
+    v = binding.get(var)
+    if isinstance(v, dict):
+        return str(v.get("value") or "")
+    return v or ""
+
+
 def collect(source_id: str, source_cfg: dict, captured_at: str) -> CollectorResult:
     """Enumerate SPARQL datasets (named graphs) from an endpoint."""
     ctx = source_cfg.get("sparql", {})
@@ -50,13 +63,15 @@ def collect(source_id: str, source_cfg: dict, captured_at: str) -> CollectorResu
 
     rows: list[dict] = []
     for idx, b in enumerate(bindings, start=1):
-        graph_uri = b.get("g", "")
+        # Query DCAT custom (es. dati_camera): binding ?dataset (+ ?title ?description)
+        # Query named-graphs (default): binding ?g
+        graph_uri = _binding_val(b, "dataset") or _binding_val(b, "g")
         if not graph_uri:
             continue
 
-        # Extract a readable name from the URI
+        # Estrai un nome leggibile dalla URI (fallback quando ?title assente)
         name = graph_uri.rstrip("/").split("/")[-1].replace("_", " ").replace("-", " ").strip()
-        title = name[:120] if name else graph_uri[:120]
+        title = _binding_val(b, "title") or (name[:120] if name else graph_uri[:120])
 
         rows.append(
             {
