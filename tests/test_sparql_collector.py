@@ -60,6 +60,59 @@ def test_collect_error(monkeypatch):
     assert result.warning["type"] == "sparql_error"
 
 
+def test_collect_dcat_dataset_bindings(monkeypatch):
+    """Query DCAT custom (es. dati_camera): binding ?dataset + ?title.
+
+    Regressione: il collector cercava solo ?g (named graphs) e scartava
+    tutti i bindings delle query DCAT (dati_camera → inventory a 0).
+    Usa il formato JSON reale di execute_sparql: {var: {type, value}}.
+    """
+    monkeypatch.setattr(
+        sparql_collector,
+        "execute_sparql",
+        lambda ep, q, timeout: [
+            {
+                "dataset": {"type": "uri", "value": "http://dati.camera.it/ocd/dataset/BPR"},
+                "title": {
+                    "type": "literal",
+                    "value": "Dataset BPR - Bibliografia del Parlamento",
+                },
+            },
+            {"dataset": {"type": "uri", "value": ""}},  # dataset vuoto → skippato
+            {
+                "dataset": {"type": "uri", "value": "http://dati.camera.it/ocd/dataset/LEG"},
+                "title": {"type": "literal", "value": "Dataset LEG - Legislature"},
+            },
+        ],
+    )
+    result = sparql_collector.collect("fonte", _cfg(), "2026-08-01")
+    assert isinstance(result, CollectorResult)
+    assert len(result.rows) == 2
+    assert result.rows[0]["item_id"] == "http://dati.camera.it/ocd/dataset/BPR"
+    assert result.rows[0]["title"] == "Dataset BPR - Bibliografia del Parlamento"
+    assert result.rows[1]["item_id"] == "http://dati.camera.it/ocd/dataset/LEG"
+
+
+# ── _binding_val ──────────────────────────────────────────────────────────────
+
+
+def test_binding_val_plain_string():
+    """Valore stringa semplice (formato XML) → invariato."""
+    assert sparql_collector._binding_val({"g": "http://x.test/g"}, "g") == "http://x.test/g"
+
+
+def test_binding_val_json_dict():
+    """Valore dict (formato JSON SPARQL) → estrae 'value'."""
+    b = {"dataset": {"type": "uri", "value": "http://x.test/d1"}}
+    assert sparql_collector._binding_val(b, "dataset") == "http://x.test/d1"
+
+
+def test_binding_val_missing():
+    """Variabile assente o None → stringa vuota."""
+    assert sparql_collector._binding_val({}, "g") == ""
+    assert sparql_collector._binding_val({"g": None}, "g") == ""
+
+
 # ── validate_items ────────────────────────────────────────────────────────────
 
 
