@@ -66,6 +66,32 @@ def test_api_base_with_query_string():
     assert result == "https://example.test/sdmx"
 
 
+# ─── catalog_fetch_url (detail=allstubs) ─────────────────────────────────────
+
+
+def test_catalog_fetch_url_empty():
+    """URL vuota → invariata."""
+    assert sdmx_collector.catalog_fetch_url("") == ""
+
+
+def test_catalog_fetch_url_no_query():
+    """URL senza query → aggiunge ?detail=allstubs."""
+    url = sdmx_collector.catalog_fetch_url("https://example.test/dataflow/IT1")
+    assert url == "https://example.test/dataflow/IT1?detail=allstubs"
+
+
+def test_catalog_fetch_url_with_query():
+    """URL con query esistente → aggiunge &detail=allstubs."""
+    url = sdmx_collector.catalog_fetch_url("https://example.test/dataflow/IT1?agency=IT1")
+    assert url == "https://example.test/dataflow/IT1?agency=IT1&detail=allstubs"
+
+
+def test_catalog_fetch_url_detail_present():
+    """URL con detail già presente → invariata (non duplica)."""
+    url = sdmx_collector.catalog_fetch_url("https://example.test/dataflow/IT1?detail=full")
+    assert url == "https://example.test/dataflow/IT1?detail=full"
+
+
 # ─── SDMX XML di esempio per collect() ────────────────────────────────────────
 
 _SDMX_XML = """\
@@ -92,7 +118,7 @@ _SDMX_XML = """\
 
 def test_collect(monkeypatch, fake_http):
     """collect() restituisce righe corrette da XML SDMX."""
-    fake_http.responses["https://example.test/dataflow/IT1"] = HttpResult(
+    fake_http.responses["https://example.test/dataflow/IT1?detail=allstubs"] = HttpResult(
         response=fake_response(200, _SDMX_XML, headers={"content-type": "application/xml"}),
         err=None,
     )
@@ -133,7 +159,7 @@ def test_collect(monkeypatch, fake_http):
 
 def test_collect_http_error(monkeypatch, fake_http):
     """collect() su errore HTTP → raise RuntimeError."""
-    fake_http.responses["https://example.test/dataflow/IT1"] = HttpResult(
+    fake_http.responses["https://example.test/dataflow/IT1?detail=allstubs"] = HttpResult(
         response=fake_response(500, "Internal Server Error"),
         err=None,
     )

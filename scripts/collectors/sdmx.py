@@ -25,10 +25,29 @@ def _sdmx_api_base(url: str) -> str | None:
     return base
 
 
+def catalog_fetch_url(url: str) -> str:
+    """Aggiunge ``detail=allstubs`` alla URL del catalogo SDMX se assente.
+
+    Il catalogo completo (es. ``dataflow/IT1``) serializza migliaia di
+    dataflow in una singola risposta e può andare in timeout (ISTAT ~80s
+    anche in modalità ridotta). ``detail=allstubs`` riduce il payload a
+    id + nome — sufficiente per l'inventory, che usa solo id, agencyID
+    e Name.
+    """
+    if not url:
+        return url
+    base = url.split("#")[0]
+    if "detail=" in base:
+        return base
+    sep = "&" if "?" in base else "?"
+    return f"{base}{sep}detail=allstubs"
+
+
 def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> CollectorResult:
     endpoint = source_cfg["base_url"]
+    fetch_url = catalog_fetch_url(endpoint)
     client = HttpClient(timeout=330, max_retries=1)
-    result = client.get(endpoint)
+    result = client.get(fetch_url)
 
     if result.is_error:
         raise RuntimeError(

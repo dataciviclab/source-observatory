@@ -25,9 +25,13 @@ from scripts._constants import (
     save_registry,
     validate_schema,
 )
+from scripts.collectors.sdmx import catalog_fetch_url
 
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 TIMEOUT_SECONDS = 10
+# SDMX: i cataloghi serializzano migliaia di dataflow in una risposta unica
+# (es. ISTAT ~80s anche con detail=allstubs) → timeout dedicato più alto.
+SDMX_TIMEOUT_SECONDS = 180
 
 
 @dataclass
@@ -135,9 +139,9 @@ def _build_probe_result(
     )
 
 
-def _probe_once(base_url: str) -> ProbeResult:
+def _probe_once(base_url: str, timeout: int = TIMEOUT_SECONDS) -> ProbeResult:
     """Single probe attempt (no retry). Uses lab_connectors HttpClient with SSL fallback."""
-    client = HttpClient(timeout=TIMEOUT_SECONDS, user_agent=USER_AGENT)
+    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
     result = client.get(
         base_url,
         allow_redirects=True,
@@ -213,8 +217,11 @@ def probe_url(base_url: str) -> ProbeResult:
             )
         return result
 
-    # SDMX: HttpClient handles retry with backoff internally
-    return _probe_once(base_url)
+    # SDMX: catalogo lento (ISTAT ~80s anche con detail=allstubs).
+    # Timeout dedicato + payload ridotto per evitare ReadTimeout su cataloghi
+    # che serializzano migliaia di dataflow in una risposta unica.
+    sdmx_fetch_url = catalog_fetch_url(base_url)
+    return _probe_once(sdmx_fetch_url, timeout=SDMX_TIMEOUT_SECONDS)
 
 
 def build_status_report(

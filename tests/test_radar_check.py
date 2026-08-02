@@ -160,6 +160,32 @@ class TestProbe:
         assert result.ssl_fallback_used is True
         assert "SSL verify failed" in (result.note or "")
 
+    def test_probe_url_sdmx_uses_allstubs_and_dedicated_timeout(self, monkeypatch) -> None:
+        """URL SDMX → fetch con ?detail=allstubs e timeout dedicato (180s).
+
+        Il catalogo SDMX completo (ISTAT) va in timeout con il timeout standard
+        (10s): la fetch deve usare detail=allstubs e SDMX_TIMEOUT_SECONDS.
+        """
+        fake = FakeHttpClient()
+        sdmx_url = "https://sdmx.test/dataflow/IT1"
+        fake.responses[sdmx_url + "?detail=allstubs"] = HttpResult(
+            response=fake_response(200, text="<ok/>", headers={"content-type": "application/xml"}),
+            err=None,
+            ssl_fallback_used=None,
+        )
+        captured: dict = {}
+
+        def _fake_client(**kw) -> FakeHttpClient:
+            captured.update(kw)
+            return fake
+
+        monkeypatch.setattr(radar_check, "HttpClient", _fake_client)
+        result = radar_check.probe_url(sdmx_url)
+        assert result.status == "GREEN"
+        assert result.http_code == "200"
+        assert captured.get("timeout") == radar_check.SDMX_TIMEOUT_SECONDS
+        assert captured.get("timeout") != radar_check.TIMEOUT_SECONDS
+
 
 class TestBuildReport:
     def test_build_status_report_basic(self) -> None:
