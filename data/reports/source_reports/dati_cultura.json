@@ -1,6 +1,6 @@
 {
   "source_id": "dati_cultura",
-  "generated_at": "2026-08-01T14:09:21+00:00",
+  "generated_at": "2026-08-03T06:48:44+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check completato con verdict catalog-watch.",
-    "last_probed": "2026-08-01"
+    "last_probed": "2026-08-03"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,68 +20,68 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 213,
+    "total_items": 278,
     "method": "sparql_query",
-    "captured_at": "2026-08-01T13:59:26+00:00",
+    "captured_at": "2026-08-03T06:41:09+00:00",
     "baseline_value": 150,
     "baseline_date": "2026-04-11",
-    "freshness_hours": 0.2,
-    "delta": 63,
-    "delta_pct": 42.0,
+    "freshness_hours": 0.1,
+    "delta": 128,
+    "delta_pct": 85.3,
     "formats": {
-      "?": 213
+      "SPARQL_NAMED_GRAPH": 278
     }
   },
   "source_check": {
-    "last_run": "2026-08-01T14:09:21Z",
-    "total_scored": 213,
-    "reachable": 213,
+    "last_run": "2026-08-03T06:48:44Z",
+    "total_scored": 272,
+    "reachable": 272,
     "csv_count": 0,
     "with_csv_schema": 0,
     "avg_readiness": 3.0,
     "top_items": [
       {
-        "name": "dati_cultura/anagrafe-degli-archivi-di-stato-icar",
+        "name": "dati_cultura/administrativedata",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "dati_cultura/anagrafe-delle-biblioteche-italiane-iccu",
+        "name": "dati_cultura/agent-fotografico2wd",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "dati_cultura/architetture-della-regione",
+        "name": "dati_cultura/agents",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "dati_cultura/archivi-fotografici-iccd",
+        "name": "dati_cultura/anagrafiche-biblioteche",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "dati_cultura/archivio-storico-del-comune-di-bolzano",
+        "name": "dati_cultura/archeologie",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       }
     ],
-    "coverage_pct": 100.0,
+    "coverage_pct": 97.8,
     "formato_aperto": {
       "score": 5.0,
       "perc_aperto": 0.0,
       "perc_reachable": 100.0,
-      "total": 213,
+      "total": 272,
       "fonte": "source_check"
     }
   },

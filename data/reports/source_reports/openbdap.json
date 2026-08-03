@@ -1,6 +1,6 @@
 {
   "source_id": "openbdap",
-  "generated_at": "2026-08-01T14:09:21+00:00",
+  "generated_at": "2026-08-03T06:48:44+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario senza intake o monitor diffuso.",
-    "last_probed": "2026-08-01"
+    "last_probed": "2026-08-03"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,27 +22,48 @@
   "inventory": {
     "total_items": 3849,
     "method": "package_list",
-    "captured_at": "2026-08-01T13:59:26+00:00",
+    "captured_at": "2026-08-03T06:41:09+00:00",
     "baseline_value": 3772,
     "baseline_date": "2026-04-02",
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.1,
     "delta": 77,
     "delta_pct": 2.0,
     "formats": {
-      "?": 3829,
-      "CSV,XML": 18,
+      "?": 3827,
+      "CSV,XML": 20,
       "CSV,330_PAGAMENTI DEL BILANCIO DELLO STATO.PDF,XML": 1,
       "1234_SIOPE MOVIMENTI MENSILI DELLE DISPONIBILITÀ LIQUIDE.PDF,CSV,XML": 1
     }
   },
   "source_check": {
-    "last_run": "2026-08-01T14:09:21Z",
-    "total_scored": 3845,
-    "reachable": 5,
-    "csv_count": 16,
+    "last_run": "2026-08-03T06:48:44Z",
+    "total_scored": 3846,
+    "reachable": 8,
+    "csv_count": 19,
     "with_csv_schema": 0,
     "avg_readiness": 0.0,
     "top_items": [
+      {
+        "name": "openbdap/disegno-legge-di-bilancio-presentato-serie-storica-spese-aggregato-per-missione-",
+        "score": 2,
+        "year_range": null,
+        "format": "csv,xml",
+        "reachable": true
+      },
+      {
+        "name": "openbdap/modello-di-rilevazione-del-conto-economico-degli-enti-del-ssn-a-livello-nazional",
+        "score": 2,
+        "year_range": null,
+        "format": "csv,xml",
+        "reachable": true
+      },
+      {
+        "name": "openbdap/note-integrative-disegno-legge-di-bilancio-obiettivi",
+        "score": 2,
+        "year_range": null,
+        "format": "csv,xml",
+        "reachable": true
+      },
       {
         "name": "openbdap/pagamenti-bilancio-dello-stato-per-missione",
         "score": 2,
@@ -56,35 +77,14 @@
         "year_range": null,
         "format": "csv,xml",
         "reachable": true
-      },
-      {
-        "name": "openbdap/piano-dei-costi-opere-pubbliche-mop",
-        "score": 2,
-        "year_range": null,
-        "format": "csv,xml",
-        "reachable": true
-      },
-      {
-        "name": "openbdap/prima-nota-di-variazione-approvata-elaborabile-spese-piano-di-gestione",
-        "score": 2,
-        "year_range": null,
-        "format": "csv,xml",
-        "reachable": true
-      },
-      {
-        "name": "openbdap/siope-movimenti-cumulati-mensili-di-spesa",
-        "score": 2,
-        "year_range": null,
-        "format": "csv,xml",
-        "reachable": true
       }
     ],
     "coverage_pct": 99.9,
     "formato_aperto": {
       "score": 10.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 0.1,
-      "total": 3845,
+      "perc_reachable": 0.2,
+      "total": 3846,
       "fonte": "source_check"
     }
   },

@@ -1,14 +1,14 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-08-01T14:09:19Z",
-  "total_groups": 11136,
-  "reachable": 7038,
-  "unreachable": 4098,
-  "csv_with_schema": 2993,
+  "generated_at": "2026-08-03T06:48:42Z",
+  "total_groups": 11434,
+  "reachable": 6946,
+  "unreachable": 4488,
+  "csv_with_schema": 2587,
   "by_source": {
     "openbdap": {
-      "total": 3845,
-      "reachable": 5,
+      "total": 3846,
+      "reachable": 8,
       "csv": 0
     },
     "istat_sdmx": {
@@ -18,13 +18,18 @@
     },
     "inps": {
       "total": 1809,
-      "reachable": 1807,
-      "csv": 1771
+      "reachable": 1412,
+      "csv": 1366
     },
     "openga": {
       "total": 405,
       "reachable": 405,
       "csv": 405
+    },
+    "dati_cultura": {
+      "total": 272,
+      "reachable": 272,
+      "csv": 0
     },
     "unioncamere": {
       "total": 256,
@@ -36,24 +41,29 @@
       "reachable": 238,
       "csv": 211
     },
-    "dati_cultura": {
-      "total": 213,
-      "reachable": 213,
+    "ispra_linked_data": {
+      "total": 132,
+      "reachable": 132,
       "csv": 0
     },
     "dati_senato": {
       "total": 100,
-      "reachable": 98,
+      "reachable": 100,
+      "csv": 0
+    },
+    "dati_camera": {
+      "total": 99,
+      "reachable": 99,
+      "csv": 0
+    },
+    "noipa_sparql": {
+      "total": 99,
+      "reachable": 99,
       "csv": 0
     },
     "lavoro_opendata": {
       "total": 83,
       "reachable": 0,
-      "csv": 0
-    },
-    "ispra_linked_data": {
-      "total": 70,
-      "reachable": 70,
       "csv": 0
     },
     "mit_opendata": {
@@ -84,7 +94,7 @@
     "ministero_interno": {
       "total": 33,
       "reachable": 33,
-      "csv": 33
+      "csv": 32
     },
     "art_opendata": {
       "total": 32,
@@ -107,13 +117,8 @@
       "csv": 28
     },
     "opencivitas": {
-      "total": 27,
+      "total": 26,
       "reachable": 0,
-      "csv": 0
-    },
-    "noipa_sparql": {
-      "total": 21,
-      "reachable": 21,
       "csv": 0
     },
     "mur_ustat": {

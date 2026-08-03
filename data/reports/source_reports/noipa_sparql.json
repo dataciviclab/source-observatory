@@ -1,6 +1,6 @@
 {
   "source_id": "noipa_sparql",
-  "generated_at": "2026-08-01T14:09:21+00:00",
+  "generated_at": "2026-08-03T06:48:44+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "NoiPA SPARQL — MEF/RGS. Dati mensili personale PA\n(entries-{YYYYMM}, 2019-2026) + pensioni PA (entriesPensioni-{YYYYMM},\n2017-oggi). ~509k soggetti/mese, 39 predicati (ente, comparto, qualifica,\nritenute previdenziali/IRPEF, detrazioni, assenze, genere, eta', residenza).\nPOST bloccato (403), solo GET funziona. XML SPARQL parsato da\nlab-connectors via _parse_sparql_xml() dal 2026-06-25.\nI named graph usano URI completi:\nhttps://sparql-noipa.mef.gov.it/entries-YYYYMM\n(usare prefix=\"https://sparql-noipa.mef.gov.it/entries-\" in discover_graphs).\n",
-    "last_probed": "2026-08-01"
+    "last_probed": "2026-08-03"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,70 +20,68 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 21,
+    "total_items": 100,
     "method": null,
-    "captured_at": "2026-08-01T13:59:26+00:00",
+    "captured_at": "2026-08-03T06:41:09+00:00",
     "baseline_value": null,
     "baseline_date": null,
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.1,
     "delta": null,
     "delta_pct": 0.0,
     "formats": {
-      "CSV, RDF_N_TRIPLES": 11,
-      "RDF_N_TRIPLES, CSV": 8,
-      "RDF_N_TRIPLES": 2
+      "SPARQL_NAMED_GRAPH": 100
     }
   },
   "source_check": {
-    "last_run": "2026-08-01T14:09:21Z",
-    "total_scored": 21,
-    "reachable": 21,
+    "last_run": "2026-08-03T06:48:44Z",
+    "total_scored": 99,
+    "reachable": 99,
     "csv_count": 0,
     "with_csv_schema": 0,
     "avg_readiness": 3.0,
     "top_items": [
       {
-        "name": "noipa_sparql/accounted-absences-for-economic-purposes",
+        "name": "noipa_sparql/entries",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "noipa_sparql/administered-by-municipality-of-the-administration-s-organizational-unit",
+        "name": "noipa_sparql/entries-201901/httpssparql-noipamefgovitentries-20",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "noipa_sparql/administered-by-province-of-residence",
+        "name": "noipa_sparql/entries-201902/httpssparql-noipamefgovitentries-20",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "noipa_sparql/administrators-mobility",
+        "name": "noipa_sparql/entries-201903/httpssparql-noipamefgovitentries-20",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "noipa_sparql/amministrati-per-fascia-di-reddito",
+        "name": "noipa_sparql/entries-201904/httpssparql-noipamefgovitentries-20",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       }
     ],
-    "coverage_pct": 100.0,
+    "coverage_pct": 99.0,
     "formato_aperto": {
       "score": 5.0,
       "perc_aperto": 0.0,
       "perc_reachable": 100.0,
-      "total": 21,
+      "total": 99,
       "fonte": "source_check"
     }
   },

@@ -1,6 +1,6 @@
 {
   "source_id": "terna_opendata",
-  "generated_at": "2026-08-01T14:09:21+00:00",
+  "generated_at": "2026-08-03T06:48:44+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "radar-only",
     "verdict": "go",
     "note": "Portale Dati Terna — API Sitecore REST. 31+ dataset su energia (fabbisogno, generazione, trasmissione, mercato, adeguatezza). API pubblica ritorna XLSX. Già in uso da pipeline Lab. Catalog-watch richiederebbe connector custom.\n",
-    "last_probed": "2026-08-01"
+    "last_probed": "2026-08-03"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 0,
     "method": null,
-    "captured_at": "2026-08-01T13:59:26+00:00",
+    "captured_at": "2026-08-03T06:41:09+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "delta": null,

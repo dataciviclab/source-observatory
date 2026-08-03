@@ -1,6 +1,6 @@
 {
   "source_id": "ispra_linked_data",
-  "generated_at": "2026-08-01T14:09:21+00:00",
+  "generated_at": "2026-08-03T06:48:44+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline tabellari.",
-    "last_probed": "2026-08-01"
+    "last_probed": "2026-08-03"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,72 +20,68 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 70,
+    "total_items": 135,
     "method": "sparql_query",
-    "captured_at": "2026-08-01T13:59:26+00:00",
+    "captured_at": "2026-08-03T06:41:09+00:00",
     "baseline_value": 66,
     "baseline_date": "2026-04-11",
-    "freshness_hours": 0.2,
-    "delta": 4,
-    "delta_pct": 6.1,
+    "freshness_hours": 0.1,
+    "delta": 69,
+    "delta_pct": 104.5,
     "formats": {
-      "SPARQL": 38,
-      "RDF_N_TRIPLES": 10,
-      "RDF_TURTLE, CSV": 8,
-      "CSV, RDF_TURTLE": 7,
-      "RDF_TURTLE": 7
+      "SPARQL_NAMED_GRAPH": 135
     }
   },
   "source_check": {
-    "last_run": "2026-08-01T14:09:21Z",
-    "total_scored": 70,
-    "reachable": 70,
+    "last_run": "2026-08-03T06:48:44Z",
+    "total_scored": 132,
+    "reachable": 132,
     "csv_count": 0,
     "with_csv_schema": 0,
     "avg_readiness": 3.0,
     "top_items": [
       {
-        "name": "ispra_linked_data/bathing-waters-dataset",
+        "name": "ispra_linked_data/aligns",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "ispra_linked_data/contact-types",
+        "name": "ispra_linked_data/bodies",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "ispra_linked_data/controlled-vocabulary-on-euring-data",
+        "name": "ispra_linked_data/capture-types",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "ispra_linked_data/dataset-dei-luoghi-amministrativi-e-ambientali",
+        "name": "ispra_linked_data/catalog",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
-        "name": "ispra_linked_data/dataset-euring-protocol-engine-dati-dellattivita-di-inanellamento-degli-uccelli-",
+        "name": "ispra_linked_data/certainty",
         "score": 3,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       }
     ],
-    "coverage_pct": 100.0,
+    "coverage_pct": 97.8,
     "formato_aperto": {
       "score": 5.0,
       "perc_aperto": 0.0,
       "perc_reachable": 100.0,
-      "total": 70,
+      "total": 132,
       "fonte": "source_check"
     }
   },

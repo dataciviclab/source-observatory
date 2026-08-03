@@ -1,6 +1,6 @@
 {
   "source_id": "istat_sdmx",
-  "generated_at": "2026-08-01T14:09:21+00:00",
+  "generated_at": "2026-08-03T06:48:44+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,21 +11,21 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Endpoint SDMX ricco e ad alto valore per scouting e source-check.",
-    "last_probed": "2026-08-01"
+    "last_probed": "2026-08-03"
   },
   "health": {
-    "radar_status": "YELLOW",
-    "http_code": "-",
-    "note": "Timeout (ReadTimeout)",
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
     "ssl_fallback": false
   },
   "inventory": {
     "total_items": 4899,
     "method": "dataflow_count",
-    "captured_at": "2026-08-01T13:59:26+00:00",
+    "captured_at": "2026-08-03T06:41:09+00:00",
     "baseline_value": 4212,
     "baseline_date": "2026-04-10",
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.1,
     "delta": 687,
     "delta_pct": 16.3,
     "formats": {
@@ -33,7 +33,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-08-01T14:09:21Z",
+    "last_run": "2026-08-03T06:48:44Z",
     "total_scored": 3574,
     "reachable": 3574,
     "csv_count": 0,
