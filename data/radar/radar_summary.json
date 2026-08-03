@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-02T06:10:27.768376+00:00",
-  "probe_date": "2026-08-02",
+  "generated_at": "2026-08-03T06:34:33.262603+00:00",
+  "probe_date": "2026-08-03",
   "sources_total": 36,
   "status_counts": {
     "GREEN": 36,
@@ -136,7 +136,8 @@
       "http_code": "200",
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
-      "ssl_issue": true
+      "ssl_issue": true,
+      "ssl_streak": 2
     },
     {
       "id": "aifa",

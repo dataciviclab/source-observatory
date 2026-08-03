@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-08-02
+Ultimo run: 2026-08-03
 
 ## Sommario
 
@@ -46,7 +46,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | mur_ustat | catalog | ckan | catalog-watch | GREEN | 200 | mur_contribuzione_universitaria, mur_immatricolati, mur_iscritti |
 | opencoesione | catalog | ckan | catalog-watch | GREEN | 200 | opencoesione_progetti |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
-| opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso, opencivitas_glossario, opencivitas_indicatori |
+| opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso, opencivitas_fsc_enti_rso, opencivitas_glossario, opencivitas_indicatori |
 | aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
 | dait | catalog | html | radar-only | GREEN | 200 | dait_amministratori_locali |
 | eligendo | catalog | html | radar-only | GREEN | 200 | elezioni_comunali, elezioni_europee, elezioni_referendum, elezioni_regionali |
