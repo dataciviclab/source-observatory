@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-08-06T06:03:20.156830+00:00",
-  "probe_date": "2026-08-06",
+  "generated_at": "2026-08-07T05:05:39.813714+00:00",
+  "probe_date": "2026-08-07",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 36,
-    "YELLOW": 0,
+    "GREEN": 32,
+    "YELLOW": 4,
     "RED": 0
   },
   "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Timeout (ConnectTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -35,10 +35,10 @@
     },
     {
       "id": "openbdap",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "ckan",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -91,10 +91,10 @@
     },
     {
       "id": "consip_open_data",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "ckan",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -123,10 +123,10 @@
     },
     {
       "id": "mef_irpef",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "html",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -137,7 +137,7 @@
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
       "ssl_issue": true,
-      "ssl_streak": 5
+      "ssl_streak": 6
     },
     {
       "id": "aifa",
