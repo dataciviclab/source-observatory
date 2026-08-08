@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-08-07T05:05:39.813714+00:00",
-  "probe_date": "2026-08-07",
+  "generated_at": "2026-08-08T04:19:47.313437+00:00",
+  "probe_date": "2026-08-08",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 32,
-    "YELLOW": 4,
+    "GREEN": 35,
+    "YELLOW": 1,
     "RED": 0
   },
   "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sdmx",
-      "http_code": "-",
-      "note": "Timeout (ConnectTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -35,10 +35,10 @@
     },
     {
       "id": "openbdap",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ConnectTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -75,10 +75,10 @@
     },
     {
       "id": "dati_cultura",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sparql",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -91,10 +91,10 @@
     },
     {
       "id": "consip_open_data",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ConnectTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -123,10 +123,10 @@
     },
     {
       "id": "mef_irpef",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "html",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ConnectTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -137,17 +137,15 @@
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
       "ssl_issue": true,
-      "ssl_streak": 6
+      "ssl_streak": 7
     },
     {
       "id": "aifa",
       "status": "GREEN",
       "protocol": "html",
       "http_code": "200",
-      "note": "SSL verify failed; fallback verify=False used (SSLError)",
-      "ssl_fallback_used": true,
-      "ssl_issue": true,
-      "ssl_streak": 14
+      "note": null,
+      "ssl_fallback_used": false
     },
     {
       "id": "dait",
