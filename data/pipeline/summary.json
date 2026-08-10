@@ -1,10 +1,10 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-08-03T06:48:42Z",
-  "total_groups": 11434,
-  "reachable": 6946,
-  "unreachable": 4488,
-  "csv_with_schema": 2587,
+  "generated_at": "2026-08-10T05:08:52Z",
+  "total_groups": 11202,
+  "reachable": 7109,
+  "unreachable": 4093,
+  "csv_with_schema": 2998,
   "by_source": {
     "openbdap": {
       "total": 3846,
@@ -12,14 +12,14 @@
       "csv": 0
     },
     "istat_sdmx": {
-      "total": 3574,
-      "reachable": 3574,
+      "total": 3571,
+      "reachable": 3571,
       "csv": 0
     },
     "inps": {
       "total": 1809,
-      "reachable": 1412,
-      "csv": 1366
+      "reachable": 1807,
+      "csv": 1776
     },
     "openga": {
       "total": 405,
@@ -27,8 +27,8 @@
       "csv": 405
     },
     "dati_cultura": {
-      "total": 272,
-      "reachable": 272,
+      "total": 274,
+      "reachable": 274,
       "csv": 0
     },
     "unioncamere": {
@@ -41,19 +41,9 @@
       "reachable": 238,
       "csv": 211
     },
-    "ispra_linked_data": {
-      "total": 132,
-      "reachable": 132,
-      "csv": 0
-    },
     "dati_senato": {
       "total": 100,
       "reachable": 100,
-      "csv": 0
-    },
-    "dati_camera": {
-      "total": 99,
-      "reachable": 99,
       "csv": 0
     },
     "noipa_sparql": {
@@ -94,7 +84,7 @@
     "ministero_interno": {
       "total": 33,
       "reachable": 33,
-      "csv": 32
+      "csv": 33
     },
     "art_opendata": {
       "total": 32,

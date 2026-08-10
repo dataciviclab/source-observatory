@@ -1,6 +1,6 @@
 {
   "source_id": "istat_sdmx",
-  "generated_at": "2026-08-03T06:48:44+00:00",
+  "generated_at": "2026-08-10T05:08:54+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Endpoint SDMX ricco e ad alto valore per scouting e source-check.",
-    "last_probed": "2026-08-03"
+    "last_probed": "2026-08-10"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,22 +20,22 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 4899,
+    "total_items": 4896,
     "method": "dataflow_count",
-    "captured_at": "2026-08-03T06:41:09+00:00",
+    "captured_at": "2026-08-10T04:59:42+00:00",
     "baseline_value": 4212,
     "baseline_date": "2026-04-10",
-    "freshness_hours": 0.1,
-    "delta": 687,
-    "delta_pct": 16.3,
+    "freshness_hours": 0.2,
+    "delta": 684,
+    "delta_pct": 16.2,
     "formats": {
-      "SDMX": 4899
+      "SDMX": 4896
     }
   },
   "source_check": {
-    "last_run": "2026-08-03T06:48:44Z",
-    "total_scored": 3574,
-    "reachable": 3574,
+    "last_run": "2026-08-10T05:08:54Z",
+    "total_scored": 3571,
+    "reachable": 3571,
     "csv_count": 0,
     "with_csv_schema": 0,
     "avg_readiness": 5.0,
@@ -76,12 +76,12 @@
         "reachable": true
       }
     ],
-    "coverage_pct": 73.0,
+    "coverage_pct": 72.9,
     "formato_aperto": {
       "score": 5.0,
       "perc_aperto": 0.0,
       "perc_reachable": 100.0,
-      "total": 3574,
+      "total": 3571,
       "fonte": "source_check"
     }
   },

@@ -1,6 +1,6 @@
 {
   "source_id": "mit_opendata",
-  "generated_at": "2026-08-03T06:48:44+00:00",
+  "generated_at": "2026-08-10T05:08:54+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Dataset del Ministero Infrastrutture e Trasporti via dati.gov.it (portale MIT dati.mit.gov.it non raggiungibile da 2026-05). 70 dataset: contratti pubblici, incidentalità, trasporti, opere pubbliche. CC-BY-4.0.",
-    "last_probed": "2026-08-03"
+    "last_probed": "2026-08-10"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 70,
     "method": "package_search",
-    "captured_at": "2026-08-03T06:41:09+00:00",
+    "captured_at": "2026-08-10T04:59:42+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-06-22",
-    "freshness_hours": 0.1,
+    "freshness_hours": 0.2,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -49,7 +49,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-08-03T06:48:44Z",
+    "last_run": "2026-08-10T05:08:54Z",
     "total_scored": 56,
     "reachable": 44,
     "csv_count": 46,

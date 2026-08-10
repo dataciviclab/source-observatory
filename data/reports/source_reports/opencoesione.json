@@ -1,6 +1,6 @@
 {
   "source_id": "opencoesione",
-  "generated_at": "2026-08-03T06:48:44+00:00",
+  "generated_at": "2026-08-10T05:08:54+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting PCM-OpenCoesione). Sostituisce accesso diretto a opencoesione.gov.it (API REST instabile: 403/timeout). 561 dataset totali su dati.gov.it; i 3 core sono progetti, soggetti, pagamenti (CSV + Parquet). Licenza CC BY 4.0. File raw su opencoesione.gov.it. Ultimo aggiornamento contenuti: 2026-02-28.\n",
-    "last_probed": "2026-08-03"
+    "last_probed": "2026-08-10"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 561,
     "method": "package_search",
-    "captured_at": "2026-08-03T06:41:09+00:00",
+    "captured_at": "2026-08-10T04:59:42+00:00",
     "baseline_value": 561,
     "baseline_date": "2026-06-03",
-    "freshness_hours": 0.1,
+    "freshness_hours": 0.2,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -35,7 +35,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-08-03T06:48:44Z",
+    "last_run": "2026-08-10T05:08:54Z",
     "total_scored": 248,
     "reachable": 238,
     "csv_count": 238,
