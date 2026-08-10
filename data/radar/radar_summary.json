@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-08-09T04:34:45.045093+00:00",
-  "probe_date": "2026-08-09",
+  "generated_at": "2026-08-10T04:51:32.421839+00:00",
+  "probe_date": "2026-08-10",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 35,
-    "YELLOW": 1,
+    "GREEN": 34,
+    "YELLOW": 2,
     "RED": 0
   },
   "persistent_red": 0,
@@ -83,10 +83,10 @@
     },
     {
       "id": "ispra_linked_data",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sparql",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -137,7 +137,7 @@
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
       "ssl_issue": true,
-      "ssl_streak": 8
+      "ssl_streak": 9
     },
     {
       "id": "aifa",

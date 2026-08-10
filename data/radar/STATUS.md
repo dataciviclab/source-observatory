@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-08-09
+Ultimo run: 2026-08-10
 
 ## Sommario
 
 - Fonti controllate: 36
-- GREEN: 35
-- YELLOW: 1
+- GREEN: 34
+- YELLOW: 2
 - RED: 0
 
 ## Tipi sorgente
@@ -40,7 +40,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | camera_deputati_legislature, camera_gruppi, camera_incarichi, camera_votazioni_sparql, membri_governo, silos_infrastrutture |
 | dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | senato_anagrafica, senato_ddl, senato_firmatari |
 | dati_cultura | catalog | sparql | catalog-watch | YELLOW | - | - |
-| ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
+| ispra_linked_data | catalog | sparql | catalog-watch | YELLOW | - | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mur_ustat | catalog | ckan | catalog-watch | GREEN | 200 | mur_contribuzione_universitaria, mur_immatricolati, mur_iscritti |
@@ -71,4 +71,5 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 ## Note
 
 - `dati_cultura`: Retry timeout/connection: Timeout (ConnectTimeout)
+- `ispra_linked_data`: Retry timeout/connection: Timeout (ReadTimeout)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
