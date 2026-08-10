@@ -1,7 +1,8 @@
-"""Sync datasets_in_use in sources_registry.yaml from DI's clean_catalog.json.
+"""Sync datasets_in_use in sources_registry.yaml from DI's registry.json.
 
-Reads dataset-incubator/registry/clean_catalog.json, groups datasets by source_id,
-and updates sources_registry.yaml so that each source lists its DI candidate slugs.
+Reads dataset-incubator/registry/registry.json (fusion), groups datasets by
+source_id, and updates sources_registry.yaml so that each source lists its
+DI candidate slugs.
 """
 
 import json
@@ -13,17 +14,16 @@ from ruamel.yaml import YAML
 
 from scripts._constants import REGISTRY_PATH
 
-DI_CATALOG_URL = (
-    "https://raw.githubusercontent.com/dataciviclab/dataset-incubator/"
-    "main/registry/clean_catalog.json"
+DI_REGISTRY_URL = (
+    "https://raw.githubusercontent.com/dataciviclab/dataset-incubator/main/registry/registry.json"
 )
 
 
-def fetch_di_catalog() -> list[dict]:
-    print(f"Fetching {DI_CATALOG_URL}...")
-    with urlopen(DI_CATALOG_URL) as resp:
-        catalog = json.loads(resp.read().decode())
-    return catalog["datasets"]
+def fetch_di_registry() -> list[dict]:
+    print(f"Fetching {DI_REGISTRY_URL}...")
+    with urlopen(DI_REGISTRY_URL) as resp:
+        registry = json.loads(resp.read().decode())
+    return registry["datasets"]
 
 
 def group_by_source_id(datasets: list[dict]) -> dict[str, list[str]]:
@@ -74,8 +74,8 @@ def update_registry(registry_path: Path, source_groups: dict[str, list[str]]) ->
 
 
 def main() -> int:
-    datasets = fetch_di_catalog()
-    print(f"DI catalog: {len(datasets)} datasets")
+    datasets = fetch_di_registry()
+    print(f"DI registry: {len(datasets)} datasets")
 
     groups = group_by_source_id(datasets)
     print(f"Source groups: {len(groups)}")
