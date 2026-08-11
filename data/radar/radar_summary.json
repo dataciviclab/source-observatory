@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-10T04:51:32.421839+00:00",
-  "probe_date": "2026-08-10",
+  "generated_at": "2026-08-11T04:37:59.776639+00:00",
+  "probe_date": "2026-08-11",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 34,
-    "YELLOW": 2,
-    "RED": 0
+    "GREEN": 33,
+    "YELLOW": 1,
+    "RED": 2
   },
   "persistent_red": 0,
   "sources": [
@@ -59,9 +59,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -83,10 +83,10 @@
     },
     {
       "id": "ispra_linked_data",
-      "status": "YELLOW",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "503",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -137,7 +137,7 @@
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
       "ssl_issue": true,
-      "ssl_streak": 9
+      "ssl_streak": 10
     },
     {
       "id": "aifa",

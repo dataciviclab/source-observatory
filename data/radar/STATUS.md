@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-08-10
+Ultimo run: 2026-08-11
 
 ## Sommario
 
 - Fonti controllate: 36
-- GREEN: 34
-- YELLOW: 2
-- RED: 0
+- GREEN: 33
+- YELLOW: 1
+- RED: 2
 
 ## Tipi sorgente
 
@@ -37,10 +37,10 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_entrate_stato, bdap_lea, bdap_spese_stato, dipendenti_pubblici |
 | inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali, mim_scuola_infanzia |
-| dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | camera_deputati_legislature, camera_gruppi, camera_incarichi, camera_votazioni_sparql, membri_governo, silos_infrastrutture |
+| dati_camera | catalog | sparql | catalog-watch | RED | 503 | camera_deputati_legislature, camera_gruppi, camera_incarichi, camera_votazioni_sparql, membri_governo, silos_infrastrutture |
 | dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | senato_anagrafica, senato_ddl, senato_firmatari |
 | dati_cultura | catalog | sparql | catalog-watch | YELLOW | - | - |
-| ispra_linked_data | catalog | sparql | catalog-watch | YELLOW | - | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
+| ispra_linked_data | catalog | sparql | catalog-watch | RED | 503 | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mur_ustat | catalog | ckan | catalog-watch | GREEN | 200 | mur_contribuzione_universitaria, mur_immatricolati, mur_iscritti |
@@ -70,6 +70,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
+- `dati_camera`: HTTP 503 | content-type: text/html; charset=UTF-8 | url finale: https://dati.camera.it/sparql | Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.
 - `dati_cultura`: Retry timeout/connection: Timeout (ConnectTimeout)
-- `ispra_linked_data`: Retry timeout/connection: Timeout (ReadTimeout)
+- `ispra_linked_data`: HTTP 503 | content-type: text/html; charset=iso-8859-1 | url finale: https://dati.isprambiente.it/sparql | Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline tabellari.
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
