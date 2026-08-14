@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-13T05:02:07.565446+00:00",
-  "probe_date": "2026-08-13",
+  "generated_at": "2026-08-14T04:59:12.856391+00:00",
+  "probe_date": "2026-08-14",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 18,
-    "YELLOW": 0,
-    "RED": 18
+    "GREEN": 33,
+    "YELLOW": 1,
+    "RED": 2
   },
   "persistent_red": 1,
   "sources": [
@@ -19,9 +19,9 @@
     },
     {
       "id": "anac",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -43,9 +43,9 @@
     },
     {
       "id": "inail_opendata",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -59,9 +59,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -75,20 +75,20 @@
     },
     {
       "id": "dati_cultura",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sparql",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)",
       "ssl_fallback_used": false
     },
     {
       "id": "ispra_linked_data",
       "status": "RED",
       "protocol": "sparql",
-      "http_code": "503",
-      "note": null,
+      "http_code": "-",
+      "note": "Connection error (ConnectionError)",
       "ssl_fallback_used": false,
-      "red_streak": 3
+      "red_streak": 4
     },
     {
       "id": "consip_open_data",
@@ -100,25 +100,25 @@
     },
     {
       "id": "lavoro_opendata",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "mur_ustat",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "opencoesione",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -138,7 +138,7 @@
       "note": "SSL verify failed; fallback verify=False used (SSLError)",
       "ssl_fallback_used": true,
       "ssl_issue": true,
-      "ssl_streak": 12
+      "ssl_streak": 13
     },
     {
       "id": "aifa",
@@ -166,9 +166,9 @@
     },
     {
       "id": "mit_opendata",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -206,17 +206,17 @@
     },
     {
       "id": "ministero_interno",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "agid",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -230,73 +230,73 @@
     },
     {
       "id": "mimit_rna",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "ministero_turismo_opendata",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "ministero_salute",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "agcm",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "unioncamere",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "pagopa",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "art_opendata",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "aci",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "adm_opendata",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     }
