@@ -20,11 +20,13 @@ jobs:
         with:
           extra-requirements: requirements-dev.txt
 
-      - name: Lint with ruff
-        run: ruff check scripts/ tests/ so_mcp/
-
-      - name: Type check with mypy
-        run: mypy scripts/ so_mcp/
+      - uses: dataciviclab/.github/actions/python-ci@main
+        with:
+          lint_paths: "scripts/ tests/ so_mcp/"
+          mypy_paths: "scripts/ so_mcp/"
+          test_dir: "tests"
+          pytest_args: "-v"
+          cov_threshold: "60"
 
       - name: Validate sources_registry.yaml
         run: |
@@ -40,8 +42,3 @@ jobs:
               assert 'verdict' in cfg, f'{sid}: missing verdict'
           print('Schema validation OK')
           "
-
-
-
-      - name: Run tests
-        run: pytest -v --cov-fail-under=60
