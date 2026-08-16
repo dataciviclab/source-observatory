@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-15T03:52:01.843540+00:00",
-  "probe_date": "2026-08-15",
+  "generated_at": "2026-08-16T03:57:21.838501+00:00",
+  "probe_date": "2026-08-16",
   "sources_total": 36,
   "status_counts": {
     "GREEN": 34,
@@ -88,7 +88,7 @@
       "http_code": "-",
       "note": "Connection error (ConnectionError)",
       "ssl_fallback_used": false,
-      "red_streak": 5
+      "red_streak": 6
     },
     {
       "id": "consip_open_data",
