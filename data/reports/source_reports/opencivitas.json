@@ -1,6 +1,6 @@
 {
   "source_id": "opencivitas",
-  "generated_at": "2026-08-10T05:08:54+00:00",
+  "generated_at": "2026-08-17T04:18:23+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale OpenCivitas — csv_magnet scan via discovery=auto (sitemap alla root). ZIP con CSV/XLSX dentro.",
-    "last_probed": "2026-08-10"
+    "last_probed": "2026-08-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,26 +20,26 @@
     "ssl_fallback": true
   },
   "inventory": {
-    "total_items": 86,
+    "total_items": 98,
     "method": "csv_magnet_area_pages_paginated",
-    "captured_at": "2026-08-10T04:59:42+00:00",
+    "captured_at": "2026-08-17T04:07:49+00:00",
     "baseline_value": 1084,
     "baseline_date": "2026-05-07",
     "freshness_hours": 0.2,
-    "delta": -998,
-    "delta_pct": -92.1,
+    "delta": -986,
+    "delta_pct": -91.0,
     "formats": {
-      "ZIP": 85,
+      "ZIP": 97,
       "XLSX": 1
     },
     "years_range": [
       2009,
-      2024
+      2023
     ]
   },
   "source_check": {
-    "last_run": "2026-08-10T05:08:54Z",
-    "total_scored": 26,
+    "last_run": "2026-08-17T04:18:23Z",
+    "total_scored": 27,
     "reachable": 0,
     "csv_count": 0,
     "with_csv_schema": 0,
@@ -49,8 +49,8 @@
         "name": "opencivitas/comuni-amministrazione-indicatori-e-determinanti-opencivitas",
         "score": 0,
         "year_range": [
-          2016,
-          2016
+          2015,
+          2015
         ],
         "format": "ZIP",
         "reachable": false
@@ -60,7 +60,17 @@
         "score": 0,
         "year_range": [
           2017,
-          2024
+          2023
+        ],
+        "format": "ZIP",
+        "reachable": false
+      },
+      {
+        "name": "opencivitas/comuni-fabbisogni-caratteristiche-e-prestazioni-generali-opencivitas",
+        "score": 0,
+        "year_range": [
+          2013,
+          2013
         ],
         "format": "ZIP",
         "reachable": false
@@ -79,29 +89,19 @@
         "name": "opencivitas/comuni-servizi-totali-indicatori-e-determinanti-opencivitas",
         "score": 0,
         "year_range": [
-          2021,
-          2022
-        ],
-        "format": "ZIP",
-        "reachable": false
-      },
-      {
-        "name": "opencivitas/comuni-sociale-e-asili-nido-indicatori-e-determinanti-opencivitas",
-        "score": 0,
-        "year_range": [
           2016,
-          2017
+          2021
         ],
         "format": "ZIP",
         "reachable": false
       }
     ],
-    "coverage_pct": 30.2,
+    "coverage_pct": 27.6,
     "formato_aperto": {
       "score": 10.0,
       "perc_aperto": 0.0,
       "perc_reachable": 0.0,
-      "total": 26,
+      "total": 27,
       "fonte": "source_check"
     }
   },

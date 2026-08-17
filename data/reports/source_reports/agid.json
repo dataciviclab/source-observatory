@@ -1,6 +1,6 @@
 {
   "source_id": "agid",
-  "generated_at": "2026-08-10T05:08:54+00:00",
+  "generated_at": "2026-08-17T04:18:23+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. IPA — Indice delle PA: enti, unita organizzative, PEC, domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione elettronica, cloud. Codice_IPA chiave di join con ANAC.",
-    "last_probed": "2026-08-10"
+    "last_probed": "2026-08-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 40,
     "method": "package_search",
-    "captured_at": "2026-08-10T04:59:42+00:00",
+    "captured_at": "2026-08-17T04:07:49+00:00",
     "baseline_value": 40,
     "baseline_date": "2026-05-24",
     "freshness_hours": 0.2,
@@ -40,7 +40,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-08-10T05:08:54Z",
+    "last_run": "2026-08-17T04:18:23Z",
     "total_scored": 40,
     "reachable": 5,
     "csv_count": 9,

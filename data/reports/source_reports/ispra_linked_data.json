@@ -1,6 +1,6 @@
 {
   "source_id": "ispra_linked_data",
-  "generated_at": "2026-08-10T05:08:54+00:00",
+  "generated_at": "2026-08-17T04:18:23+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,18 +11,18 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline tabellari.",
-    "last_probed": "2026-08-10"
+    "last_probed": "2026-08-17"
   },
   "health": {
-    "radar_status": "YELLOW",
+    "radar_status": "RED",
     "http_code": "-",
-    "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+    "note": "Connection error (ConnectionError)",
     "ssl_fallback": false
   },
   "inventory": {
     "total_items": 0,
     "method": "sparql_query",
-    "captured_at": "2026-08-10T04:59:42+00:00",
+    "captured_at": "2026-08-17T04:07:49+00:00",
     "baseline_value": 66,
     "baseline_date": "2026-04-11",
     "delta": null,
@@ -70,11 +70,11 @@
     }
   ],
   "operational_verdict": {
-    "label": "STABLE",
-    "score": "stable",
+    "label": "DOWN",
+    "score": "down",
     "triggers": [
-      "all_green"
+      "radar_red"
     ],
-    "next_action": null
+    "next_action": "investigate downtime"
   }
 }

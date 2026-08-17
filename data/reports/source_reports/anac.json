@@ -1,6 +1,6 @@
 {
   "source_id": "anac",
-  "generated_at": "2026-08-10T05:08:54+00:00",
+  "generated_at": "2026-08-17T04:18:23+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting ANAC). I download raw vanno al portale diretto dati.anticorruzione.it con User-Agent browser (WAF blocca solo python-requests). 70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari, subappalti, varianti, PNRR indicatori, SOA. CC-BY-SA 4.0.",
-    "last_probed": "2026-08-10"
+    "last_probed": "2026-08-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,32 +22,32 @@
   "inventory": {
     "total_items": 70,
     "method": "package_search",
-    "captured_at": "2026-08-10T04:59:42+00:00",
+    "captured_at": "2026-08-17T04:07:49+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-05-24",
     "freshness_hours": 0.2,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
-      "CSV,TTL,JSON": 14,
-      "CSV,JSON,TTL": 12,
+      "JSON,CSV,TTL": 13,
+      "CSV,TTL,JSON": 10,
+      "CSV,JSON,TTL": 10,
+      "TTL,JSON,CSV": 10,
       "JSON": 9,
-      "JSON,CSV,TTL": 8,
-      "TTL,CSV,JSON": 8,
-      "JSON,TTL,CSV": 8,
-      "TTL,JSON,CSV": 7,
+      "TTL,CSV,JSON": 9,
+      "JSON,TTL,CSV": 5,
       "CSV,JSON": 2,
-      "CSV": 1,
-      "JSON,CSV,ZIP,TTL": 1
+      "JSON,ZIP,CSV,TTL": 1,
+      "CSV": 1
     }
   },
   "source_check": {
-    "last_run": "2026-08-10T05:08:54Z",
+    "last_run": "2026-08-17T04:18:23Z",
     "total_scored": 48,
     "reachable": 47,
     "csv_count": 47,
     "with_csv_schema": 47,
-    "avg_readiness": 7.6,
+    "avg_readiness": 7.5,
     "top_items": [
       {
         "name": "anac/1fd421d9-691f-4fa7-bd9f-b5ac72d8b0af",
@@ -56,7 +56,7 @@
           2016,
           2016
         ],
-        "format": "ttl,json,csv",
+        "format": "csv,ttl,json",
         "reachable": true
       },
       {
@@ -66,7 +66,7 @@
           2013,
           2013
         ],
-        "format": "json,csv,ttl",
+        "format": "csv,json,ttl",
         "reachable": true
       },
       {
@@ -76,7 +76,7 @@
           2021,
           2021
         ],
-        "format": "json,ttl,csv",
+        "format": "ttl,json,csv",
         "reachable": true
       },
       {
@@ -86,7 +86,7 @@
           2007,
           2007
         ],
-        "format": "csv,json,ttl",
+        "format": "csv,ttl,json",
         "reachable": true
       },
       {
@@ -96,7 +96,7 @@
           2020,
           2020
         ],
-        "format": "json,ttl,csv",
+        "format": "ttl,csv,json",
         "reachable": true
       }
     ],

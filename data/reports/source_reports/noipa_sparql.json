@@ -1,6 +1,6 @@
 {
   "source_id": "noipa_sparql",
-  "generated_at": "2026-08-10T05:08:54+00:00",
+  "generated_at": "2026-08-17T04:18:23+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "NoiPA SPARQL — MEF/RGS. Dati mensili personale PA\n(entries-{YYYYMM}, 2019-2026) + pensioni PA (entriesPensioni-{YYYYMM},\n2017-oggi). ~509k soggetti/mese, 39 predicati (ente, comparto, qualifica,\nritenute previdenziali/IRPEF, detrazioni, assenze, genere, eta', residenza).\nPOST bloccato (403), solo GET funziona. XML SPARQL parsato da\nlab-connectors via _parse_sparql_xml() dal 2026-06-25.\nI named graph usano URI completi:\nhttps://sparql-noipa.mef.gov.it/entries-YYYYMM\n(usare prefix=\"https://sparql-noipa.mef.gov.it/entries-\" in discover_graphs).\n",
-    "last_probed": "2026-08-10"
+    "last_probed": "2026-08-17"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 100,
     "method": null,
-    "captured_at": "2026-08-10T04:59:42+00:00",
+    "captured_at": "2026-08-17T04:07:49+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "freshness_hours": 0.2,
@@ -33,7 +33,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-08-10T05:08:54Z",
+    "last_run": "2026-08-17T04:18:23Z",
     "total_scored": 99,
     "reachable": 99,
     "csv_count": 0,
