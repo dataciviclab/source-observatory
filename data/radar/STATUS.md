@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-08-17
+Ultimo run: 2026-08-18
 
 ## Sommario
 
 - Fonti controllate: 36
 - GREEN: 33
-- YELLOW: 1
-- RED: 2
+- YELLOW: 2
+- RED: 1
 
 ## Tipi sorgente
 
@@ -34,10 +34,10 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | catalog-watch | GREEN | 200 | anac_aggiudicatari, anac_aggiudicazioni, anac_bandi_gara, anac_collaudo, anac_cup, anac_partecipanti, anac_stati_avanzamento, anac_subappalti |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
-| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_entrate_stato, bdap_lea, bdap_spese_stato, dipendenti_pubblici |
+| openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_entrate_stato, bdap_lea, bdap_pagamenti_stato, bdap_spese_stato, dipendenti_pubblici |
 | inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali, mim_scuola_infanzia |
-| dati_camera | catalog | sparql | catalog-watch | RED | 503 | silos_infrastrutture |
+| dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | silos_infrastrutture |
 | dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | senato_anagrafica, senato_ddl, senato_firmatari |
 | dati_cultura | catalog | sparql | catalog-watch | YELLOW | - | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | RED | - | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
@@ -47,7 +47,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | opencoesione | catalog | ckan | catalog-watch | GREEN | 200 | opencoesione_progetti |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso, opencivitas_fsc_enti_rso, opencivitas_glossario, opencivitas_indicatori |
-| aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
+| aifa | catalog | html | catalog-watch | YELLOW | - | aifa_spesa_consumo |
 | dait | catalog | html | radar-only | GREEN | 200 | dait_amministratori_locali |
 | eligendo | catalog | html | radar-only | GREEN | 200 | elezioni_comunali, elezioni_europee, elezioni_referendum, elezioni_regionali |
 | mit_opendata | catalog | ckan | catalog-watch | GREEN | 200 | mit_incidentalita_mensile, mit_opere_incompiute_2020 |
@@ -70,7 +70,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
-- `dati_camera`: HTTP 503 | content-type: text/html; charset=UTF-8 | url finale: https://dati.camera.it/sparql | Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.
 - `dati_cultura`: Retry timeout/connection: Timeout (ConnectTimeout)
 - `ispra_linked_data`: Connection error (ConnectionError)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
+- `aifa`: Retry timeout/connection: Timeout (ReadTimeout)
