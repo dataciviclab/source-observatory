@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-18T03:56:03.873236+00:00",
-  "probe_date": "2026-08-18",
+  "generated_at": "2026-08-19T03:56:56.007895+00:00",
+  "probe_date": "2026-08-19",
   "sources_total": 36,
   "status_counts": {
     "GREEN": 33,
-    "YELLOW": 2,
-    "RED": 1
+    "YELLOW": 1,
+    "RED": 2
   },
   "persistent_red": 1,
   "sources": [
@@ -59,9 +59,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -88,7 +88,7 @@
       "http_code": "-",
       "note": "Connection error (ConnectionError)",
       "ssl_fallback_used": false,
-      "red_streak": 8
+      "red_streak": 9
     },
     {
       "id": "consip_open_data",
@@ -142,10 +142,10 @@
     },
     {
       "id": "aifa",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "html",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
