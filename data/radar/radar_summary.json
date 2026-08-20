@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-08-19T03:56:56.007895+00:00",
-  "probe_date": "2026-08-19",
+  "generated_at": "2026-08-20T04:02:05.278151+00:00",
+  "probe_date": "2026-08-20",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 33,
-    "YELLOW": 1,
+    "GREEN": 32,
+    "YELLOW": 2,
     "RED": 2
   },
-  "persistent_red": 1,
+  "persistent_red": 2,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -63,7 +63,8 @@
       "protocol": "sparql",
       "http_code": "503",
       "note": null,
-      "ssl_fallback_used": false
+      "ssl_fallback_used": false,
+      "red_streak": 2
     },
     {
       "id": "dati_senato",
@@ -88,7 +89,7 @@
       "http_code": "-",
       "note": "Connection error (ConnectionError)",
       "ssl_fallback_used": false,
-      "red_streak": 9
+      "red_streak": 10
     },
     {
       "id": "consip_open_data",
