@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-21T03:58:37.517540+00:00",
-  "probe_date": "2026-08-21",
+  "generated_at": "2026-08-22T03:53:53.532532+00:00",
+  "probe_date": "2026-08-22",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 34,
+    "GREEN": 33,
     "YELLOW": 1,
-    "RED": 1
+    "RED": 2
   },
   "persistent_red": 1,
   "sources": [
@@ -59,9 +59,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -88,7 +88,7 @@
       "http_code": "-",
       "note": "Connection error (ConnectionError)",
       "ssl_fallback_used": false,
-      "red_streak": 11
+      "red_streak": 12
     },
     {
       "id": "consip_open_data",
