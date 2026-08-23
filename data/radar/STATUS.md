@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-08-22
+Ultimo run: 2026-08-23
 
 ## Sommario
 
@@ -37,7 +37,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_entrate_stato, bdap_lea, bdap_pagamenti_stato, bdap_spese_stato, dipendenti_pubblici |
 | inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali, mim_scuola_infanzia |
-| dati_camera | catalog | sparql | catalog-watch | RED | 503 | silos_infrastrutture |
+| dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | silos_infrastrutture |
 | dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | senato_anagrafica, senato_ddl, senato_firmatari |
 | dati_cultura | catalog | sparql | catalog-watch | YELLOW | - | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | RED | - | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
@@ -47,7 +47,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | opencoesione | catalog | ckan | catalog-watch | GREEN | 200 | opencoesione_progetti |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso, opencivitas_fsc_enti_rso, opencivitas_glossario, opencivitas_indicatori |
-| aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
+| aifa | catalog | html | catalog-watch | RED | 502 | aifa_spesa_consumo |
 | dait | catalog | html | radar-only | GREEN | 200 | dait_amministratori_locali |
 | eligendo | catalog | html | radar-only | GREEN | 200 | elezioni_comunali, elezioni_europee, elezioni_referendum, elezioni_regionali |
 | mit_opendata | catalog | ckan | catalog-watch | GREEN | 200 | mit_incidentalita_mensile, mit_opere_incompiute_2020 |
@@ -70,7 +70,8 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
-- `dati_camera`: HTTP 503 | content-type: text/html; charset=UTF-8 | url finale: https://dati.camera.it/sparql | Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.
 - `dati_cultura`: Retry timeout/connection: Timeout (ConnectTimeout)
 - `ispra_linked_data`: Connection error (ConnectionError)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
+- `aifa`: HTTP 502 | content-type: text/html | url finale: https://www.aifa.gov.it/dati-aifa | Portale Open Data AIFA — CSV scaricabili senza autenticazione. Licenza CC-BY 4.0. Inventory via area_pages (sito principale ha protezioni anti-bot). Dataset: liste farmaci, provvedimenti, sperimentazioni cliniche, farmacovigilanza, incarichi, bandi.
+
