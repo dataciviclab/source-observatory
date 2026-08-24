@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-23T03:58:47.534016+00:00",
-  "probe_date": "2026-08-23",
+  "generated_at": "2026-08-24T04:03:16.613662+00:00",
+  "probe_date": "2026-08-24",
   "sources_total": 36,
   "status_counts": {
     "GREEN": 33,
-    "YELLOW": 1,
-    "RED": 2
+    "YELLOW": 2,
+    "RED": 1
   },
   "persistent_red": 1,
   "sources": [
@@ -88,7 +88,7 @@
       "http_code": "-",
       "note": "Connection error (ConnectionError)",
       "ssl_fallback_used": false,
-      "red_streak": 13
+      "red_streak": 14
     },
     {
       "id": "consip_open_data",
@@ -142,10 +142,10 @@
     },
     {
       "id": "aifa",
-      "status": "RED",
+      "status": "YELLOW",
       "protocol": "html",
-      "http_code": "502",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
