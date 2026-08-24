@@ -1,6 +1,6 @@
 {
   "source_id": "agcm",
-  "generated_at": "2026-08-17T04:18:23+00:00",
+  "generated_at": "2026-08-24T04:19:56+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (AGCM). 53 dataset su concorrenza e mercato: rating di legalita' (elenchi settimanali imprese con rating), operazioni di concentrazione 2021-2025.\n",
-    "last_probed": "2026-08-17"
+    "last_probed": "2026-08-24"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,26 +20,26 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 55,
+    "total_items": 56,
     "method": "package_search",
-    "captured_at": "2026-08-17T04:07:49+00:00",
+    "captured_at": "2026-08-24T04:10:50+00:00",
     "baseline_value": 53,
     "baseline_date": "2026-06-04",
     "freshness_hours": 0.2,
-    "delta": 2,
-    "delta_pct": 3.8,
+    "delta": 3,
+    "delta_pct": 5.7,
     "formats": {
-      "CSV,JSON": 31,
+      "CSV,JSON": 32,
       "JSON,CSV": 24
     }
   },
   "source_check": {
-    "last_run": "2026-08-17T04:18:23Z",
+    "last_run": "2026-08-24T04:19:56Z",
     "total_scored": 5,
     "reachable": 5,
     "csv_count": 5,
     "with_csv_schema": 4,
-    "avg_readiness": 8.0,
+    "avg_readiness": 8.2,
     "top_items": [
       {
         "name": "agcm/istruttorie-tutela-del-consumatore",
@@ -73,10 +73,10 @@
       },
       {
         "name": "agcm/rating-di-legalita",
-        "score": 9,
+        "score": 10,
         "year_range": [
-          2026,
-          2026
+          2023,
+          2023
         ],
         "format": "json,csv",
         "reachable": true
@@ -89,7 +89,7 @@
         "reachable": true
       }
     ],
-    "coverage_pct": 9.1,
+    "coverage_pct": 8.9,
     "formato_aperto": {
       "score": 5.0,
       "perc_aperto": 0.0,

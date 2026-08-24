@@ -1,6 +1,6 @@
 {
   "source_id": "aci",
-  "generated_at": "2026-08-17T04:18:23+00:00",
+  "generated_at": "2026-08-24T04:19:56+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. 35 dataset ACI su parco veicolare: prime iscrizioni autovetture (per comune, alimentazione, classe euro, 2017-2024), radiazioni per demolizione. CSV su lod.aci.it in formato tidy. Incrociabile con MIT incidentalità.",
-    "last_probed": "2026-08-17"
+    "last_probed": "2026-08-24"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 39,
     "method": "package_search",
-    "captured_at": "2026-08-17T04:07:49+00:00",
+    "captured_at": "2026-08-24T04:10:50+00:00",
     "baseline_value": 35,
     "baseline_date": "2026-06-11",
     "freshness_hours": 0.2,
@@ -35,7 +35,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-08-17T04:18:23Z",
+    "last_run": "2026-08-24T04:19:56Z",
     "total_scored": 5,
     "reachable": 2,
     "csv_count": 2,
