@@ -52,7 +52,7 @@ duplicati e orientarti:
 ```
 1. so_find_by_url(<URL>)       → la fonte è già in source_check o inventory?
 2. so_source_check(source_id=?, min_score=3) → score esistente per questa fonte
-3. toolkit_probe_url(<URL>)     → reachability rapida (toolkit MCP)
+3. toolkit_source(action="probe", url=<URL>)     → reachability rapida (toolkit MCP)
 ```
 
 **Se la fonte è già nota (source_id conosciuto)**: sostituisci i passaggi
