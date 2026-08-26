@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-08-25T03:57:47.210958+00:00",
-  "probe_date": "2026-08-25",
+  "generated_at": "2026-08-26T04:01:19.786139+00:00",
+  "probe_date": "2026-08-26",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 33,
-    "YELLOW": 2,
+    "GREEN": 34,
+    "YELLOW": 1,
     "RED": 1
   },
   "persistent_red": 1,
@@ -142,10 +142,10 @@
     },
     {
       "id": "aifa",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "html",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {

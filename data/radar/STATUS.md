@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-08-25
+Ultimo run: 2026-08-26
 
 ## Sommario
 
 - Fonti controllate: 36
-- GREEN: 33
-- YELLOW: 2
+- GREEN: 34
+- YELLOW: 1
 - RED: 1
 
 ## Tipi sorgente
@@ -47,7 +47,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | opencoesione | catalog | ckan | catalog-watch | GREEN | 200 | opencoesione_progetti |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso, opencivitas_fsc_enti_rso, opencivitas_glossario, opencivitas_indicatori |
-| aifa | catalog | html | catalog-watch | YELLOW | - | aifa_spesa_consumo |
+| aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
 | dait | catalog | html | radar-only | GREEN | 200 | dait_amministratori_locali |
 | eligendo | catalog | html | radar-only | GREEN | 200 | elezioni_comunali, elezioni_europee, elezioni_referendum, elezioni_regionali |
 | mit_opendata | catalog | ckan | catalog-watch | GREEN | 200 | mit_incidentalita_mensile, mit_opere_incompiute_2020 |
@@ -73,4 +73,3 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 - `dati_cultura`: Retry timeout/connection: Timeout (ConnectTimeout)
 - `ispra_linked_data`: Connection error (ConnectionError)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
-- `aifa`: Retry timeout/connection: Timeout (ReadTimeout)
