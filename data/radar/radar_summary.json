@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-08-28T15:23:21.295415+00:00",
-  "probe_date": "2026-08-28",
+  "generated_at": "2026-08-29T09:59:43.298493+00:00",
+  "probe_date": "2026-08-29",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 33,
-    "YELLOW": 2,
+    "GREEN": 35,
+    "YELLOW": 0,
     "RED": 1
   },
   "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sdmx",
-      "http_code": "-",
-      "note": "Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -27,10 +27,10 @@
     },
     {
       "id": "inps",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
