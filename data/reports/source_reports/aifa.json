@@ -1,6 +1,6 @@
 {
   "source_id": "aifa",
-  "generated_at": "2026-08-24T04:19:56+00:00",
+  "generated_at": "2026-08-31T10:03:33+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,21 +11,21 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale Open Data AIFA — CSV scaricabili senza autenticazione. Licenza CC-BY 4.0. Inventory via area_pages (sito principale ha protezioni anti-bot). Dataset: liste farmaci, provvedimenti, sperimentazioni cliniche, farmacovigilanza, incarichi, bandi.\n",
-    "last_probed": "2026-08-24"
+    "last_probed": "2026-08-31"
   },
   "health": {
-    "radar_status": "YELLOW",
-    "http_code": "-",
-    "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
     "ssl_fallback": false
   },
   "inventory": {
     "total_items": 37,
     "method": null,
-    "captured_at": "2026-08-24T04:10:50+00:00",
+    "captured_at": "2026-08-31T09:55:01+00:00",
     "baseline_value": null,
     "baseline_date": null,
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.1,
     "delta": null,
     "delta_pct": 0.0,
     "formats": {
@@ -38,63 +38,69 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-08-24T04:19:56Z",
+    "last_run": "2026-08-31T10:03:33Z",
     "total_scored": 29,
-    "reachable": 1,
+    "reachable": 29,
     "csv_count": 29,
-    "with_csv_schema": 1,
-    "avg_readiness": 1.2,
+    "with_csv_schema": 29,
+    "avg_readiness": 9.7,
     "top_items": [
       {
-        "name": "aifa/sperimentazioni-cliniche-agenzia-italiana-del-farmaco",
-        "score": 8,
-        "year_range": null,
+        "name": "aifa/farmacovigilanza-agenzia-italiana-del-farmaco",
+        "score": 10,
+        "year_range": [
+          2014,
+          2014
+        ],
         "format": "CSV",
         "reachable": true
       },
       {
-        "name": "aifa/bandi-di-gara-e-contratti-agenzia-italiana-del-farmaco/elenco-progetti-cup-1506",
-        "score": 1,
-        "year_range": [
-          2026,
-          2026
-        ],
-        "format": "CSV",
-        "reachable": false
-      },
-      {
-        "name": "aifa/farmacovigilanza-agenzia-italiana-del-farmaco",
-        "score": 1,
-        "year_range": null,
-        "format": "CSV",
-        "reachable": false
-      },
-      {
         "name": "aifa/incarichi-e-consulenze-agenzia-italiana-del-farmaco/collegio-revisori-conti-2025-2030-2605",
-        "score": 1,
+        "score": 10,
         "year_range": [
           2025,
           2025
         ],
         "format": "CSV",
-        "reachable": false
+        "reachable": true
       },
       {
         "name": "aifa/incarichi-e-consulenze-agenzia-italiana-del-farmaco/componenti-cse-2024-2027-2604",
-        "score": 1,
+        "score": 10,
         "year_range": [
           2024,
           2024
         ],
         "format": "CSV",
-        "reachable": false
+        "reachable": true
+      },
+      {
+        "name": "aifa/incarichi-e-consulenze-agenzia-italiana-del-farmaco/elencoconsulenti-2026-0906",
+        "score": 10,
+        "year_range": [
+          2026,
+          2026
+        ],
+        "format": "CSV",
+        "reachable": true
+      },
+      {
+        "name": "aifa/liste-dei-farmaci-agenzia-italiana-del-farmaco",
+        "score": 10,
+        "year_range": [
+          2026,
+          2026
+        ],
+        "format": "CSV",
+        "reachable": true
       }
     ],
     "coverage_pct": 78.4,
     "formato_aperto": {
-      "score": 10.0,
+      "score": 5.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 3.4,
+      "perc_reachable": 100.0,
       "total": 29,
       "fonte": "source_check"
     }

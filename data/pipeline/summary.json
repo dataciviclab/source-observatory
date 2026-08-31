@@ -1,25 +1,25 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-08-24T04:19:53Z",
-  "total_groups": 11301,
-  "reachable": 6904,
-  "unreachable": 4397,
-  "csv_with_schema": 2961,
+  "generated_at": "2026-08-31T10:03:31Z",
+  "total_groups": 11303,
+  "reachable": 7290,
+  "unreachable": 4013,
+  "csv_with_schema": 3075,
   "by_source": {
     "openbdap": {
-      "total": 3846,
+      "total": 3847,
       "reachable": 6,
       "csv": 0
     },
     "istat_sdmx": {
-      "total": 3571,
-      "reachable": 3571,
+      "total": 3572,
+      "reachable": 3572,
       "csv": 0
     },
     "inps": {
       "total": 1809,
       "reachable": 1807,
-      "csv": 1768
+      "csv": 1770
     },
     "openga": {
       "total": 405,
@@ -28,7 +28,7 @@
     },
     "dati_cultura": {
       "total": 274,
-      "reachable": 0,
+      "reachable": 274,
       "csv": 0
     },
     "unioncamere": {
@@ -58,8 +58,8 @@
     },
     "lavoro_opendata": {
       "total": 83,
-      "reachable": 0,
-      "csv": 0
+      "reachable": 83,
+      "csv": 83
     },
     "mit_opendata": {
       "total": 56,
@@ -89,7 +89,7 @@
     "ministero_interno": {
       "total": 33,
       "reachable": 33,
-      "csv": 32
+      "csv": 33
     },
     "art_opendata": {
       "total": 32,
@@ -103,8 +103,8 @@
     },
     "aifa": {
       "total": 29,
-      "reachable": 1,
-      "csv": 1
+      "reachable": 29,
+      "csv": 29
     },
     "mim_opendata": {
       "total": 28,
