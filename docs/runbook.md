@@ -88,7 +88,7 @@ Disciplina:
 - il perimetro segue le fonti `catalog-watch` del registry
 - una fonte può restare osservata in SO ma non essere inventariabile
 - `anac` oggi resta escluso dall'inventory automatico per vincoli WAF
-- l'upload su GCS richiede secret espliciti (GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT, CATALOG_INVENTORY_GCS_PREFIX)
+- l'upload su GCS richiede WIF org-level (GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT) e il prefix hardcoded nella workflow (CATALOG_INVENTORY_GCS_PREFIX)
 - in assenza di GCS il workflow resta valido: usa baseline locale vuota e salta i passaggi opzionali di storage/diff
 - il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`
 - `--skip-red-sources` usato in CI per evitare tentativi su fonti già RED (timeout, WAF)

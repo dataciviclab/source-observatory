@@ -31,7 +31,6 @@ dependencies = [
   "pyarrow>=24.0.0",
   "jsonschema>=4.26.0",
   "ddgs>=9.14.4",
-  "lab-connectors[duckdb,gcs,mcp] @ git+https://github.com/dataciviclab/lab-connectors.git",
   "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@v1.44.0",
 ]
 
