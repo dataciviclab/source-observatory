@@ -1,6 +1,6 @@
 {
   "source_id": "ministero_salute",
-  "generated_at": "2026-08-31T10:03:33+00:00",
+  "generated_at": "2026-09-02T13:44:13+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. Anagrafiche sanitarie nazionali: farmacie, parafarmacie, posti letto, personale SSN, ASL, dispositivi medici, fitosanitari. I file raw puntano a dati.salute.gov.it (portale in migrazione a Gatsby, alcuni URL aggiornati). Complementare a dati_salute (csv_magnet) per il catalogo completo del portale diretto.",
-    "last_probed": "2026-08-31"
+    "last_probed": "2026-09-02"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 51,
     "method": "package_search",
-    "captured_at": "2026-08-31T09:55:01+00:00",
+    "captured_at": "2026-09-02T13:33:56+00:00",
     "baseline_value": 51,
     "baseline_date": "2026-05-24",
-    "freshness_hours": 0.1,
+    "freshness_hours": 0.2,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -35,7 +35,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-08-31T10:03:33Z",
+    "last_run": "2026-09-02T13:44:13Z",
     "total_scored": 44,
     "reachable": 40,
     "csv_count": 40,

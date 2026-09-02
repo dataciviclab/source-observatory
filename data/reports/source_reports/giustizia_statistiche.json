@@ -1,6 +1,6 @@
 {
   "source_id": "giustizia_statistiche",
-  "generated_at": "2026-08-31T10:03:33+00:00",
+  "generated_at": "2026-09-02T13:44:13+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale statistico Ministero Giustizia — XLSX scaricabili su flussi civili/penali, clearance rate, disposition time, sorveglianza, intercettazioni, monitoraggio tribunali, durata procedimenti. Include dataset già in uso dal Lab.\n",
-    "last_probed": "2026-08-31"
+    "last_probed": "2026-09-02"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,10 +22,10 @@
   "inventory": {
     "total_items": 9,
     "method": null,
-    "captured_at": "2026-08-31T09:55:01+00:00",
+    "captured_at": "2026-09-02T13:33:56+00:00",
     "baseline_value": null,
     "baseline_date": null,
-    "freshness_hours": 0.1,
+    "freshness_hours": 0.2,
     "delta": null,
     "delta_pct": 0.0,
     "formats": {
@@ -37,7 +37,7 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-08-31T10:03:33Z",
+    "last_run": "2026-09-02T13:44:13Z",
     "total_scored": 8,
     "reachable": 0,
     "csv_count": 0,

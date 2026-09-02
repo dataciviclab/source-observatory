@@ -1,25 +1,25 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-08-31T10:03:31Z",
-  "total_groups": 11303,
-  "reachable": 7290,
-  "unreachable": 4013,
-  "csv_with_schema": 3075,
+  "generated_at": "2026-09-02T13:44:12Z",
+  "total_groups": 11360,
+  "reachable": 7351,
+  "unreachable": 4009,
+  "csv_with_schema": 3076,
   "by_source": {
     "openbdap": {
-      "total": 3847,
-      "reachable": 6,
+      "total": 3845,
+      "reachable": 5,
       "csv": 0
     },
     "istat_sdmx": {
-      "total": 3572,
-      "reachable": 3572,
+      "total": 3573,
+      "reachable": 3573,
       "csv": 0
     },
     "inps": {
       "total": 1809,
       "reachable": 1807,
-      "csv": 1770
+      "csv": 1771
     },
     "openga": {
       "total": 405,
@@ -27,8 +27,8 @@
       "csv": 405
     },
     "dati_cultura": {
-      "total": 274,
-      "reachable": 274,
+      "total": 335,
+      "reachable": 335,
       "csv": 0
     },
     "unioncamere": {
@@ -112,7 +112,7 @@
       "csv": 28
     },
     "opencivitas": {
-      "total": 27,
+      "total": 24,
       "reachable": 0,
       "csv": 0
     },

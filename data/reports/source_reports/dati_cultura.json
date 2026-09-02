@@ -1,6 +1,6 @@
 {
   "source_id": "dati_cultura",
-  "generated_at": "2026-08-31T10:03:33+00:00",
+  "generated_at": "2026-09-02T13:44:13+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check completato con verdict catalog-watch.",
-    "last_probed": "2026-08-31"
+    "last_probed": "2026-09-02"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,22 +20,22 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 280,
+    "total_items": 341,
     "method": "sparql_query",
-    "captured_at": "2026-08-31T09:55:01+00:00",
+    "captured_at": "2026-09-02T13:33:56+00:00",
     "baseline_value": 150,
     "baseline_date": "2026-04-11",
-    "freshness_hours": 0.1,
-    "delta": 130,
-    "delta_pct": 86.7,
+    "freshness_hours": 0.2,
+    "delta": 191,
+    "delta_pct": 127.3,
     "formats": {
-      "SPARQL_NAMED_GRAPH": 280
+      "SPARQL_NAMED_GRAPH": 341
     }
   },
   "source_check": {
-    "last_run": "2026-08-31T10:03:33Z",
-    "total_scored": 274,
-    "reachable": 274,
+    "last_run": "2026-09-02T13:44:13Z",
+    "total_scored": 335,
+    "reachable": 335,
     "csv_count": 0,
     "with_csv_schema": 0,
     "avg_readiness": 3.0,
@@ -76,12 +76,12 @@
         "reachable": true
       }
     ],
-    "coverage_pct": 97.9,
+    "coverage_pct": 98.2,
     "formato_aperto": {
       "score": 5.0,
       "perc_aperto": 0.0,
       "perc_reachable": 100.0,
-      "total": 274,
+      "total": 335,
       "fonte": "source_check"
     }
   },
