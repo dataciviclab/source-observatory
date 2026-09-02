@@ -1,6 +1,6 @@
 {
   "source_id": "unioncamere",
-  "generated_at": "2026-09-02T13:44:13+00:00",
+  "generated_at": "2026-09-02T13:59:32+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 384,
     "method": null,
-    "captured_at": "2026-09-02T13:33:56+00:00",
+    "captured_at": "2026-09-02T13:50:01+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "freshness_hours": 0.2,
@@ -33,7 +33,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-09-02T13:44:13Z",
+    "last_run": "2026-09-02T13:59:32Z",
     "total_scored": 256,
     "reachable": 256,
     "csv_count": 256,
