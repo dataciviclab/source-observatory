@@ -107,15 +107,9 @@ jobs:
           stamp=$(python3 -c "from datetime import datetime, timezone; print(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S'))")
           prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
           prefix="${prefix%/}"
-          python scripts/gha/gcs_upload.py \
-            data/pipeline/validated.parquet \
-            "$prefix/pipeline/validated.parquet"
-          python scripts/gha/gcs_upload.py \
-            data/pipeline/validated.parquet \
-            "$prefix/pipeline/snapshots/validated_${stamp}.parquet"
-          python scripts/gha/gcs_upload.py \
-            data/pipeline/summary.json \
-            "$prefix/pipeline/summary_${stamp}.json"
+          gsutil cp data/pipeline/validated.parquet "$prefix/pipeline/validated.parquet"
+          gsutil cp data/pipeline/validated.parquet "$prefix/pipeline/snapshots/validated_${stamp}.parquet"
+          gsutil cp data/pipeline/summary.json "$prefix/pipeline/summary_${stamp}.json"
 
       - name: Upload inventory snapshot to GCS
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
@@ -127,18 +121,10 @@ jobs:
           ")
           prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
           prefix="${prefix%/}"
-          python scripts/gha/gcs_upload.py \
-            data/catalog_inventory/generated/catalog_inventory_latest.parquet \
-            "$prefix/catalog_inventory_latest.parquet"
-          python scripts/gha/gcs_upload.py \
-            data/catalog_inventory/generated/catalog_inventory_report.json \
-            "$prefix/catalog_inventory_report.json"
-          python scripts/gha/gcs_upload.py \
-            data/catalog_inventory/generated/catalog_inventory_latest.parquet \
-            "$prefix/snapshots/catalog_inventory_${stamp}.parquet"
-          python scripts/gha/gcs_upload.py \
-            data/catalog_inventory/generated/catalog_inventory_report.json \
-            "$prefix/snapshots/catalog_inventory_report_${stamp}.json"
+          gsutil cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/catalog_inventory_latest.parquet"
+          gsutil cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/catalog_inventory_report.json"
+          gsutil cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/snapshots/catalog_inventory_${stamp}.parquet"
+          gsutil cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/snapshots/catalog_inventory_report_${stamp}.json"
 
       # ═══════════════════════════════════════════════════════════════════
       # STEP 5 — ARTIFACTS
