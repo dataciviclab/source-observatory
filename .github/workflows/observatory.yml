@@ -17,7 +17,6 @@ concurrency:
 env:
   GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
   GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-  CATALOG_INVENTORY_GCS_PREFIX: "gs://dataciviclab-clean/catalog_inventory"
 
 jobs:
   scan:
@@ -48,12 +47,10 @@ jobs:
       # STEP 1 — INVENTORY BUILD
       # ═══════════════════════════════════════════════════════════════════
       - name: Download previous inventory (for source-check merge)
-        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
         run: |
-          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
-          prefix="${prefix%/}"
           mkdir -p data/catalog_inventory/generated
-          gcloud storage cp "$prefix/catalog_inventory_latest.parquet" \
+          gcloud storage cp "gs://dataciviclab-clean/catalog_inventory/catalog_inventory_latest.parquet" \
             data/catalog_inventory/generated/catalog_inventory_latest.parquet || echo "No inventory snapshot yet"
 
       - name: Build catalog inventory
@@ -102,25 +99,23 @@ jobs:
       # STEP 4 — UPLOAD GCS
       # ═══════════════════════════════════════════════════════════════════
       - name: Upload validated results to GCS
-        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
         run: |
           stamp=$(python3 -c "from datetime import datetime, timezone; print(datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S'))")
-          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
-          prefix="${prefix%/}"
+          prefix="gs://dataciviclab-clean/catalog_inventory"
           gsutil cp data/pipeline/validated.parquet "$prefix/pipeline/validated.parquet"
           gsutil cp data/pipeline/validated.parquet "$prefix/pipeline/snapshots/validated_${stamp}.parquet"
           gsutil cp data/pipeline/summary.json "$prefix/pipeline/summary_${stamp}.json"
 
       - name: Upload inventory snapshot to GCS
-        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' && env.CATALOG_INVENTORY_GCS_PREFIX != '' }}
+        if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
         run: |
           stamp=$(python3 -c "
           import json
           report = json.load(open('data/catalog_inventory/generated/catalog_inventory_report.json'))
           print(report['captured_at'].replace(':', '').replace('-', ''))
           ")
-          prefix='${{ env.CATALOG_INVENTORY_GCS_PREFIX }}'
-          prefix="${prefix%/}"
+          prefix="gs://dataciviclab-clean/catalog_inventory"
           gsutil cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/catalog_inventory_latest.parquet"
           gsutil cp data/catalog_inventory/generated/catalog_inventory_report.json "$prefix/catalog_inventory_report.json"
           gsutil cp data/catalog_inventory/generated/catalog_inventory_latest.parquet "$prefix/snapshots/catalog_inventory_${stamp}.parquet"
