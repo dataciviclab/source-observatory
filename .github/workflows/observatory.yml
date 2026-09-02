@@ -17,7 +17,7 @@ concurrency:
 env:
   GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
   GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-  CATALOG_INVENTORY_GCS_PREFIX: ${{ secrets.CATALOG_INVENTORY_GCS_PREFIX }}
+  CATALOG_INVENTORY_GCS_PREFIX: "gs://dataciviclab-clean/catalog_inventory"
 
 jobs:
   scan:
