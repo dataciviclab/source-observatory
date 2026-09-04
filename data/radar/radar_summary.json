@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-09-03T07:59:50.243683+00:00",
-  "probe_date": "2026-09-03",
+  "generated_at": "2026-09-04T08:01:59.898544+00:00",
+  "probe_date": "2026-09-04",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 35,
-    "YELLOW": 0,
-    "RED": 1
+    "GREEN": 33,
+    "YELLOW": 1,
+    "RED": 2
   },
   "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -59,9 +59,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null,
       "ssl_fallback_used": false
     },
