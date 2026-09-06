@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-09-05
+Ultimo run: 2026-09-06
 
 ## Sommario
 
