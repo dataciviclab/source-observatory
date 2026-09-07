@@ -1,6 +1,6 @@
 {
   "source_id": "inps",
-  "generated_at": "2026-09-02T13:59:32+00:00",
+  "generated_at": "2026-09-07T08:36:04+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN INPS — inventory via package_list + package_show_sample (current_package_list_with_resources lento a offset alti).",
-    "last_probed": "2026-09-02"
+    "last_probed": "2026-09-07"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,17 +22,17 @@
   "inventory": {
     "total_items": 2499,
     "method": "package_search",
-    "captured_at": "2026-09-02T13:50:01+00:00",
+    "captured_at": "2026-09-07T08:28:12+00:00",
     "baseline_value": 2499,
     "baseline_date": "2026-07-18",
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.1,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
       "CSV,JSON,XLS,XML": 942,
       "CSV,JSON,OWL,XLS,XML": 411,
-      "CSV": 396,
-      "CSV,JSON,XML": 389,
+      "CSV,JSON,XML": 405,
+      "CSV": 380,
       "CSV,OWL,JSON,XLS,XML": 117,
       "CSV,XML,RDF_TURTLE,JSON": 104,
       "CSV,JSON,OWL,XML": 83,
@@ -49,11 +49,11 @@
     }
   },
   "source_check": {
-    "last_run": "2026-09-02T13:59:32Z",
+    "last_run": "2026-09-07T08:36:05Z",
     "total_scored": 1809,
     "reachable": 1807,
     "csv_count": 1807,
-    "with_csv_schema": 1767,
+    "with_csv_schema": 1770,
     "avg_readiness": 9.9,
     "top_items": [
       {
