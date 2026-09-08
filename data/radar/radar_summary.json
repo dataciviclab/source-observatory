@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-09-07T08:13:29.823894+00:00",
-  "probe_date": "2026-09-07",
+  "generated_at": "2026-09-08T08:01:21.837880+00:00",
+  "probe_date": "2026-09-08",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 35,
+    "GREEN": 36,
     "YELLOW": 0,
-    "RED": 1
+    "RED": 0
   },
-  "persistent_red": 1,
+  "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
@@ -83,12 +83,11 @@
     },
     {
       "id": "ispra_linked_data",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "sparql",
-      "http_code": "-",
-      "note": "Connection error (ConnectionError)",
-      "ssl_fallback_used": false,
-      "red_streak": 14
+      "http_code": "200",
+      "note": null,
+      "ssl_fallback_used": false
     },
     {
       "id": "consip_open_data",
