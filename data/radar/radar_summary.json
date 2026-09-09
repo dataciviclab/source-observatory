@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-09-08T08:01:21.837880+00:00",
-  "probe_date": "2026-09-08",
+  "generated_at": "2026-09-09T08:06:09.894487+00:00",
+  "probe_date": "2026-09-09",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 36,
-    "YELLOW": 0,
+    "GREEN": 35,
+    "YELLOW": 1,
     "RED": 0
   },
   "persistent_red": 0,
@@ -27,10 +27,10 @@
     },
     {
       "id": "inps",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "ckan",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
