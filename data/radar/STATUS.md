@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-09-11
+Ultimo run: 2026-09-12
 
 ## Sommario
 
 - Fonti controllate: 36
-- GREEN: 35
-- YELLOW: 1
+- GREEN: 36
+- YELLOW: 0
 - RED: 0
 
 ## Tipi sorgente
@@ -33,7 +33,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | --- | --- | --- | --- | --- | --- | --- |
 | istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | catalog-watch | GREEN | 200 | anac_aggiudicatari, anac_aggiudicazioni, anac_bandi_gara, anac_collaudo, anac_cup, anac_partecipanti, anac_stati_avanzamento, anac_subappalti |
-| inps | catalog | ckan | catalog-watch | YELLOW | - | inps_pensioni_trimestrale, pensioni_pa_dag |
+| inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_lea, dipendenti_pubblici |
 | inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali, mim_scuola_infanzia |
@@ -44,7 +44,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mur_ustat | catalog | ckan | catalog-watch | GREEN | 200 | mur_contribuzione_universitaria, mur_immatricolati, mur_iscritti |
-| opencoesione | catalog | ckan | catalog-watch | GREEN | 200 | opencoesione_progetti |
+| opencoesione | catalog | ckan | catalog-watch | GREEN | 200 | opencoesione_progetti, opencoesione_soggetti |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso, opencivitas_fsc_enti_rso, opencivitas_glossario, opencivitas_indicatori |
 | aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
@@ -70,5 +70,4 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
-- `inps`: Retry timeout/connection: Timeout (ReadTimeout)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
