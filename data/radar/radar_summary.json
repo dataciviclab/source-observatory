@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-09-13T08:15:12.157201+00:00",
-  "probe_date": "2026-09-13",
+  "generated_at": "2026-09-14T08:50:37.294005+00:00",
+  "probe_date": "2026-09-14",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 36,
-    "YELLOW": 0,
-    "RED": 0
+    "GREEN": 34,
+    "YELLOW": 1,
+    "RED": 1
   },
   "persistent_red": 0,
   "sources": [
@@ -67,9 +67,9 @@
     },
     {
       "id": "dati_senato",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -141,10 +141,10 @@
     },
     {
       "id": "aifa",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "html",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {

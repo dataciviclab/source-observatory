@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-09-13
+Ultimo run: 2026-09-14
 
 ## Sommario
 
 - Fonti controllate: 36
-- GREEN: 36
-- YELLOW: 0
-- RED: 0
+- GREEN: 34
+- YELLOW: 1
+- RED: 1
 
 ## Tipi sorgente
 
@@ -38,7 +38,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali, mim_scuola_infanzia |
 | dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | silos_infrastrutture |
-| dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | senato_anagrafica, senato_ddl, senato_firmatari |
+| dati_senato | catalog | sparql | catalog-watch | RED | 503 | senato_anagrafica, senato_ddl, senato_firmatari |
 | dati_cultura | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_consumo_suolo, ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
@@ -47,7 +47,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | opencoesione | catalog | ckan | catalog-watch | GREEN | 200 | opencoesione_progetti, opencoesione_soggetti |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_fsc_2025_rso, opencivitas_fsc_enti_rso, opencivitas_glossario, opencivitas_indicatori |
-| aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
+| aifa | catalog | html | catalog-watch | YELLOW | - | aifa_spesa_consumo |
 | dait | catalog | html | radar-only | GREEN | 200 | dait_amministratori_locali |
 | eligendo | catalog | html | radar-only | GREEN | 200 | elezioni_comunali, elezioni_europee, elezioni_referendum, elezioni_regionali |
 | mit_opendata | catalog | ckan | catalog-watch | GREEN | 200 | mit_incidentalita_mensile, mit_opere_incompiute_2020 |
@@ -70,4 +70,6 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
+- `dati_senato`: HTTP 503 | content-type: text/html | url finale: https://dati.senato.it/sparql | Portale Open Data Senato. SPARQL endpoint Virtuoso (GET). Inventory via enumerazione named graphs (~98 grafi categoria/legislatura). Download CSV/JSON via POST form autenticato (non crawlabile). CC BY 3.0. Speculare a dati_camera ma senza DCAT catalog.
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
+- `aifa`: Retry timeout/connection: Timeout (ReadTimeout)
