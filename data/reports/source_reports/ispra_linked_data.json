@@ -1,6 +1,6 @@
 {
   "source_id": "ispra_linked_data",
-  "generated_at": "2026-09-07T08:36:05+00:00",
+  "generated_at": "2026-09-14T09:15:43+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,37 +11,78 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline tabellari.",
-    "last_probed": "2026-09-07"
+    "last_probed": "2026-09-14"
   },
   "health": {
-    "radar_status": "RED",
-    "http_code": "-",
-    "note": "Connection error (ConnectionError)",
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 0,
+    "total_items": 135,
     "method": "sparql_query",
-    "captured_at": "2026-09-07T08:28:12+00:00",
+    "captured_at": "2026-09-14T09:05:27+00:00",
     "baseline_value": 66,
     "baseline_date": "2026-04-11",
-    "delta": null,
-    "delta_pct": 0.0
+    "freshness_hours": 0.2,
+    "delta": 69,
+    "delta_pct": 104.5,
+    "formats": {
+      "SPARQL_NAMED_GRAPH": 135
+    }
   },
   "source_check": {
-    "last_run": null,
-    "total_scored": 0,
-    "reachable": 0,
+    "last_run": "2026-09-14T09:15:43Z",
+    "total_scored": 132,
+    "reachable": 132,
     "csv_count": 0,
     "with_csv_schema": 0,
-    "avg_readiness": null,
-    "top_items": [],
-    "coverage_pct": null,
+    "avg_readiness": 3.0,
+    "top_items": [
+      {
+        "name": "ispra_linked_data/aligns",
+        "score": 3,
+        "year_range": null,
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
+      },
+      {
+        "name": "ispra_linked_data/bodies",
+        "score": 3,
+        "year_range": null,
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
+      },
+      {
+        "name": "ispra_linked_data/capture-types",
+        "score": 3,
+        "year_range": null,
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
+      },
+      {
+        "name": "ispra_linked_data/catalog",
+        "score": 3,
+        "year_range": null,
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
+      },
+      {
+        "name": "ispra_linked_data/certainty",
+        "score": 3,
+        "year_range": null,
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
+      }
+    ],
+    "coverage_pct": 97.8,
     "formato_aperto": {
-      "score": 0.0,
+      "score": 5.0,
       "perc_aperto": 0.0,
-      "total": 0,
-      "fonte": "missing"
+      "perc_reachable": 100.0,
+      "total": 132,
+      "fonte": "source_check"
     }
   },
   "datasets_in_use": [
@@ -70,11 +111,11 @@
     }
   ],
   "operational_verdict": {
-    "label": "DOWN",
-    "score": "down",
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
     "triggers": [
-      "radar_red"
+      "inventory_changed"
     ],
-    "next_action": "investigate downtime"
+    "next_action": "review inventory changes"
   }
 }

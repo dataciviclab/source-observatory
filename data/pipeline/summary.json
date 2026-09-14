@@ -1,13 +1,13 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-09-07T08:36:03Z",
-  "total_groups": 11369,
-  "reachable": 7084,
-  "unreachable": 4285,
-  "csv_with_schema": 2808,
+  "generated_at": "2026-09-14T09:15:42Z",
+  "total_groups": 11473,
+  "reachable": 7353,
+  "unreachable": 4120,
+  "csv_with_schema": 3045,
   "by_source": {
     "openbdap": {
-      "total": 3854,
+      "total": 3855,
       "reachable": 4,
       "csv": 0
     },
@@ -19,12 +19,12 @@
     "inps": {
       "total": 1809,
       "reachable": 1807,
-      "csv": 1770
+      "csv": 1769
     },
     "openga": {
       "total": 405,
-      "reachable": 142,
-      "csv": 141
+      "reachable": 405,
+      "csv": 405
     },
     "dati_cultura": {
       "total": 335,
@@ -41,9 +41,14 @@
       "reachable": 238,
       "csv": 211
     },
+    "ispra_linked_data": {
+      "total": 132,
+      "reachable": 132,
+      "csv": 0
+    },
     "dati_senato": {
       "total": 100,
-      "reachable": 100,
+      "reachable": 0,
       "csv": 0
     },
     "dati_camera": {
@@ -58,8 +63,8 @@
     },
     "lavoro_opendata": {
       "total": 83,
-      "reachable": 80,
-      "csv": 80
+      "reachable": 83,
+      "csv": 83
     },
     "mit_opendata": {
       "total": 56,
@@ -100,11 +105,6 @@
       "total": 31,
       "reachable": 31,
       "csv": 31
-    },
-    "aifa": {
-      "total": 29,
-      "reachable": 29,
-      "csv": 29
     },
     "mim_opendata": {
       "total": 28,

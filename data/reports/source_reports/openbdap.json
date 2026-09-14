@@ -1,6 +1,6 @@
 {
   "source_id": "openbdap",
-  "generated_at": "2026-09-07T08:36:05+00:00",
+  "generated_at": "2026-09-14T09:15:43+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario senza intake o monitor diffuso.",
-    "last_probed": "2026-09-07"
+    "last_probed": "2026-09-14"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,17 +22,16 @@
   "inventory": {
     "total_items": 3857,
     "method": "package_list",
-    "captured_at": "2026-09-07T08:28:12+00:00",
+    "captured_at": "2026-09-14T09:05:27+00:00",
     "baseline_value": 3772,
     "baseline_date": "2026-04-02",
-    "freshness_hours": 0.1,
+    "freshness_hours": 0.2,
     "delta": 85,
     "delta_pct": 2.3,
     "formats": {
       "?": 3835,
-      "CSV,XML": 16,
+      "CSV,XML": 17,
       "444_PAGAMENTI DEL BILANCIO DELLO STATO.PDF,CSV,XML": 1,
-      "CSV,389_PAGAMENTI DEL BILANCIO DELLO STATO.PDF,XML": 1,
       "1696_PAGAMENTI DEL BILANCIO DELLO STATO.PDF,CSV,XML": 1,
       "CSV,632_SECONDA NOTA DI VARIAZIONI ELABORABILE ENTRATE.PDF,XML": 1,
       "CSV,1201_SIOPE MOVIMENTI CUMULATI MENSILI DI ENTRATA.PDF,XML": 1,
@@ -40,10 +39,10 @@
     }
   },
   "source_check": {
-    "last_run": "2026-09-07T08:36:05Z",
-    "total_scored": 3854,
+    "last_run": "2026-09-14T09:15:43Z",
+    "total_scored": 3855,
     "reachable": 4,
-    "csv_count": 19,
+    "csv_count": 20,
     "with_csv_schema": 0,
     "avg_readiness": 0.0,
     "top_items": [
@@ -88,7 +87,7 @@
       "score": 10.0,
       "perc_aperto": 0.0,
       "perc_reachable": 0.1,
-      "total": 3854,
+      "total": 3855,
       "fonte": "source_check"
     }
   },
