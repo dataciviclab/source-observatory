@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-09-15T08:37:29.967487+00:00",
-  "probe_date": "2026-09-15",
+  "generated_at": "2026-09-16T08:31:10.238260+00:00",
+  "probe_date": "2026-09-16",
   "sources_total": 36,
   "status_counts": {
     "GREEN": 35,
-    "YELLOW": 1,
-    "RED": 0
+    "YELLOW": 0,
+    "RED": 1
   },
   "persistent_red": 0,
   "sources": [
@@ -75,17 +75,17 @@
     },
     {
       "id": "dati_cultura",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sparql",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ConnectTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "ispra_linked_data",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null,
       "ssl_fallback_used": false
     },
