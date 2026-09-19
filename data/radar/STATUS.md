@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-09-18
+Ultimo run: 2026-09-19
 
 ## Sommario
 
@@ -70,5 +70,5 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
-- `inps`: Retry timeout/connection: Timeout (ReadTimeout)
+- `inps`: Retry timeout/connection: Connection error (ConnectionError)
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)

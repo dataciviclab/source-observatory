@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-18T08:12:00.275250+00:00",
-  "probe_date": "2026-09-18",
+  "generated_at": "2026-09-19T08:00:01.378046+00:00",
+  "probe_date": "2026-09-19",
   "sources_total": 36,
   "status_counts": {
     "GREEN": 35,
@@ -30,7 +30,7 @@
       "status": "YELLOW",
       "protocol": "ckan",
       "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "note": "Retry timeout/connection: Connection error (ConnectionError)",
       "ssl_fallback_used": false
     },
     {
