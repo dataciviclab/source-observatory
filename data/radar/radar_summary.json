@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-09-19T08:00:01.378046+00:00",
-  "probe_date": "2026-09-19",
+  "generated_at": "2026-09-20T08:33:22.445401+00:00",
+  "probe_date": "2026-09-20",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 35,
+    "GREEN": 34,
     "YELLOW": 1,
-    "RED": 0
+    "RED": 1
   },
   "persistent_red": 0,
   "sources": [
@@ -30,7 +30,7 @@
       "status": "YELLOW",
       "protocol": "ckan",
       "http_code": "-",
-      "note": "Retry timeout/connection: Connection error (ConnectionError)",
+      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -59,9 +59,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "sparql",
-      "http_code": "200",
+      "http_code": "503",
       "note": null,
       "ssl_fallback_used": false
     },
