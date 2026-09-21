@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-09-20T08:33:22.445401+00:00",
-  "probe_date": "2026-09-20",
+  "generated_at": "2026-09-21T08:54:05.633938+00:00",
+  "probe_date": "2026-09-21",
   "sources_total": 36,
   "status_counts": {
     "GREEN": 34,
     "YELLOW": 1,
     "RED": 1
   },
-  "persistent_red": 0,
+  "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
@@ -63,7 +63,8 @@
       "protocol": "sparql",
       "http_code": "503",
       "note": null,
-      "ssl_fallback_used": false
+      "ssl_fallback_used": false,
+      "red_streak": 2
     },
     {
       "id": "dati_senato",

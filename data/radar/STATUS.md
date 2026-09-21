@@ -1,6 +1,6 @@
 # Stato Radar
 
-Ultimo run: 2026-09-20
+Ultimo run: 2026-09-21
 
 ## Sommario
 
@@ -64,7 +64,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | agcm | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | unioncamere | catalog | ckan | radar-only | GREEN | 200 | - |
 | pagopa | catalog | ckan | catalog-watch | GREEN | 200 | - |
-| art_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| art_opendata | catalog | ckan | catalog-watch | GREEN | 200 | art_taxi_ncc |
 | aci | catalog | ckan | catalog-watch | GREEN | 200 | aci_prime_iscrizioni_autovetture |
 | adm_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 
