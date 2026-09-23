@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-09-22T08:28:48.595414+00:00",
-  "probe_date": "2026-09-22",
+  "generated_at": "2026-09-23T08:31:05.678520+00:00",
+  "probe_date": "2026-09-23",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 35,
+    "GREEN": 36,
     "YELLOW": 0,
-    "RED": 1
+    "RED": 0
   },
-  "persistent_red": 1,
+  "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
@@ -59,12 +59,11 @@
     },
     {
       "id": "dati_camera",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "sparql",
-      "http_code": "503",
+      "http_code": "200",
       "note": null,
-      "ssl_fallback_used": false,
-      "red_streak": 3
+      "ssl_fallback_used": false
     },
     {
       "id": "dati_senato",
