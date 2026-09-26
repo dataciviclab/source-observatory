@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-09-25
+Ultimo run: 2026-09-26
 
 ## Sommario
 
 - Fonti controllate: 36
-- GREEN: 35
-- YELLOW: 1
+- GREEN: 36
+- YELLOW: 0
 - RED: 0
 
 ## Tipi sorgente
@@ -39,7 +39,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali, mim_scuola_infanzia |
 | dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | silos_infrastrutture |
 | dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | senato_anagrafica, senato_ddl, senato_firmatari |
-| dati_cultura | catalog | sparql | catalog-watch | YELLOW | 502 | - |
+| dati_cultura | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
@@ -70,5 +70,4 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
-- `dati_cultura`: HTTP 502 | content-type: text/html | url finale: https://dati.cultura.gov.it/sparql | Retry timeout/connection: RED
 - `opencivitas`: HTTP 200 | content-type: text/html; charset=utf-8 | url finale: https://www.opencivitas.it/it/open-data | SSL verify failed; fallback verify=False used (SSLError)
