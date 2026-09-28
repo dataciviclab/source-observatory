@@ -1,25 +1,25 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-09-21T09:17:08Z",
-  "total_groups": 11507,
-  "reachable": 7481,
-  "unreachable": 4026,
-  "csv_with_schema": 3064,
+  "generated_at": "2026-09-28T10:08:32Z",
+  "total_groups": 11430,
+  "reachable": 7392,
+  "unreachable": 4038,
+  "csv_with_schema": 3071,
   "by_source": {
     "openbdap": {
-      "total": 3855,
-      "reachable": 3,
+      "total": 3868,
+      "reachable": 5,
       "csv": 0
     },
     "istat_sdmx": {
-      "total": 3578,
-      "reachable": 3578,
+      "total": 3579,
+      "reachable": 3579,
       "csv": 0
     },
     "inps": {
       "total": 1809,
-      "reachable": 1802,
-      "csv": 1760
+      "reachable": 1807,
+      "csv": 1765
     },
     "openga": {
       "total": 405,
@@ -39,7 +39,7 @@
     "opencoesione": {
       "total": 248,
       "reachable": 238,
-      "csv": 211
+      "csv": 210
     },
     "ispra_linked_data": {
       "total": 132,
@@ -49,11 +49,6 @@
     "dati_senato": {
       "total": 100,
       "reachable": 100,
-      "csv": 0
-    },
-    "dati_camera": {
-      "total": 99,
-      "reachable": 99,
       "csv": 0
     },
     "noipa_sparql": {
@@ -91,20 +86,25 @@
       "reachable": 5,
       "csv": 5
     },
+    "adm_opendata": {
+      "total": 33,
+      "reachable": 33,
+      "csv": 33
+    },
     "ministero_interno": {
       "total": 33,
       "reachable": 33,
-      "csv": 32
+      "csv": 33
     },
     "art_opendata": {
       "total": 32,
       "reachable": 32,
       "csv": 32
     },
-    "adm_opendata": {
-      "total": 31,
-      "reachable": 31,
-      "csv": 31
+    "opencivitas": {
+      "total": 30,
+      "reachable": 0,
+      "csv": 0
     },
     "aifa": {
       "total": 29,
@@ -115,11 +115,6 @@
       "total": 28,
       "reachable": 28,
       "csv": 28
-    },
-    "opencivitas": {
-      "total": 24,
-      "reachable": 0,
-      "csv": 0
     },
     "mur_ustat": {
       "total": 17,

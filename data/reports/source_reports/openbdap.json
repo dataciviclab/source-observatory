@@ -1,6 +1,6 @@
 {
   "source_id": "openbdap",
-  "generated_at": "2026-09-21T09:17:10+00:00",
+  "generated_at": "2026-09-28T10:08:35+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario senza intake o monitor diffuso.",
-    "last_probed": "2026-09-21"
+    "last_probed": "2026-09-28"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,74 +20,71 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 3857,
+    "total_items": 3869,
     "method": "package_list",
-    "captured_at": "2026-09-21T09:07:02+00:00",
+    "captured_at": "2026-09-28T09:58:32+00:00",
     "baseline_value": 3772,
     "baseline_date": "2026-04-02",
     "freshness_hours": 0.2,
-    "delta": 85,
-    "delta_pct": 2.3,
+    "delta": 97,
+    "delta_pct": 2.6,
     "formats": {
-      "?": 3837,
-      "CSV,XML": 15,
-      "444_PAGAMENTI DEL BILANCIO DELLO STATO.PDF,CSV,XML": 1,
-      "1696_PAGAMENTI DEL BILANCIO DELLO STATO.PDF,CSV,XML": 1,
-      "CSV,632_SECONDA NOTA DI VARIAZIONI ELABORABILE ENTRATE.PDF,XML": 1,
-      "CSV,1201_SIOPE MOVIMENTI CUMULATI MENSILI DI ENTRATA.PDF,XML": 1,
-      "CSV,1455_SIOPE MOVIMENTI CUMULATI MENSILI DI ENTRATA.PDF,XML": 1
+      "?": 3846,
+      "CSV,XML": 21,
+      "1710_PRESTITI OBBLIGAZIONARI - CONSISTENZA.PDF,CSV,XML": 1,
+      "CSV,1493_SIOPE MOVIMENTI CUMULATI MENSILI DI ENTRATA.PDF,XML": 1
     }
   },
   "source_check": {
-    "last_run": "2026-09-21T09:17:10Z",
-    "total_scored": 3855,
-    "reachable": 3,
-    "csv_count": 18,
+    "last_run": "2026-09-28T10:08:35Z",
+    "total_scored": 3868,
+    "reachable": 5,
+    "csv_count": 22,
     "with_csv_schema": 0,
     "avg_readiness": 0.0,
     "top_items": [
       {
-        "name": "openbdap/dipendenti-pubblici-anzianita-dati-analitici-per-ente",
+        "name": "openbdap/legge-di-bilancio-03-sviluppo-economico-dpcm-2209-art3",
         "score": 2,
         "year_range": null,
         "format": "csv,xml",
         "reachable": true
       },
       {
-        "name": "openbdap/gestione-finanziaria-spese-enti-locali",
+        "name": "openbdap/modello-di-rilevazione-del-conto-economico-degli-enti-del-ssn-a-livello-nazional",
         "score": 2,
         "year_range": null,
         "format": "csv,xml",
         "reachable": true
       },
       {
-        "name": "openbdap/prestiti-obbligazionari-consistenza-0101anno-successivo-indagine-campionaria-sui",
+        "name": "openbdap/pagamenti-bilancio-dello-stato-per-missione",
         "score": 2,
         "year_range": null,
         "format": "csv,xml",
         "reachable": true
       },
       {
-        "name": "openbdap/disegno-legge-di-bilancio-presentato-serie-storica-spese-aggregato-per-titolo-e-",
-        "score": 1,
+        "name": "openbdap/provvedimento-di-assestamento-approvato-triennio-g8-od-action-plan-capitolo",
+        "score": 2,
         "year_range": null,
         "format": "csv,xml",
-        "reachable": false
+        "reachable": true
       },
       {
-        "name": "openbdap/enti-vigilati-bilancio-finanziario-spese-consuntivo",
-        "score": 1,
+        "name": "openbdap/trentino-alto-adige-gestione-finanziaria-spese-enti-locali",
+        "score": 2,
         "year_range": null,
         "format": "csv,xml",
-        "reachable": false
+        "reachable": true
       }
     ],
-    "coverage_pct": 99.9,
+    "coverage_pct": 100.0,
     "formato_aperto": {
       "score": 10.0,
       "perc_aperto": 0.0,
       "perc_reachable": 0.1,
-      "total": 3855,
+      "total": 3868,
       "fonte": "source_check"
     }
   },
