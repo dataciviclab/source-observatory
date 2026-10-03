@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-10-02
+Ultimo run: 2026-10-03
 
 ## Sommario
 
 - Fonti controllate: 36
 - GREEN: 34
-- YELLOW: 1
-- RED: 1
+- YELLOW: 2
+- RED: 0
 
 ## Tipi sorgente
 
@@ -37,9 +37,9 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_lea, dipendenti_pubblici |
 | inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali, mim_scuola_infanzia |
-| dati_camera | catalog | sparql | catalog-watch | RED | 502 | silos_infrastrutture |
+| dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | silos_infrastrutture |
 | dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | senato_anagrafica, senato_ddl, senato_firmatari |
-| dati_cultura | catalog | sparql | catalog-watch | GREEN | 200 | - |
+| dati_cultura | catalog | sparql | catalog-watch | YELLOW | - | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
 | lavoro_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
@@ -70,5 +70,5 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
-- `dati_camera`: HTTP 502 | content-type: text/html | url finale: https://dati.camera.it/sparql | Catalogo linked-data Camera inventariabile via query SPARQL custom. Il template DCAT generico non valorizza titolo e descrizione perché l'endpoint usa dc:title e dc:description.
+- `dati_cultura`: Retry timeout/connection: Timeout (ReadTimeout)
 - `opencivitas`: HTTP 404 | content-type: text/html; charset=iso-8859-1 | url finale: https://www.opencivitas.it/it/open-data | Portale OpenCivitas — csv_magnet scan via discovery=auto (sitemap alla root). ZIP con CSV/XLSX dentro.

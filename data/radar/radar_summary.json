@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-02T09:45:57.964479+00:00",
-  "probe_date": "2026-10-02",
+  "generated_at": "2026-10-03T09:05:43.490193+00:00",
+  "probe_date": "2026-10-03",
   "sources_total": 36,
   "status_counts": {
     "GREEN": 34,
-    "YELLOW": 1,
-    "RED": 1
+    "YELLOW": 2,
+    "RED": 0
   },
   "persistent_red": 0,
   "sources": [
@@ -59,9 +59,9 @@
     },
     {
       "id": "dati_camera",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "sparql",
-      "http_code": "502",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -75,10 +75,10 @@
     },
     {
       "id": "dati_cultura",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sparql",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
