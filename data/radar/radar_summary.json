@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-10-03T09:05:43.490193+00:00",
-  "probe_date": "2026-10-03",
+  "generated_at": "2026-10-04T09:42:41.932074+00:00",
+  "probe_date": "2026-10-04",
   "sources_total": 36,
   "status_counts": {
     "GREEN": 34,
@@ -77,8 +77,8 @@
       "id": "dati_cultura",
       "status": "YELLOW",
       "protocol": "sparql",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "502",
+      "note": "Retry timeout/connection: RED",
       "ssl_fallback_used": false
     },
     {
