@@ -1,6 +1,6 @@
 {
   "source_id": "openga",
-  "generated_at": "2026-09-28T10:08:35+00:00",
+  "generated_at": "2026-10-05T10:53:52+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale CKAN Giustizia Amministrativa — ~270 dataset su ricorsi TAR+CDS, sentenze, ordinanze, pareri. CC-BY 4.0. Aggiornamento mensile. Si incastra con civile_flussi (giustizia ordinaria).\n",
-    "last_probed": "2026-09-28"
+    "last_probed": "2026-10-05"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,7 +22,7 @@
   "inventory": {
     "total_items": 436,
     "method": null,
-    "captured_at": "2026-09-28T09:58:32+00:00",
+    "captured_at": "2026-10-05T10:38:58+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "freshness_hours": 0.2,
@@ -33,12 +33,12 @@
     }
   },
   "source_check": {
-    "last_run": "2026-09-28T10:08:35Z",
+    "last_run": "2026-10-05T10:53:52Z",
     "total_scored": 405,
-    "reachable": 405,
+    "reachable": 264,
     "csv_count": 405,
-    "with_csv_schema": 405,
-    "avg_readiness": 9.1,
+    "with_csv_schema": 255,
+    "avg_readiness": 6.1,
     "top_items": [
       {
         "name": "openga/cga-sicilia-ricorsi-pervenuti-in-materia-dappalto",
@@ -95,7 +95,7 @@
     "formato_aperto": {
       "score": 5.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 100.0,
+      "perc_reachable": 65.2,
       "total": 405,
       "fonte": "source_check"
     }

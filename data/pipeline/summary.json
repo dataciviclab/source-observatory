@@ -1,14 +1,14 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-09-28T10:08:32Z",
-  "total_groups": 11430,
-  "reachable": 7392,
-  "unreachable": 4038,
-  "csv_with_schema": 3071,
+  "generated_at": "2026-10-05T10:53:51Z",
+  "total_groups": 11498,
+  "reachable": 7343,
+  "unreachable": 4155,
+  "csv_with_schema": 2921,
   "by_source": {
     "openbdap": {
-      "total": 3868,
-      "reachable": 5,
+      "total": 3867,
+      "reachable": 3,
       "csv": 0
     },
     "istat_sdmx": {
@@ -18,13 +18,13 @@
     },
     "inps": {
       "total": 1809,
-      "reachable": 1807,
+      "reachable": 1802,
       "csv": 1765
     },
     "openga": {
       "total": 405,
-      "reachable": 405,
-      "csv": 405
+      "reachable": 264,
+      "csv": 255
     },
     "dati_cultura": {
       "total": 335,
@@ -49,6 +49,11 @@
     "dati_senato": {
       "total": 100,
       "reachable": 100,
+      "csv": 0
+    },
+    "dati_camera": {
+      "total": 99,
+      "reachable": 99,
       "csv": 0
     },
     "noipa_sparql": {
@@ -100,11 +105,6 @@
       "total": 32,
       "reachable": 32,
       "csv": 32
-    },
-    "opencivitas": {
-      "total": 30,
-      "reachable": 0,
-      "csv": 0
     },
     "aifa": {
       "total": 29,
