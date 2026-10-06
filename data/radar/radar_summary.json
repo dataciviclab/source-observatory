@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-05T10:23:25.463067+00:00",
-  "probe_date": "2026-10-05",
+  "generated_at": "2026-10-06T10:11:36.524055+00:00",
+  "probe_date": "2026-10-06",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 17,
-    "YELLOW": 19,
+    "GREEN": 34,
+    "YELLOW": 2,
     "RED": 0
   },
   "persistent_red": 0,
@@ -19,10 +19,10 @@
     },
     {
       "id": "anac",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -30,7 +30,7 @@
       "status": "YELLOW",
       "protocol": "ckan",
       "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "note": "Retry timeout/connection: Connection error (ConnectionError)",
       "ssl_fallback_used": false
     },
     {
@@ -43,10 +43,10 @@
     },
     {
       "id": "inail_opendata",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -99,26 +99,26 @@
     },
     {
       "id": "lavoro_opendata",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "mur_ustat",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "opencoesione",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -163,10 +163,10 @@
     },
     {
       "id": "mit_opendata",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -203,18 +203,18 @@
     },
     {
       "id": "ministero_interno",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "agid",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -227,74 +227,74 @@
     },
     {
       "id": "mimit_rna",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "ministero_turismo_opendata",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "ministero_salute",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "agcm",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "unioncamere",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "pagopa",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "art_opendata",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "aci",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
       "id": "adm_opendata",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     }
   ]
