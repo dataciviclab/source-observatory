@@ -52,6 +52,7 @@ so-build-reports = "scripts.build_source_reports:main"
 so-run-pipeline = "scripts.pipeline.run_pipeline:main"
 so-radar-check = "scripts.radar_check:main"
 so-sync-datasets = "scripts.sync_datasets_in_use:main"
+so-catalog = "scripts.catalog.cli:main"
 
 [project.urls]
 Repository = "https://github.com/dataciviclab/source-observatory"
@@ -59,6 +60,9 @@ Repository = "https://github.com/dataciviclab/source-observatory"
 [tool.setuptools.packages.find]
 include = ["so_mcp", "so_mcp.*", "scripts", "scripts.*"]
 exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+"scripts.catalog" = ["schemas/*.json"]
 
 [tool.setuptools.dynamic]
 version = { attr = "so_mcp.__version__" }
