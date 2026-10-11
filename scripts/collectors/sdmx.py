@@ -16,6 +16,29 @@ def parse_sdmx_name(name_elem: ET.Element | None) -> str | None:
     return text or None
 
 
+_XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
+
+
+def pick_flow_name(flow: ET.Element, ns: dict[str, str]) -> str | None:
+    """Sceglie il Name di un dataflow, preferendo la lingua EN.
+
+    I cataloghi SDMX multi-lingua (Eurostat, OECD) restituiscono piu'
+    elementi ``common:Name`` con ``xml:lang`` in ordine variabile —
+    prendere il primo produce title in lingua casuale (fr/de/en misti).
+    """
+    entries = [
+        ((n.attrib.get(_XML_LANG) or "").lower(), (n.text or "").strip())
+        for n in flow.findall("common:Name", ns)
+    ]
+    entries = [(lang, text) for lang, text in entries if text]
+    if not entries:
+        return None
+    for lang, text in entries:
+        if lang.startswith("en"):
+            return text
+    return entries[0][1]
+
+
 def _sdmx_api_base(url: str) -> str | None:
     if not url:
         return None
@@ -82,7 +105,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     rows: list[dict[str, Any]] = []
     for idx, flow in enumerate(root.findall(".//structure:Dataflow", ns), start=1):
         flow_id = flow.attrib.get("id")
-        name_elem = flow.find("common:Name", ns)
+        name = pick_flow_name(flow, ns)
         agency = flow.attrib.get("agencyID")
 
         # Costruisce URL dati dall'SDMX REST data endpoint.
@@ -103,7 +126,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 "item_kind": "dataflow",
                 "item_id": flow_id,
                 "item_name": flow_id,
-                "title": parse_sdmx_name(name_elem),
+                "title": name,
                 "organization": agency,
                 "tags": None,
                 "notes_excerpt": None,
