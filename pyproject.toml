@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "DataCivicLab Source Observatory: scouting, radar, inventory e source-check"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
   { name = "DataCivicLab" }
 ]
@@ -31,7 +31,7 @@ dependencies = [
   "pyarrow>=24.0.0",
   "jsonschema>=4.26.0",
   "ddgs>=9.14.4",
-  "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@v1.44.0",
+  "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git",
 ]
 
 [project.optional-dependencies]
