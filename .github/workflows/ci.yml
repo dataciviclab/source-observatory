@@ -18,7 +18,7 @@ jobs:
       - name: Python setup
         uses: dataciviclab/.github/actions/python-setup@main
         with:
-          extra-requirements: requirements-dev.txt
+          install-extras: "dev"
 
       - uses: dataciviclab/.github/actions/python-ci@main
         with:
