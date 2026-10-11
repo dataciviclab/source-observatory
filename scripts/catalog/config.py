@@ -106,9 +106,15 @@ def validate_observatory_config(
         )
 
     if toolkit_source_id is not None and toolkit_source_id != source_id:
-        raise ObservatoryConfigError(
-            f"[tool.observatory]{where}: source_id '{source_id}' does not match "
-            f"[tool.toolkit.extends] source_id '{toolkit_source_id}'"
+        # Warning, non errore: [tool.toolkit.extends].source_id e' spesso
+        # un id "da repo" (es. oecd-benchmark) mentre i dataset.yml usano
+        # l'id fonte reale (es. oecd). La verita' operativa per i catalog
+        # per-repo e' il source_id dei dataset.yml (abbinamento automatico
+        # di datasets_in_use dal registry locale).
+        print(
+            f"⚠️  [tool.observatory]{where}: source_id '{source_id}' differs from "
+            f"[tool.toolkit.extends] source_id '{toolkit_source_id}' "
+            f"(datasets_in_use follows dataset.yml source_id)"
         )
 
     cfg: dict[str, Any] = {

@@ -236,6 +236,25 @@ class TestBuildCatalog:
         assert catalog["inventory"]["total_items"] == 2
 
     @pytest.mark.contract
+    def test_radar_only_skips_inventory(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        repo = _make_repo(tmp_path)
+        _patch_engine(monkeypatch)
+        # Se il config e' radar-only, dispatch NON deve essere chiamato.
+        monkeypatch.setattr(
+            "scripts.catalog.build.dispatch",
+            lambda *a, **k: (_ for _ in ()).throw(AssertionError("dispatch must not run")),
+        )
+        text = (repo / "pyproject.toml").read_text()
+        (repo / "pyproject.toml").write_text(
+            text.replace('verdict = "go"', 'verdict = "go"\nobservation_mode = "radar-only"')
+        )
+
+        catalog = build_catalog(repo, write=False)
+        assert catalog["inventory"]["total_items"] == 0
+        assert catalog["source_check"]["total_scored"] == 0
+        assert catalog["health"]["radar_status"] == "GREEN"
+
+    @pytest.mark.contract
     def test_dry_run_does_not_write(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         repo = _make_repo(tmp_path)
         _patch_engine(monkeypatch)

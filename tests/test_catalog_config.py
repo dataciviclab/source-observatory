@@ -78,16 +78,17 @@ class TestValidateObservatoryConfig:
             )
 
     @pytest.mark.pure_unit
-    def test_toolkit_extends_mismatch(self):
-        with pytest.raises(ObservatoryConfigError, match="does not match"):
-            validate_observatory_config(
-                {
-                    "source_id": "eurostat",
-                    "protocol": "sdmx",
-                    "base_url": "https://example.test",
-                },
-                toolkit_source_id="altro",
-            )
+    def test_toolkit_extends_mismatch_warns_not_raises(self, capsys: pytest.CaptureFixture):
+        cfg = validate_observatory_config(
+            {
+                "source_id": "oecd",
+                "protocol": "sdmx",
+                "base_url": "https://example.test",
+            },
+            toolkit_source_id="oecd-benchmark",
+        )
+        assert cfg["source_id"] == "oecd"
+        assert "differs from" in capsys.readouterr().out
 
     @pytest.mark.pure_unit
     def test_toolkit_extends_match_ok(self):
@@ -175,18 +176,19 @@ source_id = "eurostat"
         assert cfg["source_id"] == "eurostat"
 
     @pytest.mark.pure_unit
-    def test_cross_check_mismatch_raises(self, tmp_path: Path):
+    def test_cross_check_mismatch_warns(self, tmp_path: Path, capsys: pytest.CaptureFixture):
         _write_pyproject(
             tmp_path,
             """
 [tool.observatory]
-source_id = "eurostat"
+source_id = "oecd"
 protocol = "sdmx"
 base_url = "https://example.test"
 
 [tool.toolkit.extends]
-source_id = "altro"
+source_id = "oecd-benchmark"
 """,
         )
-        with pytest.raises(ObservatoryConfigError, match="does not match"):
-            load_observatory_config(tmp_path)
+        cfg = load_observatory_config(tmp_path)
+        assert cfg["source_id"] == "oecd"
+        assert "differs from" in capsys.readouterr().out

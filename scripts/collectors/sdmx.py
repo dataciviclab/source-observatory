@@ -85,10 +85,11 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         name_elem = flow.find("common:Name", ns)
         agency = flow.attrib.get("agencyID")
 
-        # Costruisce URL CSV dall'SDMX REST data endpoint
+        # Costruisce URL dati dall'SDMX REST data endpoint.
+        # format=TSV: accettato da Eurostat (format=csv → HTTP 406) e ISTAT.
         dist_url = None
         if api_base and flow_id:
-            dist_url = f"{api_base}/data/{flow_id}/ALL/?format=csv"
+            dist_url = f"{api_base}/data/{flow_id}/ALL/?format=TSV"
 
         rows.append(
             {

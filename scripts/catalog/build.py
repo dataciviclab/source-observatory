@@ -143,12 +143,16 @@ def build_catalog(
 
     # ── Inventory ────────────────────────────────────────────────────────────
     captured_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-    print("  → inventory")
-    inv = dispatch(source_id, cfg, captured_at)
-    rows = inv.rows
-    if inv.warning:
-        print(f"  ⚠️  inventory warning: {inv.warning}")
-    print(f"  ← {len(rows)} items")
+    rows: list[dict[str, Any]] = []
+    if cfg.get("observation_mode") == "radar-only":
+        print("  ⏭️  inventory skipped (radar-only)")
+    else:
+        print("  → inventory")
+        inv = dispatch(source_id, cfg, captured_at)
+        rows = inv.rows
+        if inv.warning:
+            print(f"  ⚠️  inventory warning: {inv.warning}")
+        print(f"  ← {len(rows)} items")
 
     layout.out_dir.mkdir(parents=True, exist_ok=True)
     inventory_df = pd.DataFrame(rows) if rows else pd.DataFrame()
