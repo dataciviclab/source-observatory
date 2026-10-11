@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dataciviclab.github.io/schemas/source-observatory/catalog.schema.json",
+  "title": "SO per-repo source catalog",
+  "description": "registry/catalog.json generato da so-catalog in un repo dati. Formato derivato dal source report centrale (report_version 1), con campi repo-specifici (repo, catalog_schema_version, streak).",
+  "type": "object",
+  "required": [
+    "source_id",
+    "generated_at",
+    "report_version",
+    "catalog_schema_version",
+    "repo",
+    "identity",
+    "health",
+    "inventory",
+    "source_check",
+    "datasets_in_use",
+    "operational_verdict"
+  ],
+  "properties": {
+    "source_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identificativo fonte (coincide con [tool.observatory].source_id)."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "report_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "catalog_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "repo": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Nome della directory del repo dati ( radice del catalog)."
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "identity": {
+      "type": "object",
+      "required": ["source_id", "protocol", "base_url"],
+      "properties": {
+        "source_id": { "type": "string" },
+        "protocol": {
+          "type": "string",
+          "enum": ["ckan", "sdmx", "sparql", "html"]
+        },
+        "base_url": { "type": "string" },
+        "source_kind": { "type": "string" },
+        "observation_mode": { "type": "string" },
+        "verdict": { "type": ["string", "null"] },
+        "note": { "type": ["string", "null"] },
+        "last_probed": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "health": {
+      "type": "object",
+      "required": ["radar_status", "streak"],
+      "properties": {
+        "radar_status": { "type": "string", "enum": ["GREEN", "YELLOW", "RED"] },
+        "http_code": { "type": ["string", "null"] },
+        "note": { "type": ["string", "null"] },
+        "ssl_fallback": { "type": "boolean" },
+        "streak": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Probe consecutivi con stesso radar_status (da catalog precedente)."
+        }
+      },
+      "additionalProperties": true
+    },
+    "inventory": {
+      "type": "object",
+      "required": ["total_items", "captured_at"],
+      "properties": {
+        "total_items": { "type": "integer", "minimum": 0 },
+        "method": { "type": ["string", "null"] },
+        "captured_at": { "type": ["string", "null"] },
+        "baseline_value": { "type": ["integer", "null"] },
+        "baseline_date": { "type": ["string", "null"] },
+        "delta": { "type": ["integer", "null"] },
+        "delta_pct": { "type": ["number", "null"] },
+        "freshness_hours": { "type": "number" },
+        "formats": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "years_range": {
+          "type": ["array", "null"],
+          "items": { "type": "integer" },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      },
+      "additionalProperties": true
+    },
+    "source_check": {
+      "type": "object",
+      "required": ["total_scored", "reachable"],
+      "properties": {
+        "last_run": { "type": ["string", "null"] },
+        "total_scored": { "type": "integer", "minimum": 0 },
+        "reachable": { "type": "integer", "minimum": 0 },
+        "csv_count": { "type": "integer", "minimum": 0 },
+        "with_csv_schema": { "type": "integer", "minimum": 0 },
+        "avg_readiness": { "type": ["number", "null"] },
+        "coverage_pct": { "type": ["number", "null"] },
+        "top_items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "score"],
+            "properties": {
+              "name": { "type": "string" },
+              "score": { "type": "number" },
+              "year_range": { "type": ["array", "null"] },
+              "format": { "type": ["string", "null"] },
+              "reachable": { "type": "boolean" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "formato_aperto": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": true
+    },
+    "datasets_in_use": {
+      "type": "array",
+      "description": "Dataset del repo locale il cui source_id coincide (da registry/registry.json).",
+      "items": {
+        "type": "object",
+        "required": ["slug", "status"],
+        "properties": {
+          "slug": { "type": "string" },
+          "status": {
+            "type": "string",
+            "description": "Stage del dataset (published, incubating, deprecated, unknown)."
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "signals": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": true }
+    },
+    "operational_verdict": {
+      "type": "object",
+      "required": ["label", "score", "triggers"],
+      "properties": {
+        "label": {
+          "type": "string",
+          "enum": ["STABLE", "DOWN", "INVENTORY_CHANGED", "STALE", "PARTIALLY_SCOPED"]
+        },
+        "score": { "type": "string" },
+        "triggers": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "next_action": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "DataCivicLab Source Observatory: scouting, radar, inventory e source-check"
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
   { name = "DataCivicLab" }
 ]
@@ -31,7 +31,7 @@ dependencies = [
   "pyarrow>=24.0.0",
   "jsonschema>=4.26.0",
   "ddgs>=9.14.4",
-  "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git@v1.44.0",
+  "dataciviclab-toolkit @ git+https://github.com/dataciviclab/toolkit.git",
 ]
 
 [project.optional-dependencies]
@@ -52,6 +52,8 @@ so-build-reports = "scripts.build_source_reports:main"
 so-run-pipeline = "scripts.pipeline.run_pipeline:main"
 so-radar-check = "scripts.radar_check:main"
 so-sync-datasets = "scripts.sync_datasets_in_use:main"
+so-catalog = "scripts.catalog.cli:main"
+so-catalog-coverage = "scripts.catalog_coverage:main"
 
 [project.urls]
 Repository = "https://github.com/dataciviclab/source-observatory"
@@ -59,6 +61,9 @@ Repository = "https://github.com/dataciviclab/source-observatory"
 [tool.setuptools.packages.find]
 include = ["so_mcp", "so_mcp.*", "scripts", "scripts.*"]
 exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+"scripts.catalog" = ["schemas/*.json"]
 
 [tool.setuptools.dynamic]
 version = { attr = "so_mcp.__version__" }

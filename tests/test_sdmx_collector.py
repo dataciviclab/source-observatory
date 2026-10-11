@@ -92,6 +92,53 @@ def test_catalog_fetch_url_detail_present():
     assert url == "https://example.test/dataflow/IT1?detail=full"
 
 
+# ─── pick_flow_name (lingua) ─────────────────────────────────────────────────
+
+_NS = {
+    "structure": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure",
+    "common": "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common",
+}
+
+
+def _flow_with_names(*langs_and_texts):
+    flow = ET.Element(
+        "{http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure}Dataflow",
+        {"id": "X1"},
+    )
+    for lang, text in langs_and_texts:
+        name = ET.SubElement(flow, "{http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common}Name")
+        name.set("{http://www.w3.org/XML/1998/namespace}lang", lang)
+        name.text = text
+    return flow
+
+
+class TestPickFlowName:
+    def test_prefers_english_regardless_of_order(self):
+        # Ordine fr, de, en — come Eurostat restituisce spesso
+        flow = _flow_with_names(
+            ("fr", "Taux de deprivation"),
+            ("de", "Rate der Deprivation"),
+            ("en", "Material Deprivation rate"),
+        )
+        assert sdmx_collector.pick_flow_name(flow, _NS) == "Material Deprivation rate"
+
+    def test_fallback_first_when_no_english(self):
+        flow = _flow_with_names(("de", "Deutsche"), ("fr", "Francais"))
+        assert sdmx_collector.pick_flow_name(flow, _NS) == "Deutsche"
+
+    def test_skips_empty_names(self):
+        flow = _flow_with_names(("en", ""), ("fr", "Francais"))
+        assert sdmx_collector.pick_flow_name(flow, _NS) == "Francais"
+
+    def test_none_when_no_names(self):
+        flow = ET.Element("{http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure}Dataflow")
+        assert sdmx_collector.pick_flow_name(flow, _NS) is None
+
+    def test_en_us_lang_tag(self):
+        flow = _flow_with_names(("en-US", "English US"), ("it", "Italiano"))
+        assert sdmx_collector.pick_flow_name(flow, _NS) == "English US"
+
+
 # ─── SDMX XML di esempio per collect() ────────────────────────────────────────
 
 _SDMX_XML = """\
@@ -141,7 +188,7 @@ def test_collect(monkeypatch, fake_http):
     assert row1["ordinal"] == 1
     assert row1["api_base_url"] == "https://example.test"
     assert row1["organization"] == "IT1"
-    assert row1["distribution_url"] == "https://example.test/data/EX1/ALL/?format=csv"
+    assert row1["distribution_url"] == "https://example.test/data/EX1/ALL/?format=TSV"
     assert row1["format"] == "SDMX"
 
     # Secondo flow: EX2

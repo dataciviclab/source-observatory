@@ -30,7 +30,7 @@ Qui stanno:
 Qui non stanno:
 
 - pipeline di trasformazione dati (RAW → CLEAN → MART) — va in `dataset-incubator` + `toolkit`
-- analisi pubbliche o notebook — vanno in `dataciviclab/analisi/`
+- pagine pubbliche dataset — vanno in `data-explorer`
 - il motore della pipeline — va in `toolkit`
 - package condivisi di infrastruttura — vanno in `lab-connectors`
 - policy GitHub comuni — vanno in `.github`
