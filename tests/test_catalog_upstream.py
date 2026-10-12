@@ -36,6 +36,19 @@ class TestExtractFromSource:
         assert refs == [{"kind": "url", "id": "https://x/y.csv"}]
 
     @pytest.mark.pure_unit
+    def test_script_upstream_url(self):
+        refs = extract_upstream_from_source(
+            {
+                "type": "script",
+                "args": {
+                    "command": "python preprocess.py {year} raw_input.csv",
+                    "upstream_url": "https://docs.ex.it/{year}_FSC_csv.zip",
+                },
+            }
+        )
+        assert refs == [{"kind": "url", "id": "https://docs.ex.it/{year}_FSC_csv.zip"}]
+
+    @pytest.mark.pure_unit
     def test_script_type_flag(self):
         refs = extract_upstream_from_source(
             {
