@@ -487,10 +487,46 @@ def _scan_liferay_catalog(
         pages_scanned += 1
         page += 1
 
+    # ── Risoluzione formato per URL extensionless ─────────────────────────────
+    # I portali Liferay servono gli anni storici con URL friendly senza
+    # estensione (/documents/0/0/2025_VAR_FSC_1_2025/uuid) — 200 text/csv.
+    # HEAD concorrente sui soli UNKNOWN per determinare il formato reale.
+    unknown_rows = [r for r in all_rows if r["format"] == "UNKNOWN"]
+    if unknown_rows:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        def _resolve_one(row: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
+            try:
+                info = probe_url_headers(row["url"], timeout=8)
+                if info.get("reachable"):
+                    fmt = resolve_preview_kind(
+                        row["url"],
+                        content_type=info.get("content_type"),
+                        content_disposition=info.get("content_disposition"),
+                    )
+                    return row, fmt
+            except Exception:
+                pass
+            return row, None
+
+        resolved = 0
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            futures = [pool.submit(_resolve_one, r) for r in unknown_rows]
+            for fut in as_completed(futures):
+                row, fmt = fut.result()
+                if fmt:
+                    row["format"] = fmt
+                    resolved += 1
+        scan_params_note = f"resolved_unknown={resolved}/{len(unknown_rows)}"
+    else:
+        scan_params_note = None
+
     scan_params: dict[str, Any] = {
         "method": "liferay_catalog_table",
         "area_pages_scanned": pages_scanned,
     }
+    if scan_params_note:
+        scan_params["format_resolution"] = scan_params_note
     return all_rows, scan_params
 
 
