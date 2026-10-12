@@ -401,7 +401,9 @@ def _scan_liferay_catalog(
                 self._in_td = False
                 if self._td_index == 1 and self._current is not None:
                     text = " ".join(self._text_buf).strip()
-                    if text and len(text) == 10:  # dd/mm/yyyy
+                    # dd/mm/yyyy — regex esplicita: se la fonte cambia
+                    # formato, issued resta None in modo evidente.
+                    if text and re.fullmatch(r"\d{2}/\d{2}/\d{4}", text):
                         self._current["issued"] = text
                 self._text_buf = []
 
@@ -435,8 +437,8 @@ def _scan_liferay_catalog(
         parser = LiferayCatalogParser()
         parser.feed(html)
 
-        if not parser.entries and pages_scanned > 0:
-            break  # pagina vuota = fine paginazione
+        if not parser.entries:
+            break  # pagina vuota = fine paginazione (anche la prima)
 
         for entry in parser.entries:
             title = entry.get("title") or "unknown"
