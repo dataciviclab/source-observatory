@@ -27,6 +27,7 @@ import pandas as pd
 
 from scripts.catalog.config import load_observatory_config
 from scripts.catalog.layout import RepoLayout, resolve_layout
+from scripts.catalog.upstream import load_upstream_map
 from scripts.collectors import dispatch
 from scripts.pipeline.run_pipeline import run_merge, run_validate
 from scripts.radar_check import ProbeResult, probe_url
@@ -62,7 +63,7 @@ def load_previous_catalog(layout: RepoLayout) -> dict[str, Any] | None:
         return None
 
 
-def load_local_datasets_in_use(layout: RepoLayout, source_id: str) -> list[dict[str, str]]:
+def load_local_datasets_in_use(layout: RepoLayout, source_id: str) -> list[dict[str, Any]]:
     """Datasets del repo con ``source_id`` coincidente, da registry/registry.json.
 
     Graceful: registry assente o illeggibile → lista vuota.
@@ -183,6 +184,11 @@ def build_catalog(
 
     # ── Assemble catalog ─────────────────────────────────────────────────────
     datasets_in_use = load_local_datasets_in_use(layout, source_id)
+    upstream_map = load_upstream_map(layout.repo_root)
+    for entry in datasets_in_use:
+        refs = upstream_map.get(entry["slug"], [])
+        if refs:
+            entry["upstream"] = refs
     report_cfg = {
         **cfg,
         "last_probed": datetime.now(timezone.utc).date().isoformat(),

@@ -132,7 +132,7 @@
     },
     "datasets_in_use": {
       "type": "array",
-      "description": "Dataset del repo locale il cui source_id coincide (da registry/registry.json).",
+      "description": "Dataset del repo locale il cui source_id coincide (da registry/registry.json). 'upstream' rende espliciti gli ID a monte gia' dichiarati nei dataset.yml (flow SDMX, resource_id CKAN, url, --type degli script).",
       "items": {
         "type": "object",
         "required": ["slug", "status"],
@@ -141,6 +141,23 @@
           "status": {
             "type": "string",
             "description": "Stage del dataset (published, incubating, deprecated, unknown)."
+          },
+          "upstream": {
+            "type": "array",
+            "description": "Riferimenti agli item della fonte consumati da questo dataset.",
+            "items": {
+              "type": "object",
+              "required": ["kind", "id"],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": ["dataflow", "ckan_resource", "url", "script_type"]
+                },
+                "id": { "type": "string" },
+                "agency": { "type": "string" }
+              },
+              "additionalProperties": true
+            }
           }
         },
         "additionalProperties": true
