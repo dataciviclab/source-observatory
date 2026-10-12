@@ -273,6 +273,46 @@ class TestBuildCatalog:
         assert catalog["health"]["radar_status"] == "GREEN"
 
     @pytest.mark.contract
+    def test_pattern_probes_and_new_content_trigger(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        repo = _make_repo(tmp_path)
+        _patch_engine(monkeypatch)
+        # Aggiungi pattern_probes al config
+        text = (repo / "pyproject.toml").read_text()
+        (repo / "pyproject.toml").write_text(
+            text
+            + "\n[[tool.observatory.pattern_probes]]\n"
+            + 'name = "sentinel-2026"\n'
+            + 'url = "https://example.test/2026.zip"\n'
+        )
+        monkeypatch.setattr(
+            "scripts.catalog.build.run_pattern_probes",
+            lambda cfg: [
+                {
+                    "name": "sentinel-2026",
+                    "url": "https://example.test/2026.zip",
+                    "available": True,
+                    "http_code": "200",
+                }
+            ],
+        )
+
+        catalog = build_catalog(repo, write=False)
+        assert "pattern_probes" in catalog
+        assert catalog["pattern_probes"][0]["available"] is True
+        # Primo run + available → new_content trigger
+        assert "new_content_available" in catalog["operational_verdict"]["triggers"]
+        assert catalog["operational_verdict"]["label"] == "NEW_CONTENT"
+
+    @pytest.mark.contract
+    def test_no_pattern_probes_no_field(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        repo = _make_repo(tmp_path)
+        _patch_engine(monkeypatch)
+        catalog = build_catalog(repo, write=False)
+        assert "pattern_probes" not in catalog
+
+    @pytest.mark.contract
     def test_dry_run_does_not_write(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         repo = _make_repo(tmp_path)
         _patch_engine(monkeypatch)
