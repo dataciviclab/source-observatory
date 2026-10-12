@@ -91,6 +91,20 @@ def _make_repo(tmp_path: Path) -> Path:
     (repo / "registry").mkdir(parents=True)
     (repo / "pyproject.toml").write_text(_PYPROJECT, encoding="utf-8")
     (repo / "registry" / "registry.json").write_text(json.dumps(_REGISTRY), encoding="utf-8")
+    ds_dir = repo / "datasets" / "demo-published"
+    ds_dir.mkdir(parents=True)
+    (ds_dir / "dataset.yml").write_text(
+        """
+dataset:
+  name: demo_published
+raw:
+  sources:
+  - name: a
+    type: sdmx
+    args: {agency: ESTAT, flow: DEMO_R_D3DENS}
+""",
+        encoding="utf-8",
+    )
     return repo
 
 
@@ -197,7 +211,11 @@ class TestBuildCatalog:
         assert catalog["source_check"]["total_scored"] == 2
         assert catalog["source_check"]["reachable"] == 2
         assert catalog["datasets_in_use"] == [
-            {"slug": "demo_published", "status": "published"},
+            {
+                "slug": "demo_published",
+                "status": "published",
+                "upstream": [{"kind": "dataflow", "id": "DEMO_R_D3DENS", "agency": "ESTAT"}],
+            },
             {"slug": "demo_incubating", "status": "incubating"},
         ]
         assert catalog["operational_verdict"]["label"] in {
