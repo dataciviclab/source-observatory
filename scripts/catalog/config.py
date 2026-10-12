@@ -132,6 +132,8 @@ def validate_observatory_config(
         cfg["inventory"] = dict(obs["inventory"])
     if isinstance(obs.get("catalog_baseline"), dict):
         cfg["catalog_baseline"] = dict(obs["catalog_baseline"])
+    if isinstance(obs.get("pattern_probes"), list):
+        cfg["pattern_probes"] = [dict(p) for p in obs["pattern_probes"] if isinstance(p, dict)]
 
     # Pass-through: blocchi specifici di protocollo e campi ignoti.
     known = set(REQUIRED_KEYS) | {
@@ -141,6 +143,7 @@ def validate_observatory_config(
         "note",
         "inventory",
         "catalog_baseline",
+        "pattern_probes",
     }
     for key, value in obs.items():
         if key not in known and key not in cfg:

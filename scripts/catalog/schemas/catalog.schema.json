@@ -167,13 +167,30 @@
       "type": "array",
       "items": { "type": "object", "additionalProperties": true }
     },
+    "pattern_probes": {
+      "type": "array",
+      "description": "Risultati dei pattern_probes del config — URL sentinel per rilevare nuovi contenuti upstream (es. nuovo anno pubblicato).",
+      "items": {
+        "type": "object",
+        "required": ["url", "available"],
+        "properties": {
+          "url": { "type": "string" },
+          "available": { "type": "boolean" },
+          "http_code": { "type": "string" },
+          "content_length": { "type": ["integer", "null"] },
+          "name": { "type": "string" },
+          "error": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
     "operational_verdict": {
       "type": "object",
       "required": ["label", "score", "triggers"],
       "properties": {
         "label": {
           "type": "string",
-          "enum": ["STABLE", "DOWN", "INVENTORY_CHANGED", "STALE", "PARTIALLY_SCOPED"]
+          "enum": ["STABLE", "DOWN", "INVENTORY_CHANGED", "STALE", "PARTIALLY_SCOPED", "NEW_CONTENT"]
         },
         "score": { "type": "string" },
         "triggers": {

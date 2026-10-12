@@ -27,6 +27,7 @@ import pandas as pd
 
 from scripts.catalog.config import load_observatory_config
 from scripts.catalog.layout import RepoLayout, resolve_layout
+from scripts.catalog.pattern_probes import compute_new_content_trigger, run_pattern_probes
 from scripts.catalog.upstream import load_upstream_map
 from scripts.collectors import dispatch
 from scripts.pipeline.run_pipeline import run_merge, run_validate
@@ -213,6 +214,27 @@ def build_catalog(
     }
     health["streak"] = compute_streak(health, previous)
     catalog["health"] = health
+
+    # ── Pattern probes (sentinel URL per nuovi contenuti) ────────────────────
+    probe_cfg = cfg.get("pattern_probes") or []
+    if probe_cfg:
+        print(f"  → pattern probes ({len(probe_cfg)})")
+        probe_results = run_pattern_probes(probe_cfg)
+        available = sum(1 for p in probe_results if p.get("available"))
+        print(f"  ← {available}/{len(probe_results)} available")
+        catalog["pattern_probes"] = probe_results
+        if compute_new_content_trigger(probe_results, previous):
+            verdict = catalog.get("operational_verdict") or {}
+            triggers = list(verdict.get("triggers") or [])
+            if "new_content_available" not in triggers:
+                triggers.append("new_content_available")
+            verdict["triggers"] = triggers
+            if verdict.get("label") == "STABLE":
+                verdict["label"] = "NEW_CONTENT"
+                verdict["score"] = "new_content"
+                verdict["next_action"] = "review new upstream content"
+            catalog["operational_verdict"] = verdict
+            print("  🆕 new_content_available trigger fired")
 
     validate_catalog(catalog)
 
