@@ -267,3 +267,88 @@ def test_compute_summary_years_set_correct():
     ]
     summary = _compute_summary(links, [], None, method="test", area_pages_scanned=1)
     assert summary["years_range"] == [2021, 2023]
+
+
+# ─── Liferay Catalog Parser ──────────────────────────────────────────────────
+
+_LIFERAY_HTML = """\
+<html><head><title>Open Data - OpenCivitas</title></head>
+<body>
+<table>
+  <thead><tr><th>Titolo</th><th>Data</th><th>Anno</th><th>Download</th></tr></thead>
+  <tbody class="table-group-divider">
+    <tr>
+      <th scope="row"><a href="https://ex.it/portale/w/entry-1">2023 Comuni - Amministrazione</a></th>
+      <td>01/10/2026</td>
+      <td>1</td>
+      <td class="iconstable">
+        <a href="https://ex.it/portale/documents/0/0/2023_Ind_AMMINISTR_01_IT.csv/aaa-111">CSV</a>
+        <a href="https://ex.it/portale/documents/0/0/2023_FC90_AMMINISTR_1_IT.rdf/bbb-222">RDF</a>
+      </td>
+    </tr>
+    <tr>
+      <th scope="row"><a href="https://ex.it/portale/w/entry-2">2023 Comuni - Polizia</a></th>
+      <td>01/10/2026</td>
+      <td>1</td>
+      <td class="iconstable">
+        <a href="https://ex.it/portale/documents/0/0/2023_Ind_POLIZIA_01_IT.csv/ccc-333">CSV</a>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</body></html>
+"""
+
+
+class TestLiferayCatalogParser:
+    @pytest.mark.pure_unit
+    def test_extracts_entries_with_title_and_issued(self):
+        # Il parser Liferay è annidato in _scan_liferay_catalog.
+        # Il test e2e qui sotto copre il comportamento completo.
+        import scripts.collectors.html as html_mod
+
+        assert hasattr(html_mod, "_scan_liferay_catalog")
+
+    @pytest.mark.pure_unit
+    def test_scan_liferay_catalog_end_to_end(self, monkeypatch):
+        from scripts.collectors.html import _scan_liferay_catalog
+
+        class FakeResp:
+            status_code = 200
+            text = _LIFERAY_HTML
+            headers: dict = {}
+
+        class FakeResult:
+            is_ok = True
+            response = FakeResp()
+            err = None
+            ssl_fallback_used = False
+
+        class FakeClient:
+            def __init__(self, **kw):
+                pass
+
+            def get(self, url, **kw):
+                return FakeResult()
+
+        monkeypatch.setattr("scripts.collectors.html.HttpClient", FakeClient)
+        monkeypatch.setattr("scripts.collectors.html.time.sleep", lambda s: None)
+
+        rows, params = _scan_liferay_catalog(
+            topic_hint="trasparenza",
+            source_id="opencivitas",
+            base_url="https://ex.it/portale/open-data",
+            page_url_template="https://ex.it/portale/open-data?xpage={page}&xdelta=6",
+            page_max=3,
+        )
+        # 2 entry: entry-1 ha CSV+RDF (2 rows), entry-2 ha CSV (1 row) = 3 rows
+        assert len(rows) == 3
+        titles = {r["title"] for r in rows}
+        assert "2023 Comuni - Amministrazione" in titles
+        assert "2023 Comuni - Polizia" in titles
+        formats = {r["format"] for r in rows}
+        assert "CSV" in formats
+        assert "RDF" in formats
+        issued = {r["issued"] for r in rows}
+        assert "01/10/2026" in issued
+        assert params["method"] == "liferay_catalog_table"
