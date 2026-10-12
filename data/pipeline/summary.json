@@ -1,10 +1,10 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-10-05T10:53:51Z",
-  "total_groups": 11498,
-  "reachable": 7343,
-  "unreachable": 4155,
-  "csv_with_schema": 2921,
+  "generated_at": "2026-10-12T11:16:10Z",
+  "total_groups": 11499,
+  "reachable": 7440,
+  "unreachable": 4059,
+  "csv_with_schema": 3013,
   "by_source": {
     "openbdap": {
       "total": 3867,
@@ -12,19 +12,19 @@
       "csv": 0
     },
     "istat_sdmx": {
-      "total": 3579,
-      "reachable": 3579,
+      "total": 3580,
+      "reachable": 3580,
       "csv": 0
     },
     "inps": {
       "total": 1809,
-      "reachable": 1802,
-      "csv": 1765
+      "reachable": 1807,
+      "csv": 1769
     },
     "openga": {
       "total": 405,
-      "reachable": 264,
-      "csv": 255
+      "reachable": 405,
+      "csv": 405
     },
     "dati_cultura": {
       "total": 335,
@@ -68,8 +68,8 @@
     },
     "mit_opendata": {
       "total": 56,
-      "reachable": 44,
-      "csv": 44
+      "reachable": 19,
+      "csv": 8
     },
     "anac": {
       "total": 48,
@@ -108,8 +108,8 @@
     },
     "aifa": {
       "total": 29,
-      "reachable": 29,
-      "csv": 29
+      "reachable": 4,
+      "csv": 3
     },
     "mim_opendata": {
       "total": 28,

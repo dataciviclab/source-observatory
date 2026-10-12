@@ -1,23 +1,23 @@
 {
-  "captured_at": "2026-10-05T10:38:58+00:00",
+  "captured_at": "2026-10-12T11:05:08+00:00",
   "registry_path": "/home/runner/work/source-observatory/source-observatory/data/radar/sources_registry.yaml",
   "sources": {
     "istat_sdmx": {
-      "status": "error",
+      "status": "ok",
       "protocol": "sdmx",
-      "error": "SDMX fetch failed for istat_sdmx on https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
+      "rows": 4928,
       "method": "dataflow_count"
     },
     "anac": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source anac timed out after 180s",
+      "rows": 70,
       "method": "package_search"
     },
     "inps": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source inps timed out after 180s",
+      "rows": 2499,
       "method": "package_search"
     },
     "openbdap": {
@@ -37,18 +37,18 @@
           "sample_size": 25,
           "rows_enriched": 21,
           "errors_preview": [
-            "3932df6b-b188-48fa-aa76-fd1392dd09f8: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
-            "c781f6ce-fc34-4614-a50b-f68fe617c4c5: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
-            "75c85c3e-bba9-4467-8e9d-21c59bedda89: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
-            "c923588e-f8f6-482f-a798-e8dbda964eb6: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)"
+            "d032b3a2-2b70-4193-a0c8-cb7eb69f8710: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
+            "c923588e-f8f6-482f-a798-e8dbda964eb6: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
+            "bea701d3-c549-4472-a3c2-6b61e3b148cc: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
+            "c781f6ce-fc34-4614-a50b-f68fe617c4c5: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)"
           ]
         }
       }
     },
     "inail_opendata": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source inail_opendata timed out after 180s",
+      "rows": 102,
       "method": null
     },
     "mim_opendata": {
@@ -1599,9 +1599,9 @@
       "method": "named_graphs"
     },
     "dati_cultura": {
-      "status": "ok",
+      "status": "error",
       "protocol": "sparql",
-      "rows": 341,
+      "error": "Source dati_cultura timed out after 120s",
       "method": "sparql_query"
     },
     "ispra_linked_data": {
@@ -1617,21 +1617,21 @@
       "method": "package_list"
     },
     "lavoro_opendata": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source lavoro_opendata timed out after 180s",
+      "rows": 83,
       "method": "package_search"
     },
     "mur_ustat": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source mur_ustat timed out after 180s",
+      "rows": 70,
       "method": "package_search"
     },
     "opencoesione": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source opencoesione timed out after 180s",
+      "rows": 561,
       "method": "package_search"
     },
     "mef_irpef": {
@@ -1954,7 +1954,7 @@
             "formats": [
               "CSV"
             ],
-            "sample": "Elenco_Registri_PT_attivi_30.09.2026.csv"
+            "sample": "Elenco_Registri_PT_attivi_06.10.2026.csv"
           },
           "Accordi": {
             "years": [
@@ -2337,9 +2337,9 @@
       }
     },
     "mit_opendata": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source mit_opendata timed out after 180s",
+      "rows": 71,
       "method": "package_search"
     },
     "openga": {
@@ -2612,15 +2612,15 @@
       }
     },
     "ministero_interno": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source ministero_interno timed out after 180s",
+      "rows": 38,
       "method": "package_search"
     },
     "agid": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source agid timed out after 180s",
+      "rows": 40,
       "method": "package_search"
     },
     "noipa_sparql": {
@@ -2630,51 +2630,51 @@
       "method": null
     },
     "mimit_rna": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source mimit_rna timed out after 180s",
+      "rows": 370,
       "method": "package_search"
     },
     "ministero_turismo_opendata": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source ministero_turismo_opendata timed out after 180s",
+      "rows": 16,
       "method": "package_search"
     },
     "ministero_salute": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source ministero_salute timed out after 180s",
+      "rows": 51,
       "method": "package_search"
     },
     "agcm": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source agcm timed out after 180s",
+      "rows": 58,
       "method": "package_search"
     },
     "pagopa": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source pagopa timed out after 180s",
+      "rows": 12,
       "method": "package_search"
     },
     "art_opendata": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source art_opendata timed out after 180s",
+      "rows": 32,
       "method": "package_search"
     },
     "aci": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source aci timed out after 180s",
+      "rows": 39,
       "method": "package_search"
     },
     "adm_opendata": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "Source adm_opendata timed out after 180s",
+      "rows": 33,
       "method": "package_search"
     },
     "unioncamere": {

@@ -1,6 +1,6 @@
 {
   "source_id": "mit_opendata",
-  "generated_at": "2026-10-05T10:53:52+00:00",
+  "generated_at": "2026-10-12T11:16:11+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,18 +11,18 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Dataset del Ministero Infrastrutture e Trasporti via dati.gov.it (portale MIT dati.mit.gov.it non raggiungibile da 2026-05). 70 dataset: contratti pubblici, incidentalità, trasporti, opere pubbliche. CC-BY-4.0.",
-    "last_probed": "2026-10-05"
+    "last_probed": "2026-10-12"
   },
   "health": {
-    "radar_status": "YELLOW",
-    "http_code": "-",
-    "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
     "ssl_fallback": false
   },
   "inventory": {
     "total_items": 71,
     "method": "package_search",
-    "captured_at": "2026-10-05T10:38:58+00:00",
+    "captured_at": "2026-10-12T11:05:08+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-06-22",
     "freshness_hours": 0.2,
@@ -50,69 +50,57 @@
     }
   },
   "source_check": {
-    "last_run": "2026-10-05T10:53:52Z",
+    "last_run": "2026-10-12T11:16:11Z",
     "total_scored": 56,
-    "reachable": 44,
+    "reachable": 19,
     "csv_count": 46,
-    "with_csv_schema": 44,
-    "avg_readiness": 7.6,
+    "with_csv_schema": 8,
+    "avg_readiness": 1.9,
     "top_items": [
       {
-        "name": "mit_opendata/concessioni-demaniali-marittime-a",
-        "score": 10,
-        "year_range": [
-          1905,
-          2026
-        ],
-        "format": "zip,csv",
+        "name": "mit_opendata/aeroporti-certificati",
+        "score": 9,
+        "year_range": null,
+        "format": "csv,json",
         "reachable": true
       },
       {
-        "name": "mit_opendata/concessioni-demaniali-marittime-ad",
-        "score": 10,
-        "year_range": [
-          1905,
-          2019
-        ],
-        "format": "json,zip,csv",
+        "name": "mit_opendata/autorita-di-sistema-portuale-adsp",
+        "score": 9,
+        "year_range": null,
+        "format": "csv,json",
         "reachable": true
       },
       {
-        "name": "mit_opendata/general-contractor",
-        "score": 10,
-        "year_range": [
-          2026,
-          2026
-        ],
-        "format": "csv,xlsx",
+        "name": "mit_opendata/banca-dati-servizio-contratti-pubblici-scp",
+        "score": 9,
+        "year_range": null,
+        "format": "csv,json",
         "reachable": true
       },
       {
-        "name": "mit_opendata/incidentalita-stradale",
-        "score": 10,
+        "name": "mit_opendata/cantieri-navali",
+        "score": 8,
         "year_range": [
-          2018,
-          2018
+          2017,
+          2017
         ],
         "format": "xlsx,csv",
         "reachable": true
       },
       {
-        "name": "mit_opendata/incidenti-morti-feriti-ed-indicatori-dellincidentalita-stradale-per-mese",
-        "score": 10,
-        "year_range": [
-          2001,
-          2018
-        ],
-        "format": "csv,xlsx",
+        "name": "mit_opendata/72d632e5-56d9-4d00-810e-89c24002943f",
+        "score": 7,
+        "year_range": null,
+        "format": "csv,json,pdf",
         "reachable": true
       }
     ],
     "coverage_pct": 78.9,
     "formato_aperto": {
-      "score": 5.0,
+      "score": 15.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 78.6,
+      "perc_reachable": 33.9,
       "total": 56,
       "fonte": "source_check"
     }
