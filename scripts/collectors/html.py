@@ -498,7 +498,8 @@ def _scan_liferay_catalog(
         def _resolve_one(row: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
             try:
                 info = probe_url_headers(row["url"], timeout=8)
-                if info.get("reachable"):
+                status = info.get("status_code") or 0
+                if 200 <= status < 400:
                     fmt = resolve_preview_kind(
                         row["url"],
                         content_type=info.get("content_type"),

@@ -337,7 +337,7 @@ class TestLiferayCatalogParser:
 
         # Mock HEAD probe per URL extensionless
         def fake_probe_headers(url, **kw):
-            return {"reachable": True, "content_type": "text/csv"}
+            return {"status_code": 200, "content_type": "text/csv"}
 
         monkeypatch.setattr("scripts.collectors.html.probe_url_headers", fake_probe_headers)
 
