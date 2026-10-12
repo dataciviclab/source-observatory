@@ -305,6 +305,234 @@ def _scan_sitemap_pages(
     return rows, scan_params
 
 
+def _scan_liferay_catalog(
+    topic_hint: str | None,
+    source_id: str,
+    base_url: str,
+    *,
+    page_delay: float = 0.3,
+    page_url_template: str,
+    page_start: int = 0,
+    page_max: int = 50,
+    timeout_seconds: int = 10,
+    max_retries: int = 1,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Scan portale Liferay con tabella catalogo strutturata.
+
+    Ogni riga <tr> del tbody contiene:
+      - <th> con titolo entry + link landing (/portale/w/...)
+      - <td> data pubblicazione (dd/mm/yyyy)
+      - <td> link distribuzione (CSV, RDF, XLSX) — piu' link per entry
+
+    Estrae una riga per distribution, condividendo titolo/data/landing.
+    Raggruppamento corretto: il titolo e' per-entry, non il meta della pagina.
+    """
+    from html.parser import HTMLParser
+
+    class LiferayCatalogParser(HTMLParser):
+        """Estrae entry dal tbody della tabella catalogo Liferay."""
+
+        def __init__(self) -> None:
+            super().__init__()
+            self.entries: list[dict[str, Any]] = []
+            self._in_tbody = False
+            self._in_row = False
+            self._in_th = False
+            self._in_td = False
+            self._current: dict[str, Any] | None = None
+            self._td_index = 0
+            self._capture_text = False
+            self._text_buf: list[str] = []
+
+        def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+            attrs_d = dict(attrs)
+            if tag == "tbody":
+                self._in_tbody = True
+            elif self._in_tbody and tag == "tr":
+                self._in_row = True
+                self._current = {
+                    "title": None,
+                    "landing_url": None,
+                    "issued": None,
+                    "dist_urls": [],
+                }
+                self._td_index = 0
+            elif self._in_row and tag == "th":
+                self._in_th = True
+            elif self._in_row and tag == "td":
+                self._in_td = True
+                self._td_index += 1
+            elif self._in_row and tag == "a":
+                href = attrs_d.get("href") or ""
+                if "/portale/w/" in href and self._current is not None:
+                    self._current["landing_url"] = href
+                elif "/portale/documents/" in href and self._current is not None:
+                    self._current["dist_urls"].append(href)
+            elif self._in_th and tag == "a":
+                pass  # href già catturato sopra
+
+        def handle_data(self, data: str) -> None:
+            if self._in_th and self._current is not None:
+                self._text_buf.append(data)
+            elif self._in_td and self._td_index == 1 and self._current is not None:
+                # Primo <td> = data pubblicazione (dd/mm/yyyy)
+                self._text_buf.append(data)
+
+        def handle_endtag(self, tag: str) -> None:
+            if tag == "tbody":
+                self._in_tbody = False
+            elif tag == "tr" and self._in_row:
+                self._in_row = False
+                if self._current and self._current["dist_urls"]:
+                    text = " ".join(self._text_buf).strip()
+                    if self._current["title"] is None and text:
+                        self._current["title"] = text
+                    self.entries.append(self._current)
+                self._current = None
+                self._text_buf = []
+            elif tag == "th":
+                self._in_th = False
+                if self._current is not None:
+                    text = " ".join(self._text_buf).strip()
+                    if text:
+                        self._current["title"] = text
+                self._text_buf = []
+            elif tag == "td":
+                self._in_td = False
+                if self._td_index == 1 and self._current is not None:
+                    text = " ".join(self._text_buf).strip()
+                    # dd/mm/yyyy — regex esplicita: se la fonte cambia
+                    # formato, issued resta None in modo evidente.
+                    if text and re.fullmatch(r"\d{2}/\d{2}/\d{4}", text):
+                        self._current["issued"] = text
+                self._text_buf = []
+
+    all_rows: list[dict[str, Any]] = []
+    seen_urls: set[str] = set()
+    pages_scanned = 0
+    _ssl_bypass = False
+
+    page = page_start
+    while pages_scanned < page_max:
+        area_url = page_url_template.format(page=page)
+        time.sleep(page_delay)
+        client = HttpClient(timeout=timeout_seconds)
+        result = None
+        for attempt in range(1 + max_retries):
+            if _ssl_bypass:
+                result = client.get(area_url, verify=False)
+            else:
+                result = client.get(area_url)
+                if result.ssl_fallback_used:
+                    _ssl_bypass = True
+            if result.is_ok and result.response is not None:
+                break
+            if attempt < max_retries:
+                time.sleep(1.0)  # retry dopo 1s
+
+        if result is None or not result.is_ok or result.response is None:
+            break  # dopo retry: fine pagina
+
+        html = result.response.text
+        parser = LiferayCatalogParser()
+        parser.feed(html)
+
+        if not parser.entries:
+            break  # pagina vuota = fine paginazione (anche la prima)
+
+        for entry in parser.entries:
+            title = entry.get("title") or "unknown"
+            issued = entry.get("issued")
+            landing = entry.get("landing_url")
+            for dist_url in entry.get("dist_urls", []):
+                if dist_url in seen_urls:
+                    continue
+                seen_urls.add(dist_url)
+                # Determina formato dall'URL
+                fmt = None
+                for ext in (".csv", ".xlsx", ".xls", ".rdf", ".zip", ".json"):
+                    if ext in dist_url.lower():
+                        fmt = ext.lstrip(".").upper()
+                        break
+                filename = (
+                    dist_url.split("/")[-2]
+                    if "/documents/" in dist_url
+                    else dist_url.split("/")[-1]
+                )
+                all_rows.append(
+                    {
+                        "source_id": source_id,
+                        "source_kind": "catalog",
+                        "protocol": "html",
+                        "source_url": base_url,
+                        "item_id": filename[:100],
+                        "item_name": filename[:100],
+                        "item_slug": filename[:100],
+                        "title": title,
+                        "organization": None,
+                        "tags": None,
+                        "notes_excerpt": None,
+                        "landing_page": landing or area_url,
+                        "distribution_url": dist_url,
+                        "datastore_active": False,
+                        "resource_count": 1,
+                        "issued": issued,
+                        "modified": None,
+                        "url": dist_url,
+                        "format": fmt or "UNKNOWN",
+                        "prefix": None,
+                        "year_signal": None,
+                        "topic": topic_hint or "unknown",
+                    }
+                )
+
+        pages_scanned += 1
+        page += 1
+
+    # ── Risoluzione formato per URL extensionless ─────────────────────────────
+    # I portali Liferay servono gli anni storici con URL friendly senza
+    # estensione (/documents/0/0/2025_VAR_FSC_1_2025/uuid) — 200 text/csv.
+    # HEAD concorrente sui soli UNKNOWN per determinare il formato reale.
+    unknown_rows = [r for r in all_rows if r["format"] == "UNKNOWN"]
+    if unknown_rows:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        def _resolve_one(row: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
+            try:
+                info = probe_url_headers(row["url"], timeout=8)
+                status = info.get("status_code") or 0
+                if 200 <= status < 400:
+                    fmt = resolve_preview_kind(
+                        row["url"],
+                        content_type=info.get("content_type"),
+                        content_disposition=info.get("content_disposition"),
+                    )
+                    return row, fmt
+            except Exception:
+                pass
+            return row, None
+
+        resolved = 0
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            futures = [pool.submit(_resolve_one, r) for r in unknown_rows]
+            for fut in as_completed(futures):
+                row, fmt = fut.result()
+                if fmt:
+                    row["format"] = fmt
+                    resolved += 1
+        scan_params_note = f"resolved_unknown={resolved}/{len(unknown_rows)}"
+    else:
+        scan_params_note = None
+
+    scan_params: dict[str, Any] = {
+        "method": "liferay_catalog_table",
+        "area_pages_scanned": pages_scanned,
+    }
+    if scan_params_note:
+        scan_params["format_resolution"] = scan_params_note
+    return all_rows, scan_params
+
+
 def _scan_area_pages(
     area_pages: list[str],
     topic_hint: str | None,
@@ -449,12 +677,29 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     page_stop_on_empty = html_portal_cfg.get("page_stop_on_empty", True)
     probe_ct = html_portal_cfg.get("probe_content_type", False)
     sample = html_portal_cfg.get("sample_pages", 30)
+    extraction_mode = html_portal_cfg.get("extraction")  # None | "liferay_catalog"
 
     rows: list[dict[str, Any]] = []
     scan_params: dict[str, Any] = {}
 
+    # ── Liferay catalog table (parser strutturato per portali Liferay) ──
+    if extraction_mode == "liferay_catalog" and page_url_template:
+        timeout_cfg = html_portal_cfg.get("timeout_seconds", 10)
+        max_retries = html_portal_cfg.get("max_retries", 1)
+        rows, scan_params = _scan_liferay_catalog(
+            topic_hint,
+            source_id,
+            base_url,
+            page_delay=delay,
+            page_url_template=page_url_template,
+            page_start=page_start,
+            page_max=page_max,
+            timeout_seconds=timeout_cfg,
+            max_retries=max_retries,
+        )
+
     # ── Sitemap esplicita configurata nel registry ──
-    if sitemap_url:
+    elif sitemap_url:
         pages = fetch_sitemap_pages(sitemap_url, timeout=15)
         if pages:
             rows, scan_params = _scan_sitemap_pages(
@@ -557,7 +802,13 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         )
         for r in rows
     ]
-    summary = _compute_summary(_summary_links, rows, topic_hint, **scan_params)
+    # Filtra scan_params: _compute_summary accetta solo parametri noti
+    _summary_params = {
+        k: v
+        for k, v in scan_params.items()
+        if k in ("method", "total_pages", "pages_probed", "pages_sampled", "area_pages_scanned")
+    }
+    summary = _compute_summary(_summary_links, rows, topic_hint, **_summary_params)
 
     summary["type"] = "csv_magnet"
     summary["source_id"] = source_id

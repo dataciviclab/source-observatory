@@ -38,14 +38,18 @@ def extract_upstream_from_source(source: dict[str, Any]) -> list[dict[str, str]]
         refs.append({"kind": "ckan_resource", "id": str(args["resource_id"])})
     elif stype in ("http_file", "http_post_file") and args.get("url"):
         refs.append({"kind": "url", "id": str(args["url"])})
-    elif stype == "script" and args.get("command"):
+    elif stype == "script":
+        # upstream_url dichiarato esplicitamente nel dataset.yml
+        if args.get("upstream_url"):
+            refs.append({"kind": "url", "id": str(args["upstream_url"])})
         # Pattern diffuso: ... --type <value>  (es. prefetch.py --type sentenze)
-        cmd = str(args["command"])
-        marker = "--type"
-        if marker in cmd:
-            tail = cmd.split(marker, 1)[1].strip().split()[0].strip("\"'")
-            if tail:
-                refs.append({"kind": "script_type", "id": tail})
+        if args.get("command"):
+            cmd = str(args["command"])
+            marker = "--type"
+            if marker in cmd:
+                tail = cmd.split(marker, 1)[1].strip().split()[0].strip("\"'")
+                if tail:
+                    refs.append({"kind": "script_type", "id": tail})
     return refs
 
 
@@ -83,7 +87,7 @@ def load_upstream_map(repo_root: Path) -> dict[str, list[dict[str, str]]]:
     Graceful: yml illeggibile o senza name → skippato.
     """
     out: dict[str, list[dict[str, str]]] = {}
-    for section in ("datasets", "candidates", "compose"):
+    for section in ("datasets", "candidates", "compose", "support"):
         for yml in sorted((repo_root / section).glob("*/dataset.yml")):
             try:
                 text = yml.read_text(encoding="utf-8", errors="replace")
