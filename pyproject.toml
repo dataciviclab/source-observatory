@@ -54,6 +54,7 @@ so-radar-check = "scripts.radar_check:main"
 so-sync-datasets = "scripts.sync_datasets_in_use:main"
 so-catalog = "scripts.catalog.cli:main"
 so-catalog-coverage = "scripts.catalog_coverage:main"
+so-source = "scripts.source_cli:main"
 
 [project.urls]
 Repository = "https://github.com/dataciviclab/source-observatory"
