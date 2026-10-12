@@ -799,7 +799,13 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         )
         for r in rows
     ]
-    summary = _compute_summary(_summary_links, rows, topic_hint, **scan_params)
+    # Filtra scan_params: _compute_summary accetta solo parametri noti
+    _summary_params = {
+        k: v
+        for k, v in scan_params.items()
+        if k in ("method", "total_pages", "pages_probed", "pages_sampled", "area_pages_scanned")
+    }
+    summary = _compute_summary(_summary_links, rows, topic_hint, **_summary_params)
 
     summary["type"] = "csv_magnet"
     summary["source_id"] = source_id
