@@ -2,11 +2,11 @@
 
 Equivalente CLI dei tool MCP per umani e script senza MCP:
 
-  so-probe <source_id>       Probe HTTP di una fonte → GREEN/YELLOW/RED
-  so-inventory <source_id>   Inventario della fonte → conteggi, formati
-  so-report <source_id>      Source report completo (legge dal catalog per-repo
+  so-source probe <id>       Probe HTTP di una fonte → GREEN/YELLOW/RED
+  so-source inventory <id>   Inventario della fonte → conteggi, formati
+  so-source report <id>      Source report completo (legge dal catalog per-repo
                              o dal registry centrale)
-  so-status                  Riepilogo: fonti, radar, verdict
+  so-source status           Riepilogo: fonti, radar, verdict
 
 Le fonti si risolvono da:
   1. [tool.observatory] del pyproject nel CWD (o --repo-root)
