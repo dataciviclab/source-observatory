@@ -1,11 +1,11 @@
 """Test delle funzioni pure per collector HTML (nessun HTTP).
 
-Il motore di estrazione link è in ``toolkit.scout.link_extractor``.
+Il motore di estrazione link è in ``lab_connectors.discovery.links``.
 Qui testiamo l'orchestrazione SO e le deleghe.
 """
 
 import pytest
-from toolkit.scout.link_extractor import DataLink
+from lab_connectors.discovery.links import DataLink
 
 from scripts.collectors.html import (
     _build_row,
@@ -198,13 +198,13 @@ def _dl(url: str, fmt: str = "CSV") -> DataLink:
     from urllib.parse import urlparse
 
     filename = urlparse(url).path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
-    from toolkit.scout.link_extractor import _extract_prefix, _extract_years
+    from lab_connectors.discovery.links import extract_prefix, extract_years
 
     return DataLink(
         url=url,
         format=fmt,
-        prefix=_extract_prefix(filename),
-        years=_extract_years(filename),
+        prefix=extract_prefix(filename),
+        years=extract_years(filename),
     )
 
 

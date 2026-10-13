@@ -138,19 +138,19 @@ def _extract_year_range(
     """Estrae range anni (min, max) da un CSV profilato.
 
     Ordine di tentativo:
-    1. anni nei NOMI colonna (es. ``anno_2020``) — toolkit._extract_years_from_columns
+    1. anni nei NOMI colonna (es. ``anno_2020``) — infer_years_from_columns
     2. valori in una colonna-anno (es. colonna ``ANNO`` con valori 2018..2024):
        il sample dello sniff standard contiene stringhe, quindi serve DuckDB
        sul raw per avere valori tipizzati e range su tutto il sample
-    3. anni nel filename (es. ``beneficiari_2007-2013.zip``) — toolkit._extract_years
+    3. anni nel filename (es. ``beneficiari_2007-2013.zip``) — extract_years
 
     Ritorna (None, None) se non trova nulla.
     """
-    from toolkit.profile.preview import _extract_years_from_columns
-    from toolkit.scout.link_extractor import _extract_years as _filename_years
+    from lab_connectors.discovery.infer import infer_years_from_columns
+    from lab_connectors.discovery.links import extract_years as _filename_years
 
     # 1. anni da nomi colonna
-    y_cols = _extract_years_from_columns(columns)
+    y_cols = infer_years_from_columns(columns)
     if y_cols != (None, None):
         return y_cols
 

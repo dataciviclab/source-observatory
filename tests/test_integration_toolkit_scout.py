@@ -1,12 +1,12 @@
-"""Test integrazione SO ↔ toolkit.scout.
+"""Test integrazione SO ↔ lab_connectors.discovery.
 
-Verifica che le funzioni condivise da toolkit abbiano i contratti attesi da SO.
+Verifica che le funzioni condivise da LC abbiano i contratti attesi da SO.
 Nessuna dipendenza di rete — solo funzioni pure.
 """
 
 import pytest
-from toolkit.scout.http import resolve_preview_kind
-from toolkit.scout.infer import infer_granularity, infer_years
+from lab_connectors.discovery.classify import resolve_preview_kind
+from lab_connectors.discovery.infer import infer_granularity, infer_years
 
 pytestmark = pytest.mark.contract
 

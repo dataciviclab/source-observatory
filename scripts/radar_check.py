@@ -9,9 +9,9 @@ from datetime import date, datetime, timezone
 from typing import Any, Literal
 
 import requests
+from lab_connectors.discovery.classify import is_sdmx_url
 from lab_connectors.http import HttpClient, HttpFallbackError
 from lab_connectors.http.types import ResponseLike
-from toolkit.scout.http import is_sdmx_url
 
 from scripts._constants import (
     RADAR_HISTORY_PATH,

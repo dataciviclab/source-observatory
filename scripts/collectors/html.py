@@ -12,7 +12,7 @@ Output:
 
 Non fa full crawl (191 pagine). Campiona per stimare.
 
-Il motore di estrazione link e raggruppamento è in ``toolkit.scout.link_extractor``.
+Il motore di estrazione link è in ``lab_connectors.discovery.links``.
 Questo modulo è solo orchestratore: fetch pagine, costruisce righe SO, calcola summary.
 
 Uso:
@@ -28,10 +28,12 @@ import time
 from collections import Counter
 from typing import Any
 
+from lab_connectors.discovery.classify import resolve_preview_kind
+from lab_connectors.discovery.links import DataLink, extract_data_links, group_links
 from lab_connectors.http import HttpClient
-from toolkit.scout.http import probe_url_headers, resolve_preview_kind
-from toolkit.scout.link_extractor import DataLink, extract_data_links, group_links
-from toolkit.scout.probe import fetch_sitemap_pages, probe_html_portal
+from lab_connectors.http.probe import probe_url_headers
+
+from scripts.portal import fetch_sitemap_pages, probe_html_portal
 
 from .base import CollectorResult
 
@@ -64,26 +66,25 @@ def _extract_page_meta(html: str) -> dict[str, str]:
 
 
 def _extract_prefix(filename: str) -> str:
-    """Delega a toolkit.scout.link_extractor."""
-    from toolkit.scout.link_extractor import _extract_prefix as _tk_prefix
+    """Delega a lab_connectors.discovery.links."""
+    from lab_connectors.discovery.links import extract_prefix
 
-    return _tk_prefix(filename)
+    return extract_prefix(filename)
 
 
 def _extract_years(filename: str) -> list[int]:
-    """Delega a toolkit.scout.link_extractor."""
-    from toolkit.scout.link_extractor import _extract_years as _tk_years
+    """Delega a lab_connectors.discovery.links."""
+    from lab_connectors.discovery.links import extract_years
 
-    return _tk_years(filename)
+    return extract_years(filename)
 
 
 def _guess_topic(url: str, topic_hint: str | None) -> str:
     return topic_hint or "unknown"
 
 
-# ─── Sitemap Helper (delega a toolkit) ────────────────────────────────────────
-# La funzione fetch_sitemap_pages() è in toolkit.scout.probe — la usiamo
-# direttamente invece di duplicare la logica XML qui.
+# ─── Sitemap Helper ───────────────────────────────────────────────────────────
+# fetch_sitemap_pages() è in lab_connectors.discovery.portal (via scripts.portal).
 
 
 # ─── Shared row building & stats ─────────────────────────────────────────────
