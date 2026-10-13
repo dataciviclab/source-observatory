@@ -151,7 +151,7 @@
               "properties": {
                 "kind": {
                   "type": "string",
-                  "enum": ["dataflow", "ckan_resource", "url", "script_type"]
+                  "enum": ["dataflow", "ckan_resource", "ckan_dataset", "url", "script_type"]
                 },
                 "id": { "type": "string" },
                 "agency": { "type": "string" }

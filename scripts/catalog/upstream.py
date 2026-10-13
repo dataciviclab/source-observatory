@@ -34,8 +34,11 @@ def extract_upstream_from_source(source: dict[str, Any]) -> list[dict[str, str]]
         if args.get("agency"):
             ref["agency"] = str(args["agency"])
         refs.append(ref)
-    elif stype == "ckan" and args.get("resource_id"):
-        refs.append({"kind": "ckan_resource", "id": str(args["resource_id"])})
+    elif stype == "ckan":
+        if args.get("resource_id"):
+            refs.append({"kind": "ckan_resource", "id": str(args["resource_id"])})
+        elif args.get("dataset_id"):
+            refs.append({"kind": "ckan_dataset", "id": str(args["dataset_id"])})
     elif stype in ("http_file", "http_post_file") and args.get("url"):
         refs.append({"kind": "url", "id": str(args["url"])})
     elif stype == "script":

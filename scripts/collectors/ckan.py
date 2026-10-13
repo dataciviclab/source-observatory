@@ -288,7 +288,8 @@ def collect_ckan_inventory_via_search(
     from lab_connectors.http import HttpClient
 
     if client is None:
-        client = HttpClient(timeout=60, user_agent=USER_AGENT)
+        ua = source_cfg.get("user_agent") or USER_AGENT
+        client = HttpClient(timeout=60, user_agent=ua)
 
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_search")
     page_size = 1000
@@ -386,7 +387,8 @@ def collect_ckan_inventory_via_package_list(
     from lab_connectors.http import HttpClient
 
     if client is None:
-        client = HttpClient(timeout=60, user_agent=USER_AGENT)
+        ua = source_cfg.get("user_agent") or USER_AGENT
+        client = HttpClient(timeout=60, user_agent=ua)
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_list")
     payload = ckan_get_json(endpoint, client=client)
     if not payload.get("success"):
@@ -545,7 +547,8 @@ def collect(
     from lab_connectors.http import HttpClient
 
     if client is None:
-        client = HttpClient(timeout=60, user_agent=USER_AGENT)
+        ua = source_cfg.get("user_agent") or USER_AGENT
+        client = HttpClient(timeout=60, user_agent=ua)
     inv = inventory_cfg(source_cfg)
     rows, warning = _ckan_standard_path(
         source_id=source_id,
