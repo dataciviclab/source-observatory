@@ -177,7 +177,12 @@ def build_catalog(
     else:
         print("  → validate")
         merged = run_merge(inventory_df)
-        validated_rows_raw = run_validate(merged, max_groups=max_groups, workers=workers)
+        validated_rows_raw = run_validate(
+            merged,
+            max_groups=max_groups,
+            workers=workers,
+            user_agent=cfg.get("user_agent"),
+        )
         validated_rows = [r for r in validated_rows_raw if r is not None]
         if validated_rows:
             pd.DataFrame(validated_rows).to_parquet(layout.validated_parquet, index=False)
