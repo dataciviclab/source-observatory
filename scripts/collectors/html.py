@@ -84,7 +84,7 @@ def _guess_topic(url: str, topic_hint: str | None) -> str:
 
 
 # ─── Sitemap Helper ───────────────────────────────────────────────────────────
-# fetch_sitemap_pages() è in lab_connectors.discovery.portal (via scripts.portal).
+# fetch_sitemap_pages() è in scripts.portal (SO-specifico).
 
 
 # ─── Shared row building & stats ─────────────────────────────────────────────
