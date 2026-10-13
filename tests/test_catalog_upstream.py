@@ -120,3 +120,10 @@ raw:
     @pytest.mark.pure_unit
     def test_missing_dirs_ok(self, tmp_path: Path):
         assert load_upstream_map(tmp_path) == {}
+
+    @pytest.mark.pure_unit
+    def test_ckan_dataset_id(self):
+        refs = extract_upstream_from_source(
+            {"type": "ckan", "args": {"dataset_id": "cig-{year}", "portal_url": "https://ex.it"}}
+        )
+        assert refs == [{"kind": "ckan_dataset", "id": "cig-{year}"}]

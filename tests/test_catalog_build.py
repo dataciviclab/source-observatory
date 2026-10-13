@@ -122,7 +122,7 @@ def _patch_engine(monkeypatch: pytest.MonkeyPatch) -> None:
         df["dataset_group"] = df["item_name"].map(lambda n: f"demo_src/{n}")
         return df
 
-    def fake_validate(df, max_groups=None, workers: int = 1):
+    def fake_validate(df, max_groups=None, workers: int = 1, user_agent=None):
         return [dict(r) for r in _VALIDATED]
 
     monkeypatch.setattr("scripts.catalog.build.probe_url", fake_probe)

@@ -96,7 +96,10 @@ def _validate_one(group_df: pd.DataFrame, client=None) -> dict:
 
 
 def run_validate(
-    df: pd.DataFrame, max_groups: int | None = None, workers: int = 1
+    df: pd.DataFrame,
+    max_groups: int | None = None,
+    workers: int = 1,
+    user_agent: str | None = None,
 ) -> list[dict | None]:
     """For each dataset_group, pick best URL, probe, sniff schema.
 
@@ -124,7 +127,7 @@ def run_validate(
     # farebbe bruciare ~114s per fallimento prima che il breaker apra.
     from lab_connectors.http import HttpClient
 
-    http_client = HttpClient(timeout=5, circuit_threshold=3)
+    http_client = HttpClient(timeout=5, circuit_threshold=3, user_agent=user_agent)
 
     if workers <= 1:
         # Sequenziale
