@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-10-13
+Ultimo run: 2026-10-14
 
 ## Sommario
 
 - Fonti controllate: 36
-- GREEN: 34
-- YELLOW: 2
+- GREEN: 35
+- YELLOW: 1
 - RED: 0
 
 ## Tipi sorgente
@@ -31,18 +31,18 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
+| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | catalog-watch | GREEN | 200 | anac_aggiudicatari, anac_aggiudicazioni, anac_bandi_gara, anac_collaudo, anac_cup, anac_partecipanti, anac_stati_avanzamento, anac_subappalti |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_lea, dipendenti_pubblici |
-| inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | inail_malattie_professionali |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali, mim_scuola_infanzia |
 | dati_camera | catalog | sparql | catalog-watch | GREEN | 200 | silos_infrastrutture |
 | dati_senato | catalog | sparql | catalog-watch | GREEN | 200 | senato_anagrafica, senato_ddl, senato_firmatari |
 | dati_cultura | catalog | sparql | catalog-watch | GREEN | 200 | - |
 | ispra_linked_data | catalog | sparql | catalog-watch | GREEN | 200 | ispra_ru_base, ispra_ru_costi_kg, ispra_ru_costi_procapite |
 | consip_open_data | catalog | ckan | catalog-watch | GREEN | 200 | - |
-| lavoro_opendata | catalog | ckan | catalog-watch | GREEN | 200 | - |
+| lavoro_opendata | catalog | ckan | catalog-watch | GREEN | 200 | minlavoro_agevolazioni, minlavoro_flussi |
 | mur_ustat | catalog | ckan | catalog-watch | GREEN | 200 | mur_contribuzione_universitaria, mur_immatricolati, mur_iscritti |
 | opencoesione | catalog | ckan | catalog-watch | GREEN | 200 | opencoesione_progetti, opencoesione_soggetti |
 | mef_irpef | catalog | html | catalog-watch | GREEN | 200 | irpef_comunale, mef_irpef_regionale |
@@ -70,5 +70,4 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
-- `istat_sdmx`: Timeout (ReadTimeout)
 - `opencivitas`: HTTP 404 | content-type: text/html; charset=iso-8859-1 | url finale: https://www.opencivitas.it/it/open-data | Portale OpenCivitas — csv_magnet scan via discovery=auto (sitemap alla root). ZIP con CSV/XLSX dentro.
