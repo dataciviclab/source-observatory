@@ -139,9 +139,11 @@ def _build_probe_result(
     )
 
 
-def _probe_once(base_url: str, timeout: int = TIMEOUT_SECONDS) -> ProbeResult:
+def _probe_once(
+    base_url: str, timeout: int = TIMEOUT_SECONDS, user_agent: str | None = None
+) -> ProbeResult:
     """Single probe attempt (no retry). Uses lab_connectors HttpClient with SSL fallback."""
-    client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
+    client = HttpClient(timeout=timeout, user_agent=user_agent or USER_AGENT)
     result = client.get(
         base_url,
         allow_redirects=True,
@@ -195,13 +197,13 @@ def _probe_once(base_url: str, timeout: int = TIMEOUT_SECONDS) -> ProbeResult:
     )
 
 
-def probe_url(base_url: str) -> ProbeResult:
+def probe_url(base_url: str, user_agent: str | None = None) -> ProbeResult:
     """Probe URL with retry/backoff for SDMX endpoints known to be intermittent."""
     if not is_sdmx_url(base_url):
-        result = _probe_once(base_url)
+        result = _probe_once(base_url, user_agent=user_agent)
         # Retry once with shorter timeout on transient failures (timeout / connection error)
         if result.http_code == "-" and result.status == "YELLOW":
-            result2 = _probe_once(base_url)
+            result2 = _probe_once(base_url, user_agent=user_agent)
             # Only upgrade if second attempt succeeds — otherwise keep original note
             if result2.status == "GREEN":
                 return result2
@@ -221,7 +223,7 @@ def probe_url(base_url: str) -> ProbeResult:
     # Timeout dedicato + payload ridotto per evitare ReadTimeout su cataloghi
     # che serializzano migliaia di dataflow in una risposta unica.
     sdmx_fetch_url = catalog_fetch_url(base_url)
-    return _probe_once(sdmx_fetch_url, timeout=SDMX_TIMEOUT_SECONDS)
+    return _probe_once(sdmx_fetch_url, timeout=SDMX_TIMEOUT_SECONDS, user_agent=user_agent)
 
 
 def build_status_report(

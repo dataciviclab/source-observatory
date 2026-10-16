@@ -111,7 +111,7 @@ raw:
 def _patch_engine(monkeypatch: pytest.MonkeyPatch) -> None:
     """Neutralizza HTTP: probe/dispatch/validate restituiscono fixture."""
 
-    def fake_probe(base_url: str) -> ProbeResult:
+    def fake_probe(base_url: str, user_agent: str | None = None) -> ProbeResult:
         return ProbeResult(status="GREEN", http_code="200", note=None, final_url=base_url)
 
     def fake_dispatch(source_id, source_cfg, captured_at) -> CollectorResult:

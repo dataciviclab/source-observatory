@@ -139,7 +139,7 @@ def build_catalog(
 
     # ── Probe ────────────────────────────────────────────────────────────────
     print(f"  → probe {cfg['base_url']}")
-    probe = probe_url(cfg["base_url"])
+    probe = probe_url(cfg["base_url"], user_agent=cfg.get("user_agent"))
     radar_result = _probe_result_as_dict(probe)
     print(f"  ← {radar_result['status']} (HTTP {radar_result['http_code']})")
 
