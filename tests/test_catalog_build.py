@@ -45,6 +45,13 @@ _REGISTRY = {
 
 _INVENTORY_ROWS = [
     {
+        "item_id": "DEMO_R_D3DENS",
+        "item_name": "demo-r-d3dens",
+        "format": "SDMX",
+        "distribution_url": "https://example.test/data/DEMO_R_D3DENS/ALL/",
+        "organization": "ESTAT",
+    },
+    {
         "item_id": "a",
         "item_name": "alpha",
         "format": "CSV",
@@ -207,7 +214,7 @@ class TestBuildCatalog:
         assert catalog["catalog_schema_version"] == 1
         assert catalog["health"]["radar_status"] == "GREEN"
         assert catalog["health"]["streak"] == 1
-        assert catalog["inventory"]["total_items"] == 2
+        assert catalog["inventory"]["total_items"] == 3
         assert catalog["source_check"]["total_scored"] == 2
         assert catalog["source_check"]["reachable"] == 2
         assert catalog["datasets_in_use"] == [
@@ -251,7 +258,7 @@ class TestBuildCatalog:
 
         catalog = build_catalog(repo, skip_validate=True, write=False)
         assert catalog["source_check"]["total_scored"] == 0
-        assert catalog["inventory"]["total_items"] == 2
+        assert catalog["inventory"]["total_items"] == 3
 
     @pytest.mark.contract
     def test_radar_only_skips_inventory(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
