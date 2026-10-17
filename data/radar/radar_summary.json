@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-10-16T08:06:07.813580+00:00",
-  "probe_date": "2026-10-16",
+  "generated_at": "2026-10-17T07:43:42.769728+00:00",
+  "probe_date": "2026-10-17",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 34,
+    "GREEN": 35,
     "YELLOW": 1,
-    "RED": 1
+    "RED": 0
   },
   "persistent_red": 0,
   "sources": [
@@ -67,9 +67,9 @@
     },
     {
       "id": "dati_senato",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "sparql",
-      "http_code": "503",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
