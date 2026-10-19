@@ -1,6 +1,6 @@
 {
   "source_id": "anac",
-  "generated_at": "2026-10-12T11:16:11+00:00",
+  "generated_at": "2026-10-19T09:12:56+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (harvesting ANAC). I download raw vanno al portale diretto dati.anticorruzione.it con User-Agent browser (WAF blocca solo python-requests). 70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari, subappalti, varianti, PNRR indicatori, SOA. CC-BY-SA 4.0.",
-    "last_probed": "2026-10-12"
+    "last_probed": "2026-10-19"
   },
   "health": {
     "radar_status": "GREEN",
@@ -22,27 +22,27 @@
   "inventory": {
     "total_items": 70,
     "method": "package_search",
-    "captured_at": "2026-10-12T11:05:08+00:00",
+    "captured_at": "2026-10-19T09:05:22+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-05-24",
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.1,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
-      "CSV,JSON,TTL": 15,
+      "CSV,TTL,JSON": 15,
       "TTL,CSV,JSON": 13,
-      "CSV,TTL,JSON": 12,
+      "CSV,JSON,TTL": 11,
+      "JSON,CSV,TTL": 11,
       "JSON": 9,
-      "TTL,JSON,CSV": 8,
-      "JSON,TTL,CSV": 5,
-      "JSON,CSV,TTL": 4,
+      "JSON,TTL,CSV": 6,
       "CSV,JSON": 2,
-      "CSV,JSON,TTL,ZIP": 1,
-      "CSV": 1
+      "CSV": 1,
+      "TTL,JSON,CSV": 1,
+      "JSON,CSV,ZIP,TTL": 1
     }
   },
   "source_check": {
-    "last_run": "2026-10-12T11:16:11Z",
+    "last_run": "2026-10-19T09:12:56Z",
     "total_scored": 48,
     "reachable": 47,
     "csv_count": 47,
@@ -76,7 +76,7 @@
           2021,
           2021
         ],
-        "format": "csv,json,ttl",
+        "format": "json,csv,ttl",
         "reachable": true
       },
       {
@@ -96,7 +96,7 @@
           2020,
           2020
         ],
-        "format": "ttl,json,csv",
+        "format": "ttl,csv,json",
         "reachable": true
       }
     ],

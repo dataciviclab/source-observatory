@@ -1,6 +1,6 @@
 {
   "source_id": "ispra_linked_data",
-  "generated_at": "2026-10-12T11:16:11+00:00",
+  "generated_at": "2026-10-19T09:12:56+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline tabellari.",
-    "last_probed": "2026-10-12"
+    "last_probed": "2026-10-19"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,22 +20,22 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 135,
+    "total_items": 136,
     "method": "sparql_query",
-    "captured_at": "2026-10-12T11:05:08+00:00",
+    "captured_at": "2026-10-19T09:05:22+00:00",
     "baseline_value": 66,
     "baseline_date": "2026-04-11",
-    "freshness_hours": 0.2,
-    "delta": 69,
-    "delta_pct": 104.5,
+    "freshness_hours": 0.1,
+    "delta": 70,
+    "delta_pct": 106.1,
     "formats": {
-      "SPARQL_NAMED_GRAPH": 135
+      "SPARQL_NAMED_GRAPH": 136
     }
   },
   "source_check": {
-    "last_run": "2026-10-12T11:16:11Z",
-    "total_scored": 132,
-    "reachable": 132,
+    "last_run": "2026-10-19T09:12:56Z",
+    "total_scored": 133,
+    "reachable": 133,
     "csv_count": 0,
     "with_csv_schema": 0,
     "avg_readiness": 3.0,
@@ -81,7 +81,7 @@
       "score": 5.0,
       "perc_aperto": 0.0,
       "perc_reachable": 100.0,
-      "total": 132,
+      "total": 133,
       "fonte": "source_check"
     }
   },

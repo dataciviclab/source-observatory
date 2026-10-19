@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-10-12T11:16:11+00:00",
+  "captured_at": "2026-10-19T09:12:56+00:00",
   "sources_checked": 36,
   "signals": [
     {
@@ -16,7 +16,7 @@
       "protocol": "ckan",
       "signal_type": "validated_metrics",
       "result": "changed",
-      "detail": "reachable=100.0%; readiness=9.8",
+      "detail": "reachable=100.0%; readiness=9.6",
       "metric_value": 33,
       "suggested_action": "nessuna"
     },
@@ -25,7 +25,7 @@
       "protocol": "ckan",
       "signal_type": "validated_metrics",
       "result": "changed",
-      "detail": "reachable=100.0%; readiness=8.2",
+      "detail": "reachable=100.0%; readiness=8.0",
       "metric_value": 5,
       "suggested_action": "nessuna"
     },
@@ -43,8 +43,8 @@
       "protocol": "html",
       "signal_type": "validated_metrics",
       "result": "stable",
-      "detail": "reachable=13.8%; readiness=1.9",
-      "metric_value": 29,
+      "detail": "reachable=100.0%; readiness=9.5",
+      "metric_value": 30,
       "suggested_action": "nessuna"
     },
     {
@@ -96,7 +96,7 @@
       "source": "dati_camera",
       "protocol": "sparql",
       "signal_type": "validated_metrics",
-      "result": "stable",
+      "result": "down",
       "detail": "reachable=100.0%; readiness=3.0",
       "metric_value": 99,
       "suggested_action": "nessuna"
@@ -161,7 +161,7 @@
       "signal_type": "validated_metrics",
       "result": "changed",
       "detail": "reachable=100.0%; readiness=3.0",
-      "metric_value": 132,
+      "metric_value": 133,
       "suggested_action": "nessuna"
     },
     {
@@ -214,7 +214,7 @@
       "protocol": "ckan",
       "signal_type": "validated_metrics",
       "result": "stable",
-      "detail": "reachable=100.0%; readiness=9.3",
+      "detail": "reachable=100.0%; readiness=9.2",
       "metric_value": 33,
       "suggested_action": "nessuna"
     },
@@ -232,7 +232,7 @@
       "protocol": "ckan",
       "signal_type": "validated_metrics",
       "result": "stable",
-      "detail": "reachable=100.0%; readiness=8.8",
+      "detail": "reachable=100.0%; readiness=8.0",
       "metric_value": 14,
       "suggested_action": "nessuna"
     },
@@ -241,7 +241,7 @@
       "protocol": "ckan",
       "signal_type": "validated_metrics",
       "result": "changed",
-      "detail": "reachable=33.9%; readiness=1.9",
+      "detail": "reachable=33.9%; readiness=1.8",
       "metric_value": 56,
       "suggested_action": "nessuna"
     },
@@ -269,7 +269,7 @@
       "signal_type": "validated_metrics",
       "result": "changed",
       "detail": "reachable=0.1%",
-      "metric_value": 3867,
+      "metric_value": 3868,
       "suggested_action": "nessuna"
     },
     {
@@ -295,7 +295,7 @@
       "protocol": "ckan",
       "signal_type": "validated_metrics",
       "result": "stable",
-      "detail": "reachable=100.0%; readiness=9.1",
+      "detail": "reachable=20.0%; readiness=2.4",
       "metric_value": 405,
       "suggested_action": "nessuna"
     },

@@ -1,11 +1,11 @@
 {
-  "captured_at": "2026-10-12T11:05:08+00:00",
+  "captured_at": "2026-10-19T09:05:22+00:00",
   "registry_path": "/home/runner/work/source-observatory/source-observatory/data/radar/sources_registry.yaml",
   "sources": {
     "istat_sdmx": {
       "status": "ok",
       "protocol": "sdmx",
-      "rows": 4928,
+      "rows": 4953,
       "method": "dataflow_count"
     },
     "anac": {
@@ -28,19 +28,18 @@
       "warning": {
         "type": "package_list_with_package_show_sample",
         "message": "Enrichment via package_show_sample per openbdap.",
-        "rows_enriched": 21,
-        "rows_missing_metadata": 3848,
+        "rows_enriched": 22,
+        "rows_missing_metadata": 3847,
         "package_search_error": "CKAN package_search disabled for openbdap (timeout sistematico a 60s).",
         "package_show_sample_warning": {
           "type": "package_show_sample_partial",
           "message": "Arricchimento sample via package_show completato con errori parziali.",
           "sample_size": 25,
-          "rows_enriched": 21,
+          "rows_enriched": 22,
           "errors_preview": [
-            "d032b3a2-2b70-4193-a0c8-cb7eb69f8710: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
-            "c923588e-f8f6-482f-a798-e8dbda964eb6: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
-            "bea701d3-c549-4472-a3c2-6b61e3b148cc: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
-            "c781f6ce-fc34-4614-a50b-f68fe617c4c5: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)"
+            "c781f6ce-fc34-4614-a50b-f68fe617c4c5: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
+            "9b81e92b-c414-4116-a59e-6afc387dae12: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)",
+            "3932df6b-b188-48fa-aa76-fd1392dd09f8: HTTPSConnectionPool(host='bdap-opendata.rgs.mef.gov.it', port=443): Read timed out. (read timeout=10)"
           ]
         }
       }
@@ -54,63 +53,64 @@
     "mim_opendata": {
       "status": "ok",
       "protocol": "html",
-      "rows": 1128,
+      "rows": 1504,
       "method": "csv_magnet_homepage_area_pages",
       "summary": {
         "by_format": {
           "CSV": 376,
           "JSON": 376,
+          "RDF": 376,
           "XML": 376
         },
         "prefix_matrix": {
-          "INFANZIA": 192,
-          "ALUCORSO": 120,
-          "SCUANAGR": 72,
-          "SCUANAAU": 72,
-          "ALUITAST": 60,
-          "ALUSECGR": 60,
-          "ALUTEMPO": 60,
-          "EDICONSI": 42,
-          "DOCTIT20": 27,
-          "ATATIT20": 27,
-          "ATASUP20": 27,
-          "VALUTAZIONE": 24,
-          "EDIANAGR": 24,
-          "EDICOLLE": 24,
-          "EDIVINCO": 24,
-          "EDIAMBFU": 24,
-          "EDIETAOR": 24,
-          "DOCSUP20": 21,
-          "EDIAMBIE": 21,
-          "EDISUPBA": 21,
-          "EDITIPOR": 21,
-          "EDIRIDUZ": 21,
-          "EDIPROTE": 21,
-          "EDIUNITA": 15,
-          "AS1516DO": 6,
-          "AS1516AT": 6,
-          "DOCSUPXX": 6,
-          "RUBRICA": 6,
-          "ALTABRUZ": 3,
-          "ALTBASIL": 3,
-          "ALTCALAB": 3,
-          "ALTCAMPA": 3,
-          "ALTEMILI": 3,
-          "ALTFRIUL": 3,
-          "ALTLAZIO": 3,
-          "ALTLIGUR": 3,
-          "ALTLOMBA": 3,
-          "ALTMARCH": 3,
-          "ALTMOLIS": 3,
-          "ALTPIEMO": 3,
-          "ALTPUGLI": 3,
-          "ALTSARDE": 3,
-          "ALTSICIL": 3,
-          "ALTTOSCA": 3,
-          "ALTTRENT": 3,
-          "ALTUMBRI": 3,
-          "ALTVALLE": 3,
-          "ALTVENET": 3
+          "INFANZIA": 256,
+          "ALUCORSO": 160,
+          "SCUANAGR": 96,
+          "SCUANAAU": 96,
+          "ALUITAST": 80,
+          "ALUSECGR": 80,
+          "ALUTEMPO": 80,
+          "EDICONSI": 56,
+          "DOCTIT20": 36,
+          "ATATIT20": 36,
+          "ATASUP20": 36,
+          "VALUTAZIONE": 32,
+          "EDIANAGR": 32,
+          "EDICOLLE": 32,
+          "EDIVINCO": 32,
+          "EDIAMBFU": 32,
+          "EDIETAOR": 32,
+          "DOCSUP20": 28,
+          "EDIAMBIE": 28,
+          "EDISUPBA": 28,
+          "EDITIPOR": 28,
+          "EDIRIDUZ": 28,
+          "EDIPROTE": 28,
+          "EDIUNITA": 20,
+          "AS1516DO": 8,
+          "AS1516AT": 8,
+          "DOCSUPXX": 8,
+          "RUBRICA": 8,
+          "ALTABRUZ": 4,
+          "ALTBASIL": 4,
+          "ALTCALAB": 4,
+          "ALTCAMPA": 4,
+          "ALTEMILI": 4,
+          "ALTFRIUL": 4,
+          "ALTLAZIO": 4,
+          "ALTLIGUR": 4,
+          "ALTLOMBA": 4,
+          "ALTMARCH": 4,
+          "ALTMOLIS": 4,
+          "ALTPIEMO": 4,
+          "ALTPUGLI": 4,
+          "ALTSARDE": 4,
+          "ALTSICIL": 4,
+          "ALTTOSCA": 4,
+          "ALTTRENT": 4,
+          "ALTUMBRI": 4,
+          "ALTVALLE": 4,
+          "ALTVENET": 4
         },
         "series": {
           "INFANZIA": {
@@ -124,10 +124,11 @@
               2023,
               2024
             ],
-            "count": 192,
+            "count": 256,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "INFANZIACLASTA20242520250831.csv"
@@ -145,10 +146,11 @@
               2023,
               2024
             ],
-            "count": 120,
+            "count": 160,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALUCORSOETASTA20242520250831.csv"
@@ -168,10 +170,11 @@
               2025,
               2026
             ],
-            "count": 72,
+            "count": 96,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "SCUANAGRAFESTAT20262720260901.csv"
@@ -191,10 +194,11 @@
               2025,
               2026
             ],
-            "count": 72,
+            "count": 96,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "SCUANAAUTSTAT20262720260901.csv"
@@ -212,10 +216,11 @@
               2023,
               2024
             ],
-            "count": 60,
+            "count": 80,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALUITASTRACITSTA20242520250831.csv"
@@ -233,10 +238,11 @@
               2023,
               2024
             ],
-            "count": 60,
+            "count": 80,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALUSECGRADOINDSTA20242520250831.csv"
@@ -254,10 +260,11 @@
               2023,
               2024
             ],
-            "count": 60,
+            "count": 80,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALUTEMPOSCUOLASTA20242520250831.csv"
@@ -269,10 +276,11 @@
               2018,
               2021
             ],
-            "count": 42,
+            "count": 56,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDICONSISTENZASTA202120242520250806.csv"
@@ -289,10 +297,11 @@
               2023,
               2024
             ],
-            "count": 27,
+            "count": 36,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "DOCTIT20242520250831.csv"
@@ -309,10 +318,11 @@
               2023,
               2024
             ],
-            "count": 27,
+            "count": 36,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ATATIT20242520250831.csv"
@@ -329,10 +339,11 @@
               2023,
               2024
             ],
-            "count": 27,
+            "count": 36,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ATASUP20242520250831.csv"
@@ -341,10 +352,11 @@
             "years": [
               2016
             ],
-            "count": 24,
+            "count": 32,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "VALUTAZIONE_ESITI_STA20161720170831.csv"
@@ -356,10 +368,11 @@
               2018,
               2021
             ],
-            "count": 24,
+            "count": 32,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDIANAGRAFESTA202120242520250806.csv"
@@ -371,10 +384,11 @@
               2018,
               2021
             ],
-            "count": 24,
+            "count": 32,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDICOLLEGAMENTISTA202120242520250806.csv"
@@ -386,10 +400,11 @@
               2018,
               2021
             ],
-            "count": 24,
+            "count": 32,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDIVINCOLISTA202120242520250806.csv"
@@ -401,10 +416,11 @@
               2018,
               2021
             ],
-            "count": 24,
+            "count": 32,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDIAMBFUNZSTA202120242520250806.csv"
@@ -416,10 +432,11 @@
               2018,
               2021
             ],
-            "count": 24,
+            "count": 32,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDIETAORIGINESTA202120242520250806.csv"
@@ -434,10 +451,11 @@
               2021,
               2022
             ],
-            "count": 21,
+            "count": 28,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "DOCSUP20222320230831.csv"
@@ -448,10 +466,11 @@
               2018,
               2021
             ],
-            "count": 21,
+            "count": 28,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDIAMBIENTESTA202120242520250806.csv"
@@ -462,10 +481,11 @@
               2018,
               2021
             ],
-            "count": 21,
+            "count": 28,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDISUPBARARCSTA202120242520250806.csv"
@@ -476,10 +496,11 @@
               2018,
               2021
             ],
-            "count": 21,
+            "count": 28,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDITIPORISCSTA202120242520250806.csv"
@@ -490,10 +511,11 @@
               2018,
               2021
             ],
-            "count": 21,
+            "count": 28,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDIRIDUZCONSENESTA202120242520250806.csv"
@@ -504,10 +526,11 @@
               2018,
               2021
             ],
-            "count": 21,
+            "count": 28,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDIPROTEZRUMSTA202120242520250806.csv"
@@ -520,10 +543,11 @@
               2023,
               2024
             ],
-            "count": 15,
+            "count": 20,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "EDIUNITASTRUTSTA20242520250806.csv"
@@ -532,10 +556,11 @@
             "years": [
               2016
             ],
-            "count": 6,
+            "count": 8,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "AS1516DOCTIT20160831.csv"
@@ -544,10 +569,11 @@
             "years": [
               2016
             ],
-            "count": 6,
+            "count": 8,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "AS1516ATATIT20160831.csv"
@@ -557,10 +583,11 @@
               2023,
               2024
             ],
-            "count": 6,
+            "count": 8,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "DOCSUPXXV20242520250831.csv"
@@ -569,10 +596,11 @@
             "years": [
               2016
             ],
-            "count": 6,
+            "count": 8,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "RUBRICA_VAL20161720170831.csv"
@@ -581,10 +609,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTABRUZZO000020260909.csv"
@@ -593,10 +622,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTBASILICATA000020260909.csv"
@@ -605,10 +635,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTCALABRIA000020260909.csv"
@@ -617,10 +648,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTCAMPANIA000020260909.csv"
@@ -629,10 +661,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTEMILIAROMAGNA000020260909.csv"
@@ -641,10 +674,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTFRIULIVENEZIAGIULIA000020260909.csv"
@@ -653,10 +687,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTLAZIO000020260909.csv"
@@ -665,10 +700,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTLIGURIA000020260909.csv"
@@ -677,10 +713,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTLOMBARDIA000020260909.csv"
@@ -689,10 +726,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTMARCHE000020260909.csv"
@@ -701,10 +739,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTMOLISE000020260909.csv"
@@ -713,10 +752,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTPIEMONTE000020260909.csv"
@@ -725,10 +765,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTPUGLIA000020260909.csv"
@@ -737,10 +778,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTSARDEGNA000020260909.csv"
@@ -749,10 +791,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTSICILIA000020260909.csv"
@@ -761,10 +804,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTTOSCANA000020260909.csv"
@@ -773,10 +817,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTTRENTINOALTOADIGE000020260909.csv"
@@ -785,10 +830,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTUMBRIA000020260909.csv"
@@ -797,10 +843,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTVALLEDAOSTA000020260909.csv"
@@ -809,10 +856,11 @@
             "years": [
               2026
             ],
-            "count": 3,
+            "count": 4,
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ],
             "sample": "ALTVENETO000020260909.csv"
@@ -822,7 +870,7 @@
           {
             "group_id": "INFANZIA",
             "prefix": "INFANZIA",
-            "count": 192,
+            "count": 256,
             "year_range": [
               2017,
               2018,
@@ -836,13 +884,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALUCORSO",
             "prefix": "ALUCORSO",
-            "count": 120,
+            "count": 160,
             "year_range": [
               2015,
               2016,
@@ -858,13 +907,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "SCUANAGR",
             "prefix": "SCUANAGR",
-            "count": 72,
+            "count": 96,
             "year_range": [
               2015,
               2016,
@@ -882,13 +932,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "SCUANAAU",
             "prefix": "SCUANAAU",
-            "count": 72,
+            "count": 96,
             "year_range": [
               2015,
               2016,
@@ -906,13 +957,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALUITAST",
             "prefix": "ALUITAST",
-            "count": 60,
+            "count": 80,
             "year_range": [
               2015,
               2016,
@@ -928,13 +980,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALUSECGR",
             "prefix": "ALUSECGR",
-            "count": 60,
+            "count": 80,
             "year_range": [
               2015,
               2016,
@@ -950,13 +1003,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALUTEMPO",
             "prefix": "ALUTEMPO",
-            "count": 60,
+            "count": 80,
             "year_range": [
               2015,
               2016,
@@ -972,13 +1026,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDICONSI",
             "prefix": "EDICONSI",
-            "count": 42,
+            "count": 56,
             "year_range": [
               2016,
               2017,
@@ -988,13 +1043,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "DOCTIT20",
             "prefix": "DOCTIT20",
-            "count": 27,
+            "count": 36,
             "year_range": [
               2016,
               2017,
@@ -1009,13 +1065,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ATATIT20",
             "prefix": "ATATIT20",
-            "count": 27,
+            "count": 36,
             "year_range": [
               2016,
               2017,
@@ -1030,13 +1087,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ATASUP20",
             "prefix": "ATASUP20",
-            "count": 27,
+            "count": 36,
             "year_range": [
               2016,
               2017,
@@ -1051,26 +1109,28 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "VALUTAZIONE",
             "prefix": "VALUTAZIONE",
-            "count": 24,
+            "count": 32,
             "year_range": [
               2016
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDIANAGR",
             "prefix": "EDIANAGR",
-            "count": 24,
+            "count": 32,
             "year_range": [
               2016,
               2017,
@@ -1080,13 +1140,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDICOLLE",
             "prefix": "EDICOLLE",
-            "count": 24,
+            "count": 32,
             "year_range": [
               2016,
               2017,
@@ -1096,13 +1157,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDIVINCO",
             "prefix": "EDIVINCO",
-            "count": 24,
+            "count": 32,
             "year_range": [
               2015,
               2017,
@@ -1112,13 +1174,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDIAMBFU",
             "prefix": "EDIAMBFU",
-            "count": 24,
+            "count": 32,
             "year_range": [
               2016,
               2017,
@@ -1128,13 +1191,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDIETAOR",
             "prefix": "EDIETAOR",
-            "count": 24,
+            "count": 32,
             "year_range": [
               2016,
               2017,
@@ -1144,13 +1208,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "DOCSUP20",
             "prefix": "DOCSUP20",
-            "count": 21,
+            "count": 28,
             "year_range": [
               2016,
               2017,
@@ -1163,13 +1228,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDIAMBIE",
             "prefix": "EDIAMBIE",
-            "count": 21,
+            "count": 28,
             "year_range": [
               2017,
               2018,
@@ -1178,13 +1244,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDISUPBA",
             "prefix": "EDISUPBA",
-            "count": 21,
+            "count": 28,
             "year_range": [
               2017,
               2018,
@@ -1193,13 +1260,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDITIPOR",
             "prefix": "EDITIPOR",
-            "count": 21,
+            "count": 28,
             "year_range": [
               2017,
               2018,
@@ -1208,13 +1276,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDIRIDUZ",
             "prefix": "EDIRIDUZ",
-            "count": 21,
+            "count": 28,
             "year_range": [
               2017,
               2018,
@@ -1223,13 +1292,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDIPROTE",
             "prefix": "EDIPROTE",
-            "count": 21,
+            "count": 28,
             "year_range": [
               2017,
               2018,
@@ -1238,13 +1308,14 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "EDIUNITA",
             "prefix": "EDIUNITA",
-            "count": 15,
+            "count": 20,
             "year_range": [
               2020,
               2021,
@@ -1255,39 +1326,42 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "AS1516DO",
             "prefix": "AS1516DO",
-            "count": 6,
+            "count": 8,
             "year_range": [
               2016
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "AS1516AT",
             "prefix": "AS1516AT",
-            "count": 6,
+            "count": 8,
             "year_range": [
               2016
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "DOCSUPXX",
             "prefix": "DOCSUPXX",
-            "count": 6,
+            "count": 8,
             "year_range": [
               2023,
               2024
@@ -1295,279 +1369,301 @@
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "RUBRICA",
             "prefix": "RUBRICA",
-            "count": 6,
+            "count": 8,
             "year_range": [
               2016
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTABRUZ",
             "prefix": "ALTABRUZ",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTBASIL",
             "prefix": "ALTBASIL",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTCALAB",
             "prefix": "ALTCALAB",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTCAMPA",
             "prefix": "ALTCAMPA",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTEMILI",
             "prefix": "ALTEMILI",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTFRIUL",
             "prefix": "ALTFRIUL",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTLAZIO",
             "prefix": "ALTLAZIO",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTLIGUR",
             "prefix": "ALTLIGUR",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTLOMBA",
             "prefix": "ALTLOMBA",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTMARCH",
             "prefix": "ALTMARCH",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTMOLIS",
             "prefix": "ALTMOLIS",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTPIEMO",
             "prefix": "ALTPIEMO",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTPUGLI",
             "prefix": "ALTPUGLI",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTSARDE",
             "prefix": "ALTSARDE",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTSICIL",
             "prefix": "ALTSICIL",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTTOSCA",
             "prefix": "ALTTOSCA",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTTRENT",
             "prefix": "ALTTRENT",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTUMBRI",
             "prefix": "ALTUMBRI",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTVALLE",
             "prefix": "ALTVALLE",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           },
           {
             "group_id": "ALTVENET",
             "prefix": "ALTVENET",
-            "count": 3,
+            "count": 4,
             "year_range": [
               2026
             ],
             "formats": [
               "CSV",
               "JSON",
+              "RDF",
               "XML"
             ]
           }
@@ -1577,20 +1673,14 @@
           2026
         ],
         "topics": {
-          "istruzione": 1128
+          "istruzione": 1504
         },
         "method": "csv_magnet_area_pages_direct",
         "area_pages_scanned": 6,
-        "total_links_exact": 1128,
+        "total_links_exact": 1504,
         "type": "csv_magnet",
         "source_id": "mim_opendata"
       }
-    },
-    "dati_camera": {
-      "status": "ok",
-      "protocol": "sparql",
-      "rows": 104,
-      "method": "sparql_query"
     },
     "dati_senato": {
       "status": "ok",
@@ -1607,7 +1697,7 @@
     "ispra_linked_data": {
       "status": "ok",
       "protocol": "sparql",
-      "rows": 135,
+      "rows": 136,
       "method": "sparql_query"
     },
     "consip_open_data": {
@@ -1862,11 +1952,11 @@
     "aifa": {
       "status": "ok",
       "protocol": "html",
-      "rows": 37,
+      "rows": 41,
       "method": null,
       "summary": {
         "by_format": {
-          "CSV": 34,
+          "CSV": 38,
           "ZIP": 3
         },
         "prefix_matrix": {
@@ -1886,6 +1976,10 @@
           "programmi": 1,
           "Strutture": 1,
           "Lista-": 1,
+          "2933ae": 1,
+          "fdaab4": 1,
+          "54f80c": 1,
+          "fe9616": 1,
           "glossario": 1,
           "strutture": 1,
           "ElencoConsulenti": 1,
@@ -2017,7 +2111,7 @@
             "formats": [
               "CSV"
             ],
-            "sample": "lista_farmaci_valutati_inserimento_classe_Cnn_05.10.2026.csv"
+            "sample": "lista_farmaci_valutati_inserimento_classe_Cnn_14.10.2026.csv"
           },
           "programmi": {
             "years": [
@@ -2027,7 +2121,7 @@
             "formats": [
               "CSV"
             ],
-            "sample": "programmi_uso_compassionevole_21.09.2026.csv"
+            "sample": "programmi_uso_compassionevole_13.10.2026.csv"
           },
           "Strutture": {
             "years": [
@@ -2048,6 +2142,38 @@
               "CSV"
             ],
             "sample": "Lista-farmaci-orfani-2025.csv"
+          },
+          "2933ae": {
+            "years": [],
+            "count": 1,
+            "formats": [
+              "CSV"
+            ],
+            "sample": "2933ae24-c9cd-af4a-9aa9-f75592228ae7?t=1611584979402"
+          },
+          "fdaab4": {
+            "years": [],
+            "count": 1,
+            "formats": [
+              "CSV"
+            ],
+            "sample": "fdaab459-3919-98aa-7899-87b07a4647b4"
+          },
+          "54f80c": {
+            "years": [],
+            "count": 1,
+            "formats": [
+              "CSV"
+            ],
+            "sample": "54f80c42-121e-e86d-ed9d-46721ec17c64"
+          },
+          "fe9616": {
+            "years": [],
+            "count": 1,
+            "formats": [
+              "CSV"
+            ],
+            "sample": "fe961636-7fdf-f2c3-7534-161ce641f1d8"
           },
           "glossario": {
             "years": [],
@@ -2270,6 +2396,42 @@
             ]
           },
           {
+            "group_id": "2933ae",
+            "prefix": "2933ae",
+            "count": 1,
+            "year_range": [],
+            "formats": [
+              "CSV"
+            ]
+          },
+          {
+            "group_id": "fdaab4",
+            "prefix": "fdaab4",
+            "count": 1,
+            "year_range": [],
+            "formats": [
+              "CSV"
+            ]
+          },
+          {
+            "group_id": "54f80c",
+            "prefix": "54f80c",
+            "count": 1,
+            "year_range": [],
+            "formats": [
+              "CSV"
+            ]
+          },
+          {
+            "group_id": "fe9616",
+            "prefix": "fe9616",
+            "count": 1,
+            "year_range": [],
+            "formats": [
+              "CSV"
+            ]
+          },
+          {
             "group_id": "glossario",
             "prefix": "glossario",
             "count": 1,
@@ -2326,11 +2488,11 @@
           2026
         ],
         "topics": {
-          "sanita": 37
+          "sanita": 41
         },
         "method": "csv_magnet_area_pages_direct",
         "area_pages_scanned": 6,
-        "total_links_exact": 37,
+        "total_links_exact": 41,
         "type": "csv_magnet",
         "source_id": "aifa",
         "content_type_probes": 20
@@ -2676,6 +2838,12 @@
       "protocol": "ckan",
       "rows": 33,
       "method": "package_search"
+    },
+    "dati_camera": {
+      "status": "ok",
+      "protocol": "sparql",
+      "rows": 104,
+      "method": "sparql_query"
     },
     "unioncamere": {
       "status": "ok",
