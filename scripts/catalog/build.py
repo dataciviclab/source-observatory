@@ -26,6 +26,7 @@ import jsonschema
 import pandas as pd
 
 from scripts.catalog.config import load_observatory_config
+from scripts.catalog.drift import check_referenced_items
 from scripts.catalog.layout import RepoLayout, resolve_layout
 from scripts.catalog.pattern_probes import compute_new_content_trigger, run_pattern_probes
 from scripts.catalog.upstream import load_upstream_map
@@ -195,6 +196,16 @@ def build_catalog(
         refs = upstream_map.get(entry["slug"], [])
         if refs:
             entry["upstream"] = refs
+
+    # ── Referenced-item drift ────────────────────────────────────────────────
+    # Verifica che gli item upstream referenziati dai dataset esistano
+    # ancora nell'inventario della fonte. Se ne sparisce uno → trigger.
+    drift = check_referenced_items(datasets_in_use, rows)
+    if drift["missing"]:
+        print(
+            f"  ⚠️ referenced-item drift: {len(drift['missing'])} upstream non trovati in inventario"
+        )
+
     report_cfg = {
         **cfg,
         "last_probed": datetime.now(timezone.utc).date().isoformat(),
@@ -219,6 +230,21 @@ def build_catalog(
     }
     health["streak"] = compute_streak(health, previous)
     catalog["health"] = health
+
+    # ── Referenced-item drift nel catalog ────────────────────────────────────
+    catalog["referenced_items"] = drift
+    if drift["missing"]:
+        verdict = catalog.get("operational_verdict") or {}
+        triggers = list(verdict.get("triggers") or [])
+        if "referenced_item_missing" not in triggers:
+            triggers.append("referenced_item_missing")
+        verdict["triggers"] = triggers
+        # Non sovrascrivere label gia' impostate (es. NEW_CONTENT)
+        if verdict.get("label") == "STABLE":
+            verdict["label"] = "REFERENCED_MISSING"
+            verdict["score"] = "referenced_missing"
+            verdict["next_action"] = "review missing upstream items"
+        catalog["operational_verdict"] = verdict
 
     # ── Pattern probes (sentinel URL per nuovi contenuti) ────────────────────
     probe_cfg = cfg.get("pattern_probes") or []

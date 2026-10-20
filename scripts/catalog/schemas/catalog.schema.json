@@ -184,13 +184,33 @@
         "additionalProperties": true
       }
     },
+    "referenced_items": {
+      "type": "object",
+      "description": "Cross-check: gli item upstream referenziati dai dataset esistono ancora nell'inventario.",
+      "properties": {
+        "checked": { "type": "integer", "minimum": 0 },
+        "matched": { "type": "integer", "minimum": 0 },
+        "missing": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["slug", "kind", "id"],
+            "properties": {
+              "slug": { "type": "string" },
+              "kind": { "type": "string" },
+              "id": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
     "operational_verdict": {
       "type": "object",
       "required": ["label", "score", "triggers"],
       "properties": {
         "label": {
           "type": "string",
-          "enum": ["STABLE", "DOWN", "INVENTORY_CHANGED", "STALE", "PARTIALLY_SCOPED", "NEW_CONTENT"]
+          "enum": ["STABLE", "DOWN", "INVENTORY_CHANGED", "STALE", "PARTIALLY_SCOPED", "NEW_CONTENT", "REFERENCED_MISSING"]
         },
         "score": { "type": "string" },
         "triggers": {
