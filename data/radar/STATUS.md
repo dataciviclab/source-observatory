@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-10-24
+Ultimo run: 2026-10-25
 
 ## Sommario
 
 - Fonti controllate: 36
-- GREEN: 34
+- GREEN: 33
 - YELLOW: 2
-- RED: 0
+- RED: 1
 
 ## Tipi sorgente
 
@@ -31,7 +31,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
+| istat_sdmx | catalog | sdmx | catalog-watch | RED | 500 | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | catalog-watch | GREEN | 200 | anac_aggiudicatari, anac_aggiudicazioni, anac_bandi_gara, anac_collaudo, anac_cup, anac_partecipanti, anac_stati_avanzamento, anac_subappalti |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_pensioni_trimestrale, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | YELLOW | 200 | bdap_anagrafe_enti, bdap_lea, dipendenti_pubblici |
@@ -70,5 +70,6 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
+- `istat_sdmx`: HTTP 500 | content-type: text/plain | url finale: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1?detail=allstubs | Endpoint SDMX ricco e ad alto valore per scouting e source-check.
 - `openbdap`: HTTP 200 | content-type: text/html | url finale: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1 | CKAN API returned non-JSON content
 - `opencivitas`: HTTP 404 | content-type: text/html; charset=iso-8859-1 | url finale: https://www.opencivitas.it/it/open-data | Portale OpenCivitas — csv_magnet scan via discovery=auto (sitemap alla root). ZIP con CSV/XLSX dentro.
