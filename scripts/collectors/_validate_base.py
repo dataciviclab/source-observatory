@@ -194,9 +194,13 @@ def _sniff_csv_duckdb(raw: bytes, sample_size: int) -> dict[str, Any]:
             tmp.write(raw)
             tmp_path = tmp.name
         try:
-            df = duckdb.sql(
+            relation = duckdb.sql(
                 f"SELECT * FROM read_csv('{tmp_path}', header=true, sample_size=-1)"
-            ).fetchdf()
+            )
+            # duckdb >= 2.0 tipizza sql() come Optional: guard esplicito
+            if relation is None:
+                raise RuntimeError("duckdb.sql() ha restituito None")
+            df = relation.fetchdf()
             result["columns"] = list(df.columns)
             result["num_columns"] = len(df.columns)
             result["num_rows"] = len(df)
