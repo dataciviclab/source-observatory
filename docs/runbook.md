@@ -90,6 +90,15 @@ min_bytes = 200
   quando il dato non esiste ancora (es. MEF `analisi_stat`): senza soglia il
   trigger "nuovo contenuto" scatterebbe a ogni run, per sempre.
 
+**Query-string negli artifact**: l'URL che va al probe è quello intero, query
+inclusa (è l'identità della risorsa per molte fonti), quindi la query finisce
+nei parquet tracciati — `data/pipeline/validated.parquet` in questo repo e
+`out/so/validated.parquet` nei repo dati. Oggi i parametri osservati sono
+`format`, `d`, `t`: nessuna credenziale. **Prima di onboardare una fonte con
+URL firmati/tokenizzati** (`?token=`, `?sig=`, `?api_key=`, …) va aggiunta la
+redazione dei parametri sensibili (#436), altrimenti il valore viene persistito
+in chiaro nel parquet committato.
+
 ## Catalog inventory
 
 ```bash
