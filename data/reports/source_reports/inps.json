@@ -1,6 +1,6 @@
 {
   "source_id": "inps",
-  "generated_at": "2026-10-19T09:12:56+00:00",
+  "generated_at": "2026-10-26T09:18:43+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN INPS — inventory via package_list + package_show_sample (current_package_list_with_resources lento a offset alti).",
-    "last_probed": "2026-10-19"
+    "last_probed": "2026-10-26"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,17 +20,17 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 2499,
+    "total_items": 2505,
     "method": "package_search",
-    "captured_at": "2026-10-19T09:05:22+00:00",
+    "captured_at": "2026-10-26T09:08:31+00:00",
     "baseline_value": 2499,
     "baseline_date": "2026-07-18",
-    "freshness_hours": 0.1,
-    "delta": 0,
-    "delta_pct": 0.0,
+    "freshness_hours": 0.2,
+    "delta": 6,
+    "delta_pct": 0.2,
     "formats": {
       "CSV,JSON,XLS,XML": 942,
-      "CSV,JSON,XML": 413,
+      "CSV,JSON,XML": 419,
       "CSV,JSON,OWL,XLS,XML": 411,
       "CSV": 371,
       "CSV,OWL,JSON,XLS,XML": 117,
@@ -38,8 +38,8 @@
       "CSV,JSON,OWL,XML": 83,
       "CSV,JSON,XLS": 13,
       "CSV,JSON,XML,RDF_TURTLE": 12,
-      "CSV,JSON,XLSX,XML": 6,
       "CSV,RDF_TURTLE,XML,JSON": 6,
+      "CSV,JSON,XLSX,XML": 6,
       "CSV,RDF_TURTLE,XML": 6,
       "CSV,XLS,XML,JSON,OWL": 5,
       "CSV,OWL,XLS,XML": 4,
@@ -50,11 +50,11 @@
     }
   },
   "source_check": {
-    "last_run": "2026-10-19T09:12:56Z",
+    "last_run": "2026-10-26T09:18:43Z",
     "total_scored": 1809,
     "reachable": 1807,
     "csv_count": 1807,
-    "with_csv_schema": 1770,
+    "with_csv_schema": 1772,
     "avg_readiness": 9.9,
     "top_items": [
       {
@@ -81,8 +81,8 @@
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-area-geografica",
         "score": 10,
         "year_range": [
-          2016,
-          2016
+          2015,
+          2015
         ],
         "format": "csv,json,xls,xml",
         "reachable": true
@@ -91,8 +91,8 @@
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-categoria",
         "score": 10,
         "year_range": [
-          2016,
-          2016
+          2015,
+          2015
         ],
         "format": "csv,json,xls,xml",
         "reachable": true
@@ -108,7 +108,7 @@
         "reachable": true
       }
     ],
-    "coverage_pct": 72.4,
+    "coverage_pct": 72.2,
     "formato_aperto": {
       "score": 5.0,
       "perc_aperto": 0.0,
@@ -135,11 +135,11 @@
     }
   ],
   "operational_verdict": {
-    "label": "STABLE",
-    "score": "stable",
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
     "triggers": [
-      "all_green"
+      "inventory_changed"
     ],
-    "next_action": null
+    "next_action": "review inventory changes"
   }
 }
