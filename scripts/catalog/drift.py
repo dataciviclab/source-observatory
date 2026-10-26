@@ -10,7 +10,8 @@ Match per kind:
   - ckan_resource: distribution_url contiene resource ID
   - url:           match sull'URL completo (i placeholder {year} sono wildcard),
                    con esito a tre stati (vedi ``_url_state``)
-  - script_type:   item_name contiene il suffisso (es. "sentenze")
+  - script_type:   match per token su item_name/title, con esito a tre stati
+                   (vedi ``_script_type_state``)
 """
 
 from __future__ import annotations
@@ -138,41 +139,64 @@ def _url_state(ref_id: str, inventory_items: list[dict]) -> str:
     return UNKNOWN
 
 
-def _match_script_type(ref_id: str, inventory_items: list[dict]) -> bool:
-    # script_type e' un ID logico (es. "ricorsi-pervenuti-class") che nel
-    # codice sorgente mappa a un suffisso package diverso (es.
-    # "ricorsi-pervenuti-per-classificazione"). Il match e' best-effort:
-    # cerca il tipo come substring, e anche le sue parole chiave principali.
-    ref_low = ref_id.lower()
-    # Parole chiave significative (ignora connector words)
-    keywords = [
-        w for w in ref_low.split("-") if len(w) > 3 and w not in ("per", "con", "della", "degli")
+def _script_type_tokens(ref_id: str) -> list[str]:
+    """Token significativi di un ID logico ``script_type`` (senza connector words)."""
+    return [
+        w
+        for w in ref_id.lower().split("-")
+        if len(w) > 3 and w not in ("per", "con", "della", "degli")
     ]
-    for item in inventory_items:
-        name = str(item.get("item_name") or "").lower()
-        title = str(item.get("title") or "").lower()
-        haystack = f"{name} {title}"
-        # Match diretto
-        if ref_low in haystack:
-            return True
-        # Match per keyword (almeno 2 keyword presenti)
-        if keywords and sum(1 for kw in keywords if kw in haystack) >= min(2, len(keywords)):
-            return True
-    return False
+
+
+def _script_type_state(ref_id: str, inventory_items: list[dict]) -> str:
+    """Esito del cross-check per un ref di tipo ``script_type``.
+
+    ``script_type`` e' un ID logico (es. ``ricorsi-pervenuti-class``) che mappa
+    a nomi package diversi (``...-ricorsi-pervenuti-per-classificazione``): il
+    match e' per token, non esatto.
+
+    Un match *parziale* non e' un match: il portale puo' rimuovere l'intera
+    famiglia referenziata e il ref resterebbe ``matched`` per via di un token
+    generico (``ricorsi`` compare in 248 package su 436). Quindi:
+
+      - ``matched``: un item contiene **tutti** i token del ref;
+      - ``missing``: nessun item li contiene tutti, ma almeno un token compare
+        ancora (la famiglia c'e', la variante no) — oppure il ref e' di un solo
+        token e non compare: la famiglia stessa e' sparita;
+      - ``unknown``: ref multi-token di cui **nessun** token compare
+        nell'inventario (vocabolario non allineato, inventario che non copre).
+    """
+    tokens = _script_type_tokens(ref_id)
+    if not tokens:
+        return UNKNOWN
+
+    haystacks = [
+        f"{item.get('item_name') or ''} {item.get('title') or ''}".lower()
+        for item in inventory_items
+    ]
+    if any(all(t in h for t in tokens) for h in haystacks):
+        return MATCHED
+    if any(any(t in h for t in tokens) for h in haystacks) or len(tokens) == 1:
+        return MISSING
+    return UNKNOWN
 
 
 _MATCHERS = {
     "dataflow": _match_dataflow,
     "ckan_dataset": _match_ckan_dataset,
     "ckan_resource": _match_ckan_resource,
-    "script_type": _match_script_type,
 }
+
+# Kind gestiti da uno state matcher a tre esiti (non da un matcher booleano).
+_STATE_MATCHERS = frozenset({"url", "script_type"})
 
 
 def _state_for(kind: str, ref_id: str, inventory_items: list[dict]) -> str:
     """Esito del cross-check per un singolo ref upstream."""
     if kind == "url":
         return _url_state(ref_id, inventory_items)
+    if kind == "script_type":
+        return _script_type_state(ref_id, inventory_items)
     matcher = _MATCHERS.get(kind)
     if matcher is None:
         return UNKNOWN
@@ -205,7 +229,7 @@ def check_referenced_items(
         for ref in ds.get("upstream") or []:
             kind = ref.get("kind", "")
             ref_id = ref.get("id", "")
-            if not kind or not ref_id or (kind not in _MATCHERS and kind != "url"):
+            if not kind or not ref_id or (kind not in _MATCHERS and kind not in _STATE_MATCHERS):
                 continue
             checked += 1
             state = _state_for(kind, ref_id, inventory_rows)

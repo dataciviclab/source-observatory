@@ -115,6 +115,29 @@ raw:
     return repo
 
 
+def _make_repo_with_missing_ref(tmp_path: Path) -> Path:
+    """Repo demo con un dataset il cui upstream NON è nell'inventario."""
+    repo = _make_repo(tmp_path)
+    registry = dict(_REGISTRY)
+    registry["datasets"] = list(_REGISTRY["datasets"]) + [
+        {"slug": "demo_missing", "source_id": "demo_src", "stage": "published"}
+    ]
+    (repo / "registry" / "registry.json").write_text(json.dumps(registry), encoding="utf-8")
+    ds_dir = repo / "datasets" / "demo-missing"
+    ds_dir.mkdir(parents=True)
+    (ds_dir / "dataset.yml").write_text(
+        "dataset:\n"
+        "  name: demo_missing\n"
+        "raw:\n"
+        "  sources:\n"
+        "  - name: a\n"
+        "    type: sdmx\n"
+        "    args: {agency: ESTAT, flow: FLOW_ASSENTE}\n",
+        encoding="utf-8",
+    )
+    return repo
+
+
 def _patch_engine(monkeypatch: pytest.MonkeyPatch) -> None:
     """Neutralizza HTTP: probe/dispatch/validate restituiscono fixture."""
 
@@ -364,3 +387,115 @@ class TestLoadPreviousCatalog:
         payload = {"health": {"radar_status": "GREEN", "streak": 5}}
         layout.catalog_path.write_text(json.dumps(payload), encoding="utf-8")
         assert load_previous_catalog(layout) == payload
+
+
+# ── referenced-item drift: wiring nel catalog e nel verdict ──────────────────
+
+
+class TestReferencedItemsIntegration:
+    @pytest.mark.contract
+    def test_end_to_end_records_referenced_items(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Il catalog espone il cross-check; nessun ref missing → verdict intatto."""
+        repo = _make_repo(tmp_path)
+        _patch_engine(monkeypatch)
+
+        catalog = build_catalog(repo, write=False)
+
+        assert catalog["referenced_items"] == {
+            "checked": 1,
+            "matched": 1,
+            "missing": [],
+            "unknown": [],
+        }
+        assert "referenced_item_missing" not in catalog["operational_verdict"]["triggers"]
+        assert catalog["operational_verdict"]["label"] != "REFERENCED_MISSING"
+
+    @pytest.mark.contract
+    def test_missing_upstream_sets_trigger_and_label(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Ref assente dall'inventario → trigger + label + score + next_action."""
+        repo = _make_repo_with_missing_ref(tmp_path)
+        _patch_engine(monkeypatch)
+
+        catalog = build_catalog(repo, write=False)
+
+        drift = catalog["referenced_items"]
+        assert drift["checked"] == 2
+        assert drift["matched"] == 1
+        assert drift["missing"] == [
+            {"slug": "demo_missing", "kind": "dataflow", "id": "FLOW_ASSENTE"}
+        ]
+
+        verdict = catalog["operational_verdict"]
+        assert "referenced_item_missing" in verdict["triggers"]
+        assert verdict["label"] == "REFERENCED_MISSING"
+        assert verdict["score"] == "referenced_missing"
+        assert verdict["next_action"] == "review missing upstream items"
+
+    @pytest.mark.contract
+    def test_label_not_overwritten_when_not_stable(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Il drift aggiunge il trigger ma non riscrive una label già impostata."""
+        import scripts.catalog.build as build_mod
+        from scripts.source_report import build_report as real_build_report
+
+        def report_with_partial(*args, **kwargs):
+            catalog = real_build_report(*args, **kwargs)
+            catalog["operational_verdict"] = {
+                "label": "PARTIALLY_SCOPED",
+                "score": "partial",
+                "triggers": ["source_check_partial"],
+                "next_action": "complete source-check",
+            }
+            return catalog
+
+        repo = _make_repo_with_missing_ref(tmp_path)
+        _patch_engine(monkeypatch)
+        monkeypatch.setattr(build_mod, "build_report", report_with_partial)
+
+        catalog = build_catalog(repo, write=False)
+
+        verdict = catalog["operational_verdict"]
+        assert verdict["label"] == "PARTIALLY_SCOPED"
+        assert "source_check_partial" in verdict["triggers"]
+        assert "referenced_item_missing" in verdict["triggers"]
+
+    @pytest.mark.contract
+    def test_drift_and_new_content_coexist(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        """Drift + nuovo contenuto: entrambi i trigger; la label è del drift.
+
+        Il blocco drift gira prima di quello dei pattern probes e ognuno
+        promuove la label solo da STABLE: con entrambi i segnali vince
+        REFERENCED_MISSING e `new_content_available` resta tra i trigger.
+        """
+        repo = _make_repo_with_missing_ref(tmp_path)
+        _patch_engine(monkeypatch)
+        text = (repo / "pyproject.toml").read_text()
+        (repo / "pyproject.toml").write_text(
+            text
+            + "\n[[tool.observatory.pattern_probes]]\n"
+            + 'name = "sentinel-2026"\n'
+            + 'url = "https://example.test/2026.zip"\n'
+        )
+        monkeypatch.setattr(
+            "scripts.catalog.build.run_pattern_probes",
+            lambda cfg: [
+                {
+                    "name": "sentinel-2026",
+                    "url": "https://example.test/2026.zip",
+                    "available": True,
+                    "http_code": "200",
+                }
+            ],
+        )
+
+        catalog = build_catalog(repo, write=False)
+
+        verdict = catalog["operational_verdict"]
+        assert verdict["label"] == "REFERENCED_MISSING"
+        assert "referenced_item_missing" in verdict["triggers"]
+        assert "new_content_available" in verdict["triggers"]

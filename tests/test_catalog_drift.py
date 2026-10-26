@@ -76,6 +76,63 @@ class TestCheckReferencedItems:
         assert len(result["missing"]) == 1
 
     @pytest.mark.pure_unit
+    def test_script_type_multi_token_all_required(self):
+        """Tutti i token del ref devono comparire: un token generico non basta."""
+        inv = [
+            {
+                "item_name": "tar-lazio-roma-ricorsi-pervenuti-per-classificazione",
+                "title": "",
+            },
+            {
+                "item_name": "tar-lazio-roma-ricorsi-definiti-per-classificazione-ed-esito",
+                "title": "",
+            },
+        ]
+        ds = [
+            _ds(
+                "ga_ricorsi_pervenuti_class",
+                [{"kind": "script_type", "id": "ricorsi-pervenuti-class"}],
+            )
+        ]
+        result = check_referenced_items(ds, inv)
+        assert result["matched"] == 1
+
+    @pytest.mark.pure_unit
+    def test_script_type_family_removed_is_not_matched(self):
+        """Regressione: con solo la famiglia 'definiti' il ref 'pervenuti' non matcha.
+
+        Prima il matcher a keyword (>=2) restava `matched` per via dei token
+        generici (`ricorsi`, `class`): la rimozione della famiglia referenziata
+        non veniva rilevata.
+        """
+        inv = [
+            {
+                "item_name": "tar-lazio-roma-ricorsi-definiti-per-classificazione-ed-esito",
+                "title": "",
+            },
+            {"item_name": "tar-lazio-roma-ricorsi-definiti-per-tipo-di-decisione", "title": ""},
+        ]
+        ds = [
+            _ds(
+                "ga_ricorsi_pervenuti_class",
+                [{"kind": "script_type", "id": "ricorsi-pervenuti-class"}],
+            )
+        ]
+        result = check_referenced_items(ds, inv)
+        assert result["matched"] == 0
+        assert len(result["missing"]) == 1
+
+    @pytest.mark.pure_unit
+    def test_script_type_unknown_when_vocabulary_absent(self):
+        """Ref multi-token senza alcun token nell'inventario → non concludibile."""
+        inv = [{"item_name": "tar-lazio-roma-ricorsi-definiti", "title": ""}]
+        ds = [_ds("x", [{"kind": "script_type", "id": "sentenze-brevi"}])]
+        result = check_referenced_items(ds, inv)
+        assert result["matched"] == 0
+        assert result["missing"] == []
+        assert len(result["unknown"]) == 1
+
+    @pytest.mark.pure_unit
     def test_ckan_dataset_match_with_placeholder(self):
         ds = [_ds("bandi", [{"kind": "ckan_dataset", "id": "cig-{year}"}])]
         result = check_referenced_items(ds, _INV)
