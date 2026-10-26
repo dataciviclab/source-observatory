@@ -205,6 +205,11 @@ def build_catalog(
         print(
             f"  ⚠️ referenced-item drift: {len(drift['missing'])} upstream non trovati in inventario"
         )
+    elif drift.get("unknown"):
+        print(
+            f"  ℹ️ referenced-item drift: {len(drift['unknown'])} upstream non verificabili "
+            "(inventario non copre l'area)"
+        )
 
     report_cfg = {
         **cfg,

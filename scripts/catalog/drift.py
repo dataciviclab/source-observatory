@@ -8,7 +8,8 @@ Match per kind:
   - dataflow:      item_id == flow ID
   - ckan_dataset:  item_name == dataset name
   - ckan_resource: distribution_url contiene resource ID
-  - url:           prefix match sul path (ignora {year} e query)
+  - url:           match sull'URL completo (i placeholder {year} sono wildcard),
+                   con esito a tre stati (vedi ``_url_state``)
   - script_type:   item_name contiene il suffisso (es. "sentenze")
 """
 
@@ -16,6 +17,16 @@ from __future__ import annotations
 
 import re
 from typing import Any
+
+# Un ref di tipo ``url`` puo' finire in tre stati:
+#   matched  → l'item referenziato c'e'
+#   missing  → l'area della fonte e' nell'inventario ma l'item no (drift reale)
+#   unknown  → l'inventario non copre quell'area: non si puo' concludere
+MATCHED = "matched"
+MISSING = "missing"
+UNKNOWN = "unknown"
+
+_URL_PLACEHOLDER_RE = re.compile(r"\{[^}]+\}")
 
 
 def _match_dataflow(ref_id: str, inventory_items: list[dict]) -> bool:
@@ -36,17 +47,95 @@ def _match_ckan_resource(ref_id: str, inventory_items: list[dict]) -> bool:
     return any(ref_id in str(item.get("distribution_url") or "") for item in inventory_items)
 
 
-def _match_url(ref_id: str, inventory_items: list[dict]) -> bool:
-    # Rimuovi placeholder {year}/{prefix} e query per il prefix match.
-    # Estrai solo la parte statica prima del primo placeholder.
+def _url_pattern(ref_id: str) -> re.Pattern[str] | None:
+    """Regex dell'URL template: ogni placeholder ``{...}`` diventa wildcard.
+
+    ``.../index.php?tree={year}CIVATOT0201&export=3`` diventa un pattern che
+    matcha solo quell'export, non tutto il portale: la query-string fa parte
+    dell'identita' della risorsa, non e' rumore da scartare.
+    """
+    if not ref_id:
+        return None
+    parts = _URL_PLACEHOLDER_RE.split(ref_id)
+    if all(len(p.strip("/_,")) < 3 for p in parts):
+        return None  # ref fatto solo di placeholder: non discrimina nulla
+    try:
+        return re.compile(".*?".join(re.escape(p) for p in parts))
+    except re.error:
+        return None
+
+
+def _url_static_prefix(ref_id: str) -> str:
+    """Parte statica prima del primo placeholder o della query ('' se troppo corta)."""
     base = re.split(r"\{", ref_id)[0].split("?")[0].rstrip("/_,")
-    if not base or len(base) < 10:
-        return False
-    for item in inventory_items:
-        url = str(item.get("distribution_url") or item.get("url") or "")
-        if url.startswith(base) or base in url:
-            return True
-    return False
+    return base if len(base) >= 10 else ""
+
+
+def _common_prefix_len(a: str, b: str) -> int:
+    """Lunghezza del prefisso comune tra due stringhe."""
+    n = 0
+    for ca, cb in zip(a, b):
+        if ca != cb:
+            break
+        n += 1
+    return n
+
+
+def _path_start(url: str) -> int:
+    """Indice del primo carattere del path (dopo schema://host/)."""
+    match = re.match(r"^[a-z][a-z0-9+.-]*://[^/]+/", url, re.IGNORECASE)
+    return match.end() if match else 0
+
+
+def _url_state(ref_id: str, inventory_items: list[dict]) -> str:
+    """Esito del cross-check per un ref di tipo ``url``.
+
+    Due tentativi di match, in ordine:
+      1. URL completo (query inclusa): la query a volte *e'* l'identita' della
+         risorsa (``index.php?tree=2025CIVATOT0201``, ``?filterDataset=...``);
+      2. solo path: la query a volte e' un parametro di serializzazione
+         (``?format=csvdata`` su ECB) e l'identita' e' nel path.
+
+    Un pattern che matcha *tutti* gli item non discrimina nulla: ``unknown``,
+    non ``matched``.
+
+    Se non c'e' match, l'esito dipende da quanto l'inventario copre l'area del
+    ref (vedi i due segnali piu' sotto): area coperta → ``missing`` (drift
+    reale), altrimenti → ``unknown`` (inventario che non copre quell'area).
+    """
+    urls = [str(item.get("distribution_url") or item.get("url") or "") for item in inventory_items]
+    urls = [u for u in urls if u]
+    if not urls:
+        return UNKNOWN
+
+    full = _url_pattern(ref_id)
+    if full is not None:
+        hits = sum(1 for u in urls if full.search(u))
+        if hits:
+            return MATCHED if (hits < len(urls) or len(urls) == 1) else UNKNOWN
+
+    if "?" in ref_id:
+        path_only = _url_pattern(ref_id.split("?")[0])
+        if path_only is not None:
+            hits = sum(1 for u in urls if path_only.search(u))
+            if hits and (hits < len(urls) or len(urls) == 1):
+                return MATCHED
+
+    # Area coperta? Due segnali, entrambi conservativi:
+    # (a) il prefisso statico del ref (path, senza query) esiste nell'inventario;
+    # (b) il ref condivide con *alcuni* item un prefisso che entra nel path,
+    #     ma non con tutti (altrimenti non distingue nulla).
+    prefix = _url_static_prefix(ref_id)
+    if prefix and any(prefix in u for u in urls):
+        return MISSING
+
+    area_ref = _URL_PLACEHOLDER_RE.sub("", ref_id)
+    shared = [_common_prefix_len(area_ref, u) for u in urls]
+    best = max(shared)
+    if best >= _path_start(ref_id) and shared.count(best) < len(urls):
+        return MISSING
+
+    return UNKNOWN
 
 
 def _match_script_type(ref_id: str, inventory_items: list[dict]) -> bool:
@@ -76,9 +165,18 @@ _MATCHERS = {
     "dataflow": _match_dataflow,
     "ckan_dataset": _match_ckan_dataset,
     "ckan_resource": _match_ckan_resource,
-    "url": _match_url,
     "script_type": _match_script_type,
 }
+
+
+def _state_for(kind: str, ref_id: str, inventory_items: list[dict]) -> str:
+    """Esito del cross-check per un singolo ref upstream."""
+    if kind == "url":
+        return _url_state(ref_id, inventory_items)
+    matcher = _MATCHERS.get(kind)
+    if matcher is None:
+        return UNKNOWN
+    return MATCHED if matcher(ref_id, inventory_items) else MISSING
 
 
 def check_referenced_items(
@@ -88,27 +186,34 @@ def check_referenced_items(
     """Verifica che gli upstream referenziati esistano nell'inventario.
 
     Returns:
-        {"checked": N, "matched": N, "missing": [{slug, kind, id}, ...]}
+        {"checked": N, "matched": N, "missing": [{slug, kind, id}, ...],
+         "unknown": [{slug, kind, id}, ...]}
+        ``missing`` = drift (l'area e' nell'inventario, l'item no);
+        ``unknown`` = inventario che non copre l'area del ref.
         Se inventory e' vuoto, restituisce checked=0 (nessun cross-check possibile).
     """
     if not inventory_rows:
-        return {"checked": 0, "matched": 0, "missing": []}
+        return {"checked": 0, "matched": 0, "missing": [], "unknown": []}
 
     checked = 0
     matched = 0
     missing: list[dict[str, str]] = []
+    unknown: list[dict[str, str]] = []
 
     for ds in datasets_in_use:
         slug = ds.get("slug", "?")
         for ref in ds.get("upstream") or []:
             kind = ref.get("kind", "")
             ref_id = ref.get("id", "")
-            if not kind or not ref_id or kind not in _MATCHERS:
+            if not kind or not ref_id or (kind not in _MATCHERS and kind != "url"):
                 continue
             checked += 1
-            if _MATCHERS[kind](ref_id, inventory_rows):
+            state = _state_for(kind, ref_id, inventory_rows)
+            if state == MATCHED:
                 matched += 1
-            else:
+            elif state == MISSING:
                 missing.append({"slug": slug, "kind": kind, "id": ref_id})
+            else:
+                unknown.append({"slug": slug, "kind": kind, "id": ref_id})
 
-    return {"checked": checked, "matched": matched, "missing": missing}
+    return {"checked": checked, "matched": matched, "missing": missing, "unknown": unknown}
