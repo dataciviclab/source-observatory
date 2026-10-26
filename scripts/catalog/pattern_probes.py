@@ -20,19 +20,32 @@ USER_AGENT = "DataCivicLab-SourceObservatory/1.0 (pattern-probe)"
 TIMEOUT_SECONDS = 30
 
 
-def probe_pattern(url: str) -> dict[str, Any]:
-    """Probe singolo URL. Non alza eccezioni: errore → available=False."""
+def probe_pattern(url: str, min_bytes: int = 0) -> dict[str, Any]:
+    """Probe singolo URL. Non alza eccezioni: errore → available=False.
+
+    Args:
+        url: URL sentinella da verificare.
+        min_bytes: se > 0, una risposta 2xx piu' corta di N byte non conta
+            come disponibile. Serve per le fonti che rispondono 200 con corpo
+            vuoto quando la risorsa non esiste ancora (es. MEF analisi_stat:
+            200 + 0 byte per l'anno non pubblicato).
+    """
     client = HttpClient(timeout=TIMEOUT_SECONDS, user_agent=USER_AGENT)
     result = client.get(url, allow_redirects=True, stream=True)
     if result.is_ok and result.response is not None:
         resp = result.response
-        available = 200 <= resp.status_code < 300
-        return {
+        is_2xx = 200 <= resp.status_code < 300
+        length = len(resp.content) if resp.content is not None else 0
+        below_min_bytes = is_2xx and min_bytes > 0 and length < min_bytes
+        outcome: dict[str, Any] = {
             "url": url,
-            "available": available,
+            "available": is_2xx and not below_min_bytes,
             "http_code": str(resp.status_code),
-            "content_length": len(resp.content) if available else None,
+            "content_length": length if is_2xx else None,
         }
+        if below_min_bytes:
+            outcome["below_min_bytes"] = True
+        return outcome
     return {
         "url": url,
         "available": False,
@@ -44,18 +57,31 @@ def probe_pattern(url: str) -> dict[str, Any]:
 def run_pattern_probes(probes: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Esegue tutti i pattern_probes del config.
 
-    Ogni entry: {"name": "...", "url": "..."}. Il campo name e' opzionale.
+    Ogni entry: {"name": "...", "url": "...", "min_bytes": <int, opzionale>}.
+    Il campo name e' opzionale.
     """
     results: list[dict[str, Any]] = []
     for entry in probes:
         url = str(entry.get("url") or "")
         if not url:
             continue
-        outcome = probe_pattern(url)
+        outcome = probe_pattern(url, min_bytes=_entry_min_bytes(entry))
         if entry.get("name"):
             outcome["name"] = str(entry["name"])
         results.append(outcome)
     return results
+
+
+def _entry_min_bytes(entry: dict[str, Any]) -> int:
+    """``min_bytes`` dell'entry come int >= 0 (0 = nessuna soglia)."""
+    raw = entry.get("min_bytes")
+    if raw is None:
+        return 0
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return 0
+    return max(0, value)
 
 
 def compute_new_content_trigger(

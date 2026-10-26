@@ -398,11 +398,16 @@ def validate_tabular_group(
     url_raw = best.get("distribution_url") or best.get("url") or ""
     if not isinstance(url_raw, str):
         url_raw = ""
-    url = url_raw.split("?")[0]
+    # L'URL va usato INTERO nel probe: molte fonti servono il dato via
+    # query-string e il path nudo risponde altro (es. MEF analisi_stat:
+    # ``index.php?tree=2025CIVATOT0201&export=3`` → CSV, ``index.php`` → HTML
+    # del portale). Il path senza query serve solo a indovinare il formato.
+    url = url_raw
+    url_path = url_raw.split("?")[0]
     fmt = best.get("format") or ""
     if not isinstance(fmt, str):
         fmt = ""
-    is_csv = "csv" in fmt.lower() or url.lower().endswith(".csv")
+    is_csv = "csv" in fmt.lower() or url_path.lower().endswith(".csv")
 
     result: dict[str, Any] = {
         "dataset_group": best.get("dataset_group", "unknown"),
