@@ -118,6 +118,48 @@ class TestValidateObservatoryConfig:
         assert cfg["catalog_baseline"] == {"value": 100, "method": "count"}
         assert cfg["sparql"] == {"query": "SELECT * WHERE {?s ?p ?o}"}
 
+    @pytest.mark.pure_unit
+    def test_pattern_probes_min_bytes_kept(self):
+        cfg = validate_observatory_config(
+            {
+                "source_id": "mef_finanze",
+                "protocol": "html",
+                "base_url": "https://www1.finanze.gov.it/finanze/analisi_stat/",
+                "pattern_probes": [
+                    {
+                        "name": "iva-2026",
+                        "url": "https://x/y?tree=2026CIVATOT0201",
+                        "min_bytes": 200,
+                    }
+                ],
+            }
+        )
+        assert cfg["pattern_probes"][0]["min_bytes"] == 200
+
+    @pytest.mark.pure_unit
+    def test_pattern_probes_min_bytes_invalid(self):
+        with pytest.raises(ObservatoryConfigError, match="min_bytes"):
+            validate_observatory_config(
+                {
+                    "source_id": "mef_finanze",
+                    "protocol": "html",
+                    "base_url": "https://x/",
+                    "pattern_probes": [{"url": "https://x/y", "min_bytes": -1}],
+                }
+            )
+
+    @pytest.mark.pure_unit
+    def test_pattern_probes_min_bytes_not_int(self):
+        with pytest.raises(ObservatoryConfigError, match="min_bytes"):
+            validate_observatory_config(
+                {
+                    "source_id": "mef_finanze",
+                    "protocol": "html",
+                    "base_url": "https://x/",
+                    "pattern_probes": [{"url": "https://x/y", "min_bytes": "200"}],
+                }
+            )
+
 
 # ── load_observatory_config (file-level) ─────────────────────────────────────
 

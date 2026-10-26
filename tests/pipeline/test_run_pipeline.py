@@ -21,7 +21,7 @@ MEF_URL = (
     "https://www1.finanze.gov.it/finanze/analisi_stat/public/v_4_0_0/"
     "contenuti/REG_tipo_reddito_2025.csv?d=1615465800"
 )
-MEF_URL_NO_QUERY = MEF_URL.split("?")[0]
+# L'URL con query-string è il dato: il validate lo usa INTERO (regressione #433)
 
 
 def _make_group_df(suffix: str = "") -> pd.DataFrame:
@@ -44,9 +44,7 @@ def test_validate_one_with_shared_client(monkeypatch, fake_http):
     from scripts.pipeline import run_pipeline
 
     csv_body = "ANNO,REGIONE,IMPORTO\n2020,Lazio,1000\n2021,Lombardia,2000\n"
-    fake_http.responses[MEF_URL_NO_QUERY] = HttpResult(
-        response=fake_response(200, csv_body), err=None
-    )
+    fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
     # il validate crea client con HttpClient(...) — patchiamo la factory
     # (importata da lab_connectors.http sia in _validate_base sia in run_pipeline)
     monkeypatch.setattr("lab_connectors.http.HttpClient", lambda **kw: fake_http)
@@ -65,9 +63,7 @@ def test_validate_one_without_client_creates_own(monkeypatch, fake_http):
     from scripts.pipeline import run_pipeline
 
     csv_body = "ANNO,REGIONE,IMPORTO\n2020,Lazio,1000\n"
-    fake_http.responses[MEF_URL_NO_QUERY] = HttpResult(
-        response=fake_response(200, csv_body), err=None
-    )
+    fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
     # _validate_base importa HttpClient a livello modulo: patchiamo il nome
     # bindato nel modulo consumer (il path lab_connectors.http non basta quando
     # il pacchetto e' installato, non editable)
@@ -84,9 +80,7 @@ def test_run_validate_uses_shared_client(monkeypatch, fake_http):
     from scripts.pipeline import run_pipeline
 
     csv_body = "ANNO,REGIONE,IMPORTO\n2020,Lazio,1000\n"
-    fake_http.responses[MEF_URL_NO_QUERY] = HttpResult(
-        response=fake_response(200, csv_body), err=None
-    )
+    fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
     monkeypatch.setattr("lab_connectors.http.HttpClient", lambda **kw: fake_http)
 
     # due gruppi distinti per verificare che il client sia condiviso

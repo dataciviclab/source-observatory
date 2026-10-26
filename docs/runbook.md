@@ -63,6 +63,33 @@ Modello v0:
 - problemi di connessione/HTTP vanno letti in `radar_summary.json`, non in `catalog_signals.json`
 - **Issue automatiche**: in caso di variazioni rilevanti nel catalogo, `observatory.yml` crea o aggiorna una issue `catalog-alert` su GitHub
 
+### Catalog per-repo e `pattern_probes`
+
+Ogni repo dati che dichiara `[tool.observatory]` nel proprio `pyproject.toml`
+genera il catalog in-repo (`registry/catalog.json`) con `so-catalog` — engine
+condiviso, zero secrets (vedi `catalog-reusable.yml`).
+
+Per le fonti **senza catalogo enumerabile ma con URL deterministici** si
+dichiarano sentinelle in `pattern_probes`: se una passa da non disponibile ad
+available, il verdict riceve il trigger `new_content_available`.
+
+```toml
+[tool.observatory]
+source_id = "mef_finanze"
+protocol = "html"
+base_url = "https://www1.finanze.gov.it/finanze/analisi_stat/"
+
+[[tool.observatory.pattern_probes]]
+name = "iva-regionale-2026"
+url = "https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?tree=2026CIVATOT0201&export=3"
+min_bytes = 200
+```
+
+- `min_bytes` (opzionale): sotto quella soglia una risposta 2xx **non** conta
+  come disponibile. Serve per le fonti che rispondono 200 con corpo vuoto
+  quando il dato non esiste ancora (es. MEF `analisi_stat`): senza soglia il
+  trigger "nuovo contenuto" scatterebbe a ogni run, per sempre.
+
 ## Catalog inventory
 
 ```bash

@@ -38,8 +38,7 @@ MEF_URL = (
     "https://www1.finanze.gov.it/finanze/analisi_stat/public/v_4_0_0/"
     "contenuti/REG_tipo_reddito_2025.csv?d=1615465800"
 )
-# URL senza query: validate_tabular_group fa url.split('?')[0] prima del probe
-MEF_URL_NO_QUERY = MEF_URL.split("?")[0]
+# L'URL con query-string è il dato: il validate lo usa INTERO (regressione #433)
 
 # ── Unit: format scoring ──────────────────────────────────────────────────────
 
@@ -228,15 +227,13 @@ class TestValidateGroup:
             "2024,Lazio,AAA000000000000X,1000\n"
             "2023,Lombardia,BBB000000000000Y,2000\n"
         )
-        fake_http.responses[MEF_URL_NO_QUERY] = HttpResult(
-            response=fake_response(200, csv_body), err=None
-        )
+        fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
         monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
         items = [
             {
                 "dataset_group": "mef_irpef/statistiche/reg-tipo-reddito",
                 "source_id": "mef_irpef",
-                "distribution_url": MEF_URL_NO_QUERY,
+                "distribution_url": MEF_URL,
                 "format": "csv",
                 "year_signal": 2025,
             },
@@ -249,15 +246,13 @@ class TestValidateGroup:
     def test_validate_csv_with_sniff(self, monkeypatch, fake_http):
         """Validazione con sniff: anno estratto dalla colonna ANNO."""
         csv_body = "ANNO,REGIONE,IMPORTO\n2020,Lazio,1000\n2021,Lombardia,2000\n"
-        fake_http.responses[MEF_URL_NO_QUERY] = HttpResult(
-            response=fake_response(200, csv_body), err=None
-        )
+        fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
         monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
         items = [
             {
                 "dataset_group": "mef_irpef/statistiche/reg-tipo-reddito",
                 "source_id": "mef_irpef",
-                "distribution_url": MEF_URL_NO_QUERY,
+                "distribution_url": MEF_URL,
                 "format": "csv",
                 "year_signal": 2025,
             }
@@ -266,6 +261,49 @@ class TestValidateGroup:
         assert result["reachable"] is True
         assert result.get("dataset_group_year_min") == 2020
         assert result.get("dataset_group_year_max") == 2021
+
+    def test_validate_keeps_query_string_in_probe(self, monkeypatch, fake_http):
+        """Regressione #433: l'URL con query-string è il dato, non va troncato.
+
+        Con un URL tipo ``index.php?tree=...&export=3`` il path nudo risponde
+        HTML: il validatore deve interrogare l'URL intero.
+        """
+        csv_body = "ANNO,REGIONE,IMPORTO\n2024,Lazio,1000\n"
+        fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
+        monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
+        items = [
+            {
+                "dataset_group": "mef_finanze/iva/tot-regione",
+                "source_id": "mef_finanze",
+                "distribution_url": MEF_URL,
+                "format": "csv",
+            }
+        ]
+        result = validate_group(items)
+        assert result["url"] == MEF_URL
+        assert result["reachable"] is True
+        assert len(result.get("columns", [])) > 0
+
+    def test_validate_query_only_url_is_csv_by_format(self, monkeypatch, fake_http):
+        """Senza estensione nel path, è il campo ``format`` a decidere il probe."""
+        url = (
+            "https://www1.finanze.gov.it/finanze/analisi_stat/public/"
+            "index.php?tree=2025CIVATOT0201&export=3"
+        )
+        csv_body = "Regione;Numero contribuenti IVA\nPiemonte;278397\n"
+        fake_http.responses[url] = HttpResult(response=fake_response(200, csv_body), err=None)
+        monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
+        items = [
+            {
+                "dataset_group": "mef_finanze/iva/tot-regione",
+                "source_id": "mef_finanze",
+                "distribution_url": url,
+                "format": "CSV",
+            }
+        ]
+        result = validate_group(items)
+        assert result["reachable"] is True
+        assert result["url"] == url
 
     def test_validate_no_url_returns_error(self):
         items = [{"dataset_group": "test/no-url", "source_id": "test", "format": "csv"}]
@@ -294,9 +332,7 @@ class TestValidateGroup:
         """Il merge pandas produce NaN (non None) per gli anni:
         il validatore deve trattarlo come 'assente' e usare lo sniff."""
         csv_body = "ANNO,REGIONE,IMPORTO\n2020,Lazio,1000\n2021,Lombardia,2000\n"
-        fake_http.responses[MEF_URL_NO_QUERY] = HttpResult(
-            response=fake_response(200, csv_body), err=None
-        )
+        fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
         monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
         items = [
             {
@@ -317,9 +353,7 @@ class TestValidateGroup:
     def test_validate_with_existing_years_keeps_them(self, monkeypatch, fake_http):
         """Se il gruppo fornisce gia' anni validi, lo sniff non li sovrascrive."""
         csv_body = "ANNO,REGIONE,IMPORTO\n2020,Lazio,1000\n"
-        fake_http.responses[MEF_URL_NO_QUERY] = HttpResult(
-            response=fake_response(200, csv_body), err=None
-        )
+        fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
         monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
         items = [
             {

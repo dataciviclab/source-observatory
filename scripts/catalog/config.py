@@ -64,6 +64,24 @@ def _extract_tool_table(data: dict[str, Any], section: str) -> dict[str, Any]:
     return dict(block)
 
 
+def _normalize_pattern_probe(entry: dict[str, Any], where: str) -> dict[str, Any]:
+    """Normalizza una entry di ``pattern_probes``.
+
+    ``min_bytes`` (opzionale) deve essere un intero >= 0: sotto quella soglia
+    una risposta 2xx non conta come "nuovo contenuto disponibile".
+    """
+    probe = dict(entry)
+    raw = probe.get("min_bytes")
+    if raw is None:
+        return probe
+    if isinstance(raw, bool) or not isinstance(raw, int) or raw < 0:
+        raise ObservatoryConfigError(
+            f"[tool.observatory]{where}: pattern_probes.min_bytes must be "
+            f"an integer >= 0, got {raw!r}"
+        )
+    return probe
+
+
 def validate_observatory_config(
     obs: dict[str, Any],
     *,
@@ -133,7 +151,9 @@ def validate_observatory_config(
     if isinstance(obs.get("catalog_baseline"), dict):
         cfg["catalog_baseline"] = dict(obs["catalog_baseline"])
     if isinstance(obs.get("pattern_probes"), list):
-        cfg["pattern_probes"] = [dict(p) for p in obs["pattern_probes"] if isinstance(p, dict)]
+        cfg["pattern_probes"] = [
+            _normalize_pattern_probe(p, where) for p in obs["pattern_probes"] if isinstance(p, dict)
+        ]
 
     # Pass-through: blocchi specifici di protocollo e campi ignoti.
     known = set(REQUIRED_KEYS) | {

@@ -57,6 +57,57 @@ class TestProbePattern:
         assert r["content_length"] is None
 
     @pytest.mark.pure_unit
+    def test_empty_200_below_min_bytes_is_unavailable(self, monkeypatch):
+        """Regressione #433: MEF risponde 200 + 0 byte per l'anno mancante.
+
+        Con ``min_bytes`` la risposta vuota non conta come disponibile:
+        altrimenti il trigger "nuovo contenuto" scatta per sempre.
+        """
+
+        class FakeResp:
+            status_code = 200
+            content = b""
+
+        class FakeResult:
+            is_ok = True
+            response = FakeResp()
+            err = None
+
+        class FakeClient:
+            def __init__(self, **kw): ...
+            def get(self, url, **kw):
+                return FakeResult()
+
+        monkeypatch.setattr("scripts.catalog.pattern_probes.HttpClient", FakeClient)
+        r = probe_pattern("https://ex.it/2026.csv", min_bytes=200)
+        assert r["available"] is False
+        assert r["http_code"] == "200"
+        assert r["content_length"] == 0
+        assert r["below_min_bytes"] is True
+
+    @pytest.mark.pure_unit
+    def test_above_min_bytes_is_available(self, monkeypatch):
+        class FakeResp:
+            status_code = 200
+            content = b"x" * 500
+
+        class FakeResult:
+            is_ok = True
+            response = FakeResp()
+            err = None
+
+        class FakeClient:
+            def __init__(self, **kw): ...
+            def get(self, url, **kw):
+                return FakeResult()
+
+        monkeypatch.setattr("scripts.catalog.pattern_probes.HttpClient", FakeClient)
+        r = probe_pattern("https://ex.it/2026.csv", min_bytes=200)
+        assert r["available"] is True
+        assert r["content_length"] == 500
+        assert "below_min_bytes" not in r
+
+    @pytest.mark.pure_unit
     def test_error_is_unavailable(self, monkeypatch):
         class FakeResult:
             is_ok = False
@@ -79,7 +130,7 @@ class TestRunPatternProbes:
     def test_runs_all_and_names(self, monkeypatch):
         monkeypatch.setattr(
             "scripts.catalog.pattern_probes.probe_pattern",
-            lambda url: {"url": url, "available": True, "http_code": "200"},
+            lambda url, min_bytes=0: {"url": url, "available": True, "http_code": "200"},
         )
         results = run_pattern_probes(
             [
@@ -91,6 +142,25 @@ class TestRunPatternProbes:
         assert len(results) == 2
         assert results[0]["name"] == "fsc-2026"
         assert "name" not in results[1]
+
+    @pytest.mark.pure_unit
+    def test_min_bytes_passed_to_probe(self, monkeypatch):
+        """``min_bytes`` dell'entry arriva al probe (sentinelle MEF: 200 + 0 byte)."""
+        seen: list[int] = []
+
+        def fake_probe(url, min_bytes=0):
+            seen.append(min_bytes)
+            return {"url": url, "available": True, "http_code": "200"}
+
+        monkeypatch.setattr("scripts.catalog.pattern_probes.probe_pattern", fake_probe)
+        run_pattern_probes(
+            [
+                {"url": "https://ex.it/2026.csv", "min_bytes": 200},
+                {"url": "https://ex.it/2025.csv"},
+                {"url": "https://ex.it/2024.csv", "min_bytes": "boh"},
+            ]
+        )
+        assert seen == [200, 0, 0]
 
 
 class TestComputeNewContentTrigger:
