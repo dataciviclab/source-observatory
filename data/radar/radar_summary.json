@@ -1,13 +1,13 @@
 {
-  "generated_at": "2026-10-25T08:20:19.656634+00:00",
-  "probe_date": "2026-10-25",
+  "generated_at": "2026-10-26T08:48:08.897275+00:00",
+  "probe_date": "2026-10-26",
   "sources_total": 36,
   "status_counts": {
     "GREEN": 33,
     "YELLOW": 2,
     "RED": 1
   },
-  "persistent_red": 0,
+  "persistent_red": 1,
   "sources": [
     {
       "id": "istat_sdmx",
@@ -15,7 +15,8 @@
       "protocol": "sdmx",
       "http_code": "500",
       "note": null,
-      "ssl_fallback_used": false
+      "ssl_fallback_used": false,
+      "red_streak": 2
     },
     {
       "id": "anac",
