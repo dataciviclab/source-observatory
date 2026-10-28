@@ -104,6 +104,21 @@ quindi resta l'esito dell'inventario. Con inventario vuoto (fonti radar-only)
 il check funziona **solo** grazie a questa verifica. L'UA usato è quello di
 `[tool.observatory]`, per le fonti dietro WAF.
 
+**Regola della prova di assenza** (vale per ogni `kind`): il drift dichiara
+`missing` **solo** se ha una prova positiva che l'item esatto non c'è più.
+La prova richiesta è dichiarata in `drift.ABSENCE_EVIDENCE`:
+
+| `kind` | Prova | Perché |
+|---|---|---|
+| `dataflow` | `inventory` | una riga per dataflow nel catalogo SDMX |
+| `ckan_dataset` | `inventory` | una riga per package (il nome è l'identità) |
+| `ckan_resource` | `probe` | l'inventario tiene **una** distribuzione per item, ma un package ne ha decine → verifica con `resource_show` sulla fonte |
+| `url` | `probe` | l'inventario può descrivere un altro endpoint |
+| `script_type` | `inventory` | ID logico: match per token sull'area della fonte |
+
+Un `kind` non dichiarato non può dichiarare `missing`: al massimo `unknown`.
+Il gate è `tests/test_catalog_drift.py::TestAbsenceEvidence`.
+
 **Query-string negli artifact**: l'URL che va al probe è quello intero, query
 inclusa (è l'identità della risorsa per molte fonti), quindi la query finisce
 nei parquet tracciati — `data/pipeline/validated.parquet` in questo repo e
