@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-10-27T08:59:51.417675+00:00",
-  "probe_date": "2026-10-27",
+  "generated_at": "2026-10-28T09:34:30.349376+00:00",
+  "probe_date": "2026-10-28",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 33,
-    "YELLOW": 3,
+    "GREEN": 34,
+    "YELLOW": 2,
     "RED": 0
   },
   "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sdmx",
-      "http_code": "-",
-      "note": "Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -35,10 +35,10 @@
     },
     {
       "id": "openbdap",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "ckan",
       "http_code": "200",
-      "note": "CKAN API returned non-JSON content",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
@@ -75,10 +75,10 @@
     },
     {
       "id": "dati_cultura",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sparql",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
