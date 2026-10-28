@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any
 
 import jsonschema
+from lab_connectors.http import HttpClient
 
 from scripts.catalog.config import load_observatory_config
 from scripts.catalog.drift import check_referenced_items
@@ -85,6 +86,73 @@ class _UrlProbe:
     @property
     def probed(self) -> int:
         """Quanti URL distinti sono stati verificati via HTTP."""
+        return len(self._cache)
+
+
+def _ckan_action_endpoint(base_url: str | None, action: str) -> str | None:
+    """Endpoint CKAN ``action`` derivato dal ``base_url`` della fonte.
+
+    ``https://host/api/3/action/package_list?limit=1`` →
+    ``https://host/api/3/action/resource_show``. ``None`` se il ``base_url``
+    non è un endpoint CKAN.
+    """
+    if not base_url:
+        return None
+    marker = "/api/3/action/"
+    idx = base_url.find(marker)
+    if idx == -1:
+        return None
+    return f"{base_url[: idx + len(marker)]}{action}"
+
+
+class _CkanResourceProbe:
+    """Verifica una resource CKAN con ``resource_show`` sulla fonte.
+
+    L'inventario tiene **una** distribuzione per item (quella "migliore"), ma un
+    package CKAN ne ha in media decine: non trovare un resource ID non prova
+    nulla. La prova va chiesta al portale. Restituisce ``True`` (esiste),
+    ``False`` (CKAN dice non trovata) o ``None`` (non concludente, o ``base_url``
+    non CKAN).
+    """
+
+    def __init__(self, base_url: str | None, user_agent: str | None = None) -> None:
+        self._endpoint = _ckan_action_endpoint(base_url, "resource_show")
+        self._user_agent = user_agent
+        self._cache: dict[str, bool | None] = {}
+
+    def __call__(self, resource_id: str) -> bool | None:
+        if self._endpoint is None:
+            return None
+        if resource_id not in self._cache:
+            self._cache[resource_id] = self._probe(resource_id)
+        return self._cache[resource_id]
+
+    def _probe(self, resource_id: str) -> bool | None:
+        client = HttpClient(
+            timeout=20,
+            user_agent=self._user_agent or "DataCivicLab-SourceObservatory/1.0",
+        )
+        result = client.get(f"{self._endpoint}?id={resource_id}", allow_redirects=True)
+        if not result.is_ok or result.response is None:
+            return None
+        code = str(result.response.status_code)
+        if code in _INCONCLUSIVE_HTTP_CODES:
+            return None
+        if code == "404":
+            return False
+        if code != "200":
+            return None
+        try:
+            payload = result.response.json()
+        except Exception:  # payload illeggibile: non concludente
+            return None
+        if not isinstance(payload, dict):
+            return None
+        return bool(payload.get("success"))
+
+    @property
+    def probed(self) -> int:
+        """Quante resource distinte sono state verificate."""
         return len(self._cache)
 
 
@@ -279,12 +347,19 @@ def build_catalog(
     # ── Referenced-item drift ────────────────────────────────────────────────
     # Verifica che gli item upstream referenziati dai dataset esistano ancora.
     # L'inventario non è autorevole per gli URL consumati (può descrivere un
-    # altro endpoint o una sola distribuzione per item): quando non conferma,
-    # si verifica l'URL via HTTP (``_UrlProbe``).
+    # altro endpoint o una sola distribuzione per item) né per le resource
+    # CKAN (una distribuzione per item, ma i package ne hanno decine): quando
+    # non conferma, la prova si chiede alla fonte. Cosa serve per dichiarare
+    # `missing` lo decide `drift.ABSENCE_EVIDENCE`.
     url_probe = _UrlProbe(cfg.get("user_agent"))
-    drift = check_referenced_items(datasets_in_use, rows, url_probe=url_probe)
+    resource_probe = _CkanResourceProbe(cfg.get("base_url"), cfg.get("user_agent"))
+    drift = check_referenced_items(
+        datasets_in_use, rows, url_probe=url_probe, resource_probe=resource_probe
+    )
     if url_probe.probed:
         print(f"  ℹ️  {url_probe.probed} URL consumati verificati via HTTP")
+    if resource_probe.probed:
+        print(f"  ℹ️  {resource_probe.probed} resource CKAN verificate via resource_show")
     if drift["missing"]:
         print(
             f"  ⚠️ referenced-item drift: {len(drift['missing'])} upstream non trovati in inventario"

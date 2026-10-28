@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.catalog.drift import check_referenced_items
+from scripts.catalog.drift import (
+    _MATCHERS,
+    _STATE_MATCHERS,
+    ABSENCE_EVIDENCE,
+    check_referenced_items,
+)
 
 _INV = [
     {
@@ -385,3 +390,97 @@ class TestUrlQueryString:
         assert result["matched"] == 2
         assert len(result["missing"]) == 1
         assert result["missing"][0]["id"] == "GONE"
+
+
+# ── Prova di assenza: `missing` solo con evidenza ────────────────────────────
+# Regola: un kind dichiara `missing` solo se l'inventario è completo per quel
+# kind, o se esiste una verifica diretta dell'item. Altrimenti `unknown`.
+
+
+class TestAbsenceEvidence:
+    @pytest.mark.contract
+    def test_every_handled_kind_is_declared(self):
+        """Un kind gestito ma non dichiarato non può dichiarare `missing`."""
+        handled = set(_MATCHERS) | set(_STATE_MATCHERS)
+        undeclared = handled - set(ABSENCE_EVIDENCE)
+        assert not undeclared, (
+            "Kind gestito senza dichiarazione di prova in ABSENCE_EVIDENCE: "
+            f"{sorted(undeclared)}. Serve 'inventory' (inventario completo) o "
+            "'probe' (verifica diretta dell'item)."
+        )
+
+    @pytest.mark.contract
+    def test_declared_evidence_values_are_known(self):
+        assert set(ABSENCE_EVIDENCE.values()) <= {"inventory", "probe"}
+
+
+class TestCkanDatasetPlaceholder:
+    @pytest.mark.pure_unit
+    def test_placeholder_first_matches(self):
+        """`{year}-nome`: la parte fissa è un suffisso, non un prefisso.
+
+        Regressione: il confronto `startswith` falliva sempre e l'item
+        risultava `missing` (open-mur: `{year}-contribuzione-...-atenei`).
+        """
+        inv = [{"item_name": "2025-contribuzione-e-interventi-atenei"}]
+        ds = [
+            _ds("m", [{"kind": "ckan_dataset", "id": "{year}-contribuzione-e-interventi-atenei"}])
+        ]
+        result = check_referenced_items(ds, inv)
+        assert result["matched"] == 1
+        assert result["missing"] == []
+
+    @pytest.mark.pure_unit
+    def test_placeholder_first_no_match_when_name_differs(self):
+        inv = [{"item_name": "2025-contribuzione-e-interventi-afam"}]
+        ds = [
+            _ds("m", [{"kind": "ckan_dataset", "id": "{year}-contribuzione-e-interventi-atenei"}])
+        ]
+        result = check_referenced_items(ds, inv)
+        assert result["matched"] == 0
+        # L'inventario è completo per i package: l'assenza è prova.
+        assert len(result["missing"]) == 1
+
+
+class TestCkanResourceEvidence:
+    _DS = [_ds("m", [{"kind": "ckan_resource", "id": "uuid-non-in-inventario"}])]
+
+    @pytest.mark.pure_unit
+    def test_unconfirmed_without_probe_is_unknown(self):
+        """L'inventario tiene una distribuzione per item: l'assenza non è prova."""
+        result = check_referenced_items(self._DS, _INV)
+        assert result["missing"] == []
+        assert len(result["unknown"]) == 1
+
+    @pytest.mark.pure_unit
+    def test_probe_confirms_resource(self):
+        result = check_referenced_items(self._DS, _INV, resource_probe=lambda rid: True)
+        assert result["matched"] == 1
+
+    @pytest.mark.pure_unit
+    def test_probe_detects_removed_resource(self):
+        result = check_referenced_items(self._DS, _INV, resource_probe=lambda rid: False)
+        assert len(result["missing"]) == 1
+
+    @pytest.mark.pure_unit
+    def test_probe_inconclusive_is_unknown(self):
+        result = check_referenced_items(self._DS, _INV, resource_probe=lambda rid: None)
+        assert result["missing"] == []
+        assert len(result["unknown"]) == 1
+
+    @pytest.mark.pure_unit
+    def test_probe_not_called_when_inventory_confirms(self):
+        ds = [_ds("a", [{"kind": "ckan_resource", "id": "cig-2024-uuid"}])]
+
+        def probe(rid: str) -> bool | None:
+            raise AssertionError("il probe non deve essere chiamato")
+
+        result = check_referenced_items(ds, _INV, resource_probe=probe)
+        assert result["matched"] == 1
+
+    @pytest.mark.pure_unit
+    def test_probe_works_with_empty_inventory(self):
+        """Inventario vuoto: la verifica diretta basta."""
+        result = check_referenced_items(self._DS, [], resource_probe=lambda rid: True)
+        assert result["checked"] == 1
+        assert result["matched"] == 1

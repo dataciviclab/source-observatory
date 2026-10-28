@@ -571,3 +571,85 @@ class TestUrlProbe:
         assert len(calls) == 4
         # L'UA del config arriva al probe (fonti con WAF).
         assert all(ua == "UA-della-fonte" for _, ua in calls)
+
+
+class TestCkanResourceProbe:
+    """Verifica diretta di una resource CKAN via ``resource_show``."""
+
+    @pytest.mark.pure_unit
+    def test_endpoint_derivation(self):
+        import scripts.catalog.build as build_mod
+
+        assert (
+            build_mod._ckan_action_endpoint(
+                "https://host/api/3/action/package_list?limit=1", "resource_show"
+            )
+            == "https://host/api/3/action/resource_show"
+        )
+        assert build_mod._ckan_action_endpoint("https://host/opendata", "resource_show") is None
+        assert build_mod._ckan_action_endpoint(None, "resource_show") is None
+
+    @pytest.mark.pure_unit
+    def test_maps_http_outcomes(self, monkeypatch: pytest.MonkeyPatch):
+        import scripts.catalog.build as build_mod
+
+        class FakeResp:
+            def __init__(self, code: int, payload: dict | None = None) -> None:
+                self.status_code = code
+                self._payload = payload
+
+            def json(self):
+                if self._payload is None:
+                    raise ValueError("payload illeggibile")
+                return self._payload
+
+        class FakeResult:
+            def __init__(self, resp=None, err=None) -> None:
+                self.response = resp
+                self.err = err
+
+            @property
+            def is_ok(self) -> bool:
+                return self.response is not None and self.err is None
+
+        outcomes = {
+            "ok": FakeResult(resp=FakeResp(200, {"success": True})),
+            "nope": FakeResult(resp=FakeResp(200, {"success": False})),
+            "gone": FakeResult(resp=FakeResp(404, {"success": False})),
+            "blocked": FakeResult(resp=FakeResp(403)),
+            "error": FakeResult(resp=None, err=RuntimeError("boom")),
+        }
+        calls: list[str] = []
+
+        class FakeClient:
+            def __init__(self, **kw): ...
+
+            def get(self, url, **kw):
+                rid = url.split("id=", 1)[1]
+                calls.append(rid)
+                return outcomes[rid]
+
+        monkeypatch.setattr("scripts.catalog.build.HttpClient", FakeClient)
+        probe = build_mod._CkanResourceProbe("https://host/api/3/action/package_list?limit=1")
+
+        assert probe("ok") is True
+        assert probe("nope") is False
+        assert probe("gone") is False
+        assert probe("blocked") is None
+        assert probe("error") is None
+        # Cache per run.
+        assert probe("ok") is True
+        assert probe.probed == 5
+        assert len(calls) == 5
+
+    @pytest.mark.pure_unit
+    def test_no_request_when_base_url_is_not_ckan(self, monkeypatch: pytest.MonkeyPatch):
+        import scripts.catalog.build as build_mod
+
+        def boom(**kw):
+            raise AssertionError("nessuna richiesta se il base_url non è CKAN")
+
+        monkeypatch.setattr("scripts.catalog.build.HttpClient", boom)
+        probe = build_mod._CkanResourceProbe("https://host/opendata")
+        assert probe("uuid") is None
+        assert probe.probed == 0

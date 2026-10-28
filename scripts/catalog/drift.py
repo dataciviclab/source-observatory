@@ -24,6 +24,10 @@ from typing import Any, Callable
 # (non concludente, es. errore di rete → nessun drift dichiarato).
 UrlProbe = Callable[[str], "bool | None"]
 
+# Verifica diretta di un item della fonte (es. ``resource_show`` su CKAN):
+# stesse semantiche tri-stato di ``UrlProbe``.
+ResourceProbe = Callable[[str], "bool | None"]
+
 # Un ref di tipo ``url`` puo' finire in tre stati:
 #   matched  → l'item referenziato c'e'
 #   missing  → l'area della fonte e' nell'inventario ma l'item no (drift reale)
@@ -32,6 +36,30 @@ MATCHED = "matched"
 MISSING = "missing"
 UNKNOWN = "unknown"
 
+# Prova richiesta per poter dichiarare ``missing`` su un ref di un kind.
+#
+#   "inventory" → l'inventario e' **completo** per quel kind: l'assenza e' prova
+#   "probe"     → l'inventario **non** e' completo (o il match e' euristico):
+#                 serve la verifica diretta dell'item, altrimenti `unknown`
+#
+# Regola: un kind non elencato non puo' dichiarare `missing`. Questa tabella e'
+# il punto unico in cui l'assunzione e' scritta — e il gate e' in
+# ``tests/test_catalog_drift.py`` (ogni kind gestito deve essere dichiarato).
+ABSENCE_EVIDENCE: dict[str, str] = {
+    # SDMX: una riga per dataflow nel catalogo della fonte.
+    "dataflow": "inventory",
+    # CKAN package: una riga per package (il nome e' l'identita').
+    "ckan_dataset": "inventory",
+    # CKAN resource: l'inventario tiene UNA distribuzione per item, ma un
+    # package ne ha in media decine → l'assenza non e' prova.
+    "ckan_resource": "probe",
+    # URL consumato: l'inventario puo' descrivere un altro endpoint.
+    "url": "probe",
+    # ``script_type`` e' un ID logico: il match per token sull'inventario
+    # copre l'area della fonte (design di #429).
+    "script_type": "inventory",
+}
+
 _URL_PLACEHOLDER_RE = re.compile(r"\{[^}]+\}")
 
 
@@ -39,18 +67,63 @@ def _match_dataflow(ref_id: str, inventory_items: list[dict]) -> bool:
     return any(str(item.get("item_id")) == ref_id for item in inventory_items)
 
 
+def _wildcard_pattern(text: str) -> re.Pattern[str] | None:
+    """Regex del nome con ogni placeholder ``{...}`` come wildcard, o None.
+
+    Serve ai nomi package templati: ``{year}-contribuzione-e-interventi-atenei``
+    deve matchare ``2025-contribuzione-e-interventi-atenei``.
+    """
+    if not _URL_PLACEHOLDER_RE.search(text):
+        return None
+    parts = [re.escape(p) for p in _URL_PLACEHOLDER_RE.split(text)]
+    return re.compile(".*".join(parts))
+
+
 def _match_ckan_dataset(ref_id: str, inventory_items: list[dict]) -> bool:
-    # ref_id puo' contenere placeholder tipo {year} — estrai il prefisso fisso
-    base = re.sub(r"\{[^}]+\}", "", ref_id).strip("-_")
+    """Match del nome package; i placeholder ``{...}`` sono wildcard.
+
+    Regressione: il confronto era ``name.startswith(base)`` con il placeholder
+    rimosso, che funziona solo se la parte fissa e' in **testa** (``nome-{year}``).
+    Con il placeholder davanti (``{year}-nome``) la parte fissa e' un suffisso,
+    quindi il match falliva sempre e l'item risultava ``missing``.
+    """
+    pattern = _wildcard_pattern(ref_id)
     for item in inventory_items:
         name = str(item.get("item_name") or item.get("item_id") or "")
-        if name == ref_id or (base and name.startswith(base)):
+        if name == ref_id or (pattern is not None and pattern.fullmatch(name)):
             return True
     return False
 
 
 def _match_ckan_resource(ref_id: str, inventory_items: list[dict]) -> bool:
     return any(ref_id in str(item.get("distribution_url") or "") for item in inventory_items)
+
+
+def _ckan_resource_state(
+    ref_id: str,
+    inventory_items: list[dict],
+    resource_probe: ResourceProbe | None = None,
+) -> str:
+    """Esito del cross-check per un ref ``ckan_resource``.
+
+    L'inventario tiene **una** distribuzione per item (quella "migliore"), ma un
+    package CKAN ne ha in media decine: non trovare un resource ID non prova
+    nulla. Quindi:
+
+      1. se l'inventario lo conferma → ``matched``, senza rete;
+      2. altrimenti, se un ``resource_probe`` e' disponibile, decide la verifica
+         diretta (``resource_show``): esiste → ``matched``, non esiste →
+         ``missing``, non concludente → ``unknown``;
+      3. senza probe → ``unknown``: nessuna prova di assenza.
+    """
+    if _match_ckan_resource(ref_id, inventory_items):
+        return MATCHED
+    if resource_probe is None:
+        return UNKNOWN
+    verdict = resource_probe(ref_id)
+    if verdict is None:
+        return UNKNOWN
+    return MATCHED if verdict else MISSING
 
 
 def _url_pattern(ref_id: str) -> re.Pattern[str] | None:
@@ -232,32 +305,39 @@ def _state_for(
     ref_id: str,
     inventory_items: list[dict],
     url_probe: UrlProbe | None = None,
+    resource_probe: ResourceProbe | None = None,
 ) -> str:
     """Esito del cross-check per un singolo ref upstream."""
     if kind == "url":
         return _url_state(ref_id, inventory_items, url_probe)
+    if kind == "ckan_resource":
+        return _ckan_resource_state(ref_id, inventory_items, resource_probe)
     if kind == "script_type":
         return _script_type_state(ref_id, inventory_items)
     matcher = _MATCHERS.get(kind)
     if matcher is None:
         return UNKNOWN
-    return MATCHED if matcher(ref_id, inventory_items) else MISSING
+    if matcher(ref_id, inventory_items):
+        return MATCHED
+    # Cosa serve per dichiarare `missing` lo decide la tabella, non il matcher.
+    return MISSING if ABSENCE_EVIDENCE.get(kind) == "inventory" else UNKNOWN
 
 
 def check_referenced_items(
     datasets_in_use: list[dict[str, Any]],
     inventory_rows: list[dict[str, Any]],
     url_probe: UrlProbe | None = None,
+    resource_probe: ResourceProbe | None = None,
 ) -> dict[str, Any]:
     """Verifica che gli upstream referenziati esistano ancora.
 
     Returns:
         {"checked": N, "matched": N, "missing": [{slug, kind, id}, ...],
          "unknown": [{slug, kind, id}, ...]}
-        ``missing`` = drift (l'area e' nell'inventario, l'item no);
-        ``unknown`` = inventario che non copre l'area del ref.
-        Se inventory e' vuoto e non c'e' ``url_probe``, restituisce checked=0
-        (nessun cross-check possibile).
+        ``missing`` = drift **provato** (vedi ``ABSENCE_EVIDENCE``);
+        ``unknown`` = non concludente: inventario che non copre, oppure kind
+        senza prova di assenza disponibile.
+        Se inventario vuoto e nessun probe, restituisce checked=0.
 
     Args:
         url_probe: verifica opzionale di un URL consumato. Riceve l'URL e
@@ -267,7 +347,7 @@ def check_referenced_items(
             una sola distribuzione per item. Senza probe resta l'euristica
             sull'inventario.
     """
-    if not inventory_rows and url_probe is None:
+    if not inventory_rows and url_probe is None and resource_probe is None:
         return {"checked": 0, "matched": 0, "missing": [], "unknown": []}
 
     checked = 0
@@ -283,7 +363,7 @@ def check_referenced_items(
             if not kind or not ref_id or (kind not in _MATCHERS and kind not in _STATE_MATCHERS):
                 continue
             checked += 1
-            state = _state_for(kind, ref_id, inventory_rows, url_probe)
+            state = _state_for(kind, ref_id, inventory_rows, url_probe, resource_probe)
             if state == MATCHED:
                 matched += 1
             elif state == MISSING:
