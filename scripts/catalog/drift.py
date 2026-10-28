@@ -1,15 +1,16 @@
 """Referenced-item drift: verifica che gli upstream referenziati esistano ancora.
 
 Per ogni dataset con upstream refs, controlla che gli item referenziati
-esistano nell'inventario della fonte. Se un upstream non ha match →
-lo segnala come missing (drift).
+esistano ancora. Se un upstream non ha match → lo segnala come missing (drift).
 
 Match per kind:
   - dataflow:      item_id == flow ID
   - ckan_dataset:  item_name == dataset name
   - ckan_resource: distribution_url contiene resource ID
   - url:           match sull'URL completo (i placeholder {year} sono wildcard),
-                   con esito a tre stati (vedi ``_url_state``)
+                   con esito a tre stati (vedi ``_url_state``); se un
+                   ``url_probe`` e' disponibile, l'inventario non conferma e
+                   decide la verifica dell'URL consumato
   - script_type:   match per token su item_name/title, con esito a tre stati
                    (vedi ``_script_type_state``)
 """
@@ -17,7 +18,11 @@ Match per kind:
 from __future__ import annotations
 
 import re
-from typing import Any
+from typing import Any, Callable
+
+# Verifica di un URL consumato: True (esiste) / False (non esiste) / None
+# (non concludente, es. errore di rete → nessun drift dichiarato).
+UrlProbe = Callable[[str], "bool | None"]
 
 # Un ref di tipo ``url`` puo' finire in tre stati:
 #   matched  → l'item referenziato c'e'
@@ -88,8 +93,32 @@ def _path_start(url: str) -> int:
     return match.end() if match else 0
 
 
-def _url_state(ref_id: str, inventory_items: list[dict]) -> str:
+def _url_state(ref_id: str, inventory_items: list[dict], url_probe: UrlProbe | None = None) -> str:
     """Esito del cross-check per un ref di tipo ``url``.
+
+    L'inventario *non* e' autorevole per un URL che consumiamo: spesso descrive
+    un altro endpoint dello stesso dato (AGID: ``catalogocloud.agid.gov.it`` vs
+    ``indicepa.gov.it``) o solo una distribuzione per item (Consip: un resource
+    per package, mentre il repo consuma piu' anni). Quindi:
+
+      1. se l'inventario conferma l'URL → ``matched``, senza rete;
+      2. altrimenti, se un ``url_probe`` e' configurato, decide la verifica
+         dell'URL consumato: esiste → ``matched``, non esiste → ``missing``,
+         non concludente (errore di rete) → ``unknown`` (niente falso drift);
+      3. senza probe, resta l'euristica sull'inventario (comportamento storico).
+    """
+    state = _url_state_from_inventory(ref_id, inventory_items)
+    if state == MATCHED or url_probe is None:
+        return state
+
+    verdict = url_probe(ref_id)
+    if verdict is None:
+        return UNKNOWN
+    return MATCHED if verdict else MISSING
+
+
+def _url_state_from_inventory(ref_id: str, inventory_items: list[dict]) -> str:
+    """Esito del cross-check per un ref di tipo ``url`` (solo inventario).
 
     Due tentativi di match, in ordine:
       1. URL completo (query inclusa): la query a volte *e'* l'identita' della
@@ -191,10 +220,15 @@ _MATCHERS = {
 _STATE_MATCHERS = frozenset({"url", "script_type"})
 
 
-def _state_for(kind: str, ref_id: str, inventory_items: list[dict]) -> str:
+def _state_for(
+    kind: str,
+    ref_id: str,
+    inventory_items: list[dict],
+    url_probe: UrlProbe | None = None,
+) -> str:
     """Esito del cross-check per un singolo ref upstream."""
     if kind == "url":
-        return _url_state(ref_id, inventory_items)
+        return _url_state(ref_id, inventory_items, url_probe)
     if kind == "script_type":
         return _script_type_state(ref_id, inventory_items)
     matcher = _MATCHERS.get(kind)
@@ -206,17 +240,27 @@ def _state_for(kind: str, ref_id: str, inventory_items: list[dict]) -> str:
 def check_referenced_items(
     datasets_in_use: list[dict[str, Any]],
     inventory_rows: list[dict[str, Any]],
+    url_probe: UrlProbe | None = None,
 ) -> dict[str, Any]:
-    """Verifica che gli upstream referenziati esistano nell'inventario.
+    """Verifica che gli upstream referenziati esistano ancora.
 
     Returns:
         {"checked": N, "matched": N, "missing": [{slug, kind, id}, ...],
          "unknown": [{slug, kind, id}, ...]}
         ``missing`` = drift (l'area e' nell'inventario, l'item no);
         ``unknown`` = inventario che non copre l'area del ref.
-        Se inventory e' vuoto, restituisce checked=0 (nessun cross-check possibile).
+        Se inventory e' vuoto e non c'e' ``url_probe``, restituisce checked=0
+        (nessun cross-check possibile).
+
+    Args:
+        url_probe: verifica opzionale di un URL consumato. Riceve l'URL e
+            ritorna ``True`` (esiste), ``False`` (non esiste) o ``None``
+            (non concludente). Serve perche' l'inventario non e' autorevole
+            per gli URL di ``http_file``: puo' descrivere un altro endpoint o
+            una sola distribuzione per item. Senza probe resta l'euristica
+            sull'inventario.
     """
-    if not inventory_rows:
+    if not inventory_rows and url_probe is None:
         return {"checked": 0, "matched": 0, "missing": [], "unknown": []}
 
     checked = 0
@@ -232,7 +276,7 @@ def check_referenced_items(
             if not kind or not ref_id or (kind not in _MATCHERS and kind not in _STATE_MATCHERS):
                 continue
             checked += 1
-            state = _state_for(kind, ref_id, inventory_rows)
+            state = _state_for(kind, ref_id, inventory_rows, url_probe)
             if state == MATCHED:
                 matched += 1
             elif state == MISSING:

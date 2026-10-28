@@ -177,6 +177,68 @@ class TestCheckReferencedItems:
         assert len(result["unknown"]) == 1
 
 
+# ── url_probe: l'inventario non è autorevole per gli URL consumati ───────────
+# Regressione: l'inventario può descrivere un altro endpoint dello stesso dato
+# (AGID: catalogocloud vs indicepa.gov.it) o una sola distribuzione per item
+# (Consip: un resource per package, N anni consumati dal repo). Entrambi
+# producevano "missing" su URL che rispondono 200.
+
+
+class TestUrlProbe:
+    @pytest.mark.pure_unit
+    def test_probe_confirms_url_that_inventory_cannot_cover(self):
+        """L'area è coperta ma l'URL esatto no → il probe conferma che esiste."""
+        ds = [
+            _ds(
+                "fsc", [{"kind": "url", "id": "https://docs.ex.it/{year}_VAR_FSC_9_{year}_csv.zip"}]
+            )
+        ]
+        probed: list[str] = []
+
+        def probe(url: str) -> bool | None:
+            probed.append(url)
+            return True
+
+        result = check_referenced_items(ds, _INV, url_probe=probe)
+        assert result["matched"] == 1
+        assert result["missing"] == []
+        assert len(probed) == 1
+
+    @pytest.mark.pure_unit
+    def test_probe_detects_real_removal(self):
+        """L'URL non risponde → drift reale."""
+        ds = [_ds("x", [{"kind": "url", "id": "https://other.ex.it/gone.csv"}])]
+        result = check_referenced_items(ds, _INV, url_probe=lambda url: False)
+        assert len(result["missing"]) == 1
+
+    @pytest.mark.pure_unit
+    def test_probe_inconclusive_is_unknown_not_drift(self):
+        """Errore di rete (None) → non si dichiara drift."""
+        ds = [_ds("x", [{"kind": "url", "id": "https://other.ex.it/slow.csv"}])]
+        result = check_referenced_items(ds, _INV, url_probe=lambda url: None)
+        assert result["missing"] == []
+        assert len(result["unknown"]) == 1
+
+    @pytest.mark.pure_unit
+    def test_probe_not_called_when_inventory_confirms(self):
+        """Se l'inventario conferma l'URL, nessuna richiesta HTTP."""
+        ds = [_ds("crim", [{"kind": "url", "id": "https://ex.it/data/CRIM_GEN_REG"}])]
+
+        def probe(url: str) -> bool | None:
+            raise AssertionError("il probe non deve essere chiamato")
+
+        result = check_referenced_items(ds, _INV, url_probe=probe)
+        assert result["matched"] == 1
+
+    @pytest.mark.pure_unit
+    def test_probe_verifies_with_empty_inventory(self):
+        """Inventario vuoto (fonti radar-only): il probe rende il check possibile."""
+        ds = [_ds("dait", [{"kind": "url", "id": "https://dait.ex.it/amministratori.csv"}])]
+        result = check_referenced_items(ds, [], url_probe=lambda url: True)
+        assert result["checked"] == 1
+        assert result["matched"] == 1
+
+
 # ── URL a query-string: la query è l'identità della risorsa ──────────────────
 # Regressione: il prefix match sul path nudo dichiarava "missing" (inventario che
 # non copre l'area) o "matched" per costruzione (qualunque item del portale).

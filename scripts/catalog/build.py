@@ -28,7 +28,11 @@ import pandas as pd
 from scripts.catalog.config import load_observatory_config
 from scripts.catalog.drift import check_referenced_items
 from scripts.catalog.layout import RepoLayout, resolve_layout
-from scripts.catalog.pattern_probes import compute_new_content_trigger, run_pattern_probes
+from scripts.catalog.pattern_probes import (
+    compute_new_content_trigger,
+    probe_pattern,
+    run_pattern_probes,
+)
 from scripts.catalog.upstream import load_upstream_map
 from scripts.collectors import dispatch
 from scripts.pipeline.run_pipeline import run_merge, run_validate
@@ -37,6 +41,44 @@ from scripts.source_report import build_report
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "catalog.schema.json"
 CATALOG_SCHEMA_VERSION = 1
+
+
+class _UrlProbe:
+    """Verifica l'esistenza di un URL consumato, con cache per run.
+
+    Adatta ``probe_pattern`` al contratto tri-stato di ``drift``:
+
+      - 2xx → ``True`` (l'URL esiste);
+      - risposta HTTP di errore (4xx/5xx) → ``False`` (non esiste);
+      - errore di rete (``http_code == "-"``) → ``None``, non concludente:
+        un timeout non deve produrre un falso drift.
+
+    Serve perché l'inventario non è autorevole per gli URL di ``http_file``:
+    può descrivere un altro endpoint dello stesso dato (AGID) o una sola
+    distribuzione per item (Consip: un resource per package, N anni nel repo).
+    """
+
+    def __init__(self, user_agent: str | None = None) -> None:
+        self._user_agent = user_agent
+        self._cache: dict[str, bool | None] = {}
+
+    def __call__(self, url: str) -> bool | None:
+        if url not in self._cache:
+            self._cache[url] = self._probe(url)
+        return self._cache[url]
+
+    def _probe(self, url: str) -> bool | None:
+        result = probe_pattern(url, user_agent=self._user_agent)
+        if result.get("available"):
+            return True
+        if str(result.get("http_code") or "-") == "-":
+            return None
+        return False
+
+    @property
+    def probed(self) -> int:
+        """Quanti URL distinti sono stati verificati via HTTP."""
+        return len(self._cache)
 
 
 def load_catalog_schema() -> dict[str, Any]:
@@ -198,9 +240,14 @@ def build_catalog(
             entry["upstream"] = refs
 
     # ── Referenced-item drift ────────────────────────────────────────────────
-    # Verifica che gli item upstream referenziati dai dataset esistano
-    # ancora nell'inventario della fonte. Se ne sparisce uno → trigger.
-    drift = check_referenced_items(datasets_in_use, rows)
+    # Verifica che gli item upstream referenziati dai dataset esistano ancora.
+    # L'inventario non è autorevole per gli URL consumati (può descrivere un
+    # altro endpoint o una sola distribuzione per item): quando non conferma,
+    # si verifica l'URL via HTTP (``_UrlProbe``).
+    url_probe = _UrlProbe(cfg.get("user_agent"))
+    drift = check_referenced_items(datasets_in_use, rows, url_probe=url_probe)
+    if url_probe.probed:
+        print(f"  ℹ️  {url_probe.probed} URL consumati verificati via HTTP")
     if drift["missing"]:
         print(
             f"  ⚠️ referenced-item drift: {len(drift['missing'])} upstream non trovati in inventario"

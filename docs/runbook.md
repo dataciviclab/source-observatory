@@ -90,6 +90,17 @@ min_bytes = 200
   quando il dato non esiste ancora (es. MEF `analisi_stat`): senza soglia il
   trigger "nuovo contenuto" scatterebbe a ogni run, per sempre.
 
+**Drift degli URL consumati**: per gli upstream di tipo `url` (connector
+`http_file`) l'inventario della fonte **non è autorevole** — può descrivere un
+altro endpoint dello stesso dato (AGID: `catalogocloud.agid.gov.it` vs
+`indicepa.gov.it`) o una sola distribuzione per item (Consip: un resource per
+package, mentre il repo consuma più anni). Quando l'inventario non conferma,
+`so-catalog` verifica l'URL consumato via HTTP: 2xx → `matched`, risposta di
+errore → `missing` (drift reale), errore di rete → `unknown` (nessun falso
+drift). Con inventario vuoto (fonti radar-only) il check funziona **solo**
+grazie a questa verifica. L'UA usato è quello di `[tool.observatory]`, per le
+fonti dietro WAF.
+
 **Query-string negli artifact**: l'URL che va al probe è quello intero, query
 inclusa (è l'identità della risorsa per molte fonti), quindi la query finisce
 nei parquet tracciati — `data/pipeline/validated.parquet` in questo repo e

@@ -20,7 +20,7 @@ USER_AGENT = "DataCivicLab-SourceObservatory/1.0 (pattern-probe)"
 TIMEOUT_SECONDS = 30
 
 
-def probe_pattern(url: str, min_bytes: int = 0) -> dict[str, Any]:
+def probe_pattern(url: str, min_bytes: int = 0, user_agent: str | None = None) -> dict[str, Any]:
     """Probe singolo URL. Non alza eccezioni: errore → available=False.
 
     Args:
@@ -29,8 +29,11 @@ def probe_pattern(url: str, min_bytes: int = 0) -> dict[str, Any]:
             come disponibile. Serve per le fonti che rispondono 200 con corpo
             vuoto quando la risorsa non esiste ancora (es. MEF analisi_stat:
             200 + 0 byte per l'anno non pubblicato).
+        user_agent: UA della richiesta (default: quello del probe). Serve alle
+            fonti che bloccano i client generici (WAF) e dichiarano un UA nel
+            proprio ``[tool.observatory]``.
     """
-    client = HttpClient(timeout=TIMEOUT_SECONDS, user_agent=USER_AGENT)
+    client = HttpClient(timeout=TIMEOUT_SECONDS, user_agent=user_agent or USER_AGENT)
     result = client.get(url, allow_redirects=True, stream=True)
     if result.is_ok and result.response is not None:
         resp = result.response
