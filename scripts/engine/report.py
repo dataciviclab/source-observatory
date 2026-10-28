@@ -16,6 +16,7 @@ Funzioni pubbliche:
 from __future__ import annotations
 
 import math
+import time
 from collections import Counter
 from datetime import datetime, timezone
 
@@ -152,7 +153,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
         "no_year": no_year,
         "problematic": problematic[:3],
         "top_items": scored[:5],
-        "last_run": __import__("time").strftime("%Y-%m-%dT%H:%M:%SZ", __import__("time").gmtime()),
+        "last_run": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 
 
