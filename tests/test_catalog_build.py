@@ -531,3 +531,43 @@ class TestReferencedItemsIntegration:
         assert verdict["label"] == "REFERENCED_MISSING"
         assert "referenced_item_missing" in verdict["triggers"]
         assert "new_content_available" in verdict["triggers"]
+
+
+class TestUrlProbe:
+    """Adattatore ``probe_pattern`` → tri-stato di ``drift``, con cache per run."""
+
+    @pytest.mark.contract
+    def test_maps_result_to_tristate_and_caches(self, monkeypatch: pytest.MonkeyPatch):
+        import scripts.catalog.build as build_mod
+
+        calls: list[tuple[str, str | None]] = []
+
+        def fake_probe_pattern(
+            url: str,
+            min_bytes: int = 0,
+            user_agent: str | None = None,
+            read_body: bool = True,
+        ):
+            calls.append((url, user_agent))
+            if "ok" in url:
+                return {"url": url, "available": True, "http_code": "200"}
+            if "gone" in url:
+                return {"url": url, "available": False, "http_code": "404"}
+            if "blocked" in url:
+                return {"url": url, "available": False, "http_code": "403"}
+            return {"url": url, "available": False, "http_code": "-", "error": "timeout"}
+
+        monkeypatch.setattr("scripts.catalog.build.probe_pattern", fake_probe_pattern)
+
+        probe = build_mod._UrlProbe("UA-della-fonte")
+        assert probe("https://x/ok.csv") is True
+        assert probe("https://x/gone.csv") is False
+        assert probe("https://x/slow.csv") is None
+        # 403/429 (WAF, rate limit) non provano che la risorsa non esista.
+        assert probe("https://x/blocked.csv") is None
+        # Cache per run: lo stesso URL non si riprova.
+        assert probe("https://x/ok.csv") is True
+        assert probe.probed == 4
+        assert len(calls) == 4
+        # L'UA del config arriva al probe (fonti con WAF).
+        assert all(ua == "UA-della-fonte" for _, ua in calls)
