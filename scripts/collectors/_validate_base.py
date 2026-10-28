@@ -178,8 +178,6 @@ def _sniff_csv_duckdb(raw: bytes, sample_size: int) -> dict[str, Any]:
     """
     import tempfile
 
-    import duckdb
-
     result: dict[str, Any] = {
         "columns": [],
         "num_columns": 0,
@@ -189,6 +187,16 @@ def _sniff_csv_duckdb(raw: bytes, sample_size: int) -> dict[str, Any]:
         "sample": [],
         "error": None,
     }
+
+    try:
+        import duckdb
+    except ImportError:
+        # duckdb è nello stack item-level (extra `validate`), non nel motore
+        # base: senza di lui il fallback di sniff non è disponibile e si tiene
+        # il risultato del parser standard (che ha già fallito).
+        result["error"] = "duckdb non installato: fallback sniff non disponibile"
+        return result
+
     try:
         with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
             tmp.write(raw)

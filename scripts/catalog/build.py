@@ -3,9 +3,12 @@
 Flusso (per un repo dati con ``[tool.observatory]``):
 
   1. Config: ``pyproject.toml`` → dict fonte (compatibile collectors)
-  2. Probe: ``radar_check.probe_url`` sul ``base_url`` + streak dal catalog precedente
-  3. Inventory: ``collectors.dispatch`` → righe + parquet locale ``out/so/``
-  4. Validate: merge + probe item-level (riuso ``run_pipeline``) → ``out/so/validated.parquet``
+  2. Probe: ``engine.probe.probe_url`` sul ``base_url`` + streak dal catalog precedente
+  3. Inventory: ``collectors.dispatch`` → righe (+ parquet locale ``out/so/``)
+  4. Validate (opzionale): merge + probe item-level (``run_pipeline``) →
+     ``out/so/validated.parquet``. Richiede lo stack item-level
+     (``pandas``/``pyarrow``/``duckdb``, extra ``validate``): senza, questa
+     fase è saltata e il catalog esce con ``source_check`` vuoto.
   5. Report: ``engine.report.build_report`` (funzione pura) → dict catalog
   6. ``datasets_in_use`` dal ``registry/registry.json`` locale
   7. Validazione schema + scrittura ``registry/catalog.json``
@@ -23,7 +26,6 @@ from pathlib import Path
 from typing import Any
 
 import jsonschema
-import pandas as pd
 
 from scripts.catalog.config import load_observatory_config
 from scripts.catalog.drift import check_referenced_items
@@ -33,10 +35,24 @@ from scripts.catalog.upstream import load_upstream_map
 from scripts.collectors import dispatch
 from scripts.engine.probe import ProbeResult, probe_url
 from scripts.engine.report import build_report
-from scripts.pipeline.run_pipeline import run_merge, run_validate
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "catalog.schema.json"
 CATALOG_SCHEMA_VERSION = 1
+
+
+def _validate_stage() -> tuple[Any, Any] | None:
+    """Restituisce ``(run_merge, run_validate)`` se lo stack item-level c'è, altrimenti None.
+
+    Lo stadio item-level (merge dei gruppi + sniff CSV + parquet) richiede
+    ``pandas``/``pyarrow``/``duckdb``: sono dipendenze dell'extra ``validate``,
+    non del motore base. Senza, il catalog esce con ``source_check`` vuoto —
+    lo stesso stato di ``--skip-validate`` — invece di rompersi all'import.
+    """
+    try:
+        from scripts.pipeline.run_pipeline import run_merge, run_validate
+    except ImportError:
+        return None
+    return run_merge, run_validate
 
 
 def load_catalog_schema() -> dict[str, Any]:
@@ -158,15 +174,22 @@ def build_catalog(
         print(f"  ← {len(rows)} items")
 
     layout.out_dir.mkdir(parents=True, exist_ok=True)
-    inventory_df = pd.DataFrame(rows) if rows else pd.DataFrame()
-    if not inventory_df.empty:
+    validate_stage = _validate_stage()
+
+    # Parquet di inventario: artefatto operativo locale (out/so/, gitignored).
+    # Richiede pyarrow → solo con lo stack item-level installato.
+    inventory_df: Any = None
+    if rows and validate_stage is not None:
+        import pandas as pd
+
+        inventory_df = pd.DataFrame(rows)
         inventory_df["source_id"] = source_id
         inventory_df.to_parquet(layout.inventory_parquet, index=False)
         print(f"  💾 {layout.inventory_parquet}")
 
     # ── Validate (item-level) ────────────────────────────────────────────────
     validated_rows: list[dict[str, Any]] = []
-    if skip_validate or cfg.get("observation_mode") == "radar-only" or inventory_df.empty:
+    if skip_validate or cfg.get("observation_mode") == "radar-only" or not rows:
         reason = (
             "skip-validate"
             if skip_validate
@@ -175,7 +198,15 @@ def build_catalog(
             else "empty-inventory"
         )
         print(f"  ⏭️  validate skipped ({reason})")
+    elif validate_stage is None:
+        print(
+            "  ⏭️  validate skipped (stack item-level non installato: "
+            "pandas/pyarrow — extra `validate`)"
+        )
     else:
+        import pandas as pd
+
+        run_merge, run_validate = validate_stage
         print("  → validate")
         merged = run_merge(inventory_df)
         validated_rows_raw = run_validate(

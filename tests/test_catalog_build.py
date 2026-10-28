@@ -157,8 +157,11 @@ def _patch_engine(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr("scripts.catalog.build.probe_url", fake_probe)
     monkeypatch.setattr("scripts.catalog.build.dispatch", fake_dispatch)
-    monkeypatch.setattr("scripts.catalog.build.run_merge", fake_merge)
-    monkeypatch.setattr("scripts.catalog.build.run_validate", fake_validate)
+    # Lo stadio item-level è caricato lazy: si inietta dal suo unico punto
+    # di ingresso (`_validate_stage`) invece che dai simboli pandas-based.
+    monkeypatch.setattr(
+        "scripts.catalog.build._validate_stage", lambda: (fake_merge, fake_validate)
+    )
 
 
 # ── schema ───────────────────────────────────────────────────────────────────
@@ -282,6 +285,35 @@ class TestBuildCatalog:
         catalog = build_catalog(repo, skip_validate=True, write=False)
         assert catalog["source_check"]["total_scored"] == 0
         assert catalog["inventory"]["total_items"] == 3
+
+    @pytest.mark.contract
+    def test_validate_stage_none_when_stack_missing(self, monkeypatch: pytest.MonkeyPatch):
+        """Senza lo stack item-level, `_validate_stage` non solleva: ritorna None."""
+        import sys
+
+        import scripts.catalog.build as build_mod
+
+        monkeypatch.setitem(sys.modules, "scripts.pipeline.run_pipeline", None)
+        assert build_mod._validate_stage() is None
+
+    @pytest.mark.contract
+    def test_build_without_validate_stack(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+        """Motore base (senza pandas/pyarrow): catalog valido, source_check vuoto, no parquet."""
+        repo = _make_repo(tmp_path)
+        _patch_engine(monkeypatch)
+        monkeypatch.setattr("scripts.catalog.build._validate_stage", lambda: None)
+
+        catalog = build_catalog(repo, write=True)
+
+        assert catalog["inventory"]["total_items"] == 3
+        assert catalog["source_check"]["total_scored"] == 0
+        validate_catalog(catalog)
+
+        layout = resolve_layout(repo)
+        assert layout.catalog_path.exists()
+        # I parquet locali richiedono pyarrow: senza stack non si scrivono.
+        assert not layout.inventory_parquet.exists()
+        assert not layout.validated_parquet.exists()
 
     @pytest.mark.contract
     def test_radar_only_skips_inventory(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
