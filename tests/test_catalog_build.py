@@ -521,6 +521,8 @@ class TestUrlProbe:
                 return {"url": url, "available": True, "http_code": "200"}
             if "gone" in url:
                 return {"url": url, "available": False, "http_code": "404"}
+            if "blocked" in url:
+                return {"url": url, "available": False, "http_code": "403"}
             return {"url": url, "available": False, "http_code": "-", "error": "timeout"}
 
         monkeypatch.setattr("scripts.catalog.build.probe_pattern", fake_probe_pattern)
@@ -529,9 +531,11 @@ class TestUrlProbe:
         assert probe("https://x/ok.csv") is True
         assert probe("https://x/gone.csv") is False
         assert probe("https://x/slow.csv") is None
+        # 403/429 (WAF, rate limit) non provano che la risorsa non esista.
+        assert probe("https://x/blocked.csv") is None
         # Cache per run: lo stesso URL non si riprova.
         assert probe("https://x/ok.csv") is True
-        assert probe.probed == 3
-        assert len(calls) == 3
+        assert probe.probed == 4
+        assert len(calls) == 4
         # L'UA del config arriva al probe (fonti con WAF).
         assert all(ua == "UA-della-fonte" for _, ua in calls)

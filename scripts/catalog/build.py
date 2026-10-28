@@ -42,6 +42,10 @@ from scripts.source_report import build_report
 SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "catalog.schema.json"
 CATALOG_SCHEMA_VERSION = 1
 
+# Codici HTTP che indicano un blocco o un limite (WAF, rate limit, auth di
+# proxy): non provano che la risorsa non esista, quindi non sono drift.
+_INCONCLUSIVE_HTTP_CODES = frozenset({"401", "403", "407", "429"})
+
 
 class _UrlProbe:
     """Verifica l'esistenza di un URL consumato, con cache per run.
@@ -72,7 +76,8 @@ class _UrlProbe:
         result = probe_pattern(url, user_agent=self._user_agent, read_body=False)
         if result.get("available"):
             return True
-        if str(result.get("http_code") or "-") == "-":
+        code = str(result.get("http_code") or "-")
+        if code == "-" or code in _INCONCLUSIVE_HTTP_CODES:
             return None
         return False
 

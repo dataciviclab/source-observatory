@@ -97,9 +97,12 @@ altro endpoint dello stesso dato (AGID: `catalogocloud.agid.gov.it` vs
 package, mentre il repo consuma più anni). Quando l'inventario non conferma,
 `so-catalog` verifica l'URL consumato via HTTP: 2xx → `matched`, risposta di
 errore → `missing` (drift reale), errore di rete → `unknown` (nessun falso
-drift). Con inventario vuoto (fonti radar-only) il check funziona **solo**
-grazie a questa verifica. L'UA usato è quello di `[tool.observatory]`, per le
-fonti dietro WAF.
+drift). **401/403/407/429 sono `unknown`, non drift**: un blocco WAF o un rate
+limit non prova che la risorsa sia stata rimossa. I ref **templati**
+(`{year}`) non si verificano via HTTP: l'URL concreto lo genera la pipeline,
+quindi resta l'esito dell'inventario. Con inventario vuoto (fonti radar-only)
+il check funziona **solo** grazie a questa verifica. L'UA usato è quello di
+`[tool.observatory]`, per le fonti dietro WAF.
 
 **Query-string negli artifact**: l'URL che va al probe è quello intero, query
 inclusa (è l'identità della risorsa per molte fonti), quindi la query finisce
