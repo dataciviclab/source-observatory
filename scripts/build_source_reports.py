@@ -26,7 +26,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from scripts._constants import load_registry
-from scripts.source_report import build_report
+from scripts.engine.report import build_report
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 

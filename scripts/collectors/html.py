@@ -33,7 +33,7 @@ from lab_connectors.discovery.links import DataLink, extract_data_links, group_l
 from lab_connectors.http import HttpClient
 from lab_connectors.http.probe import probe_url_headers
 
-from scripts.portal import fetch_sitemap_pages, probe_html_portal
+from scripts.engine.portal import fetch_sitemap_pages, probe_html_portal
 
 from .base import CollectorResult
 
@@ -84,7 +84,7 @@ def _guess_topic(url: str, topic_hint: str | None) -> str:
 
 
 # ─── Sitemap Helper ───────────────────────────────────────────────────────────
-# fetch_sitemap_pages() è in scripts.portal (SO-specifico).
+# fetch_sitemap_pages() è in scripts.engine.portal (primitiva del motore).
 
 
 # ─── Shared row building & stats ─────────────────────────────────────────────

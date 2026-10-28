@@ -14,6 +14,16 @@ from pathlib import Path
 
 import jsonschema
 
+# Format scoring: definizione unica nel motore, re-export per il centrale.
+from scripts.engine.formats import (  # noqa: F401
+    FORMAT_CSV_KEYWORDS as FORMAT_CSV_KEYWORDS,
+)
+from scripts.engine.formats import (  # noqa: F401
+    FORMAT_PRIORITY as FORMAT_PRIORITY,
+)
+from scripts.engine.formats import (  # noqa: F401
+    format_score as format_score,
+)
 from so_mcp._paths import (
     CATALOG_INVENTORY_DIR_PATH as CATALOG_INVENTORY_DIR_PATH,  # noqa: F401 — re‑export per scripts
 )
@@ -70,45 +80,7 @@ def validate_schema(instance: dict, schema_name: str) -> None:
 
 
 # ── Format priority ranking ──────────────────────────────────────────────────
-# Usato da collector CKAN (_best_resource_url) e validatori (_validate_base).
-# Unico punto di definizione: aggiungere/formati qui.
-
-FORMAT_PRIORITY: dict[str, int] = {
-    "csv": 10,
-    "tsv": 10,
-    "json": 9,
-    "parquet": 8,
-    "xml": 7,
-    "xlsx": 6,
-    "xls": 5,
-    "ods": 4,
-    "zip": 3,
-    "ttl": 2,
-    "rdf": 2,
-    "pdf": 1,
-}
-
-FORMAT_CSV_KEYWORDS = {"csv", "tsv"}
-
-
-def format_score(fmt: str | float | None) -> int:
-    """Score format: piu' alto = piu' facile da pipeline."""
-    if fmt is None or not isinstance(fmt, str):
-        return 0
-    key = fmt.strip().lower()
-    if key in FORMAT_PRIORITY:
-        return FORMAT_PRIORITY[key]
-    if any(kw in key for kw in FORMAT_CSV_KEYWORDS):
-        return 10
-    if "json" in key:
-        return 9
-    if "xml" in key:
-        return 7
-    if "zip" in key:
-        return 3
-    if "ttl" in key or "rdf" in key:
-        return 2
-    return 1
+# Definizione unica nel motore: ``scripts.engine.formats`` (re-export in testa).
 
 
 # Canonical stale_reason taxonomy for catalog-inventory error classification.

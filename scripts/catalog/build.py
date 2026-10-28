@@ -6,7 +6,7 @@ Flusso (per un repo dati con ``[tool.observatory]``):
   2. Probe: ``radar_check.probe_url`` sul ``base_url`` + streak dal catalog precedente
   3. Inventory: ``collectors.dispatch`` → righe + parquet locale ``out/so/``
   4. Validate: merge + probe item-level (riuso ``run_pipeline``) → ``out/so/validated.parquet``
-  5. Report: ``source_report.build_report`` (funzione pura) → dict catalog
+  5. Report: ``engine.report.build_report`` (funzione pura) → dict catalog
   6. ``datasets_in_use`` dal ``registry/registry.json`` locale
   7. Validazione schema + scrittura ``registry/catalog.json``
 
@@ -31,9 +31,9 @@ from scripts.catalog.layout import RepoLayout, resolve_layout
 from scripts.catalog.pattern_probes import compute_new_content_trigger, run_pattern_probes
 from scripts.catalog.upstream import load_upstream_map
 from scripts.collectors import dispatch
+from scripts.engine.probe import ProbeResult, probe_url
+from scripts.engine.report import build_report
 from scripts.pipeline.run_pipeline import run_merge, run_validate
-from scripts.radar_check import ProbeResult, probe_url
-from scripts.source_report import build_report
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "schemas" / "catalog.schema.json"
 CATALOG_SCHEMA_VERSION = 1

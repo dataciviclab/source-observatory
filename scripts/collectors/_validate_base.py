@@ -13,7 +13,7 @@ from typing import Any
 
 from lab_connectors.http import HttpClient
 
-from scripts._constants import format_score as _format_score
+from scripts.engine.formats import format_score as _format_score
 
 _DEFAULT_TIMEOUT = 5
 _SNIFF_BYTES = 32 * 1024

@@ -17,7 +17,7 @@ from scripts.catalog.build import (
 )
 from scripts.catalog.layout import resolve_layout
 from scripts.collectors.base import CollectorResult
-from scripts.radar_check import ProbeResult
+from scripts.engine.probe import ProbeResult
 
 _PYPROJECT = """
 [project]
@@ -441,7 +441,7 @@ class TestReferencedItemsIntegration:
     ):
         """Il drift aggiunge il trigger ma non riscrive una label già impostata."""
         import scripts.catalog.build as build_mod
-        from scripts.source_report import build_report as real_build_report
+        from scripts.engine.report import build_report as real_build_report
 
         def report_with_partial(*args, **kwargs):
             catalog = real_build_report(*args, **kwargs)

@@ -72,7 +72,7 @@ def cmd_probe(args: argparse.Namespace) -> int:
         )
         return 2
 
-    from scripts.radar_check import probe_url
+    from scripts.engine.probe import probe_url
 
     url = cfg["base_url"]
     print(f"🔭 probing {args.source_id}: {url}")
