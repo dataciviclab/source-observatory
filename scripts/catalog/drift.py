@@ -290,14 +290,14 @@ def _script_type_state(ref_id: str, inventory_items: list[dict]) -> str:
     return UNKNOWN
 
 
+# Kind con matcher **booleano** sull'inventario (prova dichiarata: "inventory").
 _MATCHERS = {
     "dataflow": _match_dataflow,
     "ckan_dataset": _match_ckan_dataset,
-    "ckan_resource": _match_ckan_resource,
 }
 
-# Kind gestiti da uno state matcher a tre esiti (non da un matcher booleano).
-_STATE_MATCHERS = frozenset({"url", "script_type"})
+# Kind con esito a tre stati (prova "probe" o euristica dichiarata).
+_STATE_MATCHERS = frozenset({"url", "ckan_resource", "script_type"})
 
 
 def _state_for(
@@ -307,20 +307,30 @@ def _state_for(
     url_probe: UrlProbe | None = None,
     resource_probe: ResourceProbe | None = None,
 ) -> str:
-    """Esito del cross-check per un singolo ref upstream."""
+    """Esito del cross-check per un singolo ref upstream.
+
+    Primo passo: la tabella ``ABSENCE_EVIDENCE``. Un kind non dichiarato non
+    entra nel check (→ ``unknown``), e la prova dichiarata decide se l'assenza
+    può diventare ``missing``.
+    """
+    evidence = ABSENCE_EVIDENCE.get(kind)
+    if evidence is None:
+        return UNKNOWN
+
     if kind == "url":
         return _url_state(ref_id, inventory_items, url_probe)
     if kind == "ckan_resource":
         return _ckan_resource_state(ref_id, inventory_items, resource_probe)
     if kind == "script_type":
         return _script_type_state(ref_id, inventory_items)
+
     matcher = _MATCHERS.get(kind)
     if matcher is None:
         return UNKNOWN
     if matcher(ref_id, inventory_items):
         return MATCHED
     # Cosa serve per dichiarare `missing` lo decide la tabella, non il matcher.
-    return MISSING if ABSENCE_EVIDENCE.get(kind) == "inventory" else UNKNOWN
+    return MISSING if evidence == "inventory" else UNKNOWN
 
 
 def check_referenced_items(

@@ -399,15 +399,26 @@ class TestUrlQueryString:
 
 class TestAbsenceEvidence:
     @pytest.mark.contract
-    def test_every_handled_kind_is_declared(self):
-        """Un kind gestito ma non dichiarato non può dichiarare `missing`."""
-        handled = set(_MATCHERS) | set(_STATE_MATCHERS)
-        undeclared = handled - set(ABSENCE_EVIDENCE)
-        assert not undeclared, (
-            "Kind gestito senza dichiarazione di prova in ABSENCE_EVIDENCE: "
-            f"{sorted(undeclared)}. Serve 'inventory' (inventario completo) o "
-            "'probe' (verifica diretta dell'item)."
+    def test_declared_kinds_and_routable_kinds_coincide(self):
+        """La tabella è il registro dei kind gestiti: dichiarato ⇔ instradabile.
+
+        Un kind dichiarato ma non instradabile sarebbe una promessa vuota; un
+        kind instradabile ma non dichiarato potrebbe dichiarare `missing`
+        senza prova. Entrambe le direzioni sono un errore.
+        """
+        declared = set(ABSENCE_EVIDENCE)
+        routable = set(_MATCHERS) | set(_STATE_MATCHERS)
+        assert declared == routable, (
+            f"Dichiarati ma non instradabili: {sorted(declared - routable)}; "
+            f"instradabili ma non dichiarati: {sorted(routable - declared)}."
         )
+
+    @pytest.mark.contract
+    def test_undeclared_kind_never_claims_missing(self):
+        """Un kind fuori tabella non entra nel check: al massimo `unknown`."""
+        ds = [_ds("x", [{"kind": "kind_inesistente", "id": "qualcosa"}])]
+        result = check_referenced_items(ds, _INV)
+        assert result["checked"] == 0  # filtrato prima di arrivare a `_state_for`
 
     @pytest.mark.contract
     def test_declared_evidence_values_are_known(self):
