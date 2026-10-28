@@ -68,7 +68,8 @@ class _UrlProbe:
         return self._cache[url]
 
     def _probe(self, url: str) -> bool | None:
-        result = probe_pattern(url, user_agent=self._user_agent)
+        # Solo esistenza: nessuna lettura del corpo (basta lo status).
+        result = probe_pattern(url, user_agent=self._user_agent, read_body=False)
         if result.get("available"):
             return True
         if str(result.get("http_code") or "-") == "-":

@@ -20,7 +20,12 @@ USER_AGENT = "DataCivicLab-SourceObservatory/1.0 (pattern-probe)"
 TIMEOUT_SECONDS = 30
 
 
-def probe_pattern(url: str, min_bytes: int = 0, user_agent: str | None = None) -> dict[str, Any]:
+def probe_pattern(
+    url: str,
+    min_bytes: int = 0,
+    user_agent: str | None = None,
+    read_body: bool = True,
+) -> dict[str, Any]:
     """Probe singolo URL. Non alza eccezioni: errore → available=False.
 
     Args:
@@ -32,14 +37,35 @@ def probe_pattern(url: str, min_bytes: int = 0, user_agent: str | None = None) -
         user_agent: UA della richiesta (default: quello del probe). Serve alle
             fonti che bloccano i client generici (WAF) e dichiarano un UA nel
             proprio ``[tool.observatory]``.
+        read_body: se False non legge il corpo (basta lo status). Usato dalla
+            verifica di esistenza degli URL consumati (drift), dove leggere
+            N file grandi sarebbe inutile. In quel caso ``content_length``
+            resta ``None``.
     """
     client = HttpClient(timeout=TIMEOUT_SECONDS, user_agent=user_agent or USER_AGENT)
     result = client.get(url, allow_redirects=True, stream=True)
     if result.is_ok and result.response is not None:
         resp = result.response
         is_2xx = 200 <= resp.status_code < 300
-        length = len(resp.content) if resp.content is not None else 0
-        below_min_bytes = is_2xx and min_bytes > 0 and length < min_bytes
+        length: int | None = None
+        if read_body:
+            try:
+                length = len(resp.content) if resp.content is not None else 0
+            except Exception as exc:  # stream resettato, decode, connessione caduta
+                # Non concludente: ``http_code`` "-" come per gli errori di rete.
+                return {
+                    "url": url,
+                    "available": False,
+                    "http_code": "-",
+                    "error": f"body read failed: {exc}"[:120],
+                }
+        else:
+            # Corpo non letto: chiudi la risposta per non lasciare la
+            # connessione appesa (il protocollo non espone ``close``).
+            closer = getattr(resp, "close", None)
+            if callable(closer):
+                closer()
+        below_min_bytes = is_2xx and min_bytes > 0 and (length or 0) < min_bytes
         outcome: dict[str, Any] = {
             "url": url,
             "available": is_2xx and not below_min_bytes,

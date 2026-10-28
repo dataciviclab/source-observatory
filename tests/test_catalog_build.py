@@ -510,7 +510,12 @@ class TestUrlProbe:
 
         calls: list[tuple[str, str | None]] = []
 
-        def fake_probe_pattern(url: str, min_bytes: int = 0, user_agent: str | None = None):
+        def fake_probe_pattern(
+            url: str,
+            min_bytes: int = 0,
+            user_agent: str | None = None,
+            read_body: bool = True,
+        ):
             calls.append((url, user_agent))
             if "ok" in url:
                 return {"url": url, "available": True, "http_code": "200"}

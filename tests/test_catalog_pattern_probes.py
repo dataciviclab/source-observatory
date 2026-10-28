@@ -186,3 +186,66 @@ class TestComputeNewContentTrigger:
         prev = {"pattern_probes": [{"url": "https://x/2026.zip", "available": False}]}
         current = [{"url": "https://x/2026.zip", "available": False}]
         assert compute_new_content_trigger(current, prev) is False
+
+
+class TestProbePatternRobustness:
+    """Il probe non deve sollevare: gira sul percorso del catalog per ogni URL."""
+
+    @pytest.mark.pure_unit
+    def test_body_read_failure_is_inconclusive(self, monkeypatch):
+        """Stream resettato durante la lettura → http_code "-", non 4xx finto."""
+
+        class FakeResp:
+            status_code = 200
+
+            @property
+            def content(self):
+                raise RuntimeError("Stream 1 was reset by remote peer")
+
+        class FakeResult:
+            is_ok = True
+            response = FakeResp()
+            err = None
+
+        class FakeClient:
+            def __init__(self, **kw): ...
+
+            def get(self, url, **kw):
+                return FakeResult()
+
+        monkeypatch.setattr("scripts.catalog.pattern_probes.HttpClient", FakeClient)
+        r = probe_pattern("https://ex.it/big.csv")
+        assert r["available"] is False
+        assert r["http_code"] == "-"
+        assert "body read failed" in r["error"]
+
+    @pytest.mark.pure_unit
+    def test_read_body_false_does_not_read(self, monkeypatch):
+        """Verifica di esistenza: basta lo status, nessuna lettura del corpo."""
+
+        class FakeResp:
+            status_code = 200
+
+            @property
+            def content(self):
+                raise AssertionError("il corpo non deve essere letto")
+
+            def close(self):
+                self.closed = True
+
+        class FakeResult:
+            is_ok = True
+            response = FakeResp()
+            err = None
+
+        class FakeClient:
+            def __init__(self, **kw): ...
+
+            def get(self, url, **kw):
+                return FakeResult()
+
+        monkeypatch.setattr("scripts.catalog.pattern_probes.HttpClient", FakeClient)
+        r = probe_pattern("https://ex.it/big.csv", read_body=False)
+        assert r["available"] is True
+        assert r["http_code"] == "200"
+        assert r["content_length"] is None

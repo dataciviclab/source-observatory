@@ -188,11 +188,7 @@ class TestUrlProbe:
     @pytest.mark.pure_unit
     def test_probe_confirms_url_that_inventory_cannot_cover(self):
         """L'area è coperta ma l'URL esatto no → il probe conferma che esiste."""
-        ds = [
-            _ds(
-                "fsc", [{"kind": "url", "id": "https://docs.ex.it/{year}_VAR_FSC_9_{year}_csv.zip"}]
-            )
-        ]
+        ds = [_ds("fsc", [{"kind": "url", "id": "https://other.ex.it/annuale-2025.csv"}])]
         probed: list[str] = []
 
         def probe(url: str) -> bool | None:
@@ -202,7 +198,7 @@ class TestUrlProbe:
         result = check_referenced_items(ds, _INV, url_probe=probe)
         assert result["matched"] == 1
         assert result["missing"] == []
-        assert len(probed) == 1
+        assert probed == ["https://other.ex.it/annuale-2025.csv"]
 
     @pytest.mark.pure_unit
     def test_probe_detects_real_removal(self):
@@ -237,6 +233,30 @@ class TestUrlProbe:
         result = check_referenced_items(ds, [], url_probe=lambda url: True)
         assert result["checked"] == 1
         assert result["matched"] == 1
+
+    @pytest.mark.pure_unit
+    def test_templated_url_is_not_probed(self):
+        """Un ref con placeholder non si verifica via HTTP: l'URL concreto lo
+        genera la pipeline. Il probe lo sondarebbe con `{year}` letterale."""
+        ds = [
+            _ds(
+                "iva",
+                [
+                    {
+                        "kind": "url",
+                        "id": "https://f.ex.it/index.php?tree={year}CIVATOT0201&export=3",
+                    }
+                ],
+            )
+        ]
+
+        def probe(url: str) -> bool | None:
+            raise AssertionError(f"il probe non deve essere chiamato: {url}")
+
+        result = check_referenced_items(ds, _INV, url_probe=probe)
+        # Nessun match in inventario e nessun probe → non si conclude drift.
+        assert result["missing"] == []
+        assert len(result["unknown"]) == 1
 
 
 # ── URL a query-string: la query è l'identità della risorsa ──────────────────

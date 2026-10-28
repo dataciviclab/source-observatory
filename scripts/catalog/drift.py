@@ -102,13 +102,20 @@ def _url_state(ref_id: str, inventory_items: list[dict], url_probe: UrlProbe | N
     per package, mentre il repo consuma piu' anni). Quindi:
 
       1. se l'inventario conferma l'URL → ``matched``, senza rete;
-      2. altrimenti, se un ``url_probe`` e' configurato, decide la verifica
-         dell'URL consumato: esiste → ``matched``, non esiste → ``missing``,
-         non concludente (errore di rete) → ``unknown`` (niente falso drift);
-      3. senza probe, resta l'euristica sull'inventario (comportamento storico).
+      2. altrimenti, se un ``url_probe`` e' configurato e l'URL e' concreto
+         (nessun placeholder ``{year}``), decide la verifica dell'URL consumato:
+         esiste → ``matched``, non esiste → ``missing``, non concludente
+         (errore di rete) → ``unknown`` (niente falso drift);
+      3. senza probe, o con URL templato, resta l'euristica sull'inventario
+         (comportamento storico).
+
+    I ref templati non si possono verificare via HTTP: l'URL concreto lo genera
+    la pipeline a runtime (``{year}``), quindi l'unico oracolo resta l'inventario.
     """
     state = _url_state_from_inventory(ref_id, inventory_items)
     if state == MATCHED or url_probe is None:
+        return state
+    if _URL_PLACEHOLDER_RE.search(ref_id):
         return state
 
     verdict = url_probe(ref_id)
