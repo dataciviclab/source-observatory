@@ -30,6 +30,9 @@ jobs:
 
       - name: Python setup
         uses: dataciviclab/.github/actions/python-setup@main
+        with:
+          # Ruolo centrale: inventory + report + artifact (duckdb/pandas/gcs).
+          install-extras: "central"
 
       # ── GCS Auth ──────────────────────────────────────────────────────────
       - name: Authenticate to Google Cloud

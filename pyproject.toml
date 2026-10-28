@@ -23,18 +23,34 @@ classifiers = [
 ]
 
 dependencies = [
+  # Motore (engine): probe + inventory + drift + catalog.json.
+  # Tutto ciò che serve a `so-catalog` senza lo stadio item-level.
   "requests>=2.34.2",
   "pyyaml>=6.0.3",
-  "ruamel.yaml>=0.19.1",
-  "duckdb>=1.5.3",
-  "pandas>=3.0.3",
-  "pyarrow>=24.0.0",
   "jsonschema>=4.26.0",
-  "ddgs>=9.14.4",
-  "lab-connectors[duckdb,gcs,mcp] @ git+https://github.com/dataciviclab/lab-connectors.git",
+  "lab-connectors @ git+https://github.com/dataciviclab/lab-connectors.git",
 ]
 
 [project.optional-dependencies]
+# Stadio item-level del motore: merge dei gruppi, sniff CSV, parquet locali.
+validate = [
+  "duckdb>=1.5.3",
+  "pandas>=3.0.3",
+  "pyarrow>=24.0.0",
+]
+# Ruolo centrale: radar/report/inventory + artifact su GCS.
+# (duckdb/pandas/pyarrow ripetuti: gli extra non si compongono tra loro.)
+central = [
+  "duckdb>=1.5.3",
+  "pandas>=3.0.3",
+  "pyarrow>=24.0.0",
+  "ruamel.yaml>=0.19.1",
+  "lab-connectors[gcs] @ git+https://github.com/dataciviclab/lab-connectors.git",
+]
+# Server MCP (so_mcp): client MCP + helper.
+mcp = [
+  "lab-connectors[mcp] @ git+https://github.com/dataciviclab/lab-connectors.git",
+]
 dev = [
   "pytest>=9.0.3",
   "pytest-cov>=6.0.0",

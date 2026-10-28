@@ -1,10 +1,10 @@
-"""Smoke test per scripts/source_report.py: aggregazioni, build_report, verdict."""
+"""Smoke test per scripts/engine/report.py: aggregazioni, build_report, verdict."""
 
 from __future__ import annotations
 
 import pytest
 
-from scripts.source_report import (
+from scripts.engine.report import (
     aggregate_inventory_rows,
     aggregate_source_check,
     build_report,

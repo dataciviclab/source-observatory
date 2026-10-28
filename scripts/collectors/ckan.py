@@ -159,7 +159,7 @@ def _best_resource_url(item: dict) -> str | None:
         if not url or not isinstance(url, str) or not url.strip():
             continue
         fmt = r.get("format") or ""
-        from scripts._constants import format_score
+        from scripts.engine.formats import format_score
 
         score = format_score(fmt)
         if score > best_score:

@@ -1,6 +1,11 @@
 """
 Source Report — logica di aggregazione e costruzione report per fonte.
 
+Primitiva del motore: è **stdlib puro** e la usano entrambi i ruoli — il
+centrale (``scripts/build_source_reports.py``, report di fonte in
+``data/reports/``) e il motore (``scripts/catalog/build.py``, ``catalog.json``).
+Stava in ``scripts/source_report.py``; ora il centrale importa da qui.
+
 Funzioni pubbliche:
     aggregate_inventory_rows(rows)       → formato/anni/organizzazioni
     aggregate_source_check(results)      → qualità item-level
@@ -11,12 +16,9 @@ Funzioni pubbliche:
 from __future__ import annotations
 
 import math
+import time
 from collections import Counter
 from datetime import datetime, timezone
-from pathlib import Path
-
-REPO_ROOT = Path(__file__).resolve().parent.parent
-
 
 # ── AGGREGAZIONI ──────────────────────────────────────────────────────────────
 
@@ -151,7 +153,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
         "no_year": no_year,
         "problematic": problematic[:3],
         "top_items": scored[:5],
-        "last_run": __import__("time").strftime("%Y-%m-%dT%H:%M:%SZ", __import__("time").gmtime()),
+        "last_run": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
 
 

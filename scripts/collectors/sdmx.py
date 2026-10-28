@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 import xml.etree.ElementTree as ET
 from typing import Any
 
@@ -204,9 +205,7 @@ def validate_items(
         "readiness_score": 5 if reachable else 0,
         "format": "SDMX",
         "error": "; ".join(issues) if issues else None,
-        "validated_at": __import__("time").strftime(
-            "%Y-%m-%dT%H:%M:%SZ", __import__("time").gmtime()
-        ),
+        "validated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "endpoint": api_base,
         "dataflow_id": first.get("item_id"),
         "dimensions": dimensions or None,

@@ -152,6 +152,29 @@ class TestProbeReachability:
 # ── Unit: CSV sniffing (FAKE, deterministico) ────────────────────────────────
 
 
+class TestDuckdbOptional:
+    """Lo stack item-level è opzionale: senza duckdb il fallback non solleva."""
+
+    def test_sniff_duckdb_without_duckdb_returns_error(self, monkeypatch):
+        import sys
+
+        monkeypatch.setitem(sys.modules, "duckdb", None)
+        result = _sniff_csv_duckdb(b"a,b\n1,2\n", 100)
+        assert result["columns"] == []
+        assert "duckdb" in (result["error"] or "")
+
+    def test_sniff_csv_schema_works_without_duckdb(self, monkeypatch, fake_http):
+        """Il percorso standard (csv.Sniffer) non dipende da duckdb."""
+        import sys
+
+        monkeypatch.setitem(sys.modules, "duckdb", None)
+        csv_body = "ANNO,REGIONE\n2024,Lazio\n"
+        fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
+        monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
+        result = sniff_csv_schema(MEF_URL)
+        assert result["columns"] == ["ANNO", "REGIONE"]
+
+
 class TestSniffCSVSchema:
     def test_real_csv(self, monkeypatch, fake_http):
         """CSV reale (MEF) → colonne e dati."""

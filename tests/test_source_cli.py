@@ -25,10 +25,10 @@ base_url = "https://ex.it/api/3/action/package_list"
         monkeypatch.chdir(tmp_path)
 
         # Monkeypatch probe_url: niente rete nel test pure_unit
-        from scripts.radar_check import ProbeResult
+        from scripts.engine.probe import ProbeResult
 
         monkeypatch.setattr(
-            "scripts.radar_check.probe_url",
+            "scripts.engine.probe.probe_url",
             lambda url: ProbeResult(status="GREEN", http_code="200"),
         )
         rc = main(["probe", "demo"])

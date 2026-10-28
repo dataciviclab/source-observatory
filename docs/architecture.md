@@ -4,6 +4,11 @@
 
 ```
 scripts/
+  engine/              # package: primitive del MOTORE (condivise col centrale)
+    formats.py         # scoring dei formati (collector + validatori)
+    probe.py           # probe HTTP di una fonte (radar + catalog)
+    portal.py          # profiling portali HTML (sitemap, RSS, JSON API)
+    report.py          # aggregazioni + build report di fonte (funzione pura)
   collectors/          # package: logica di inventory e validazione per protocollo
     base.py            # utility condivise: CollectorResult, strip_query
     ckan.py            # collector + validatore CKAN
@@ -11,17 +16,22 @@ scripts/
     sparql.py          # collector + validatore SPARQL
     html.py            # collector HTML (scraping pagine con link a dati)
     _validate_base.py  # validazione comune: HEAD probe + sniff CSV + readiness_score
+  catalog/             # package: engine per-repo (so-catalog → registry/catalog.json)
   pipeline/
     run_pipeline.py    # orchestrazione: merge → validate in sequenza
     _merge_utils.py    # merge/dedup: normalizzazione titoli, dataset_group, slug
   build_catalog_inventory.py   # entry point: enumera fonti → parquet
   build_source_reports.py      # entry point: produce report per fonte + dashboard
-  source_report.py             # logica di aggregazione e scoring
   radar_check.py               # health check HTTP su tutte le fonti (radar)
   sync_datasets_in_use.py      # sincronizza datasets_in_use dal catalogo DI
-  _constants.py                # costanti condivise tra script
+  _constants.py                # costanti/path del centrale (ri-esporta engine.formats)
   gha/                         # helper per CI (gcs upload, publish summary)
 ```
+
+**Confine del motore**: `engine/`, `collectors/`, `catalog/` e `pipeline/` sono il
+motore — ciò che un repo dati installa per generare il proprio catalog. Non
+importano moduli del centrale (`_constants`, `radar_check`, `so_mcp`): è il
+centrale a importare dal motore. Il gate è `tests/test_engine_boundary.py`.
 
 ## Funnel attuale
 
