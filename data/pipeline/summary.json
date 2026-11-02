@@ -1,15 +1,15 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-10-26T09:18:42Z",
-  "total_groups": 11501,
-  "reachable": 7414,
-  "unreachable": 4087,
-  "csv_with_schema": 2993,
+  "generated_at": "2026-11-02T11:38:22Z",
+  "total_groups": 11128,
+  "reachable": 7056,
+  "unreachable": 4072,
+  "csv_with_schema": 3079,
   "by_source": {
     "openbdap": {
-      "total": 3868,
-      "reachable": 5,
-      "csv": 5
+      "total": 3882,
+      "reachable": 2,
+      "csv": 0
     },
     "istat_sdmx": {
       "total": 3580,
@@ -19,17 +19,12 @@
     "inps": {
       "total": 1809,
       "reachable": 1807,
-      "csv": 1772
+      "csv": 1773
     },
     "openga": {
       "total": 405,
-      "reachable": 327,
-      "csv": 316
-    },
-    "dati_cultura": {
-      "total": 335,
-      "reachable": 335,
-      "csv": 0
+      "reachable": 405,
+      "csv": 405
     },
     "unioncamere": {
       "total": 256,
@@ -51,11 +46,6 @@
       "reachable": 100,
       "csv": 0
     },
-    "dati_camera": {
-      "total": 99,
-      "reachable": 99,
-      "csv": 0
-    },
     "noipa_sparql": {
       "total": 99,
       "reachable": 99,
@@ -70,6 +60,11 @@
       "total": 56,
       "reachable": 44,
       "csv": 44
+    },
+    "agcm": {
+      "total": 51,
+      "reachable": 5,
+      "csv": 4
     },
     "anac": {
       "total": 48,
@@ -107,9 +102,9 @@
       "csv": 32
     },
     "aifa": {
-      "total": 29,
-      "reachable": 29,
-      "csv": 29
+      "total": 30,
+      "reachable": 30,
+      "csv": 30
     },
     "mim_opendata": {
       "total": 28,
@@ -155,11 +150,6 @@
       "total": 5,
       "reachable": 2,
       "csv": 2
-    },
-    "agcm": {
-      "total": 5,
-      "reachable": 5,
-      "csv": 4
     },
     "cortecostituzionale": {
       "total": 5,

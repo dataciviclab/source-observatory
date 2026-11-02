@@ -1,6 +1,6 @@
 {
   "source_id": "openbdap",
-  "generated_at": "2026-10-26T09:18:43+00:00",
+  "generated_at": "2026-11-02T11:38:24+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,75 +11,70 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario senza intake o monitor diffuso.",
-    "last_probed": "2026-10-26"
+    "last_probed": "2026-10-28"
   },
   "health": {
-    "radar_status": "YELLOW",
+    "radar_status": "GREEN",
     "http_code": "200",
-    "note": "CKAN API returned non-JSON content",
+    "note": null,
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 3869,
+    "total_items": 3882,
     "method": "package_list",
-    "captured_at": "2026-10-26T09:08:31+00:00",
+    "captured_at": "2026-11-02T11:26:46+00:00",
     "baseline_value": 3772,
     "baseline_date": "2026-04-02",
     "freshness_hours": 0.2,
-    "delta": 97,
-    "delta_pct": 2.6,
+    "delta": 110,
+    "delta_pct": 2.9,
     "formats": {
-      "?": 3847,
-      "CSV,XML": 20,
-      "1710_PRESTITI OBBLIGAZIONARI - CONSISTENZA.PDF,CSV,XML": 1,
-      "CSV,1493_SIOPE MOVIMENTI CUMULATI MENSILI DI ENTRATA.PDF,XML": 1
+      "?": 3878,
+      "CSV,XML": 4
     }
   },
   "source_check": {
-    "last_run": "2026-10-26T09:18:43Z",
-    "total_scored": 3868,
-    "reachable": 5,
-    "csv_count": 21,
-    "with_csv_schema": 5,
+    "last_run": "2026-11-02T11:38:24Z",
+    "total_scored": 3882,
+    "reachable": 2,
+    "csv_count": 4,
+    "with_csv_schema": 0,
     "avg_readiness": 0.0,
     "top_items": [
       {
-        "name": "openbdap/legge-di-bilancio-03-sviluppo-economico-dpcm-2209-art3",
-        "score": 9,
-        "year_range": [
-          2018,
-          2018
-        ],
-        "format": "csv,xml",
-        "reachable": true
-      },
-      {
         "name": "openbdap/modello-di-rilevazione-del-conto-economico-degli-enti-del-ssn-a-livello-nazional",
-        "score": 8,
+        "score": 2,
         "year_range": null,
         "format": "csv,xml",
         "reachable": true
       },
       {
         "name": "openbdap/pagamenti-bilancio-dello-stato-per-missione",
-        "score": 8,
+        "score": 2,
         "year_range": null,
         "format": "csv,xml",
         "reachable": true
       },
       {
-        "name": "openbdap/provvedimento-di-assestamento-approvato-triennio-g8-od-action-plan-capitolo",
-        "score": 8,
+        "name": "openbdap/gestione-finanziaria-spese-enti-locali",
+        "score": 1,
         "year_range": null,
         "format": "csv,xml",
-        "reachable": true
+        "reachable": false
       },
       {
-        "name": "openbdap/trentino-alto-adige-gestione-finanziaria-spese-enti-locali",
-        "score": 8,
+        "name": "openbdap/siope-movimenti-mensili-delle-disponibilita-liquide",
+        "score": 1,
         "year_range": null,
         "format": "csv,xml",
-        "reachable": true
+        "reachable": false
+      },
+      {
+        "name": "openbdap/00123bd0-7863-4499-92be-b1dea2126560",
+        "score": 0,
+        "year_range": null,
+        "format": "",
+        "reachable": false
       }
     ],
     "coverage_pct": 100.0,
@@ -87,7 +82,7 @@
       "score": 10.0,
       "perc_aperto": 0.0,
       "perc_reachable": 0.1,
-      "total": 3868,
+      "total": 3882,
       "fonte": "source_check"
     }
   },

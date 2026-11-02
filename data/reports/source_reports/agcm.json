@@ -1,6 +1,6 @@
 {
   "source_id": "agcm",
-  "generated_at": "2026-10-26T09:18:43+00:00",
+  "generated_at": "2026-11-02T11:38:24+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it (AGCM). 53 dataset su concorrenza e mercato: rating di legalita' (elenchi settimanali imprese con rating), operazioni di concentrazione 2021-2025.\n",
-    "last_probed": "2026-10-26"
+    "last_probed": "2026-10-28"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,26 +20,32 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 58,
+    "total_items": 104,
     "method": "package_search",
-    "captured_at": "2026-10-26T09:08:31+00:00",
+    "captured_at": "2026-11-02T11:26:46+00:00",
     "baseline_value": 53,
     "baseline_date": "2026-06-04",
     "freshness_hours": 0.2,
-    "delta": 5,
-    "delta_pct": 9.4,
+    "delta": 51,
+    "delta_pct": 96.2,
     "formats": {
       "CSV,JSON": 33,
-      "JSON,CSV": 25
+      "JSON,CSV": 25,
+      "ZIP,XML,PDF": 11,
+      "ZIP,PDF,XML": 11,
+      "PDF,XML,ZIP": 9,
+      "PDF,ZIP,XML": 7,
+      "XML,ZIP,PDF": 5,
+      "XML,PDF,ZIP": 3
     }
   },
   "source_check": {
-    "last_run": "2026-10-26T09:18:43Z",
-    "total_scored": 5,
+    "last_run": "2026-11-02T11:38:24Z",
+    "total_scored": 51,
     "reachable": 5,
     "csv_count": 5,
     "with_csv_schema": 4,
-    "avg_readiness": 8.2,
+    "avg_readiness": 1.7,
     "top_items": [
       {
         "name": "agcm/istruttorie-tutela-del-consumatore",
@@ -82,19 +88,19 @@
         "reachable": true
       },
       {
-        "name": "agcm/istruttorie-concorrenza-dati-di-sintesi",
+        "name": "agcm/c12586b-ignazio-messina-cterminal-san-giorgio",
         "score": 1,
         "year_range": null,
-        "format": "csv,json",
-        "reachable": true
+        "format": "zip,pdf,xml",
+        "reachable": false
       }
     ],
-    "coverage_pct": 8.6,
+    "coverage_pct": 49.0,
     "formato_aperto": {
-      "score": 5.0,
+      "score": 10.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 100.0,
-      "total": 5,
+      "perc_reachable": 9.8,
+      "total": 51,
       "fonte": "source_check"
     }
   },

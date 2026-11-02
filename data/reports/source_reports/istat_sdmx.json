@@ -1,6 +1,6 @@
 {
   "source_id": "istat_sdmx",
-  "generated_at": "2026-10-26T09:18:43+00:00",
+  "generated_at": "2026-11-02T11:38:24+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,18 +11,18 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Endpoint SDMX ricco e ad alto valore per scouting e source-check.",
-    "last_probed": "2026-10-26"
+    "last_probed": "2026-10-28"
   },
   "health": {
-    "radar_status": "RED",
-    "http_code": "500",
+    "radar_status": "GREEN",
+    "http_code": "200",
     "note": null,
     "ssl_fallback": false
   },
   "inventory": {
     "total_items": 4953,
     "method": "dataflow_count",
-    "captured_at": "2026-10-26T09:08:31+00:00",
+    "captured_at": "2026-11-02T11:26:46+00:00",
     "baseline_value": 4212,
     "baseline_date": "2026-04-10",
     "freshness_hours": 0.2,
@@ -33,7 +33,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-10-26T09:18:43Z",
+    "last_run": "2026-11-02T11:38:24Z",
     "total_scored": 3580,
     "reachable": 3580,
     "csv_count": 0,
@@ -119,12 +119,11 @@
     }
   ],
   "operational_verdict": {
-    "label": "DOWN",
-    "score": "down",
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
     "triggers": [
-      "radar_red",
       "inventory_changed"
     ],
-    "next_action": "investigate downtime"
+    "next_action": "review inventory changes"
   }
 }

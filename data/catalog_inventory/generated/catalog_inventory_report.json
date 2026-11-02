@@ -1,7 +1,13 @@
 {
-  "captured_at": "2026-10-26T09:08:31+00:00",
+  "captured_at": "2026-11-02T11:26:46+00:00",
   "registry_path": "/home/runner/work/source-observatory/source-observatory/data/radar/sources_registry.yaml",
   "sources": {
+    "istat_sdmx": {
+      "status": "error",
+      "protocol": "sdmx",
+      "error": "SDMX fetch failed for istat_sdmx on https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
+      "method": "dataflow_count"
+    },
     "anac": {
       "status": "ok",
       "protocol": "ckan",
@@ -15,10 +21,35 @@
       "method": "package_search"
     },
     "openbdap": {
-      "status": "error",
+      "status": "ok",
       "protocol": "ckan",
-      "error": "CKAN API returned non-JSON content (status=200, content_type=text/html, preview='<!DOCTYPE html> <html lang=\"it\">   <head>     <meta charset=\"UTF-8\" />     <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />     <meta name=\"viewport\" content=\"width=device-width, initial-scale=')",
-      "method": "package_list"
+      "rows": 3882,
+      "method": "package_list",
+      "warning": {
+        "type": "package_list_with_package_show_sample",
+        "message": "Enrichment via package_show_sample per openbdap.",
+        "rows_enriched": 4,
+        "rows_missing_metadata": 3878,
+        "package_search_error": "CKAN package_search disabled for openbdap (timeout sistematico a 60s).",
+        "package_show_sample_warning": {
+          "type": "package_show_sample_partial",
+          "message": "Arricchimento sample via package_show completato con errori parziali.",
+          "sample_size": 25,
+          "rows_enriched": 4,
+          "errors_preview": [
+            "476b12f1-8c54-413d-b1bd-fa43bd6dabb7: 502 Server Error: Proxy Error for url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_show?id=476b12f1-8c54-413d-b1bd-fa43bd6dabb7",
+            "40c16e0e-a296-48cf-ae43-a761fb9f2f0d: 503 Server Error: Service Unavailable for url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_show?id=40c16e0e-a296-48cf-ae43-a761fb9f2f0d",
+            "5556185c-54d3-49e5-bdcd-5ad97a2de728: 503 Server Error: Service Unavailable for url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_show?id=5556185c-54d3-49e5-bdcd-5ad97a2de728",
+            "d818ce47-dc64-4df6-bf98-7cc447059b78: 503 Server Error: Service Unavailable for url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_show?id=d818ce47-dc64-4df6-bf98-7cc447059b78",
+            "3b8564c1-94ea-450b-8850-ab402a4cf41f: 503 Server Error: Service Unavailable for url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_show?id=3b8564c1-94ea-450b-8850-ab402a4cf41f",
+            "6350246c-052f-421c-ab63-5aaf56c4c1cf: 503 Server Error: Service Unavailable for url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_show?id=6350246c-052f-421c-ab63-5aaf56c4c1cf",
+            "d369cc8e-8932-4699-b667-ba37300934c3: 503 Server Error: Service Unavailable for url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_show?id=d369cc8e-8932-4699-b667-ba37300934c3",
+            "47ac28bd-a16f-474e-8a19-4c64a24e2cc1: 503 Server Error: Service Unavailable for url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_show?id=47ac28bd-a16f-474e-8a19-4c64a24e2cc1",
+            "9b262dcc-3fd9-4312-9ffd-cdb2815679c5: 503 Server Error: Service Unavailable for url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_show?id=9b262dcc-3fd9-4312-9ffd-cdb2815679c5",
+            "5faf6350-bdd4-49ec-bd0c-01858c135202: 503 Server Error: Service Unavailable for url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_show?id=5faf6350-bdd4-49ec-bd0c-01858c135202"
+          ]
+        }
+      }
     },
     "inail_opendata": {
       "status": "ok",
@@ -1661,8 +1692,12 @@
     "dati_camera": {
       "status": "ok",
       "protocol": "sparql",
-      "rows": 104,
-      "method": "sparql_query"
+      "rows": 0,
+      "method": "sparql_query",
+      "warning": {
+        "type": "sparql_error",
+        "message": "SPARQL query failed on https://dati.camera.it/sparql (POST e GET fallback entrambi falliti)"
+      }
     },
     "dati_senato": {
       "status": "ok",
@@ -1671,10 +1706,14 @@
       "method": "named_graphs"
     },
     "dati_cultura": {
-      "status": "error",
+      "status": "ok",
       "protocol": "sparql",
-      "error": "Source dati_cultura timed out after 120s",
-      "method": "sparql_query"
+      "rows": 0,
+      "method": "sparql_query",
+      "warning": {
+        "type": "sparql_error",
+        "message": "SPARQL query failed on https://dati.cultura.gov.it/sparql (POST e GET fallback entrambi falliti)"
+      }
     },
     "ispra_linked_data": {
       "status": "ok",
@@ -1934,16 +1973,17 @@
     "aifa": {
       "status": "ok",
       "protocol": "html",
-      "rows": 40,
+      "rows": 41,
       "method": null,
       "summary": {
         "by_format": {
-          "CSV": 37,
+          "CSV": 38,
           "ZIP": 3
         },
         "prefix_matrix": {
           "provvedimenti": 8,
           "sc": 3,
+          "Classe-A": 2,
           "Classe-H": 2,
           "elenco-farmaci-MR-l648": 2,
           "elenco": 2,
@@ -1953,7 +1993,6 @@
           "confezioni": 1,
           "PA": 1,
           "atc": 1,
-          "Classe-A": 1,
           "Liste": 1,
           "lista": 1,
           "programmi": 1,
@@ -1993,6 +2032,16 @@
             ],
             "sample": "sc_approvate.zip"
           },
+          "Classe-A": {
+            "years": [
+              2026
+            ],
+            "count": 2,
+            "formats": [
+              "CSV"
+            ],
+            "sample": "Classe-A_per_principio-attivo_30-6-2026.csv"
+          },
           "Classe-H": {
             "years": [
               2026
@@ -2001,7 +2050,7 @@
             "formats": [
               "CSV"
             ],
-            "sample": "Classe-H_per_nome-commerciale_30-6-2026.csv"
+            "sample": "Classe-H_per_principio-attivo_30-6-2026.csv"
           },
           "elenco-farmaci-MR-l648": {
             "years": [
@@ -2031,7 +2080,7 @@
             "formats": [
               "CSV"
             ],
-            "sample": "Elenco_Registri_PT_attivi_22.10.2026.csv"
+            "sample": "Elenco_Registri_PT_attivi_02.11.2026.csv"
           },
           "Accordi": {
             "years": [
@@ -2075,16 +2124,6 @@
               "CSV"
             ],
             "sample": "atc.csv"
-          },
-          "Classe-A": {
-            "years": [
-              2026
-            ],
-            "count": 1,
-            "formats": [
-              "CSV"
-            ],
-            "sample": "Classe-A_per_principio-attivo_30-6-2026.csv"
           },
           "Liste": {
             "years": [
@@ -2242,6 +2281,17 @@
             ]
           },
           {
+            "group_id": "Classe-A",
+            "prefix": "Classe-A",
+            "count": 2,
+            "year_range": [
+              2026
+            ],
+            "formats": [
+              "CSV"
+            ]
+          },
+          {
             "group_id": "Classe-H",
             "prefix": "Classe-H",
             "count": 2,
@@ -2329,17 +2379,6 @@
             "prefix": "atc",
             "count": 1,
             "year_range": [],
-            "formats": [
-              "CSV"
-            ]
-          },
-          {
-            "group_id": "Classe-A",
-            "prefix": "Classe-A",
-            "count": 1,
-            "year_range": [
-              2026
-            ],
             "formats": [
               "CSV"
             ]
@@ -2492,11 +2531,11 @@
           2026
         ],
         "topics": {
-          "sanita": 40
+          "sanita": 41
         },
         "method": "csv_magnet_area_pages_direct",
         "area_pages_scanned": 6,
-        "total_links_exact": 40,
+        "total_links_exact": 41,
         "type": "csv_magnet",
         "source_id": "aifa",
         "content_type_probes": 20
@@ -2784,9 +2823,9 @@
       "method": "package_search"
     },
     "agid": {
-      "status": "ok",
+      "status": "error",
       "protocol": "ckan",
-      "rows": 40,
+      "error": "Source agid timed out after 180s",
       "method": "package_search"
     },
     "noipa_sparql": {
@@ -2816,7 +2855,7 @@
     "agcm": {
       "status": "ok",
       "protocol": "ckan",
-      "rows": 58,
+      "rows": 104,
       "method": "package_search"
     },
     "pagopa": {
@@ -2842,12 +2881,6 @@
       "protocol": "ckan",
       "rows": 33,
       "method": "package_search"
-    },
-    "istat_sdmx": {
-      "status": "ok",
-      "protocol": "sdmx",
-      "rows": 4953,
-      "method": "dataflow_count"
     },
     "unioncamere": {
       "status": "ok",
