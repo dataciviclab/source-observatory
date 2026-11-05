@@ -709,11 +709,15 @@ mimit_rna:
       fq=organization:ministero-delle-imprese-e-del-made-in-italy su 
       dati.gov.it. 370 dataset (133 RNA Aiuti + 237 RNA Misure).
   verdict: go
-  note: 'Fonte via dati.gov.it. RNA — Registro Nazionale Aiuti di Stato. 133 dataset
-    mensili Aiuti (2017-2026, XML, ~14.500 record/mese) + 237 dataset Misure (1994-2023).
-    File su www.rna.gov.it scaricabili (200 MB/mese, XML strutturato). Altissimo valore
-    civico: tracciamento aiuti pubblici alle imprese con beneficiario, CF, importo,
-    regione, CUP.'
+  note: 'Fonte via dati.gov.it (harvesting) + portale Incentivi Italia (MIMIT). RNA —
+    Registro Nazionale Aiuti di Stato. 142 dataset mensili Aiuti (2016-11→2026-10, XML,
+    ~500 MB/mese non compresso) + 257 dataset Misure (1994-01→2027, XML). Dal 2026 i
+    file sono serviti dal portale Incentivi Italia: https://www.incentivitalia.gov.it/open-data
+    — il vecchio www.rna.gov.it reindirizza lì restituendo HTML, non XML. NB: su dati.gov.it
+    le resource sono registrate con http:// (reset) o con il vecchio host rna.gov.it →
+    source_check reachable=0; non impatta la pipeline Lab, che scarica gli URL diretti https.
+    Altissimo valore civico: tracciamento aiuti pubblici alle imprese con beneficiario,
+    CF, importo, regione, CUP.'
   datasets_in_use:
     - rna_aiuti_stato
     - rna_misure
