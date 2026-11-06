@@ -305,6 +305,7 @@ def build_catalog(
 
     # ── Validate (item-level) ────────────────────────────────────────────────
     validated_rows: list[dict[str, Any]] = []
+    total_groups: int | None = None
     if skip_validate or cfg.get("observation_mode") == "radar-only" or not rows:
         reason = (
             "skip-validate"
@@ -325,6 +326,7 @@ def build_catalog(
         run_merge, run_validate = validate_stage
         print("  → validate")
         merged = run_merge(inventory_df)
+        total_groups = int(merged["dataset_group"].nunique())
         validated_rows_raw = run_validate(
             merged,
             max_groups=max_groups,
@@ -382,6 +384,7 @@ def build_catalog(
         rows=rows,
         captured_at=captured_at,
         results=validated_rows,
+        total_groups=total_groups,
     )
     catalog["repo"] = layout.repo_root.name
     catalog["catalog_schema_version"] = CATALOG_SCHEMA_VERSION

@@ -28,37 +28,6 @@ def strip_query(url: str) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
 
 
-def parse_int(value: str | None) -> int | None:
-    if value is None:
-        return None
-    try:
-        return int(value)
-    except ValueError:
-        return None
-
-
-def append_unique(values: list[str], value: str | None) -> None:
-    if value and value not in values:
-        values.append(value)
-
-
-def sparql_binding_value(binding: dict[str, Any], name: str) -> str | None:
-    value = (binding.get(name) or {}).get("value")
-    if not isinstance(value, str):
-        return None
-    value = value.strip()
-    return value or None
-
-
-def compact_uri_name(uri: str | None) -> str | None:
-    if not uri:
-        return None
-    value = uri.rstrip("/")
-    if "#" in value:
-        return value.rsplit("#", 1)[-1] or value
-    return value.rsplit("/", 1)[-1] or value
-
-
 def inventory_cfg(source_cfg: dict[str, Any]) -> dict[str, Any]:
     """Legge il blocco `inventory:` dalla config della fonte nel registry."""
     inv = source_cfg.get("inventory")

@@ -63,7 +63,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
     """Metriche qualità da validated.parquet (output nuova pipeline).
 
     Campi disponibili: dataset_group, source_id, reachable, url, format,
-    columns, num_columns, readiness_score (0-4), status_code, content_type,
+    columns, num_columns, readiness_score (0-10), status_code, content_type,
     dataset_group_year_min, dataset_group_year_max.
     """
     if not results:
@@ -76,6 +76,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
             "no_year": 0,
             "problematic": [],
             "csv_count": 0,
+            "not_checked_non_csv": 0,
             "top_items": [],
         }
 
@@ -193,7 +194,9 @@ def compute_formato_aperto(
         for r in probeable:
             if r.get("reachable"):
                 reachable += 1
-            fmt = _safe_str(r.get("resource_format")).upper()
+            fmt = (
+                _safe_str(r.get("resource_format"), fallback="") or _safe_str(r.get("format"))
+            ).upper()
             if any(a in fmt for a in APERTI):
                 n_aperto += 1
 
@@ -264,21 +267,44 @@ def compute_operational_verdict(
     radar_result: dict | None,
     inventory_data: dict,
     source_check_data: dict,
+    observation_mode: str | None = None,
 ) -> dict:
-    """Verdict composito: STABLE / DOWN / INVENTORY_CHANGED / STALE / PARTIALLY_SCOPED."""
+    """Verdict composito, con priorità esplicita.
+
+    Ordine: DOWN > NO_DATA/HEALTH_ONLY > UNREACHABLE > STALE >
+    INVENTORY_CHANGED > PARTIALLY_SCOPED > STABLE.
+
+    Regola: ``STABLE`` non è il default. Se non c'è misura, il verdict è
+    ``NO_DATA`` (o ``HEALTH_ONLY`` per le fonti radar-only).
+    """
     triggers: list[str] = []
 
     radar_status = (radar_result or {}).get("status")
     if radar_status == "RED":
         triggers.append("radar_red")
 
-    delta = inventory_data.get("delta")
-    if delta is not None and delta != 0:
-        triggers.append("inventory_changed")
+    scored = int(source_check_data.get("total_scored") or 0)
+    reachable = int(source_check_data.get("reachable") or 0)
+    not_checked = int(source_check_data.get("not_checked_non_csv") or 0)
+    probeable = max(0, scored - not_checked)
+    reachability = round(reachable / probeable * 100, 1) if probeable else None
+    if scored == 0:
+        triggers.append("health_only" if observation_mode == "radar-only" else "no_data")
+    elif probeable == 0:
+        triggers.append("not_probeable")
+    elif reachability is not None and reachability < 50:
+        triggers.append("unreachable")
 
+    stale_items = int(inventory_data.get("stale_items") or 0)
+    if stale_items:
+        triggers.append("stale_rows")
     freshness = inventory_data.get("freshness_hours")
     if freshness is not None and freshness > 168:
         triggers.append("inventory_stale")
+
+    delta = inventory_data.get("delta")
+    if delta is not None and delta != 0:
+        triggers.append("inventory_changed")
 
     coverage = source_check_data.get("coverage_pct")
     if coverage is not None and coverage < 50:
@@ -288,25 +314,27 @@ def compute_operational_verdict(
         triggers.append("all_green")
 
     if "radar_red" in triggers:
-        label = "DOWN"
-        score = "down"
-        next_action = "investigate downtime"
+        label, score, next_action = "DOWN", "down", "investigate downtime"
+    elif "no_data" in triggers:
+        label, score, next_action = "NO_DATA", "no_data", "run inventory/validate"
+    elif "health_only" in triggers:
+        label, score, next_action = "HEALTH_ONLY", "health_only", None
+    elif "not_probeable" in triggers:
+        label, score, next_action = (
+            "NOT_PROBEABLE",
+            "not_probeable",
+            "add a probeable format/schema",
+        )
+    elif "unreachable" in triggers:
+        label, score, next_action = "UNREACHABLE", "unreachable", "verify used items"
+    elif "stale_rows" in triggers or "inventory_stale" in triggers:
+        label, score, next_action = "STALE", "stale", "refresh inventory"
     elif "inventory_changed" in triggers:
-        label = "INVENTORY_CHANGED"
-        score = "changed"
-        next_action = "review inventory changes"
-    elif "inventory_stale" in triggers:
-        label = "STALE"
-        score = "stale"
-        next_action = "refresh inventory"
+        label, score, next_action = "INVENTORY_CHANGED", "changed", "review inventory changes"
     elif "source_check_partial" in triggers:
-        label = "PARTIALLY_SCOPED"
-        score = "partial"
-        next_action = "complete source-check"
+        label, score, next_action = "PARTIALLY_SCOPED", "partial", "complete source-check"
     else:
-        label = "STABLE"
-        score = "stable"
-        next_action = None
+        label, score, next_action = "STABLE", "stable", None
 
     return {
         "label": label,
@@ -326,7 +354,7 @@ def build_report(
     rows: list[dict],
     captured_at: str | None,
     results: list[dict],
-    health_entry: dict | None = None,
+    total_groups: int | None = None,
     timing: dict | None = None,
 ) -> dict:
     """Costruisce il source report JSON per una fonte.
@@ -338,7 +366,7 @@ def build_report(
         rows: Righe inventory (da CollectorResult.rows)
         captured_at: Timestamp ISO inventory
         results: Risultati source-check
-        health_entry: Output di _health_score() o None
+        total_groups: Gruppi logici attesi prima della validazione
         timing: Dict {fase: secondi}
     """
     now_iso = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -368,8 +396,11 @@ def build_report(
 
     # Inventory
     baseline = cfg.get("catalog_baseline") or {}
+    stale_items = sum(1 for row in rows if row.get("source_status") == "stale")
     inventory: dict = {
         "total_items": len(rows),
+        "active_items": len(rows) - stale_items,
+        "stale_items": stale_items,
         "method": baseline.get("method"),
         "captured_at": captured_at,
         "baseline_value": baseline.get("value"),
@@ -410,18 +441,26 @@ def build_report(
         "with_csv_schema": sc_agg.get("with_csv_schema", 0),
         "avg_readiness": sc_agg.get("avg_readiness"),
         "top_items": sc_agg["top_items"],
-        "coverage_pct": (
-            round(sc_agg["total"] / len(rows) * 100, 1) if rows and sc_agg["total"] else None
+        "not_checked_non_csv": sc_agg["not_checked_non_csv"],
+        "probeable_items": sc_agg["total"] - sc_agg["not_checked_non_csv"],
+        "reachability_pct": (
+            round(
+                sc_agg["reachable"] / (sc_agg["total"] - sc_agg["not_checked_non_csv"]) * 100,
+                1,
+            )
+            if sc_agg["total"] - sc_agg["not_checked_non_csv"]
+            else None
         ),
+        "coverage_pct": (round(sc_agg["total"] / total_groups * 100, 1) if total_groups else None),
         "formato_aperto": compute_formato_aperto(results, rows),
     }
 
-    # Datasets in use
+    # Datasets in use: status = stato d'uso, non stage editoriale.
     datasets_in_use = [
-        {"slug": slug, "status": "published"} for slug in (cfg.get("datasets_in_use") or [])
+        {"slug": slug, "status": "in_use"} for slug in (cfg.get("datasets_in_use") or [])
     ]
 
-    # Signals (sostituiti da validated metrics — catalog_signals.json non più prodotto)
+    # Signals legacy: catalog_signals.json è ancora scritto per ACB.
     signals = [
         {
             "type": "validated_metrics",
@@ -431,7 +470,12 @@ def build_report(
     ]
 
     # Operational verdict
-    operational_verdict = compute_operational_verdict(radar_result, inventory, source_check)
+    operational_verdict = compute_operational_verdict(
+        radar_result,
+        inventory,
+        source_check,
+        observation_mode=cfg.get("observation_mode"),
+    )
 
     report = {
         "source_id": source_id,

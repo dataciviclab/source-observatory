@@ -532,11 +532,12 @@ opencivitas:
   catalog_baseline:
     captured_at: '2026-11-06'
     metric: catalog_table_rows
-    value: 367
+    value: 334
     method: liferay_catalog_table
     reliability: high
-    note: Conteggio via tabella catalogo Liferay sul nuovo portale /portale/open-data.
-      Il vecchio /it/open-data risponde 404 e il dominio docs.opencivitas.it è dismesso.
+    note: 'Conteggio unico dopo dedup per item_id sul nuovo portale /portale/open-data.
+      page_start=0 è necessario: la pagina 0 contiene 9 item che non compaiono a page_start=1;
+      il totale raw è 367, gli item unici 334.'
   verdict: go
   note: Portale OpenCivitas (Liferay, live 2026-06). File su /portale/documents/ con
     UUID. Inventario via tabella catalogo; il vecchio /it/open-data è 404.
@@ -548,7 +549,6 @@ opencivitas:
     delay_seconds: 0.3
     timeout_seconds: 10
     max_retries: 1
-    page_start: 1
   datasets_in_use:
     - opencivitas_determinanti
     - opencivitas_fprcm

@@ -74,6 +74,17 @@ def _load_inventory_report() -> dict:
     }
 
 
+def _load_pipeline_summary() -> dict:
+    """Carica summary.json → gruppi totali per fonte (pre-validazione)."""
+    path = REPO_ROOT / "data" / "pipeline" / "summary.json"
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
 def _load_source_check() -> dict[str, list[dict]]:
     """Carica validated.parquet → {source_id: [results]}."""
     # Cerca prima il nuovo validated.parquet, poi fallback al vecchio
@@ -122,6 +133,11 @@ def main() -> int:
     inventory_rows = _load_inventory_rows()
     inventory_report = _load_inventory_report()
     sc_results = _load_source_check()
+    pipeline_summary = _load_pipeline_summary()
+    groups_by_source = {
+        sid: int(stats.get("groups_total") or stats.get("total") or 0)
+        for sid, stats in (pipeline_summary.get("by_source") or {}).items()
+    }
 
     global_captured_at = inventory_report.get("captured_at")
 
@@ -158,6 +174,7 @@ def main() -> int:
                 rows=rows,
                 captured_at=captured_at,
                 results=results,
+                total_groups=groups_by_source.get(source_id),
             )
         except Exception as e:
             print(f"  ❌ {source_id}: build_report fallito — {e}")
@@ -182,6 +199,8 @@ def main() -> int:
                 "reachable": report.get("source_check", {}).get("reachable", 0),
                 "csv_count": report.get("source_check", {}).get("csv_count", 0),
                 "avg_readiness": report.get("source_check", {}).get("avg_readiness"),
+                "reachability_pct": report.get("source_check", {}).get("reachability_pct"),
+                "coverage_pct": report.get("source_check", {}).get("coverage_pct"),
                 "datasets_in_use": len(cfg.get("datasets_in_use") or []),
                 "verdict": verdict.get("label"),
                 "verdict_score": verdict.get("score"),

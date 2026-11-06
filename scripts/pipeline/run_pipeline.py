@@ -204,8 +204,14 @@ def write_output(
     results: list[dict],
     validated_path: Path,
     summary_path: Path,
+    groups_by_source: dict[str, int] | None = None,
 ):
-    """Write validated results as parquet + summary JSON."""
+    """Write validated results as parquet + summary JSON.
+
+    ``groups_by_source`` è il numero di gruppi logici *prima* della
+    validazione: serve ai report per distinguere "non validato" da
+    "validato e caduto".
+    """
     validated_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -217,11 +223,14 @@ def write_output(
     # Write summary JSON
     reachable = sum(1 for r in results if r.get("reachable"))
     csv_with_schema = sum(1 for r in results if r.get("reachable") and r.get("columns"))
-    by_source: dict[str, dict] = {}
+    by_source: dict[str, dict] = {
+        src: {"total": 0, "reachable": 0, "csv": 0, "groups_total": groups}
+        for src, groups in (groups_by_source or {}).items()
+    }
     for r in results:
         src = r.get("source_id", "unknown")
         if src not in by_source:
-            by_source[src] = {"total": 0, "reachable": 0, "csv": 0}
+            by_source[src] = {"total": 0, "reachable": 0, "csv": 0, "groups_total": 0}
         by_source[src]["total"] += 1
         if r.get("reachable"):
             by_source[src]["reachable"] += 1
@@ -232,6 +241,7 @@ def write_output(
         "pipeline_version": 1,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "total_groups": len(results),
+        "groups_total": sum(groups_by_source.values()) if groups_by_source else len(results),
         "reachable": reachable,
         "unreachable": len(results) - reachable,
         "csv_with_schema": csv_with_schema,
@@ -318,12 +328,16 @@ def main():
         ngroups = df["dataset_group"].nunique()
         print(f"   Using existing groups: {ngroups}")
 
+    groups_by_source = (
+        df.groupby("source_id")["dataset_group"].nunique().to_dict() if "source_id" in df else {}
+    )
+
     # Step 3: Validate
     if args.dry_run:
         print("\n⏩ Skipping validate (--dry-run)")
     else:
         results = run_validate(df, max_groups=args.max_groups, workers=args.workers)
-        write_output(results, args.output, args.summary)
+        write_output(results, args.output, args.summary, groups_by_source=groups_by_source)
 
     print("\n✅ Pipeline complete")
 

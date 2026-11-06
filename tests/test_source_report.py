@@ -121,11 +121,19 @@ class TestFormatoAperto:
         result = compute_formato_aperto(_SAMPLE_RESULTS)
         assert result["total"] == 3
         assert result["fonte"] == "source_check"
+        assert result["perc_aperto"] == pytest.approx(66.7)
 
     @pytest.mark.smoke
     def test_from_inventory_fallback(self):
         result = compute_formato_aperto([], rows=_SAMPLE_ROWS)
         assert result["total"] == 3
+        assert result["perc_aperto"] == pytest.approx(66.7)
+
+    @pytest.mark.smoke
+    def test_nan_resource_format_falls_back(self):
+        results = [{"reachable": True, "resource_format": float("nan"), "format": "csv"}]
+        result = compute_formato_aperto(results)
+        assert result["perc_aperto"] == 100.0
 
 
 # ── compute_operational_verdict ──────────────────────────────────────────────
@@ -135,11 +143,21 @@ class TestOperationalVerdict:
     @pytest.mark.smoke
     def test_empty(self):
         v = compute_operational_verdict({}, {"total_items": 0}, {"total_scored": 0})
-        assert v["label"] == "STABLE"
+        assert v["label"] == "NO_DATA"
+
+    def test_health_only(self):
+        v = compute_operational_verdict(
+            {}, {"total_items": 0}, {"total_scored": 0}, observation_mode="radar-only"
+        )
+        assert v["label"] == "HEALTH_ONLY"
 
     @pytest.mark.smoke
     def test_stable(self):
-        v = compute_operational_verdict({}, {"total_items": 10}, {"total_scored": 10})
+        v = compute_operational_verdict(
+            {},
+            {"total_items": 10},
+            {"total_scored": 10, "reachable": 10, "coverage_pct": 100.0},
+        )
         assert v["score"] == "stable"
 
     @pytest.mark.smoke
@@ -151,8 +169,32 @@ class TestOperationalVerdict:
     @pytest.mark.smoke
     def test_inventory_changed(self):
         inventory = {"total_items": 50, "delta": 10}
-        v = compute_operational_verdict({}, inventory, {"total_scored": 50})
+        v = compute_operational_verdict(
+            {}, inventory, {"total_scored": 50, "reachable": 50, "coverage_pct": 100.0}
+        )
         assert v["label"] == "INVENTORY_CHANGED"
+
+    def test_unreachable(self):
+        v = compute_operational_verdict(
+            {}, {"total_items": 10}, {"total_scored": 10, "reachable": 2, "coverage_pct": 100.0}
+        )
+        assert v["label"] == "UNREACHABLE"
+
+    def test_not_probeable(self):
+        v = compute_operational_verdict(
+            {},
+            {"total_items": 27},
+            {"total_scored": 27, "reachable": 0, "not_checked_non_csv": 27, "coverage_pct": 100.0},
+        )
+        assert v["label"] == "NOT_PROBEABLE"
+
+    def test_stale_rows(self):
+        v = compute_operational_verdict(
+            {},
+            {"total_items": 10, "stale_items": 3},
+            {"total_scored": 10, "reachable": 10, "coverage_pct": 100.0},
+        )
+        assert v["label"] == "STALE"
 
 
 # ── build_report (integration smoke) ─────────────────────────────────────────
@@ -202,6 +244,39 @@ class TestBuildReport:
         assert report["source_check"]["total_scored"] == 5
         assert report["source_check"]["reachable"] == 5
         assert report["source_check"]["avg_readiness"] == 3.0
+
+    @pytest.mark.smoke
+    def test_coverage_uses_logical_groups(self):
+        report = build_report(
+            source_id="test_src",
+            cfg={"source_kind": "catalog", "protocol": "ckan", "base_url": "https://example.com"},
+            radar_result={},
+            rows=[{"item_id": "1", "format": "CSV", "organization": "Test"}],
+            captured_at="2026-07-16T10:00:00+00:00",
+            results=self._make_source_check(),
+            total_groups=10,
+        )
+        assert report["source_check"]["coverage_pct"] == 50.0
+        assert report["source_check"]["reachability_pct"] == 100.0
+
+    @pytest.mark.smoke
+    def test_not_probeable_report(self):
+        results = [
+            {"dataset_group": f"test_src/ds{i}", "reachable": None, "format": "xlsx,json"}
+            for i in range(3)
+        ]
+        report = build_report(
+            source_id="test_src",
+            cfg={"source_kind": "catalog", "protocol": "ckan", "base_url": "https://example.com"},
+            radar_result={},
+            rows=[{"item_id": str(i)} for i in range(3)],
+            captured_at="2026-07-16T10:00:00+00:00",
+            results=results,
+            total_groups=3,
+        )
+        assert report["source_check"]["probeable_items"] == 0
+        assert report["source_check"]["reachability_pct"] is None
+        assert report["operational_verdict"]["label"] == "NOT_PROBEABLE"
 
     @pytest.mark.smoke
     def test_timing_filtered(self):

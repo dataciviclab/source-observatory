@@ -93,15 +93,6 @@ def probe_reachability(
 # ── CSV schema sniff ──────────────────────────────────────────────────────────
 
 
-def _is_csv_url(url: str, content_type: str | None = None) -> bool:
-    """Check if URL o Content-Type suggeriscono CSV."""
-    if content_type:
-        ct = content_type.lower()
-        if "csv" in ct or "text/plain" in ct:
-            return True
-    return url.lower().endswith(".csv") or ".csv?" in url.lower()
-
-
 # Nomi colonna che indicano una dimensione temporale (valori = anni)
 _YEAR_COLUMN_HINTS = frozenset(
     {
@@ -373,17 +364,12 @@ def sniff_csv_schema(
 
 def validate_tabular_group(
     items: list[dict[str, Any]],
-    deep: bool = False,
     client: Any | None = None,
 ) -> dict[str, Any]:
     """Valida un gruppo di item tabulari (CKAN/HTML): HEAD + sniff CSV.
 
     Salta completamente i probe HTTP per gruppi non-CSV (ZIP, TTL, JSON...).
     Per gruppi CSV, sniff leggero interno (encoding, delim, colonne).
-
-    Con ``deep=True``, usa toolkit.profile.preview.preview_url per profilo
-    approfondito (tipi colonna, quality score, granularità, anni) — più
-    lento ma più ricco.
 
     ``client`` opzionale: HttpClient condiviso tra gruppi (con circuit
     breaker attivo) — se fornito dalla pipeline, il breaker sopravvive
