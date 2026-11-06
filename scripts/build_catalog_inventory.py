@@ -106,6 +106,12 @@ def _collect_source(
         if isinstance(user_agent, str) and user_agent:
             for row in res.rows:
                 row["user_agent"] = user_agent
+        max_concurrency = (source_cfg.get("source_check") or {}).get("max_concurrency")
+        if max_concurrency is None:
+            max_concurrency = (source_cfg.get("inventory") or {}).get("max_concurrency")
+        if isinstance(max_concurrency, int) and max_concurrency > 0:
+            for row in res.rows:
+                row["max_concurrency"] = max_concurrency
         return source_id, res.rows, res.warning, res.summary, None, time.monotonic() - collect_start
     except Exception as exc:
         return source_id, [], None, None, exc, time.monotonic() - collect_start

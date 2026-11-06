@@ -21,14 +21,18 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import ExitStack
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+from urllib.parse import urlsplit
 
 import pandas as pd
 
 from scripts.collectors import dispatch_validate
+from scripts.collectors._validate_base import pick_best_url
 from scripts.pipeline._merge_utils import add_dataset_group_columns
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -101,11 +105,13 @@ def run_validate(
     max_groups: int | None = None,
     workers: int = 1,
     user_agent: str | None = None,
+    max_concurrency_per_host: int = 4,
 ) -> list[dict | None]:
     """For each dataset_group, pick best URL, probe, sniff schema.
 
     Con workers > 1 usa ThreadPoolExecutor per parallelizzare i probe HTTP.
-    Rispetta i limiti di concorrenza per fonte (max_concurrency nel registry).
+    Due limiti proteggono le fonti: ``max_concurrency_per_host`` globale e
+    ``max_concurrency`` per fonte (colonna inventory, dal registry).
     """
     groups = list(df.groupby("dataset_group"))
     if max_groups:
@@ -144,10 +150,59 @@ def run_validate(
             clients[ua] = HttpClient(timeout=5, circuit_threshold=3, user_agent=ua)
         return clients[ua]
 
+    # Rate limit per host e per fonte. Il ThreadPool può avere 16 worker, ma
+    # una singola fonte non deve ricevere 16 richieste concorrenti.
+    host_semaphores: dict[str, threading.Semaphore] = {}
+    source_semaphores: dict[str, threading.Semaphore] = {}
+    semaphores_lock = threading.Lock()
+
+    def _semaphore(
+        cache: dict[str, threading.Semaphore], key: str, limit: int
+    ) -> threading.Semaphore:
+        with semaphores_lock:
+            if key not in cache:
+                cache[key] = threading.Semaphore(max(1, limit))
+            return cache[key]
+
+    def _host_for(group_df: pd.DataFrame) -> str:
+        if len(group_df):
+            items = cast(list[dict[str, Any]], group_df.to_dict("records"))
+            best = pick_best_url(items)
+            if best:
+                url = str(best.get("distribution_url") or best.get("url") or "")
+                host = urlsplit(url).hostname
+                if host:
+                    return host
+        return "unknown"
+
+    def _source_for(group_df: pd.DataFrame) -> str:
+        return str(group_df.iloc[0].get("source_id") or "unknown") if len(group_df) else "unknown"
+
+    def _source_limit(group_df: pd.DataFrame) -> int | None:
+        if not len(group_df):
+            return None
+        value = group_df.iloc[0].get("max_concurrency")
+        if value is None or (isinstance(value, float) and value != value):
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _validate_limited(group_df: pd.DataFrame) -> dict[str, Any]:
+        host = _host_for(group_df)
+        source_id = _source_for(group_df)
+        source_limit = _source_limit(group_df)
+        with ExitStack() as stack:
+            stack.enter_context(_semaphore(host_semaphores, host, max_concurrency_per_host))
+            if source_limit:
+                stack.enter_context(_semaphore(source_semaphores, source_id, source_limit))
+            return _validate_one(group_df, client=_client_for(group_df))
+
     if workers <= 1:
         # Sequenziale
         for i, (group_name, group_df) in enumerate(groups):
-            result = _validate_one(group_df, client=_client_for(group_df))
+            result = _validate_limited(group_df)
             results[i] = result
             if result.get("reachable"):
                 ok += 1
@@ -160,7 +215,7 @@ def run_validate(
         # Parallelo con ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=workers) as pool:
             future_map = {
-                pool.submit(_validate_one, group_df, _client_for(group_df)): i
+                pool.submit(_validate_limited, group_df): i
                 for i, (_, group_df) in enumerate(groups)
             }
             for future in as_completed(future_map):
@@ -307,6 +362,12 @@ def main():
         default=1,
         help="Parallel workers for HTTP probes (default: 1, sequenziale)",
     )
+    parser.add_argument(
+        "--max-concurrency-per-host",
+        type=int,
+        default=4,
+        help="Max richieste concorrenti per host nel validate (default: 4)",
+    )
 
     args = parser.parse_args()
 
@@ -336,7 +397,12 @@ def main():
     if args.dry_run:
         print("\n⏩ Skipping validate (--dry-run)")
     else:
-        results = run_validate(df, max_groups=args.max_groups, workers=args.workers)
+        results = run_validate(
+            df,
+            max_groups=args.max_groups,
+            workers=args.workers,
+            max_concurrency_per_host=args.max_concurrency_per_host,
+        )
         write_output(results, args.output, args.summary, groups_by_source=groups_by_source)
 
     print("\n✅ Pipeline complete")
