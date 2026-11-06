@@ -92,9 +92,17 @@ def run_merge(df: pd.DataFrame, dry_run: bool = False) -> pd.DataFrame:
 # ── Step 3: Validate ──────────────────────────────────────────────────────────
 
 
-def _validate_one(group_df: pd.DataFrame, client=None) -> dict:
-    """Validate a single group: pick protocol, dispatch validator."""
-    items = group_df.to_dict("records")
+def _validate_one(
+    group_df: pd.DataFrame,
+    client=None,
+    items: list[dict[str, Any]] | None = None,
+) -> dict:
+    """Validate a single group: pick protocol, dispatch validator.
+
+    ``items`` permette a ``run_validate`` di riusare la lista già costruita
+    per il calcolo dell'host, evitando un secondo ``to_dict("records")``.
+    """
+    items = items if items is not None else cast(list[dict[str, Any]], group_df.to_dict("records"))
     protocol = str(items[0].get("protocol", "")) if items else ""
     validator = dispatch_validate(protocol)
     return validator(items, client=client)
@@ -130,16 +138,14 @@ def _host_map(df: pd.DataFrame) -> dict[Any, str]:
     }
 
 
-def _group_host(group_df: pd.DataFrame) -> str:
+def _host_from_items(items: list[dict[str, Any]]) -> str:
     """Host scelto dallo stesso criterio del validator."""
-    if len(group_df):
-        items = cast(list[dict[str, Any]], group_df.to_dict("records"))
-        best = pick_best_url(items)
-        if best:
-            url = str(best.get("distribution_url") or best.get("url") or "")
-            host = urlsplit(url).hostname
-            if host:
-                return host
+    best = pick_best_url(items)
+    if best:
+        url = str(best.get("distribution_url") or best.get("url") or "")
+        host = urlsplit(url).hostname
+        if host:
+            return host
     return "unknown"
 
 
@@ -258,14 +264,15 @@ def run_validate(
                 "validation_skipped": True,
                 "reason": "catalog-only",
             }
-        host = _group_host(group_df)
+        items = cast(list[dict[str, Any]], group_df.to_dict("records"))
+        host = _host_from_items(items)
         source_id = _source_for(group_df)
         source_limit = _source_limit(group_df)
         with ExitStack() as stack:
             stack.enter_context(_semaphore(host_semaphores, host, max_concurrency_per_host))
             if source_limit:
                 stack.enter_context(_semaphore(source_semaphores, source_id, source_limit))
-            return _validate_one(group_df, client=_client_for(group_df))
+            return _validate_one(group_df, client=_client_for(group_df), items=items)
 
     if workers <= 1:
         # Sequenziale

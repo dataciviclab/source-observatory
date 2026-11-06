@@ -168,7 +168,7 @@ def test_run_validate_limits_per_host(monkeypatch):
     max_active = 0
     lock = threading.Lock()
 
-    def fake_validate(group_df, client=None):
+    def fake_validate(group_df, client=None, items=None):
         nonlocal active, max_active
         with lock:
             active += 1
@@ -204,7 +204,7 @@ def test_run_validate_limits_per_source(monkeypatch):
     max_active = 0
     lock = threading.Lock()
 
-    def fake_validate(group_df, client=None):
+    def fake_validate(group_df, client=None, items=None):
         nonlocal active, max_active
         with lock:
             active += 1
@@ -237,7 +237,7 @@ def test_run_validate_skips_catalog_only(monkeypatch):
     """I gruppi catalog-only non passano dal validator."""
     from scripts.pipeline import run_pipeline
 
-    def fake_validate(group_df, client=None):
+    def fake_validate(group_df, client=None, items=None):
         raise AssertionError("catalog-only non deve essere validato")
 
     monkeypatch.setattr(run_pipeline, "_validate_one", fake_validate)
@@ -284,7 +284,7 @@ def test_run_validate_skips_only_true_flag(monkeypatch):
 
     calls: list[str] = []
 
-    def fake_validate(group_df, client=None):
+    def fake_validate(group_df, client=None, items=None):
         calls.append(group_df.iloc[0]["dataset_group"])
         return {
             "dataset_group": group_df.iloc[0]["dataset_group"],

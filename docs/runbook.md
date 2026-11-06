@@ -63,7 +63,7 @@ Modello v0:
 - gli output canonici sono i source report in `data/reports/` e `sources_dashboard.json`; `catalog_signals.json` resta un contratto legacy per ACB
 - problemi di connessione/HTTP vanno letti in `radar_summary.json`, non in `catalog_signals.json`
 - **Issue automatiche**: in caso di variazioni rilevanti nel catalogo, `observatory.yml` crea o aggiorna una issue `catalog-alert` su GitHub
-- **Verdict**: `DOWN` > `NO_DATA`/`HEALTH_ONLY` > `UNREACHABLE` > `STALE` > `INVENTORY_CHANGED` > `PARTIALLY_SCOPED` > `STABLE`. `STABLE` non è il default: se non c'è misura, il verdict è `NO_DATA` (o `HEALTH_ONLY` per `radar-only`).
+- **Verdict**: `DOWN` > `NO_DATA`/`HEALTH_ONLY` > `UNREACHABLE` > `STALE` > `INVENTORY_CHANGED` > `CATALOG_ONLY`/`NOT_PROBEABLE` > `PARTIALLY_SCOPED` > `STABLE`. `STABLE` non è il default: se non c'è misura, il verdict è `NO_DATA` (o `HEALTH_ONLY` per `radar-only`).
 
 ### Catalog per-repo e `pattern_probes`
 
