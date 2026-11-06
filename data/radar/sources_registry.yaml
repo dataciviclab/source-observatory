@@ -30,23 +30,21 @@ anac:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
-  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  base_url: https://dati.anticorruzione.it/opendata/api/3/action/package_list
   inventory:
-    fq: organization:anac
     timeout: 180
   last_probed: '2026-11-06'
   catalog_baseline:
-    captured_at: '2026-05-24'
+    captured_at: '2026-11-06'
     metric: package_count
     value: 70
     method: package_search
     reliability: high
-    note: Conteggio via package_search con fq=organization:anac su dati.gov.it. 70
-      dataset harvestati dal portale ANAC.
+    note: Conteggio via package_search sul portale diretto dati.anticorruzione.it.
+      70 package; il download raw resta sullo stesso portale con User-Agent browser.
   verdict: go
-  note: 'Fonte via dati.gov.it (harvesting ANAC). I download raw vanno al portale
-    diretto dati.anticorruzione.it con User-Agent browser (WAF blocca solo python-requests).
-    70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari,
+  note: 'Portale CKAN diretto ANAC (dati.anticorruzione.it). WAF: richiede User-Agent
+    browser. 70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari,
     subappalti, varianti, PNRR indicatori, SOA. CC-BY-SA 4.0.'
   datasets_in_use:
     - anac_aggiudicatari
@@ -61,6 +59,8 @@ anac:
     - anac_stati_avanzamento
     - anac_subappalti
     - anac_varianti
+  user_agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)
+    Chrome/120.0.0.0 Safari/537.36
 inps:
   source_kind: catalog
   protocol: ckan
@@ -429,23 +429,23 @@ mur_ustat:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
-  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  base_url: https://dati-ustat.mur.gov.it/api/3/action/package_list?limit=1
   inventory:
-    fq: organization:ministero-universita-e-ricerca
     timeout: 180
   last_probed: '2026-11-06'
   catalog_baseline:
-    captured_at: '2026-05-24'
+    captured_at: '2026-11-06'
     metric: package_count
-    value: 69
+    value: 70
     method: package_search
     reliability: high
-    note: Conteggio via package_search con fq=organization:ministero-universita-e-ricerca
-      su dati.gov.it. 69 dataset harvestati dal portale MUR.
+    note: Conteggio via package_search sul portale diretto dati-ustat.mur.gov.it.
+      70 package; il vecchio harvest dati.gov.it non è più la fonte autoritativa.
   verdict: go
-  note: Fonte via dati.gov.it (harvesting MUR). Sostituisce fonte diretta dati-ustat.mur.gov.it
-    che aveva ConnectTimeout. 69 dataset su istruzione universitaria (contribuzione
-    atenei, DSU regionale, collegi, AFAM).
+  note: 'Portale CKAN diretto MUR USTAT (dati-ustat.mur.gov.it). Il vecchio endpoint
+    dati.gov.it è stato abbandonato: il repo consuma resource_id di questo portale.
+    70 dataset su istruzione universitaria (contribuzione atenei, DSU regionale, collegi,
+    AFAM).'
   datasets_in_use:
     - mur_afam_diplomati
     - mur_afam_iscritti
@@ -527,23 +527,27 @@ opencivitas:
   source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
-  base_url: https://www.opencivitas.it/it/open-data
+  base_url: https://www.opencivitas.it/portale/open-data
   last_probed: '2026-11-06'
   catalog_baseline:
-    captured_at: '2026-05-07'
-    metric: csv_magnet_total_links
-    value: 1084
-    method: csv_magnet_area_pages_paginated
-    reliability: medium
-    note: Sondaggio CSV magnet via page_url_template (page=0..54). SSL fallback necessario
-      per cert invalido.
+    captured_at: '2026-11-06'
+    metric: catalog_table_rows
+    value: 367
+    method: liferay_catalog_table
+    reliability: high
+    note: Conteggio via tabella catalogo Liferay sul nuovo portale /portale/open-data.
+      Il vecchio /it/open-data risponde 404 e il dominio docs.opencivitas.it è dismesso.
   verdict: go
-  note: Portale OpenCivitas — csv_magnet scan via discovery=auto (sitemap alla root).
-    ZIP con CSV/XLSX dentro.
+  note: Portale OpenCivitas (Liferay, live 2026-06). File su /portale/documents/ con
+    UUID. Inventario via tabella catalogo; il vecchio /it/open-data è 404.
   html_portal:
     topic_hint: trasparenza
-    discovery: auto
+    extraction: liferay_catalog
+    page_url_template: https://www.opencivitas.it/portale/open-data?xpage={page}&xdelta=6
+    page_max: 25
     delay_seconds: 0.3
+    timeout_seconds: 10
+    max_retries: 1
   datasets_in_use:
     - opencivitas_determinanti
     - opencivitas_fprcm
@@ -804,23 +808,24 @@ agid:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
-  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  base_url: https://indicepa.gov.it/ipa-dati/api/3/action/package_list
   inventory:
-    fq: organization:agenzia-per-l-italia-digitale
     timeout: 180
   last_probed: '2026-11-06'
   catalog_baseline:
-    captured_at: '2026-05-24'
+    captured_at: '2026-11-06'
     metric: package_count
-    value: 40
+    value: 27
     method: package_search
     reliability: high
-    note: Conteggio via package_search con fq=organization:agenzia-per-l-italia-digitale
-      su dati.gov.it. 40 dataset IPA (enti, PEC, domicili digitali, servizi, RTD).
+    note: Conteggio via package_search sul portale diretto indicepa.gov.it. 27 package
+      IPA; l'harvest dati.gov.it ne mostrava 40 ma non è il catalogo consumato.
   verdict: go
-  note: 'Fonte via dati.gov.it. IPA — Indice delle PA: enti, unita organizzative,
-    PEC, domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione
-    elettronica, cloud. Codice_IPA chiave di join con ANAC.'
+  note: 'Portale CKAN diretto IPA (indicepa.gov.it). Enti, unità organizzative, PEC,
+    domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione
+    elettronica, cloud. Codice_IPA chiave di join con ANAC. Nota: il validate sceglie
+    i resource JSON di metadati invece degli XLSX (landing_page); 0/27 reachable al
+    2026-11-06 — follow-up dedicato.'
   datasets_in_use:
     - ipa_aree_organizzative_omogenee
     - ipa_categorie_enti

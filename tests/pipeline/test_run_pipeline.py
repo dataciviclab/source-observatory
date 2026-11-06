@@ -89,3 +89,50 @@ def test_run_validate_uses_shared_client(monkeypatch, fake_http):
 
     ok = [r for r in results if r is not None and r.get("reachable")]
     assert len(ok) == 2
+
+
+def test_run_validate_uses_source_user_agent(monkeypatch, fake_http):
+    """L'UA della riga di inventory vince sull'UA di default."""
+    from scripts.pipeline import run_pipeline
+
+    csv_body = "ANNO,REGIONE,IMPORTO\n2020,Lazio,1000\n"
+    fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
+    calls: list[dict] = []
+
+    def fake_client(**kwargs):
+        calls.append(kwargs)
+        return fake_http
+
+    monkeypatch.setattr("lab_connectors.http.HttpClient", fake_client)
+
+    df = _make_group_df()
+    df["user_agent"] = "Browser/1.0"
+    results = run_pipeline.run_validate(df, max_groups=1, workers=1)
+
+    assert results[0]["reachable"] is True
+    assert calls[0]["user_agent"] == "Browser/1.0"
+
+
+def test_run_validate_uses_one_client_per_user_agent(monkeypatch, fake_http):
+    """UA diversi non condividono lo stesso client/circuit breaker."""
+    from scripts.pipeline import run_pipeline
+
+    csv_body = "ANNO,REGIONE,IMPORTO\n2020,Lazio,1000\n"
+    fake_http.responses[MEF_URL] = HttpResult(response=fake_response(200, csv_body), err=None)
+    calls: list[dict] = []
+
+    def fake_client(**kwargs):
+        calls.append(kwargs)
+        return fake_http
+
+    monkeypatch.setattr("lab_connectors.http.HttpClient", fake_client)
+
+    first = _make_group_df("A")
+    first["user_agent"] = "Browser/1.0"
+    second = _make_group_df("B")
+    second["user_agent"] = "Browser/2.0"
+    df = pd.concat([first, second], ignore_index=True)
+
+    run_pipeline.run_validate(df, max_groups=2, workers=1)
+
+    assert [call["user_agent"] for call in calls] == ["Browser/1.0", "Browser/2.0"]
