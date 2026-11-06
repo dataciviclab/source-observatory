@@ -35,6 +35,7 @@ Manutenzione del Registry:
 - Se una fonte è stabilmente giù, verificare manualmente l'URL.
 - Se l'URL è cambiato, aggiornare `data/radar/sources_registry.yaml`.
 - Se la fonte è definitivamente rimossa, valutare la disattivazione o rimozione nel registry.
+- `user_agent`, se presente nella fonte del registry, è un contratto della fonte: lo usano radar, inventory e validate. Serve per i portali dietro WAF (es. ANAC).
 
 Boundary:
 

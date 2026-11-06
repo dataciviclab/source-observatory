@@ -24,6 +24,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 
@@ -127,12 +128,26 @@ def run_validate(
     # farebbe bruciare ~114s per fallimento prima che il breaker apra.
     from lab_connectors.http import HttpClient
 
-    http_client = HttpClient(timeout=5, circuit_threshold=3, user_agent=user_agent)
+    # Un client per User-Agent, non uno globale: alcune fonti (ANAC) hanno un
+    # WAF che blocca l'UA di default ma accetta un UA browser. L'UA della fonte
+    # arriva dalla riga di inventory (`user_agent`), quindi il motore non
+    # importa il registry centrale.
+    clients: dict[str | None, Any] = {}
+
+    def _client_for(group_df: pd.DataFrame) -> Any:
+        ua = user_agent
+        if len(group_df):
+            value = group_df.iloc[0].get("user_agent")
+            if isinstance(value, str) and value:
+                ua = value
+        if ua not in clients:
+            clients[ua] = HttpClient(timeout=5, circuit_threshold=3, user_agent=ua)
+        return clients[ua]
 
     if workers <= 1:
         # Sequenziale
         for i, (group_name, group_df) in enumerate(groups):
-            result = _validate_one(group_df, client=http_client)
+            result = _validate_one(group_df, client=_client_for(group_df))
             results[i] = result
             if result.get("reachable"):
                 ok += 1
@@ -145,7 +160,7 @@ def run_validate(
         # Parallelo con ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=workers) as pool:
             future_map = {
-                pool.submit(_validate_one, group_df, http_client): i
+                pool.submit(_validate_one, group_df, _client_for(group_df)): i
                 for i, (_, group_df) in enumerate(groups)
             }
             for future in as_completed(future_map):

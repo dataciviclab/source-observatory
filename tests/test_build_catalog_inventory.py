@@ -12,6 +12,29 @@ import scripts.collectors.sparql as collectors_sparql
 pytestmark = pytest.mark.contract
 
 
+def test_collect_source_carries_user_agent(monkeypatch) -> None:
+    """L'UA della fonte viaggia con le righe di inventory fino al validate."""
+
+    class _Result:
+        rows = [{"source_id": "anac"}]
+        warning = None
+        summary = None
+
+    monkeypatch.setattr(
+        scripts.build_catalog_inventory,
+        "dispatch",
+        lambda source_id, source_cfg, captured_at: _Result(),
+    )
+
+    source_id, rows, _, _, err = scripts.build_catalog_inventory._collect_source(
+        "anac", {"user_agent": "Browser/1.0"}, "2026-11-06T00:00:00+00:00"
+    )
+
+    assert err is None
+    assert source_id == "anac"
+    assert rows[0]["user_agent"] == "Browser/1.0"
+
+
 def test_collect_ckan_inventory_via_package_show_sample(monkeypatch) -> None:
     source_cfg = {
         "base_url": "https://www.inps.it/odapi/api/3/action/package_search",

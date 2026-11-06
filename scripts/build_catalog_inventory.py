@@ -94,6 +94,12 @@ def _collect_source(
     _SOURCE_STARTED[source_id] = time.time()
     try:
         res = dispatch(source_id, source_cfg, captured_at)
+        # L'UA della fonte viaggia con le righe: il validate usa un client
+        # per-UA e non può dipendere dal registry centrale (confine del motore).
+        user_agent = source_cfg.get("user_agent")
+        if isinstance(user_agent, str) and user_agent:
+            for row in res.rows:
+                row["user_agent"] = user_agent
         return source_id, res.rows, res.warning, res.summary, None
     except Exception as exc:
         return source_id, [], None, None, exc

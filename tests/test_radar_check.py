@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import jsonschema
 import pytest
@@ -17,6 +18,62 @@ _SCHEMA_DIR = Path(__file__).resolve().parents[1] / "schemas"
 
 def _load_schema(name: str) -> dict:
     return json.loads((_SCHEMA_DIR / name).read_text(encoding="utf-8"))
+
+
+class TestProbeOne:
+    def test_uses_registry_user_agent(self, monkeypatch) -> None:
+        """Il probe daily deve onorare lo user_agent della fonte."""
+        calls: list[tuple[str, str | None]] = []
+
+        def fake_probe(url: str, user_agent: str | None = None):
+            calls.append((url, user_agent))
+            return radar_check.ProbeResult(status="GREEN", http_code="200")
+
+        monkeypatch.setattr(radar_check, "probe_url", fake_probe)
+
+        portal, result = radar_check._probe_one(
+            "anac",
+            "https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1",
+            "Browser/1.0",
+        )
+
+        assert portal == "anac"
+        assert result.status == "GREEN"
+        assert calls == [
+            (
+                "https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1",
+                "Browser/1.0",
+            )
+        ]
+
+    def test_main_passes_registry_user_agent(self, monkeypatch, capsys) -> None:
+        """Il main legge l'UA dal registry e lo passa al probe."""
+        registry = {
+            "anac": {
+                "base_url": "https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1",
+                "source_kind": "catalog",
+                "protocol": "ckan",
+                "observation_mode": "catalog-watch",
+                "user_agent": "Browser/1.0",
+            }
+        }
+        calls: list[str | None] = []
+
+        def fake_probe(url: str, user_agent: str | None = None):
+            calls.append(user_agent)
+            return radar_check.ProbeResult(status="GREEN", http_code="200")
+
+        monkeypatch.setattr(radar_check, "load_registry", lambda _path: registry)
+        monkeypatch.setattr(radar_check, "probe_url", fake_probe)
+        monkeypatch.setattr(
+            radar_check,
+            "parse_args",
+            lambda: SimpleNamespace(dry_run=True, workers=1),
+        )
+
+        assert radar_check.main() == 0
+        assert calls == ["Browser/1.0"]
+        assert "anac" in capsys.readouterr().out
 
 
 class TestBuildReport:
