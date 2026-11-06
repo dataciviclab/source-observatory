@@ -76,6 +76,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
             "no_year": 0,
             "problematic": [],
             "csv_count": 0,
+            "not_checked_non_csv": 0,
             "top_items": [],
         }
 
@@ -193,7 +194,9 @@ def compute_formato_aperto(
         for r in probeable:
             if r.get("reachable"):
                 reachable += 1
-            fmt = _safe_str(r.get("resource_format") or r.get("format")).upper()
+            fmt = (
+                _safe_str(r.get("resource_format"), fallback="") or _safe_str(r.get("format"))
+            ).upper()
             if any(a in fmt for a in APERTI):
                 n_aperto += 1
 
@@ -282,9 +285,13 @@ def compute_operational_verdict(
 
     scored = int(source_check_data.get("total_scored") or 0)
     reachable = int(source_check_data.get("reachable") or 0)
-    reachability = round(reachable / scored * 100, 1) if scored else None
+    not_checked = int(source_check_data.get("not_checked_non_csv") or 0)
+    probeable = max(0, scored - not_checked)
+    reachability = round(reachable / probeable * 100, 1) if probeable else None
     if scored == 0:
         triggers.append("health_only" if observation_mode == "radar-only" else "no_data")
+    elif probeable == 0:
+        triggers.append("not_probeable")
     elif reachability is not None and reachability < 50:
         triggers.append("unreachable")
 
@@ -312,6 +319,12 @@ def compute_operational_verdict(
         label, score, next_action = "NO_DATA", "no_data", "run inventory/validate"
     elif "health_only" in triggers:
         label, score, next_action = "HEALTH_ONLY", "health_only", None
+    elif "not_probeable" in triggers:
+        label, score, next_action = (
+            "NOT_PROBEABLE",
+            "not_probeable",
+            "add a probeable format/schema",
+        )
     elif "unreachable" in triggers:
         label, score, next_action = "UNREACHABLE", "unreachable", "verify used items"
     elif "stale_rows" in triggers or "inventory_stale" in triggers:
@@ -428,19 +441,26 @@ def build_report(
         "with_csv_schema": sc_agg.get("with_csv_schema", 0),
         "avg_readiness": sc_agg.get("avg_readiness"),
         "top_items": sc_agg["top_items"],
+        "not_checked_non_csv": sc_agg["not_checked_non_csv"],
+        "probeable_items": sc_agg["total"] - sc_agg["not_checked_non_csv"],
         "reachability_pct": (
-            round(sc_agg["reachable"] / sc_agg["total"] * 100, 1) if sc_agg["total"] else None
+            round(
+                sc_agg["reachable"] / (sc_agg["total"] - sc_agg["not_checked_non_csv"]) * 100,
+                1,
+            )
+            if sc_agg["total"] - sc_agg["not_checked_non_csv"]
+            else None
         ),
         "coverage_pct": (round(sc_agg["total"] / total_groups * 100, 1) if total_groups else None),
         "formato_aperto": compute_formato_aperto(results, rows),
     }
 
-    # Datasets in use
+    # Datasets in use: status = stato d'uso, non stage editoriale.
     datasets_in_use = [
         {"slug": slug, "status": "in_use"} for slug in (cfg.get("datasets_in_use") or [])
     ]
 
-    # Signals (sostituiti da validated metrics — catalog_signals.json non più prodotto)
+    # Signals legacy: catalog_signals.json è ancora scritto per ACB.
     signals = [
         {
             "type": "validated_metrics",

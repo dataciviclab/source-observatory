@@ -129,6 +129,12 @@ class TestFormatoAperto:
         assert result["total"] == 3
         assert result["perc_aperto"] == pytest.approx(66.7)
 
+    @pytest.mark.smoke
+    def test_nan_resource_format_falls_back(self):
+        results = [{"reachable": True, "resource_format": float("nan"), "format": "csv"}]
+        result = compute_formato_aperto(results)
+        assert result["perc_aperto"] == 100.0
+
 
 # ── compute_operational_verdict ──────────────────────────────────────────────
 
@@ -173,6 +179,14 @@ class TestOperationalVerdict:
             {}, {"total_items": 10}, {"total_scored": 10, "reachable": 2, "coverage_pct": 100.0}
         )
         assert v["label"] == "UNREACHABLE"
+
+    def test_not_probeable(self):
+        v = compute_operational_verdict(
+            {},
+            {"total_items": 27},
+            {"total_scored": 27, "reachable": 0, "not_checked_non_csv": 27, "coverage_pct": 100.0},
+        )
+        assert v["label"] == "NOT_PROBEABLE"
 
     def test_stale_rows(self):
         v = compute_operational_verdict(
@@ -244,6 +258,25 @@ class TestBuildReport:
         )
         assert report["source_check"]["coverage_pct"] == 50.0
         assert report["source_check"]["reachability_pct"] == 100.0
+
+    @pytest.mark.smoke
+    def test_not_probeable_report(self):
+        results = [
+            {"dataset_group": f"test_src/ds{i}", "reachable": None, "format": "xlsx,json"}
+            for i in range(3)
+        ]
+        report = build_report(
+            source_id="test_src",
+            cfg={"source_kind": "catalog", "protocol": "ckan", "base_url": "https://example.com"},
+            radar_result={},
+            rows=[{"item_id": str(i)} for i in range(3)],
+            captured_at="2026-07-16T10:00:00+00:00",
+            results=results,
+            total_groups=3,
+        )
+        assert report["source_check"]["probeable_items"] == 0
+        assert report["source_check"]["reachability_pct"] is None
+        assert report["operational_verdict"]["label"] == "NOT_PROBEABLE"
 
     @pytest.mark.smoke
     def test_timing_filtered(self):
