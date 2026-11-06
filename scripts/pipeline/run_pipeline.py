@@ -123,6 +123,7 @@ def run_validate(
     results: list[dict | None] = [None] * total  # pre-allocate per ordine
     ok = 0
     fail = 0
+    skipped = 0
     csv_ok = 0
     t0 = time.time()
 
@@ -190,6 +191,15 @@ def run_validate(
             return None
 
     def _validate_limited(group_df: pd.DataFrame) -> dict[str, Any]:
+        if len(group_df) and bool(group_df.iloc[0].get("skip_item_validation")):
+            first = group_df.iloc[0]
+            return {
+                "dataset_group": first.get("dataset_group"),
+                "source_id": first.get("source_id"),
+                "reachable": None,
+                "validation_skipped": True,
+                "reason": "catalog-only",
+            }
         host = _host_for(group_df)
         source_id = _source_for(group_df)
         source_limit = _source_limit(group_df)
@@ -204,7 +214,9 @@ def run_validate(
         for i, (group_name, group_df) in enumerate(groups):
             result = _validate_limited(group_df)
             results[i] = result
-            if result.get("reachable"):
+            if result.get("validation_skipped"):
+                skipped += 1
+            elif result.get("reachable"):
                 ok += 1
                 if result.get("columns"):
                     csv_ok += 1
@@ -222,7 +234,9 @@ def run_validate(
                 i = future_map[future]
                 result = future.result()
                 results[i] = result
-                if result.get("reachable"):
+                if result.get("validation_skipped"):
+                    skipped += 1
+                elif result.get("reachable"):
                     ok += 1
                     if result.get("columns"):
                         csv_ok += 1
@@ -233,7 +247,8 @@ def run_validate(
 
     elapsed = time.time() - t0
     print(
-        f"\n   ✅ Validate done: {ok} reachable, {csv_ok} CSV, {fail} unreachable ({elapsed:.1f}s)"
+        f"\n   ✅ Validate done: {ok} reachable, {csv_ok} CSV, {fail} unreachable, "
+        f"{skipped} catalog-only ({elapsed:.1f}s)"
     )
     return results
 
@@ -278,6 +293,7 @@ def write_output(
     # Write summary JSON
     reachable = sum(1 for r in results if r.get("reachable"))
     csv_with_schema = sum(1 for r in results if r.get("reachable") and r.get("columns"))
+    skipped = sum(1 for r in results if r.get("validation_skipped"))
     by_source: dict[str, dict] = {
         src: {"total": 0, "reachable": 0, "csv": 0, "groups_total": groups}
         for src, groups in (groups_by_source or {}).items()
@@ -291,6 +307,9 @@ def write_output(
             by_source[src]["reachable"] += 1
         if r.get("columns"):
             by_source[src]["csv"] += 1
+        if r.get("validation_skipped"):
+            by_source[src].setdefault("skipped", 0)
+            by_source[src]["skipped"] += 1
 
     summary = {
         "pipeline_version": 1,
@@ -298,7 +317,8 @@ def write_output(
         "total_groups": len(results),
         "groups_total": sum(groups_by_source.values()) if groups_by_source else len(results),
         "reachable": reachable,
-        "unreachable": len(results) - reachable,
+        "unreachable": len(results) - reachable - skipped,
+        "skipped": skipped,
         "csv_with_schema": csv_with_schema,
         "by_source": {
             src: stats for src, stats in sorted(by_source.items(), key=lambda x: -x[1]["total"])

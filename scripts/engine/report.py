@@ -77,13 +77,18 @@ def aggregate_source_check(results: list[dict]) -> dict:
             "problematic": [],
             "csv_count": 0,
             "not_checked_non_csv": 0,
+            "validation_skipped": 0,
+            "catalog_only": False,
             "top_items": [],
         }
 
     total = len(results)
     reachable = sum(1 for r in results if r.get("reachable") is True)
     not_reachable = sum(1 for r in results if r.get("reachable") is False)
-    not_checked = sum(1 for r in results if r.get("reachable") is None)
+    skipped = sum(1 for r in results if r.get("validation_skipped"))
+    not_checked = sum(
+        1 for r in results if r.get("reachable") is None and not r.get("validation_skipped")
+    )
 
     formats = Counter(r.get("format") or "?" for r in results)
     csv_count = sum(1 for r in results if r.get("format") and "csv" in r.get("format", "").lower())
@@ -147,6 +152,8 @@ def aggregate_source_check(results: list[dict]) -> dict:
         "reachable": reachable,
         "not_reachable": not_reachable,
         "not_checked_non_csv": not_checked,
+        "validation_skipped": skipped,
+        "catalog_only": skipped > 0 and skipped == total,
         "formats": dict(formats.most_common()),
         "csv_count": csv_count,
         "with_csv_schema": len(with_schema),
@@ -286,10 +293,13 @@ def compute_operational_verdict(
     scored = int(source_check_data.get("total_scored") or 0)
     reachable = int(source_check_data.get("reachable") or 0)
     not_checked = int(source_check_data.get("not_checked_non_csv") or 0)
-    probeable = max(0, scored - not_checked)
+    skipped = int(source_check_data.get("validation_skipped") or 0)
+    probeable = max(0, scored - not_checked - skipped)
     reachability = round(reachable / probeable * 100, 1) if probeable else None
     if scored == 0:
         triggers.append("health_only" if observation_mode == "radar-only" else "no_data")
+    elif skipped and skipped == scored:
+        triggers.append("catalog_only")
     elif probeable == 0:
         triggers.append("not_probeable")
     elif reachability is not None and reachability < 50:
@@ -319,6 +329,8 @@ def compute_operational_verdict(
         label, score, next_action = "NO_DATA", "no_data", "run inventory/validate"
     elif "health_only" in triggers:
         label, score, next_action = "HEALTH_ONLY", "health_only", None
+    elif "catalog_only" in triggers:
+        label, score, next_action = "CATALOG_ONLY", "catalog_only", "review inventory changes"
     elif "not_probeable" in triggers:
         label, score, next_action = (
             "NOT_PROBEABLE",
@@ -442,13 +454,19 @@ def build_report(
         "avg_readiness": sc_agg.get("avg_readiness"),
         "top_items": sc_agg["top_items"],
         "not_checked_non_csv": sc_agg["not_checked_non_csv"],
-        "probeable_items": sc_agg["total"] - sc_agg["not_checked_non_csv"],
+        "validation_skipped": sc_agg["validation_skipped"],
+        "catalog_only": sc_agg["catalog_only"],
+        "probeable_items": (
+            sc_agg["total"] - sc_agg["not_checked_non_csv"] - sc_agg["validation_skipped"]
+        ),
         "reachability_pct": (
             round(
-                sc_agg["reachable"] / (sc_agg["total"] - sc_agg["not_checked_non_csv"]) * 100,
+                sc_agg["reachable"]
+                / (sc_agg["total"] - sc_agg["not_checked_non_csv"] - sc_agg["validation_skipped"])
+                * 100,
                 1,
             )
-            if sc_agg["total"] - sc_agg["not_checked_non_csv"]
+            if (sc_agg["total"] - sc_agg["not_checked_non_csv"] - sc_agg["validation_skipped"])
             else None
         ),
         "coverage_pct": (round(sc_agg["total"] / total_groups * 100, 1) if total_groups else None),

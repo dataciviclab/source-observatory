@@ -143,6 +143,20 @@ python scripts/pipeline/run_pipeline.py --workers 16 --max-concurrency-per-host 
 inventory. Il numero di worker del pool non è il numero di richieste
 concorrenti consentite su un singolo host.
 
+### `catalog-only`: inventory senza validate item-level
+
+Per cataloghi enormi o non probeabili si può disattivare il validate per fonte:
+
+```yaml
+source_check:
+  skip_item_validation: true
+  skip_item_validation_reason: "catalogo enorme / formato non gestito"
+```
+
+Il flusso resta inventory → diff → report; la pipeline non esegue probe
+item-level e il verdict diventa `CATALOG_ONLY`. È il caso di OpenBDAP, ISTAT
+SDMX, AGID e giustizia-statistiche: il catalogo è utile, il validate no.
+
 Usa `catalog inventory` quando la domanda è:
 
 - quali item sono oggi enumerabili nei cataloghi osservati?

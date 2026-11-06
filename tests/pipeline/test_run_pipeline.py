@@ -231,3 +231,29 @@ def test_run_validate_limits_per_source(monkeypatch):
     run_pipeline.run_validate(df, workers=8, max_concurrency_per_host=4)
 
     assert max_active == 2
+
+
+def test_run_validate_skips_catalog_only(monkeypatch):
+    """I gruppi catalog-only non passano dal validator."""
+    from scripts.pipeline import run_pipeline
+
+    def fake_validate(group_df, client=None):
+        raise AssertionError("catalog-only non deve essere validato")
+
+    monkeypatch.setattr(run_pipeline, "_validate_one", fake_validate)
+
+    df = pd.DataFrame(
+        [
+            {
+                "dataset_group": f"demo/{i}",
+                "source_id": "demo",
+                "skip_item_validation": True,
+                "distribution_url": "https://example.test/data.csv",
+            }
+            for i in range(3)
+        ]
+    )
+    results = run_pipeline.run_validate(df, workers=2)
+
+    assert len(results) == 3
+    assert all(r["validation_skipped"] is True for r in results)
