@@ -77,7 +77,12 @@ _SOURCE_STARTED: dict[str, float] = {}
 def _collect_source(
     source_id: str, source_cfg: dict[str, Any], captured_at: str
 ) -> tuple[
-    str, list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None
+    str,
+    list[dict[str, Any]],
+    dict[str, Any] | None,
+    dict[str, Any] | None,
+    Exception | None,
+    float,
 ]:
     """Worker per ThreadPoolExecutor: raccoglie una fonte e cattura eccezioni.
 
@@ -92,6 +97,7 @@ def _collect_source(
     niente doppio annidamento di thread.
     """
     _SOURCE_STARTED[source_id] = time.time()
+    collect_start = time.monotonic()
     try:
         res = dispatch(source_id, source_cfg, captured_at)
         # L'UA della fonte viaggia con le righe: il validate usa un client
@@ -100,9 +106,9 @@ def _collect_source(
         if isinstance(user_agent, str) and user_agent:
             for row in res.rows:
                 row["user_agent"] = user_agent
-        return source_id, res.rows, res.warning, res.summary, None
+        return source_id, res.rows, res.warning, res.summary, None, time.monotonic() - collect_start
     except Exception as exc:
-        return source_id, [], None, None, exc
+        return source_id, [], None, None, exc, time.monotonic() - collect_start
 
 
 def parse_args() -> argparse.Namespace:
@@ -175,6 +181,7 @@ def main() -> None:
                 "protocol": source_cfg.get("protocol"),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
                 "reason": inv.get("reason", "Fonte non inventariabile."),
+                "collect_seconds": 0.0,
             }
             continue
 
@@ -185,6 +192,7 @@ def main() -> None:
                 "protocol": protocol,
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
                 "reason": f"Protocollo {protocol} non ancora supportato dal builder inventory.",
+                "collect_seconds": 0.0,
             }
             continue
 
@@ -207,7 +215,13 @@ def main() -> None:
 
     collected: dict[
         str,
-        tuple[list[dict[str, Any]], dict[str, Any] | None, dict[str, Any] | None, Exception | None],
+        tuple[
+            list[dict[str, Any]],
+            dict[str, Any] | None,
+            dict[str, Any] | None,
+            Exception | None,
+            float,
+        ],
     ] = {}
     source_timing: dict[str, float] = {}
 
@@ -257,13 +271,12 @@ def main() -> None:
             for f in batch_done:
                 sid = future_to_id[f]
                 try:
-                    _, rows, warning, summary, err = f.result()
+                    _, rows, warning, summary, err, collect_seconds = f.result()
                 except Exception as exc:
-                    collected[sid] = ([], None, None, exc)
+                    collected[sid] = ([], None, None, exc, 0.0)
                 else:
-                    if sid not in source_timing:
-                        source_timing[sid] = now - submit_times[sid]
-                    collected[sid] = (rows, warning, summary, err)
+                    source_timing[sid] = collect_seconds
+                    collected[sid] = (rows, warning, summary, err, collect_seconds)
 
             # Per-source timeout: usa source_timeout[sid] dal registry
             # (fallback _SOURCE_TIMEOUT) MA solo per fonti effettivamente
@@ -278,13 +291,14 @@ def main() -> None:
                 if now - _SOURCE_STARTED[sid] >= to:
                     pending.discard(f)
                     f.cancel()
-                    if sid not in source_timing:
-                        source_timing[sid] = now - submit_times[sid]
+                    timeout_seconds = now - _SOURCE_STARTED[sid]
+                    source_timing[sid] = timeout_seconds
                     collected[sid] = (
                         [],
                         None,
                         None,
                         TimeoutError(f"Source {sid} timed out after {to}s"),
+                        timeout_seconds,
                     )
                     print(
                         f"  [timeout] {sid} — {(now - submit_times[sid]):.0f}s"
@@ -322,6 +336,7 @@ def main() -> None:
                     None,
                     None,
                     TimeoutError(f"Batch timeout after {_BATCH_TIMEOUT}s"),
+                    max(0.0, now - _SOURCE_STARTED.get(sid, now)),
                 )
     finally:
         # shutdown(wait=False) non aspetta task bloccati — il timeout HTTP
@@ -354,7 +369,7 @@ def main() -> None:
             )
 
     for source_id, source_cfg in inventoriable:
-        rows, warning, summary, err = collected[source_id]
+        rows, warning, summary, err, _collect_seconds = collected[source_id]
         if err is not None:
             # Source failed: preserve existing rows as stale
             report["sources"][source_id] = {
@@ -362,7 +377,7 @@ def main() -> None:
                 "protocol": source_cfg.get("protocol"),
                 "error": str(err),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
-                "elapsed_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
+                "collect_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
             }
             if existing_df is not None:
                 stale_rows = existing_df[existing_df["source_id"] == source_id].copy()
@@ -387,7 +402,7 @@ def main() -> None:
             "protocol": source_cfg.get("protocol"),
             "rows": len(rows),
             "method": source_cfg.get("catalog_baseline", {}).get("method"),
-            "elapsed_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
+            "collect_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
         }
         if warning:
             source_report["warning"] = warning
@@ -453,7 +468,7 @@ def main() -> None:
     print(f"{'Source':<24} {'Status':<12} {'Items':<8} {'Time':<8}  {'Note'}")
     print("-" * 72)
     for source_id, source_cfg in inventoriable:
-        rows_count, _warning, _summary, err = collected[source_id]
+        rows_count, _warning, _summary, err, _collect_seconds = collected[source_id]
         elapsed = source_timing.get(source_id, 0)
         if err is not None:
             err_str = str(err)
