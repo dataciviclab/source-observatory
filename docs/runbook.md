@@ -143,6 +143,23 @@ python scripts/pipeline/run_pipeline.py --workers 16 --max-concurrency-per-host 
 inventory. Il numero di worker del pool non è il numero di richieste
 concorrenti consentite su un singolo host.
 
+### robots.txt nei fetch HTML
+
+Il collector HTML (`area_pages`, `page_url_template`, pagine da sitemap,
+`homepage`) verifica `robots.txt` prima di ogni fetch diretto, con cache per
+origine (`scripts/collectors/robots.py`). Politica:
+
+- `robots.txt` assente o 4xx → nessuna regola, fetch consentito;
+- `robots.txt` illeggibile / 5xx / errore di rete → **fail-open** (il fetch
+  procede) e l'origine finisce in `summary.robots_error`;
+- pagina vietata → skip, conteggiata in `summary.robots_skipped`. Con
+  `page_url_template` l'enumerazione si ferma alla prima pagina vietata,
+  perché le pagine sono sequenziali sullo stesso percorso.
+
+Il fail-open è deliberato: un robots.txt temporaneamente rotto non deve
+bloccare l'osservatorio. Se serve fail-closed, il punto unico da cambiare è
+`RobotsGuard._fetch_parser`.
+
 ### `catalog-only`: inventory senza validate item-level
 
 Per cataloghi enormi o non probeabili si può disattivare il validate per fonte:
@@ -154,8 +171,10 @@ source_check:
 ```
 
 Il flusso resta inventory → diff → report; la pipeline non esegue probe
-item-level e il verdict diventa `CATALOG_ONLY`. È il caso di OpenBDAP, ISTAT
-SDMX, AGID e giustizia-statistiche: il catalogo è utile, il validate no.
+item-level e il verdict diventa `CATALOG_ONLY` (o `INVENTORY_CHANGED` se il
+catalogo è cambiato: il delta è più informativo dello stato). È il caso di
+OpenBDAP, ISTAT SDMX, AGID, giustizia-statistiche e MIMIT RNA: il catalogo è
+utile, il validate no.
 
 Usa `catalog inventory` quando la domanda è:
 
@@ -173,6 +192,8 @@ Per ottenere l'ultimo output senza rieseguire: artifact del workflow `observator
 Disciplina:
 
 - il perimetro segue le fonti `catalog-watch` del registry
+- un run completo droppa dall'inventory le fonti rimosse dal registry; un run
+  filtrato (`--source-ids`) le preserva, perché non è una fotografia completa
 - una fonte può restare osservata in SO ma non essere inventariabile
 - l'upload su GCS richiede WIF org-level (GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT) e il prefix hardcoded nella workflow (CATALOG_INVENTORY_GCS_PREFIX)
 - in assenza di GCS il workflow resta valido: usa baseline locale vuota e salta i passaggi opzionali di storage/diff

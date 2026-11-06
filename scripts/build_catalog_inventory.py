@@ -124,6 +124,30 @@ def _collect_source(
         return source_id, [], None, None, exc, time.monotonic() - collect_start
 
 
+def _preserved_inventory(
+    existing_df: pd.DataFrame,
+    *,
+    this_run_sources: set[str],
+    registry_keys: set[str],
+    filtered: bool,
+) -> pd.DataFrame:
+    """Righe inventory da preservare da run precedenti.
+
+    In un run completo le fonti rimosse dal registry vanno droppate, così
+    l'inventory non continua a contenere fonti che non esistono più. In un
+    run filtrato (`--source-ids`) tutto ciò che non è nel run va preservato.
+    """
+    preserved = existing_df[~existing_df["source_id"].isin(this_run_sources)]
+    if not filtered:
+        preserved = preserved[preserved["source_id"].isin(registry_keys)]
+    return preserved
+
+
+def _keep_report_entry(source_id: str, *, registry_keys: set[str], filtered: bool) -> bool:
+    """True se la entry di report di una fonte va preservata nel merge."""
+    return filtered or source_id in registry_keys
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Costruisce il catalog inventory derivato dal registry di source-observatory."
@@ -427,9 +451,15 @@ def main() -> None:
 
     # Merge with existing inventory (preserves sources not in this run)
     if out_parquet.exists() and existing_df is not None:
-        # Sources not in this run at all → keep as-is
+        # Sources not in this run at all → keep as-is, ma solo in run filtrati.
+        # In un run completo le fonti rimosse dal registry vanno droppate.
         this_run_sources = {sid for sid, _ in inventoriable}
-        preserved = existing_df[~existing_df["source_id"].isin(this_run_sources)]
+        preserved = _preserved_inventory(
+            existing_df,
+            this_run_sources=this_run_sources,
+            registry_keys=set(registry.keys()),
+            filtered=source_id_filter is not None,
+        )
         if not preserved.empty:
             # Mark as stale if older than last successful fetch
             preserved = preserved.copy()
@@ -465,6 +495,12 @@ def main() -> None:
         with out_report.open(encoding="utf-8") as fh:
             prev_report = json.load(fh)
         for sid, info in prev_report.get("sources", {}).items():
+            if not _keep_report_entry(
+                sid,
+                registry_keys=set(registry.keys()),
+                filtered=source_id_filter is not None,
+            ):
+                continue
             if sid not in report["sources"]:
                 report["sources"][sid] = info
 
