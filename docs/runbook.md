@@ -157,7 +157,7 @@ Disciplina:
 - in assenza di GCS il workflow resta valido: usa baseline locale vuota e salta i passaggi opzionali di storage/diff
 - il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`
 - `--skip-red-sources` usato in CI per evitare tentativi su fonti già RED (timeout, WAF)
-- `sync_datasets_in_use.py` viene eseguito nel workflow `radar.yml` per allineare il catalogo DI
+- `sync_datasets_in_use.py` viene eseguito nel workflow `radar.yml` per allineare il catalogo ACB (`topic_index.json`, branch `context`: `https://raw.githubusercontent.com/dataciviclab/agent-context-builder/context/topic_index.json`). Se ACB non risponde, il registry resta invariato.
 
 ## Ordine consigliato
 

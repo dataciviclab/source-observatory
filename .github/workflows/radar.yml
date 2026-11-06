@@ -30,7 +30,11 @@ jobs:
         run: |
           python scripts/radar_check.py
 
-      - name: Sync datasets_in_use from DI catalog
+      # ACB è la fonte di verità dell'uso reale (topic_index merged di tutti
+      # i repo). Se non è raggiungibile il registry resta invariato: il job
+      # continua e committa comunque lo stato del radar.
+      - name: Sync datasets_in_use from ACB
+        continue-on-error: true
         run: python scripts/sync_datasets_in_use.py
 
       - name: Upload radar artifacts

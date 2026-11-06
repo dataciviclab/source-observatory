@@ -23,7 +23,7 @@ scripts/
   build_catalog_inventory.py   # entry point: enumera fonti → parquet
   build_source_reports.py      # entry point: produce report per fonte + dashboard
   radar_check.py               # health check HTTP su tutte le fonti (radar)
-  sync_datasets_in_use.py      # sincronizza datasets_in_use dal catalogo DI
+  sync_datasets_in_use.py      # sincronizza datasets_in_use dal topic_index ACB
   _constants.py                # costanti/path del centrale (ri-esporta engine.formats)
   gha/                         # helper per CI (gcs upload, publish summary)
 ```

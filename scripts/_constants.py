@@ -174,9 +174,22 @@ def save_registry(path: Path | None, registry: dict) -> None:
     """Save registry YAML. Defaults to REGISTRY_PATH."""
     import yaml
 
+    class _RegistryDumper(yaml.SafeDumper):
+        """Mantiene le sequenze indentate come nel registry storico."""
+
+        def increase_indent(self, flow: bool = False, indentless: bool = False):
+            return super().increase_indent(flow, False)
+
     p = path or REGISTRY_PATH
     with p.open("w", encoding="utf-8") as fh:
-        yaml.safe_dump(registry, fh, sort_keys=False, allow_unicode=True)
+        yaml.dump(
+            registry,
+            fh,
+            Dumper=_RegistryDumper,
+            sort_keys=False,
+            allow_unicode=True,
+            default_flow_style=False,
+        )
 
 
 # ── Utility generiche ──────────────────────────────────────────────────────────
