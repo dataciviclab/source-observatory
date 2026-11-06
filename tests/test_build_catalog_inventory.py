@@ -27,12 +27,15 @@ def test_collect_source_carries_user_agent(monkeypatch) -> None:
     )
 
     source_id, rows, _, _, err, collect_seconds = scripts.build_catalog_inventory._collect_source(
-        "anac", {"user_agent": "Browser/1.0"}, "2026-11-06T00:00:00+00:00"
+        "anac",
+        {"user_agent": "Browser/1.0", "source_check": {"max_concurrency": 2}},
+        "2026-11-06T00:00:00+00:00",
     )
 
     assert err is None
     assert source_id == "anac"
     assert rows[0]["user_agent"] == "Browser/1.0"
+    assert rows[0]["max_concurrency"] == 2
     assert collect_seconds >= 0.0
 
 

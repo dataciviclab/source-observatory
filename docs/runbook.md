@@ -135,7 +135,13 @@ in chiaro nel parquet committato.
 ```bash
 python scripts/build_catalog_inventory.py
 python scripts/build_catalog_inventory.py --workers 3  # parallelo, sperimentale
+python scripts/pipeline/run_pipeline.py --workers 16 --max-concurrency-per-host 4
 ```
+
+`run_pipeline` applica due limiti: `max_concurrency_per_host` (default 4) e
+`max_concurrency` per fonte, letto dal registry e trasportato nelle righe di
+inventory. Il numero di worker del pool non è il numero di richieste
+concorrenti consentite su un singolo host.
 
 Usa `catalog inventory` quando la domanda è:
 

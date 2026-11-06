@@ -11,6 +11,8 @@ Marker: pure_unit (nessuna chiamata HTTP reale).
 from __future__ import annotations
 
 import json
+import threading
+import time
 
 import pandas as pd
 import pytest
@@ -156,3 +158,39 @@ def test_write_output_records_groups_total(tmp_path):
     assert summary["groups_total"] == 5
     assert summary["by_source"]["demo"]["groups_total"] == 5
     assert summary["by_source"]["demo"]["total"] == 1
+
+
+def test_run_validate_limits_per_host(monkeypatch):
+    """Il pool può avere 8 worker, ma un host non supera il limite."""
+    from scripts.pipeline import run_pipeline
+
+    active = 0
+    max_active = 0
+    lock = threading.Lock()
+
+    def fake_validate(group_df, client=None):
+        nonlocal active, max_active
+        with lock:
+            active += 1
+            max_active = max(max_active, active)
+        time.sleep(0.05)
+        with lock:
+            active -= 1
+        return {"dataset_group": group_df.iloc[0]["dataset_group"], "reachable": True}
+
+    monkeypatch.setattr(run_pipeline, "_validate_one", fake_validate)
+    monkeypatch.setattr("lab_connectors.http.HttpClient", lambda **kw: object())
+
+    df = pd.DataFrame(
+        [
+            {
+                "dataset_group": f"demo/{i}",
+                "source_id": "demo",
+                "distribution_url": "https://same-host.test/data.csv",
+            }
+            for i in range(8)
+        ]
+    )
+    run_pipeline.run_validate(df, workers=8, max_concurrency_per_host=2)
+
+    assert max_active <= 2
