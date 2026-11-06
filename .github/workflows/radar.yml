@@ -34,6 +34,7 @@ jobs:
       # i repo). Se non è raggiungibile il registry resta invariato: il job
       # continua e committa comunque lo stato del radar.
       - name: Sync datasets_in_use from ACB
+        id: sync_usage
         continue-on-error: true
         run: python scripts/sync_datasets_in_use.py
 
@@ -65,3 +66,12 @@ jobs:
         run: |
           python scripts/gha/publish_radar_summary.py
           cat radar_summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      # Il sync è continue-on-error per non perdere il commit del radar.
+      # Qui però il job torna rosso: un fallimento quotidiano del sync non
+      # deve passare inosservato.
+      - name: Fail if usage sync failed
+        if: steps.sync_usage.outcome == 'failure'
+        run: |
+          echo "::error::Sync datasets_in_use da ACB fallito; registry invariato."
+          exit 1

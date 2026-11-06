@@ -33,6 +33,12 @@ motore — ciò che un repo dati installa per generare il proprio catalog. Non
 importano moduli del centrale (`_constants`, `radar_check`, `so_mcp`): è il
 centrale a importare dal motore. Il gate è `tests/test_engine_boundary.py`.
 
+**Due `datasets_in_use`**: quello in `data/radar/sources_registry.yaml` è
+l'uso reale di tutto il Lab e arriva da ACB (`topic_index.json`); quello dentro
+`registry/catalog.json` è locale al singolo repo e arriva dal suo
+`registry/registry.json`. Sono artifact diversi: non vanno confrontati come
+se fossero lo stesso campo.
+
 ## Funnel attuale
 
 ```

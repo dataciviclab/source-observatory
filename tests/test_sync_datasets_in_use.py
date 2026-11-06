@@ -11,6 +11,7 @@ import pytest
 import yaml
 
 from scripts.sync_datasets_in_use import (
+    UsageDropError,
     fetch_topic_index,
     group_by_source_id,
     update_registry,
@@ -70,6 +71,13 @@ def test_fetch_topic_index_invalid_payload():
     client = _FakeClient(_FakeResult({"schema_version": 7}))
 
     with pytest.raises(ValueError, match="missing 'datasets'"):
+        fetch_topic_index("https://example.test/topic_index.json", client=client)
+
+
+def test_fetch_topic_index_rejects_unknown_schema():
+    client = _FakeClient(_FakeResult({"schema_version": 8, "datasets": {}}))
+
+    with pytest.raises(ValueError, match="schema_version 8 != expected 7"):
         fetch_topic_index("https://example.test/topic_index.json", client=client)
 
 
@@ -144,3 +152,70 @@ def test_update_registry_dry_run_does_not_write(tmp_path):
 
     assert updated == 1
     assert registry.read_text(encoding="utf-8") == before
+
+
+def test_update_registry_rejects_empty_acb_payload(tmp_path):
+    """Un topic index valido ma senza datasets non deve svuotare il registry."""
+    registry = tmp_path / "sources_registry.yaml"
+    before = (
+        "anac:\n  protocol: ckan\n  datasets_in_use: [a, b]\n"
+        "inps:\n  protocol: ckan\n  datasets_in_use: [c]\n"
+    )
+    registry.write_text(before, encoding="utf-8")
+
+    with pytest.raises(UsageDropError, match="2 fonti non vuote diventerebbero vuote"):
+        update_registry(registry, {})
+
+    assert registry.read_text(encoding="utf-8") == before
+
+
+def test_update_registry_rejects_partial_acb_payload(tmp_path):
+    """Se una fonte non vuota sparisce dal payload, non si scrive."""
+    registry = tmp_path / "sources_registry.yaml"
+    before = (
+        "anac:\n  protocol: ckan\n  datasets_in_use: [a]\n"
+        "inps:\n  protocol: ckan\n  datasets_in_use: [b]\n"
+    )
+    registry.write_text(before, encoding="utf-8")
+
+    with pytest.raises(UsageDropError, match="inps"):
+        update_registry(registry, {"anac": ["a"]})
+
+    assert registry.read_text(encoding="utf-8") == before
+
+
+def test_update_registry_rejects_large_link_drop(tmp_path):
+    registry = tmp_path / "sources_registry.yaml"
+    before = "anac:\n  protocol: ckan\n  datasets_in_use: [a, b, c, d, e, f, g, h, i, j]\n"
+    registry.write_text(before, encoding="utf-8")
+
+    with pytest.raises(UsageDropError, match="30.0%"):
+        update_registry(registry, {"anac": ["a", "b", "c", "d", "e", "f", "g"]})
+
+    assert registry.read_text(encoding="utf-8") == before
+
+
+def test_update_registry_rejects_links_below_floor(tmp_path):
+    registry = tmp_path / "sources_registry.yaml"
+    slugs = [f"ds_{i}" for i in range(60)]
+    before = "anac:\n  protocol: ckan\n  datasets_in_use: [" + ", ".join(slugs) + "]\n"
+    registry.write_text(before, encoding="utf-8")
+
+    with pytest.raises(UsageDropError, match="soglia minima"):
+        update_registry(registry, {"anac": slugs[:49]})
+
+    assert registry.read_text(encoding="utf-8") == before
+
+
+def test_update_registry_allow_drop_writes(tmp_path):
+    registry = tmp_path / "sources_registry.yaml"
+    registry.write_text(
+        "anac:\n  protocol: ckan\n  datasets_in_use: [a, b]\n",
+        encoding="utf-8",
+    )
+
+    updated = update_registry(registry, {}, allow_drop=True)
+
+    data = yaml.safe_load(registry.read_text(encoding="utf-8"))
+    assert updated == 1
+    assert data["anac"]["datasets_in_use"] == []

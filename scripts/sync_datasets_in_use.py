@@ -28,6 +28,16 @@ ACB_TOPIC_INDEX_URL = (
 DEFAULT_TIMEOUT = 30
 USER_AGENT = "DataCivicLab-SourceObservatory/1.0"
 
+# Contratto ACB: il topic index è un artifact generato, non una release.
+# Se cambia forma ci fermiamo prima di scrivere un registry sbagliato.
+EXPECTED_SCHEMA_VERSION = 7
+MIN_EXPECTED_LINKS = 50
+MAX_LINK_DROP_PCT = 20.0
+
+
+class UsageDropError(RuntimeError):
+    """Il payload ACB sembra parziale: il registry non viene scritto."""
+
 
 def fetch_topic_index(
     url: str = ACB_TOPIC_INDEX_URL,
@@ -48,6 +58,11 @@ def fetch_topic_index(
         raise ValueError(f"ACB topic index is not valid JSON: {url}") from exc
     if not isinstance(payload, dict):
         raise ValueError(f"ACB topic index must be a JSON object: {url}")
+    if payload.get("schema_version") != EXPECTED_SCHEMA_VERSION:
+        raise ValueError(
+            "ACB topic index schema_version "
+            f"{payload.get('schema_version')!r} != expected {EXPECTED_SCHEMA_VERSION}: {url}"
+        )
     if not isinstance(payload.get("datasets"), dict):
         raise ValueError(f"ACB topic index missing 'datasets' mapping: {url}")
     return payload
@@ -85,23 +100,63 @@ def update_registry(
     source_groups: dict[str, list[str]],
     *,
     dry_run: bool = False,
+    allow_drop: bool = False,
 ) -> int:
     """Aggiorna ``datasets_in_use`` nel registry.
 
     - aggiorna solo le fonti presenti nel registry;
     - una fonte senza dataset in ACB riceve una lista vuota;
     - le fonti ACB non presenti nel registry vengono saltate e loggate;
-    - ``dry_run`` mostra il diff senza scrivere.
+    - ``dry_run`` mostra il diff senza scrivere;
+    - ``allow_drop`` autorizza esplicitamente rimozioni di dataset/fonti.
 
-    Ritorna il numero di fonti modificate.
+    Guardia anti-wipe: un payload ACB parziale è uno stato previsto (un repo
+    può mancare dal merge). Prima di scrivere, il default rifiuta di:
+
+    - svuotare una fonte che prima aveva dataset;
+    - perdere più del 20% dei link totali;
+    - scendere sotto i 50 link quando il registry ne aveva almeno 50.
+
+    In quei casi solleva ``UsageDropError`` e non tocca il registry.
     """
     registry = load_registry(registry_path)
-    updated = 0
 
-    for source_id in sorted(registry):
-        new_list = sorted(source_groups.get(source_id, []))
+    old_lists: dict[str, list[str]] = {}
+    new_lists: dict[str, list[str]] = {}
+    for source_id in registry:
         old_raw = registry[source_id].get("datasets_in_use") or []
-        old_list = old_raw if isinstance(old_raw, list) else []
+        old_lists[source_id] = old_raw if isinstance(old_raw, list) else []
+        new_lists[source_id] = sorted(source_groups.get(source_id, []))
+
+    old_total = sum(len(slugs) for slugs in old_lists.values())
+    new_total = sum(len(slugs) for slugs in new_lists.values())
+    emptied = [
+        source_id
+        for source_id in sorted(registry)
+        if old_lists[source_id] and not new_lists[source_id]
+    ]
+    drop_pct = ((old_total - new_total) / old_total * 100) if old_total else 0.0
+
+    if not allow_drop:
+        if emptied:
+            raise UsageDropError(
+                f"{len(emptied)} fonti non vuote diventerebbero vuote: {', '.join(emptied)}"
+            )
+        if old_total and drop_pct > MAX_LINK_DROP_PCT:
+            raise UsageDropError(
+                f"link in calo del {drop_pct:.1f}% ({old_total} -> {new_total}), "
+                f"soglia {MAX_LINK_DROP_PCT:.0f}%"
+            )
+        if old_total >= MIN_EXPECTED_LINKS and new_total < MIN_EXPECTED_LINKS:
+            raise UsageDropError(
+                f"link sotto la soglia minima ({new_total} < {MIN_EXPECTED_LINKS}), "
+                f"prima erano {old_total}"
+            )
+
+    updated = 0
+    for source_id in sorted(registry):
+        old_list = old_lists[source_id]
+        new_list = new_lists[source_id]
 
         if old_list != new_list:
             print(f"  UPDATE {source_id}: {old_list} -> {new_list}")
@@ -149,6 +204,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Mostra il diff senza scrivere il registry.",
     )
+    parser.add_argument(
+        "--allow-drop",
+        action="store_true",
+        help="Autorizza esplicitamente la rimozione di dataset/fonti (bypassa la guardia anti-wipe).",
+    )
     return parser.parse_args(argv)
 
 
@@ -170,7 +230,19 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Source groups: {len(groups)} — dataset: {n_datasets}")
     print(f"Registry: {args.registry}")
 
-    updated = update_registry(args.registry, groups, dry_run=args.dry_run)
+    try:
+        updated = update_registry(
+            args.registry,
+            groups,
+            dry_run=args.dry_run,
+            allow_drop=args.allow_drop,
+        )
+    except UsageDropError as exc:
+        print(f"ERROR: guardia anti-wipe: {exc}", file=sys.stderr)
+        print(
+            "Registry invariato. Usa --allow-drop per una rimozione intenzionale.", file=sys.stderr
+        )
+        return 2
 
     if args.dry_run:
         print(f"\nDry-run: {updated} fonte/i da aggiornare (nessuna scrittura).")

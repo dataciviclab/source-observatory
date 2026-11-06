@@ -158,6 +158,7 @@ Disciplina:
 - il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`
 - `--skip-red-sources` usato in CI per evitare tentativi su fonti già RED (timeout, WAF)
 - `sync_datasets_in_use.py` viene eseguito nel workflow `radar.yml` per allineare il catalogo ACB (`topic_index.json`, branch `context`: `https://raw.githubusercontent.com/dataciviclab/agent-context-builder/context/topic_index.json`). Se ACB non risponde, il registry resta invariato.
+- Il sync ha una guardia anti-wipe: rifiuta `schema_version` diverso da 7, fonti non vuote che diventerebbero vuote, calo link >20% e discesa sotto 50 link. Per rimozioni intenzionali usare `--allow-drop`.
 
 ## Ordine consigliato
 
