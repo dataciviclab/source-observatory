@@ -276,3 +276,48 @@ def test_interleave_groups_by_host():
     )
 
     assert [name for name, _ in ordered] == ["a1", "b1", "a2", "b2"]
+
+
+def test_run_validate_skips_only_true_flag(monkeypatch):
+    """NaN/None non devono essere interpretati come catalog-only."""
+    from scripts.pipeline import run_pipeline
+
+    calls: list[str] = []
+
+    def fake_validate(group_df, client=None):
+        calls.append(group_df.iloc[0]["dataset_group"])
+        return {
+            "dataset_group": group_df.iloc[0]["dataset_group"],
+            "reachable": True,
+            "columns": ["x"],
+        }
+
+    monkeypatch.setattr(run_pipeline, "_validate_one", fake_validate)
+    monkeypatch.setattr("lab_connectors.http.HttpClient", lambda **kw: object())
+
+    df = pd.DataFrame(
+        [
+            {
+                "dataset_group": "skip",
+                "source_id": "demo",
+                "skip_item_validation": True,
+                "distribution_url": "https://example.test/a.csv",
+            },
+            {
+                "dataset_group": "nan",
+                "source_id": "demo",
+                "skip_item_validation": float("nan"),
+                "distribution_url": "https://example.test/b.csv",
+            },
+            {
+                "dataset_group": "none",
+                "source_id": "demo",
+                "skip_item_validation": None,
+                "distribution_url": "https://example.test/c.csv",
+            },
+        ]
+    )
+    results = run_pipeline.run_validate(df, workers=1)
+
+    assert calls == ["nan", "none"]
+    assert sum(1 for r in results if r.get("validation_skipped")) == 1

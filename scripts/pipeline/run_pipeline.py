@@ -100,6 +100,36 @@ def _validate_one(group_df: pd.DataFrame, client=None) -> dict:
     return validator(items, client=client)
 
 
+def _group_host_cheap(group_df: pd.DataFrame) -> str:
+    """Host della prima riga: usato solo per il bucketing, non per il semaforo."""
+    if len(group_df):
+        first = group_df.iloc[0]
+        url = str(first.get("distribution_url") or first.get("url") or "")
+        host = urlsplit(url).hostname
+        if host:
+            return host
+    return "unknown"
+
+
+def _host_map(df: pd.DataFrame) -> dict[Any, str]:
+    """Host per dataset_group, calcolato una volta in modo vettoriale."""
+    if "dataset_group" not in df:
+        return {}
+    if "distribution_url" in df and "url" in df:
+        urls = df["distribution_url"].where(df["distribution_url"].notna(), df["url"])
+    elif "distribution_url" in df:
+        urls = df["distribution_url"]
+    elif "url" in df:
+        urls = df["url"]
+    else:
+        return {}
+    first = urls.groupby(df["dataset_group"], sort=False).first()
+    return {
+        key: (urlsplit(str(value)).hostname or "unknown") if pd.notna(value) else "unknown"
+        for key, value in first.items()
+    }
+
+
 def _group_host(group_df: pd.DataFrame) -> str:
     """Host scelto dallo stesso criterio del validator."""
     if len(group_df):
@@ -115,11 +145,13 @@ def _group_host(group_df: pd.DataFrame) -> str:
 
 def _interleave_groups(
     groups: list[tuple[Any, pd.DataFrame]],
+    host_by_group: dict[Any, str] | None = None,
 ) -> list[tuple[Any, pd.DataFrame]]:
     """Round-robin per host: evita che una fonte monopolizzi i worker."""
     buckets: dict[str, list[tuple[Any, pd.DataFrame]]] = {}
     for item in groups:
-        buckets.setdefault(_group_host(item[1]), []).append(item)
+        host = (host_by_group or {}).get(item[0]) or _group_host_cheap(item[1])
+        buckets.setdefault(host, []).append(item)
 
     ordered: list[tuple[Any, pd.DataFrame]] = []
     while buckets:
@@ -148,7 +180,7 @@ def run_validate(
     groups = list(df.groupby("dataset_group"))
     if max_groups:
         groups = groups[:max_groups]
-    groups = _interleave_groups(groups)
+    groups = _interleave_groups(groups, _host_map(df))
 
     total = len(groups)
     print(f"\n✅ Step 3: VALIDATE — probing {total} groups (workers={workers})")
@@ -213,7 +245,11 @@ def run_validate(
             return None
 
     def _validate_limited(group_df: pd.DataFrame) -> dict[str, Any]:
-        if len(group_df) and bool(group_df.iloc[0].get("skip_item_validation")):
+        skip_flag = group_df.iloc[0].get("skip_item_validation") if len(group_df) else None
+        item = getattr(skip_flag, "item", None)
+        if callable(item):
+            skip_flag = item()
+        if skip_flag is True:
             first = group_df.iloc[0]
             return {
                 "dataset_group": first.get("dataset_group"),

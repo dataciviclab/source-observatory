@@ -112,6 +112,19 @@ class TestAggregateSourceCheck:
         assert "404" in agg["problematic"][0]["error"]
 
 
+class TestAggregateSourceCheckCatalogOnly:
+    def test_skipped_rows_excluded_from_formats(self):
+        results = [
+            {"dataset_group": "a", "validation_skipped": True},
+            {"dataset_group": "b", "validation_skipped": True},
+            {"dataset_group": "c", "format": "csv", "num_columns": 3, "readiness_score": 9},
+        ]
+        agg = aggregate_source_check(results)
+        assert agg["validation_skipped"] == 2
+        assert agg["formats"] == {"csv": 1}
+        assert agg["no_year"] == 1
+
+
 # ── compute_formato_aperto ──────────────────────────────────────────────────
 
 
@@ -187,6 +200,15 @@ class TestOperationalVerdict:
             {"total_scored": 10, "reachable": 0, "validation_skipped": 10},
         )
         assert v["label"] == "CATALOG_ONLY"
+
+    def test_catalog_only_inventory_changed(self):
+        v = compute_operational_verdict(
+            {},
+            {"total_items": 10, "delta": 10},
+            {"total_scored": 10, "reachable": 0, "validation_skipped": 10},
+        )
+        assert v["label"] == "INVENTORY_CHANGED"
+        assert "catalog_only" in v["triggers"]
 
     def test_not_probeable(self):
         v = compute_operational_verdict(
@@ -277,7 +299,7 @@ class TestBuildReport:
             cfg={"source_kind": "catalog", "protocol": "ckan", "base_url": "https://example.com"},
             radar_result={},
             rows=[{"item_id": str(i)} for i in range(3)],
-            captured_at="2026-07-16T10:00:00+00:00",
+            captured_at=None,
             results=results,
             total_groups=3,
         )
@@ -296,7 +318,7 @@ class TestBuildReport:
             cfg={"source_kind": "catalog", "protocol": "ckan", "base_url": "https://example.com"},
             radar_result={},
             rows=[{"item_id": str(i)} for i in range(3)],
-            captured_at="2026-07-16T10:00:00+00:00",
+            captured_at=None,
             results=results,
             total_groups=3,
         )

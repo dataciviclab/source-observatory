@@ -89,19 +89,20 @@ def aggregate_source_check(results: list[dict]) -> dict:
     not_checked = sum(
         1 for r in results if r.get("reachable") is None and not r.get("validation_skipped")
     )
+    active = [r for r in results if not r.get("validation_skipped")]
 
-    formats = Counter(r.get("format") or "?" for r in results)
-    csv_count = sum(1 for r in results if r.get("format") and "csv" in r.get("format", "").lower())
-    with_schema = [r for r in results if r.get("num_columns") and r["num_columns"] > 0]
+    formats = Counter(r.get("format") or "?" for r in active)
+    csv_count = sum(1 for r in active if r.get("format") and "csv" in r.get("format", "").lower())
+    with_schema = [r for r in active if r.get("num_columns") and r["num_columns"] > 0]
 
     # Readiness score medio
-    scores = [r["readiness_score"] for r in results if r.get("readiness_score") is not None]
+    scores = [r["readiness_score"] for r in active if r.get("readiness_score") is not None]
     avg_readiness = round(sum(scores) / len(scores), 1) if scores else None
 
     # Anni
     no_year = sum(
         1
-        for r in results
+        for r in active
         if r.get("dataset_group_year_min") is None
         or (
             isinstance(r.get("dataset_group_year_min"), float)
@@ -116,7 +117,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
             "url": str(r.get("url", ""))[:80],
             "error": r.get("error"),
         }
-        for r in results
+        for r in active
         if r.get("reachable") is False
     ]
 
@@ -142,7 +143,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
             "format": r.get("format"),
             "reachable": r.get("reachable") is True,
         }
-        for r in results
+        for r in active
         if r.get("readiness_score") is not None
     ]
     scored.sort(key=lambda x: x["score"], reverse=True)
@@ -329,6 +330,12 @@ def compute_operational_verdict(
         label, score, next_action = "NO_DATA", "no_data", "run inventory/validate"
     elif "health_only" in triggers:
         label, score, next_action = "HEALTH_ONLY", "health_only", None
+    elif "unreachable" in triggers:
+        label, score, next_action = "UNREACHABLE", "unreachable", "verify used items"
+    elif "stale_rows" in triggers or "inventory_stale" in triggers:
+        label, score, next_action = "STALE", "stale", "refresh inventory"
+    elif "inventory_changed" in triggers:
+        label, score, next_action = "INVENTORY_CHANGED", "changed", "review inventory changes"
     elif "catalog_only" in triggers:
         label, score, next_action = "CATALOG_ONLY", "catalog_only", "review inventory changes"
     elif "not_probeable" in triggers:
@@ -337,12 +344,6 @@ def compute_operational_verdict(
             "not_probeable",
             "add a probeable format/schema",
         )
-    elif "unreachable" in triggers:
-        label, score, next_action = "UNREACHABLE", "unreachable", "verify used items"
-    elif "stale_rows" in triggers or "inventory_stale" in triggers:
-        label, score, next_action = "STALE", "stale", "refresh inventory"
-    elif "inventory_changed" in triggers:
-        label, score, next_action = "INVENTORY_CHANGED", "changed", "review inventory changes"
     elif "source_check_partial" in triggers:
         label, score, next_action = "PARTIALLY_SCOPED", "partial", "complete source-check"
     else:
