@@ -23,7 +23,7 @@ scripts/
   build_catalog_inventory.py   # entry point: enumera fonti → parquet
   build_source_reports.py      # entry point: produce report per fonte + dashboard
   radar_check.py               # health check HTTP su tutte le fonti (radar)
-  sync_datasets_in_use.py      # sincronizza datasets_in_use dal catalogo DI
+  sync_datasets_in_use.py      # sincronizza datasets_in_use dal topic_index ACB
   _constants.py                # costanti/path del centrale (ri-esporta engine.formats)
   gha/                         # helper per CI (gcs upload, publish summary)
 ```
@@ -32,6 +32,12 @@ scripts/
 motore — ciò che un repo dati installa per generare il proprio catalog. Non
 importano moduli del centrale (`_constants`, `radar_check`, `so_mcp`): è il
 centrale a importare dal motore. Il gate è `tests/test_engine_boundary.py`.
+
+**Due `datasets_in_use`**: quello in `data/radar/sources_registry.yaml` è
+l'uso reale di tutto il Lab e arriva da ACB (`topic_index.json`); quello dentro
+`registry/catalog.json` è locale al singolo repo e arriva dal suo
+`registry/registry.json`. Sono artifact diversi: non vanno confrontati come
+se fossero lo stesso campo.
 
 ## Funnel attuale
 

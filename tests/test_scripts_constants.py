@@ -127,3 +127,10 @@ class TestRegistry:
         content = p.read_text(encoding="utf-8")
         assert "test_source" in content
         assert "ckan" in content
+
+    def test_save_registry_indents_sequences(self, tmp_path):
+        """Le liste restano indentate come nel registry storico (4 spazi)."""
+        p = tmp_path / "registry.yaml"
+        save_registry(p, {"test_source": {"datasets_in_use": ["a", "b"]}})
+        content = p.read_text(encoding="utf-8")
+        assert "  datasets_in_use:\n    - a\n    - b\n" in content

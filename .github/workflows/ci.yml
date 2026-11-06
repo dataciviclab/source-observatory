@@ -9,6 +9,22 @@ permissions:
   contents: read
 
 jobs:
+  # Guardia sul workflow daily `radar`: deve girare con le sole dipendenze
+  # base. Se un import reintroduce un extra (es. ruamel), questo job fallisce
+  # prima che il radar schedulato si rompa in produzione.
+  base-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Python setup (base only)
+        uses: dataciviclab/.github/actions/python-setup@main
+
+      - name: Import daily modules with base deps
+        run: |
+          python -c "import scripts.sync_datasets_in_use, scripts.radar_check"
+
   test:
     runs-on: ubuntu-latest
 

@@ -44,7 +44,6 @@ central = [
   "duckdb>=1.5.3",
   "pandas>=3.0.3",
   "pyarrow>=24.0.0",
-  "ruamel.yaml>=0.19.1",
   "lab-connectors[gcs] @ git+https://github.com/dataciviclab/lab-connectors.git",
 ]
 # Server MCP (so_mcp): client MCP + helper.

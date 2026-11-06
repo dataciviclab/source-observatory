@@ -24,7 +24,7 @@ Il funnel è alimentato dal `sources_registry.yaml`: ogni fonte ha `source_id`,
 
 | Workflow | Schedule | Cosa fa |
 |---|---|---|
-| `radar.yml` | **daily** 03:15 | Radar check su tutte le fonti + sync `datasets_in_use` |
+| `radar.yml` | **daily** 03:15 | Radar check su tutte le fonti + sync `datasets_in_use` da ACB |
 | `observatory.yml` | **weekly** (lunedì) 03:20 | Inventory → pipeline → report → upload GCS |
 
 I report vengono committati nel repo. I parquet operativi sono caricati su GCS

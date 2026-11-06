@@ -1,28 +1,98 @@
-"""
-Test sync_datasets_in_use.py — grouping DI catalog e update registry.
+"""Test ``sync_datasets_in_use`` — grouping ACB e update del registry.
 
-Funzioni pure testate senza rete: group_by_source_id (raggruppa e ordina)
-e update_registry (aggiorna sources_registry.yaml preservando ordine).
+Le funzioni pure sono testate senza rete. Il fetch è testato con un client
+finto, così il contratto ACB resta verificato senza dipendere dal branch
+``context``.
 """
 
 from __future__ import annotations
 
 import pytest
+import yaml
 
-from scripts.sync_datasets_in_use import group_by_source_id, update_registry
+from scripts.sync_datasets_in_use import (
+    UsageDropError,
+    fetch_topic_index,
+    group_by_source_id,
+    update_registry,
+)
 
 pytestmark = pytest.mark.pure_unit
 
 
+class _FakeResponse:
+    def __init__(self, payload):
+        self._payload = payload
+
+    def json(self):
+        return self._payload
+
+
+class _FakeResult:
+    def __init__(self, payload=None, *, ok=True, err=None):
+        self.is_ok = ok
+        self.response = _FakeResponse(payload) if payload is not None else None
+        self.err = err
+
+
+class _FakeClient:
+    def __init__(self, result):
+        self.result = result
+        self.calls = []
+
+    def get(self, url, **kwargs):
+        self.calls.append((url, kwargs))
+        return self.result
+
+
+def test_fetch_topic_index():
+    payload = {
+        "schema_version": 7,
+        "generated_at": "2026-11-06T13:50:19",
+        "datasets": {"anac": [{"slug": "anac_bandi_gara"}]},
+    }
+    client = _FakeClient(_FakeResult(payload))
+
+    result = fetch_topic_index("https://example.test/topic_index.json", client=client)
+
+    assert result == payload
+    assert client.calls[0][0] == "https://example.test/topic_index.json"
+    assert client.calls[0][1]["allow_redirects"] is True
+
+
+def test_fetch_topic_index_network_error():
+    client = _FakeClient(_FakeResult(ok=False, err=RuntimeError("boom")))
+
+    with pytest.raises(RuntimeError, match="ACB fetch failed"):
+        fetch_topic_index("https://example.test/topic_index.json", client=client)
+
+
+def test_fetch_topic_index_invalid_payload():
+    client = _FakeClient(_FakeResult({"schema_version": 7}))
+
+    with pytest.raises(ValueError, match="missing 'datasets'"):
+        fetch_topic_index("https://example.test/topic_index.json", client=client)
+
+
+def test_fetch_topic_index_rejects_unknown_schema():
+    client = _FakeClient(_FakeResult({"schema_version": 8, "datasets": {}}))
+
+    with pytest.raises(ValueError, match="schema_version 8 != expected 7"):
+        fetch_topic_index("https://example.test/topic_index.json", client=client)
+
+
 def test_group_by_source_id():
-    """Raggruppa slug per source_id, ordina, ignora dataset senza source."""
-    datasets = [
-        {"source_id": "anac", "slug": "anac_bandi_gara"},
-        {"source_id": "anac", "slug": "anac_aggiudicazioni"},
-        {"source_id": "inps", "slug": "inps_precariato"},
-        {"slug": "no_source"},  # senza source_id → ignorato
-    ]
-    groups = group_by_source_id(datasets)
+    topic_index = {
+        "datasets": {
+            "anac": [{"slug": "anac_bandi_gara"}, {"slug": "anac_aggiudicazioni"}],
+            "inps": [{"slug": "inps_precariato"}],
+            "empty": [],
+            "bad": [{"nope": 1}, "not-a-card"],
+        }
+    }
+
+    groups = group_by_source_id(topic_index)
+
     assert groups == {
         "anac": ["anac_aggiudicazioni", "anac_bandi_gara"],
         "inps": ["inps_precariato"],
@@ -30,39 +100,122 @@ def test_group_by_source_id():
 
 
 def test_update_registry_updates(tmp_path):
-    """Fonte presente con lista diversa → aggiornata, conteggio 1."""
     registry = tmp_path / "sources_registry.yaml"
     registry.write_text(
         "anac:\n  protocol: ckan\n  datasets_in_use: [old_slug]\ninps:\n  protocol: ckan\n",
         encoding="utf-8",
     )
+
     updated = update_registry(
         registry,
         {"anac": ["anac_bandi_gara", "anac_aggiudicazioni"]},
     )
+
+    data = yaml.safe_load(registry.read_text(encoding="utf-8"))
     assert updated == 1
-    content = registry.read_text(encoding="utf-8")
-    assert "anac_bandi_gara" in content
-    assert "anac_aggiudicazioni" in content
-    assert "old_slug" not in content
+    assert data["anac"]["datasets_in_use"] == [
+        "anac_aggiudicazioni",
+        "anac_bandi_gara",
+    ]
+    assert data["inps"].get("datasets_in_use", []) == []
 
 
 def test_update_registry_unchanged(tmp_path):
-    """Lista identica → nessun aggiornamento."""
     registry = tmp_path / "sources_registry.yaml"
     registry.write_text(
         "anac:\n  protocol: ckan\n  datasets_in_use: [x]\n",
         encoding="utf-8",
     )
+
     updated = update_registry(registry, {"anac": ["x"]})
+
     assert updated == 0
 
 
 def test_update_registry_unknown_source(tmp_path):
-    """Fonte non nel registry → skippata, non crasha, scrittura avviene."""
     registry = tmp_path / "sources_registry.yaml"
-    registry.write_text("anac:\n  protocol: ckan\n", encoding="utf-8")
+    before = "anac:\n  protocol: ckan\n"
+    registry.write_text(before, encoding="utf-8")
+
     updated = update_registry(registry, {"ghost_fonte": ["slug1"]})
+
     assert updated == 0
-    # il registry e' stato comunque riscritto (yaml round-trip)
-    assert registry.exists()
+    assert yaml.safe_load(registry.read_text(encoding="utf-8")) == yaml.safe_load(before)
+
+
+def test_update_registry_dry_run_does_not_write(tmp_path):
+    registry = tmp_path / "sources_registry.yaml"
+    before = "anac:\n  protocol: ckan\n  datasets_in_use: [old]\n"
+    registry.write_text(before, encoding="utf-8")
+
+    updated = update_registry(registry, {"anac": ["new"]}, dry_run=True)
+
+    assert updated == 1
+    assert registry.read_text(encoding="utf-8") == before
+
+
+def test_update_registry_rejects_empty_acb_payload(tmp_path):
+    """Un topic index valido ma senza datasets non deve svuotare il registry."""
+    registry = tmp_path / "sources_registry.yaml"
+    before = (
+        "anac:\n  protocol: ckan\n  datasets_in_use: [a, b]\n"
+        "inps:\n  protocol: ckan\n  datasets_in_use: [c]\n"
+    )
+    registry.write_text(before, encoding="utf-8")
+
+    with pytest.raises(UsageDropError, match="2 fonti non vuote diventerebbero vuote"):
+        update_registry(registry, {})
+
+    assert registry.read_text(encoding="utf-8") == before
+
+
+def test_update_registry_rejects_partial_acb_payload(tmp_path):
+    """Se una fonte non vuota sparisce dal payload, non si scrive."""
+    registry = tmp_path / "sources_registry.yaml"
+    before = (
+        "anac:\n  protocol: ckan\n  datasets_in_use: [a]\n"
+        "inps:\n  protocol: ckan\n  datasets_in_use: [b]\n"
+    )
+    registry.write_text(before, encoding="utf-8")
+
+    with pytest.raises(UsageDropError, match="inps"):
+        update_registry(registry, {"anac": ["a"]})
+
+    assert registry.read_text(encoding="utf-8") == before
+
+
+def test_update_registry_rejects_large_link_drop(tmp_path):
+    registry = tmp_path / "sources_registry.yaml"
+    before = "anac:\n  protocol: ckan\n  datasets_in_use: [a, b, c, d, e, f, g, h, i, j]\n"
+    registry.write_text(before, encoding="utf-8")
+
+    with pytest.raises(UsageDropError, match="30.0%"):
+        update_registry(registry, {"anac": ["a", "b", "c", "d", "e", "f", "g"]})
+
+    assert registry.read_text(encoding="utf-8") == before
+
+
+def test_update_registry_rejects_links_below_floor(tmp_path):
+    registry = tmp_path / "sources_registry.yaml"
+    slugs = [f"ds_{i}" for i in range(60)]
+    before = "anac:\n  protocol: ckan\n  datasets_in_use: [" + ", ".join(slugs) + "]\n"
+    registry.write_text(before, encoding="utf-8")
+
+    with pytest.raises(UsageDropError, match="soglia minima"):
+        update_registry(registry, {"anac": slugs[:49]})
+
+    assert registry.read_text(encoding="utf-8") == before
+
+
+def test_update_registry_allow_drop_writes(tmp_path):
+    registry = tmp_path / "sources_registry.yaml"
+    registry.write_text(
+        "anac:\n  protocol: ckan\n  datasets_in_use: [a, b]\n",
+        encoding="utf-8",
+    )
+
+    updated = update_registry(registry, {}, allow_drop=True)
+
+    data = yaml.safe_load(registry.read_text(encoding="utf-8"))
+    assert updated == 1
+    assert data["anac"]["datasets_in_use"] == []
