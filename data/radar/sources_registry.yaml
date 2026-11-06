@@ -715,13 +715,13 @@ giustizia_statistiche:
     skip_item_validation: true
     skip_item_validation_reason: 'Export XLSX non gestiti dal validator tabellare:
       validate item-level non probeable.'
-cortecostituzionale:
+corte_costituzionale:
   source_kind: catalog
   protocol: html
-  observation_mode: radar-only
+  observation_mode: catalog-watch
   base_url: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
   last_probed: '2026-11-06'
-  verdict: watchlist
+  verdict: go
   note: 'Portale Open Data Corte Costituzionale — Pronunce (1956-oggi), Massime, Anagrafica
     Giudici, Atti di promovimento. CSV/XML/JSON in ZIP. Agg. giornaliero. Endpoint
     SPARQL disponibile.
@@ -732,7 +732,12 @@ cortecostituzionale:
     homepage: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
     delay_seconds: 0.3
     probe_content_type: true
-  datasets_in_use: []
+  datasets_in_use:
+    - atti_promovimento_corte_costituzionale
+    - giudici_corte_costituzionale
+    - massime_corte_costituzionale
+    - pronunce_corte_costituzionale
+    - sentenze_complete
 terna_opendata:
   source_kind: catalog
   protocol: rest
