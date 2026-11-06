@@ -829,3 +829,27 @@ class TestScanSitemap:
         assert len(rows) == 0
         assert "error" in scan_params
         assert "no dataset pages found" in scan_params["error"]
+
+
+def test_collect_source_falls_back_to_inventory_max_concurrency(monkeypatch) -> None:
+    """Il limite può arrivare da inventory.max_concurrency, non solo source_check."""
+
+    class _Result:
+        rows = [{"source_id": "demo"}]
+        warning = None
+        summary = None
+
+    monkeypatch.setattr(
+        scripts.build_catalog_inventory,
+        "dispatch",
+        lambda source_id, source_cfg, captured_at: _Result(),
+    )
+
+    _, rows, _, _, err, _ = scripts.build_catalog_inventory._collect_source(
+        "demo",
+        {"inventory": {"max_concurrency": 3}},
+        "2026-11-06T00:00:00+00:00",
+    )
+
+    assert err is None
+    assert rows[0]["max_concurrency"] == 3

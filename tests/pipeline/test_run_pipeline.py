@@ -193,4 +193,41 @@ def test_run_validate_limits_per_host(monkeypatch):
     )
     run_pipeline.run_validate(df, workers=8, max_concurrency_per_host=2)
 
-    assert max_active <= 2
+    assert max_active == 2
+
+
+def test_run_validate_limits_per_source(monkeypatch):
+    """Il limite per fonte agisce anche con host diversi."""
+    from scripts.pipeline import run_pipeline
+
+    active = 0
+    max_active = 0
+    lock = threading.Lock()
+
+    def fake_validate(group_df, client=None):
+        nonlocal active, max_active
+        with lock:
+            active += 1
+            max_active = max(max_active, active)
+        time.sleep(0.05)
+        with lock:
+            active -= 1
+        return {"dataset_group": group_df.iloc[0]["dataset_group"], "reachable": True}
+
+    monkeypatch.setattr(run_pipeline, "_validate_one", fake_validate)
+    monkeypatch.setattr("lab_connectors.http.HttpClient", lambda **kw: object())
+
+    df = pd.DataFrame(
+        [
+            {
+                "dataset_group": f"demo/{i}",
+                "source_id": "demo",
+                "max_concurrency": 2,
+                "distribution_url": f"https://host-{i}.test/data.csv",
+            }
+            for i in range(8)
+        ]
+    )
+    run_pipeline.run_validate(df, workers=8, max_concurrency_per_host=4)
+
+    assert max_active == 2

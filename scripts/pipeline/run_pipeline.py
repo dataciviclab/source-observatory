@@ -26,12 +26,13 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from urllib.parse import urlsplit
 
 import pandas as pd
 
 from scripts.collectors import dispatch_validate
+from scripts.collectors._validate_base import pick_best_url
 from scripts.pipeline._merge_utils import add_dataset_group_columns
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -165,11 +166,13 @@ def run_validate(
 
     def _host_for(group_df: pd.DataFrame) -> str:
         if len(group_df):
-            first = group_df.iloc[0]
-            url = str(first.get("distribution_url") or first.get("url") or "")
-            host = urlsplit(url).hostname
-            if host:
-                return host
+            items = cast(list[dict[str, Any]], group_df.to_dict("records"))
+            best = pick_best_url(items)
+            if best:
+                url = str(best.get("distribution_url") or best.get("url") or "")
+                host = urlsplit(url).hostname
+                if host:
+                    return host
         return "unknown"
 
     def _source_for(group_df: pd.DataFrame) -> str:
