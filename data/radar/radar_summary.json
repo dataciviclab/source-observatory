@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-10-28T09:34:30.349376+00:00",
-  "probe_date": "2026-10-28",
+  "generated_at": "2026-11-06T18:14:20.111833+00:00",
+  "probe_date": "2026-11-06",
   "sources_total": 36,
   "status_counts": {
-    "GREEN": 34,
-    "YELLOW": 2,
+    "GREEN": 35,
+    "YELLOW": 1,
     "RED": 0
   },
   "persistent_red": 0,
@@ -75,10 +75,10 @@
     },
     {
       "id": "dati_cultura",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "sparql",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
