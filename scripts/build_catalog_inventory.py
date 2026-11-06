@@ -124,6 +124,59 @@ def _collect_source(
         return source_id, [], None, None, exc, time.monotonic() - collect_start
 
 
+def _preserved_inventory(
+    existing_df: pd.DataFrame,
+    *,
+    this_run_sources: set[str],
+    registry_keys: set[str],
+    filtered: bool,
+) -> pd.DataFrame:
+    """Righe inventory da preservare da run precedenti.
+
+    In un run completo le fonti rimosse dal registry vanno droppate, così
+    l'inventory non continua a contenere fonti che non esistono più. In un
+    run filtrato (`--source-ids`) tutto ciò che non è nel run va preservato.
+    """
+    preserved = existing_df[~existing_df["source_id"].isin(this_run_sources)]
+    if not filtered:
+        preserved = preserved[preserved["source_id"].isin(registry_keys)]
+    return preserved
+
+
+def _keep_report_entry(source_id: str, *, registry_keys: set[str], filtered: bool) -> bool:
+    """True se la entry di report di una fonte va preservata nel merge."""
+    return filtered or source_id in registry_keys
+
+
+def _robots_blocked(summary: dict[str, Any] | None) -> bool:
+    """True se il collector non ha righe perché robots.txt ha bloccato le pagine.
+
+    Serve a distinguere "catalogo vuoto" da "robots cambiato": nel secondo
+    caso le righe vecchie vanno preservate come stale, non cancellate.
+    """
+    if not summary:
+        return False
+    if summary.get("robots_skipped"):
+        return True
+    return "robots.txt disallows" in str(summary.get("message") or "")
+
+
+def _stale_rows(
+    existing_df: pd.DataFrame | None,
+    source_id: str,
+    reason: str,
+) -> list[dict[str, Any]]:
+    """Righe inventory di una fonte da preservare come stale."""
+    if existing_df is None:
+        return []
+    stale = existing_df[existing_df["source_id"] == source_id].copy()
+    if stale.empty:
+        return []
+    stale["source_status"] = "stale"
+    stale["stale_reason"] = reason
+    return cast(list[dict[str, Any]], stale.to_dict(orient="records"))
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Costruisce il catalog inventory derivato dal registry di source-observatory."
@@ -392,14 +445,23 @@ def main() -> None:
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
                 "collect_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
             }
-            if existing_df is not None:
-                stale_rows = existing_df[existing_df["source_id"] == source_id].copy()
-                if not stale_rows.empty:
-                    stale_rows["source_status"] = "stale"
-                    stale_rows["stale_reason"] = stale_reason_from_exception(err)
-                    all_rows.extend(
-                        cast(list[dict[str, Any]], stale_rows.to_dict(orient="records"))
-                    )
+            all_rows.extend(_stale_rows(existing_df, source_id, stale_reason_from_exception(err)))
+            continue
+
+        # robots.txt ha bloccato tutte le pagine: non è un catalogo vuoto.
+        # Preserva le righe vecchie come stale, così una regola cambiata non
+        # fa sparire la fonte dal catalogo con il radar verde.
+        if not rows and _robots_blocked(summary):
+            report["sources"][source_id] = {
+                "status": "robots_blocked",
+                "protocol": source_cfg.get("protocol"),
+                "reason": "robots.txt ha bloccato tutte le pagine",
+                "method": source_cfg.get("catalog_baseline", {}).get("method"),
+                "collect_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
+            }
+            if summary:
+                report["sources"][source_id]["robots_skipped"] = summary.get("robots_skipped")
+            all_rows.extend(_stale_rows(existing_df, source_id, "robots_disallow"))
             continue
 
         # Source succeeded: add rows with active status
@@ -421,15 +483,25 @@ def main() -> None:
             source_report["warning"] = warning
         if summary:
             source_report["summary"] = summary
+            if summary.get("robots_skipped"):
+                source_report["robots_skipped"] = summary["robots_skipped"]
+            if summary.get("robots_error"):
+                source_report["robots_error"] = summary["robots_error"]
         report["sources"][source_id] = source_report
 
     df = pd.DataFrame(all_rows)
 
     # Merge with existing inventory (preserves sources not in this run)
     if out_parquet.exists() and existing_df is not None:
-        # Sources not in this run at all → keep as-is
+        # Sources not in this run at all → keep as-is, ma solo in run filtrati.
+        # In un run completo le fonti rimosse dal registry vanno droppate.
         this_run_sources = {sid for sid, _ in inventoriable}
-        preserved = existing_df[~existing_df["source_id"].isin(this_run_sources)]
+        preserved = _preserved_inventory(
+            existing_df,
+            this_run_sources=this_run_sources,
+            registry_keys=set(registry.keys()),
+            filtered=source_id_filter is not None,
+        )
         if not preserved.empty:
             # Mark as stale if older than last successful fetch
             preserved = preserved.copy()
@@ -465,6 +537,12 @@ def main() -> None:
         with out_report.open(encoding="utf-8") as fh:
             prev_report = json.load(fh)
         for sid, info in prev_report.get("sources", {}).items():
+            if not _keep_report_entry(
+                sid,
+                registry_keys=set(registry.keys()),
+                filtered=source_id_filter is not None,
+            ):
+                continue
             if sid not in report["sources"]:
                 report["sources"][sid] = info
 
@@ -494,6 +572,9 @@ def main() -> None:
         else:
             status = "OK"
             note = f"{len(rows_count)} items" if rows_count else "empty"
+            if not rows_count and _robots_blocked(_summary):
+                status = "ROBOTS"
+                note = "robots.txt blocca tutte le pagine; righe preservate"
         print(f"{source_id:<24} {status:<12} {len(rows_count):<8} {elapsed:>6.1f}s  {note}")
     print()
 

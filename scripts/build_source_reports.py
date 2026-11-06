@@ -112,6 +112,22 @@ def _load_source_check() -> dict[str, list[dict]]:
     return result
 
 
+def _prune_orphan_reports(reports_dir: Path, registry_keys: set[str]) -> list[str]:
+    """Rimuove i report di fonti non più presenti nel registry.
+
+    Senza questa pulizia un report di una fonte rimossa resterebbe in
+    ``data/reports/source_reports/`` per sempre, perché il builder scrive
+    solo i file delle fonti correnti senza mai cancellare i vecchi.
+    """
+    removed: list[str] = []
+    for path in sorted(reports_dir.glob("*.json")):
+        if path.stem in registry_keys:
+            continue
+        path.unlink()
+        removed.append(path.name)
+    return removed
+
+
 def _make_radar_result(entry: dict | None) -> dict | None:
     """Converte entry radar in formato atteso da build_report."""
     if not entry:
@@ -207,6 +223,11 @@ def main() -> int:
                 "last_inventory": captured_at,
             }
         )
+
+    # 3b. Pulizia report orfani (fonti rimosse dal registry)
+    pruned = _prune_orphan_reports(reports_dir, set(reg.keys()))
+    if pruned:
+        print(f"🧹 Rimossi {len(pruned)} report orfani: {', '.join(pruned)}")
 
     # 4. Dashboard index
     dashboard = {

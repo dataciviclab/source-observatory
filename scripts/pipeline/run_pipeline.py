@@ -11,7 +11,7 @@ Steps:
 Uso:
     python scripts/pipeline/run_pipeline.py
     python scripts/pipeline/run_pipeline.py --inventory data/custom.parquet
-    python scripts/pipeline/run_pipeline.py --source-ids mef_irpef aci
+    python scripts/pipeline/run_pipeline.py --source-ids mef_finanze aci
     python scripts/pipeline/run_pipeline.py --dry-run  # solo merge, niente HTTP
     python scripts/pipeline/run_pipeline.py --max-groups 10  # primi 10 gruppi
 """
@@ -424,7 +424,7 @@ def main():
     parser.add_argument(
         "--source-ids",
         nargs="+",
-        help="Filter to specific source IDs (e.g., --source-ids aci mef_irpef)",
+        help="Filter to specific source IDs (e.g., --source-ids aci mef_finanze)",
     )
     parser.add_argument(
         "--dry-run",

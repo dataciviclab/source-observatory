@@ -143,6 +143,32 @@ python scripts/pipeline/run_pipeline.py --workers 16 --max-concurrency-per-host 
 inventory. Il numero di worker del pool non è il numero di richieste
 concorrenti consentite su un singolo host.
 
+### robots.txt nei fetch HTML
+
+Il collector HTML (`area_pages`, `page_url_template`, pagine da sitemap,
+`homepage`) verifica `robots.txt` prima di ogni fetch diretto, con cache per
+origine (`scripts/collectors/robots.py`). Politica:
+
+- `robots.txt` assente o 4xx → nessuna regola, fetch consentito;
+- `robots.txt` illeggibile / 5xx / errore di rete → **fail-open** (il fetch
+  procede) e l'origine finisce in `summary.robots_error`;
+- pagina vietata → skip, conteggiata in `summary.robots_skipped`. Con
+  `page_url_template` l'enumerazione si ferma alla prima pagina vietata,
+  perché le pagine sono sequenziali sullo stesso percorso;
+- se **tutte** le pagine sono bloccate, la fonte non produce righe: l'inventory
+  la marca `robots_blocked` e preserva le righe precedenti come `stale`, invece
+  di svuotare il catalogo.
+
+Il matching segue **RFC 9309**, non `urllib.robotparser`: gruppo più specifico
+dello user agent, `*` come jolly, `$` come ancora di fine path, longest-match e
+`Allow` vincente a parità di lunghezza. `urllib.robotparser` non lo fa: ignora
+wildcard e longest-match, quindi con `Disallow: /` + `Allow: /public/`
+bloccherebbe `/public/a`.
+
+Il fail-open è deliberato: un robots.txt temporaneamente rotto non deve
+bloccare l'osservatorio. Se serve fail-closed, il punto unico da cambiare è
+`RobotsGuard._fetch_rules`.
+
 ### `catalog-only`: inventory senza validate item-level
 
 Per cataloghi enormi o non probeabili si può disattivare il validate per fonte:
@@ -154,8 +180,10 @@ source_check:
 ```
 
 Il flusso resta inventory → diff → report; la pipeline non esegue probe
-item-level e il verdict diventa `CATALOG_ONLY`. È il caso di OpenBDAP, ISTAT
-SDMX, AGID e giustizia-statistiche: il catalogo è utile, il validate no.
+item-level e il verdict diventa `CATALOG_ONLY` (o `INVENTORY_CHANGED` se il
+catalogo è cambiato: il delta è più informativo dello stato). È il caso di
+OpenBDAP, ISTAT SDMX, AGID, giustizia-statistiche e MIMIT RNA: il catalogo è
+utile, il validate no.
 
 Usa `catalog inventory` quando la domanda è:
 
@@ -173,12 +201,22 @@ Per ottenere l'ultimo output senza rieseguire: artifact del workflow `observator
 Disciplina:
 
 - il perimetro segue le fonti `catalog-watch` del registry
+- un run completo droppa dall'inventory **solo** le fonti rimosse dal registry;
+  un run filtrato (`--source-ids`) preserva tutto ciò che non ha girato, perché
+  non è una fotografia completa
+- le fonti `radar-only` restano nell'inventory con le righe esistenti (non
+  vengono più aggiornate né cancellate): se una fonte torna `catalog-watch` non
+  si perde lo storico. Per ripulirle serve una decisione esplicita
+- se robots.txt blocca tutte le pagine, la fonte è `robots_blocked` e le righe
+  vecchie restano come `stale` (`stale_reason: robots_disallow`): un catalogo
+  vuoto non deve sembrare una fonte spenta con il radar verde
 - una fonte può restare osservata in SO ma non essere inventariabile
 - l'upload su GCS richiede WIF org-level (GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT) e il prefix hardcoded nella workflow (CATALOG_INVENTORY_GCS_PREFIX)
 - in assenza di GCS il workflow resta valido: usa baseline locale vuota e salta i passaggi opzionali di storage/diff
 - il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`
 - `--skip-red-sources` usato in CI per evitare tentativi su fonti già RED (timeout, WAF)
 - `sync_datasets_in_use.py` viene eseguito nel workflow `radar.yml` per allineare il catalogo ACB (`topic_index.json`, branch `context`: `https://raw.githubusercontent.com/dataciviclab/agent-context-builder/context/topic_index.json`). Se ACB non risponde, il registry resta invariato.
+  **La chiave del registry deve coincidere con il `source_id` usato dai repo e da ACB**: se differisce, l'uso reale non si aggancia e la fonte risulta a zero (è quello che era successo a `cortecostituzionale` vs `corte_costituzionale`). Prima di demote/rimuovere una fonte, verificare che l'id non sia solo un alias.
 - Il sync ha una guardia anti-wipe: rifiuta `schema_version` diverso da 7, fonti non vuote che diventerebbero vuote, calo link >20% e discesa sotto 50 link. Per rimozioni intenzionali usare `--allow-drop`.
 
 ## Ordine consigliato

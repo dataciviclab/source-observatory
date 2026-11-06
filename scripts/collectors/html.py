@@ -33,6 +33,7 @@ from lab_connectors.discovery.links import DataLink, extract_data_links, group_l
 from lab_connectors.http import HttpClient
 from lab_connectors.http.probe import probe_url_headers
 
+from scripts.collectors.robots import RobotsGuard
 from scripts.engine.portal import fetch_sitemap_pages, probe_html_portal
 
 from .base import CollectorResult
@@ -227,6 +228,7 @@ def _scan_sitemap_pages(
     *,
     sample_pages: int = 30,
     page_delay: float = 0.2,
+    robots: RobotsGuard | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Scan un portale HTML via lista di URL pagine (es. da sitemap).
 
@@ -263,9 +265,13 @@ def _scan_sitemap_pages(
     all_data_links: list[DataLink] = []
     seen_urls: set[str] = set()
     pages_probed = 0
+    robots_skipped = 0
     page_meta: dict[str, dict[str, str]] = {}  # page_url → {title, description}
 
     for page_url in sampled:
+        if robots is not None and not robots.can_fetch(page_url):
+            robots_skipped += 1
+            continue
         time.sleep(page_delay)
         # Fetch page directly — no separate HEAD probe (saves one round-trip)
         client = HttpClient(timeout=10)
@@ -302,6 +308,8 @@ def _scan_sitemap_pages(
         "pages_probed": pages_probed,
         "pages_sampled": sample_size,
     }
+    if robots_skipped:
+        scan_params["robots_skipped"] = robots_skipped
 
     return rows, scan_params
 
@@ -317,6 +325,7 @@ def _scan_liferay_catalog(
     page_max: int = 50,
     timeout_seconds: int = 10,
     max_retries: int = 1,
+    robots: RobotsGuard | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Scan portale Liferay con tabella catalogo strutturata.
 
@@ -414,8 +423,14 @@ def _scan_liferay_catalog(
     _ssl_bypass = False
 
     page = page_start
+    robots_skipped = 0
     while pages_scanned < page_max:
         area_url = page_url_template.format(page=page)
+        if robots is not None and not robots.can_fetch(area_url):
+            # Pagine sequenziali sullo stesso percorso: se robots blocca
+            # una pagina, blocca l'intera enumerazione.
+            robots_skipped = 1
+            break
         time.sleep(page_delay)
         client = HttpClient(timeout=timeout_seconds)
         result = None
@@ -529,6 +544,8 @@ def _scan_liferay_catalog(
         "method": "liferay_catalog_table",
         "area_pages_scanned": pages_scanned,
     }
+    if robots_skipped:
+        scan_params["robots_skipped"] = robots_skipped
     if scan_params_note:
         scan_params["format_resolution"] = scan_params_note
     return all_rows, scan_params
@@ -545,6 +562,7 @@ def _scan_area_pages(
     page_start: int = 0,
     page_max: int = 200,
     page_stop_on_empty: bool = True,
+    robots: RobotsGuard | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Scan portale HTML via area_pages (nessun second-level crawl).
 
@@ -566,6 +584,7 @@ def _scan_area_pages(
     all_data_links: list[DataLink] = []
     seen_urls: set[str] = set()
     pages_scanned = 0
+    robots_skipped = 0
     page_meta: dict[str, dict[str, str]] = {}
 
     if page_url_template:
@@ -575,6 +594,10 @@ def _scan_area_pages(
         _ssl_bypass = False
         while pages_scanned < page_max:
             area_url = page_url_template.format(page=page)
+            if robots is not None and not robots.can_fetch(area_url):
+                # Enumerazione sequenziale: robots blocca l'intero percorso.
+                robots_skipped = 1
+                break
             time.sleep(page_delay)
             client = HttpClient(timeout=5)
             if _ssl_bypass:
@@ -602,6 +625,9 @@ def _scan_area_pages(
         area_pages_scanned = pages_scanned
     else:
         for area_url in area_pages:
+            if robots is not None and not robots.can_fetch(area_url):
+                robots_skipped += 1
+                continue
             time.sleep(page_delay)
             client = HttpClient(timeout=15)
             result = client.get(area_url)
@@ -635,6 +661,8 @@ def _scan_area_pages(
         "method": method,
         "area_pages_scanned": area_pages_scanned,
     }
+    if robots_skipped:
+        scan_params["robots_skipped"] = robots_skipped
 
     return rows, scan_params
 
@@ -682,6 +710,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
 
     rows: list[dict[str, Any]] = []
     scan_params: dict[str, Any] = {}
+    robots = RobotsGuard()
 
     # ── Liferay catalog table (parser strutturato per portali Liferay) ──
     if extraction_mode == "liferay_catalog" and page_url_template:
@@ -697,6 +726,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             page_max=page_max,
             timeout_seconds=timeout_cfg,
             max_retries=max_retries,
+            robots=robots,
         )
 
     # ── Sitemap esplicita configurata nel registry ──
@@ -710,6 +740,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 base_url,
                 sample_pages=sample,
                 page_delay=delay,
+                robots=robots,
             )
         else:
             scan_params = {"error": "sitemap unreachable"}
@@ -725,6 +756,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 base_url,
                 sample_pages=sample,
                 page_delay=delay,
+                robots=robots,
             )
         else:
             scan_params = {"error": "auto-discovery: no sitemap found"}
@@ -741,9 +773,19 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             page_start=page_start,
             page_max=page_max,
             page_stop_on_empty=page_stop_on_empty,
+            robots=robots,
         )
     else:
         # Homepage only probe
+        if not robots.can_fetch(base_url):
+            return CollectorResult(
+                rows=[],
+                summary={
+                    "type": "csv_magnet_error",
+                    "message": "robots.txt disallows homepage",
+                    "source_id": source_id,
+                },
+            )
         client = HttpClient(timeout=5)
         result = client.get(base_url)
         if not result.is_ok or result.response is None:
@@ -764,14 +806,14 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
 
     # Check for scan error
     if "error" in scan_params:
-        return CollectorResult(
-            rows=[],
-            summary={
-                "type": "csv_magnet_error",
-                "message": scan_params["error"],
-                "source_id": source_id,
-            },
-        )
+        summary: dict[str, Any] = {
+            "type": "csv_magnet_error",
+            "message": scan_params["error"],
+            "source_id": source_id,
+        }
+        if robots.errors:
+            summary["robots_error"] = sorted(robots.errors)
+        return CollectorResult(rows=[], summary=summary)
 
     # Content-Type probe (opt-in): arricchisce formato per URL ambigui
     # ESEGUITO PRIMA di _compute_summary — così by_format è già corretto
@@ -822,5 +864,10 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
         summary["content_type_probes"] = min(
             len([r for r in rows if r.get("format") not in ("?",)]), 20
         )
+
+    if scan_params.get("robots_skipped"):
+        summary["robots_skipped"] = scan_params["robots_skipped"]
+    if robots.errors:
+        summary["robots_error"] = sorted(robots.errors)
 
     return CollectorResult(rows=rows, summary=summary)

@@ -309,30 +309,6 @@ dati_senato:
     - senato_sindisp
     - senato_votazioni
     - senato_votazioni_oggetto
-dati_cultura:
-  source_kind: catalog
-  protocol: sparql
-  observation_mode: catalog-watch
-  base_url: https://dati.cultura.gov.it/sparql
-  last_probed: '2026-11-06'
-  catalog_baseline:
-    captured_at: '2026-04-11'
-    metric: dataset_count
-    value: 150
-    method: sparql_query
-    query_name: dcat_datasets
-    reliability: medium
-    note: Catalogo linked-data MiC (ArCo) con metadati DCAT interrogabili via SPARQL.
-      ~150 dataset/thesaurus nel catalogo. Pilot per inventory SPARQL oltre ISPRA.
-  sparql:
-    endpoint_url: https://dati.cultura.gov.it/sparql
-    query_name: dcat_datasets
-    limit: 5000
-    timeout_seconds: 90
-  verdict: go
-  note: Catalogo ArCo MiC inventariabile via SPARQL DCAT. Source-check completato
-    con verdict catalog-watch.
-  datasets_in_use: []
 ispra_linked_data:
   source_kind: catalog
   protocol: sparql
@@ -506,7 +482,7 @@ opencoesione:
     - opencoesione_progetti
     - opencoesione_progetti_esteso
     - opencoesione_soggetti
-mef_irpef:
+mef_finanze:
   source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
@@ -530,7 +506,25 @@ mef_irpef:
     homepage: https://www1.finanze.gov.it/finanze/analisi_stat/public/index.php?opendata=yes
     delay_seconds: 0.2
     probe_content_type: true
-  datasets_in_use: []
+  datasets_in_use:
+    - abpf_titolari_piva_regione
+    - acsp_imprese_regione
+    - acsp_professionisti_regione
+    - acsp_tutte_classi_reddito
+    - acsp_tutte_classi_volume
+    - acsp_tutte_regione
+    - irap_imposta_pa_regione
+    - irap_imposta_regione
+    - irap_imposta_settore
+    - irap_italia_estero
+    - irap_vp_regime
+    - ires_redditi_regione
+    - irpef_calcolo_tipologia
+    - irpef_comunale
+    - irpef_imposta_tipologia
+    - iva_regionale
+    - iva_sez_attivita
+    - mef_irpef_regionale
 opencivitas:
   source_kind: catalog
   protocol: html
@@ -721,7 +715,7 @@ giustizia_statistiche:
     skip_item_validation: true
     skip_item_validation_reason: 'Export XLSX non gestiti dal validator tabellare:
       validate item-level non probeable.'
-cortecostituzionale:
+corte_costituzionale:
   source_kind: catalog
   protocol: html
   observation_mode: catalog-watch
@@ -738,7 +732,12 @@ cortecostituzionale:
     homepage: https://dati.cortecostituzionale.it/Scarica_i_dati/Scarica_i_dati
     delay_seconds: 0.3
     probe_content_type: true
-  datasets_in_use: []
+  datasets_in_use:
+    - atti_promovimento_corte_costituzionale
+    - giudici_corte_costituzionale
+    - massime_corte_costituzionale
+    - pronunce_corte_costituzionale
+    - sentenze_complete
 terna_opendata:
   source_kind: catalog
   protocol: rest
@@ -798,7 +797,7 @@ terna_opendata:
 ministero_interno:
   source_kind: catalog
   protocol: ckan
-  observation_mode: catalog-watch
+  observation_mode: radar-only
   base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
   inventory:
     fq: organization:ministero-dell-interno
@@ -812,7 +811,7 @@ ministero_interno:
     reliability: high
     note: Conteggio via package_search con fq=organization:ministero-dell-interno
       su dati.gov.it. 38 dataset su elezioni (per comune) e ANPR (popolazione).
-  verdict: go
+  verdict: watchlist
   note: Fonte via dati.gov.it. Dati elezioni (Politiche 2022, Comunali 2024, Europee
     2024, Regionali) per comune + ANPR (popolazione residente, cambi residenza, certificati,
     AIRE). Alto valore civico per analisi territoriale del voto.
@@ -897,6 +896,8 @@ mimit_rna:
     timeout: 180
   source_check:
     max_concurrency: 2
+    skip_item_validation: true
+    skip_item_validation_reason: 0/43 gruppi reachable; risorse RNA su host vecchio/HTML.
   last_probed: '2026-11-06'
   catalog_baseline:
     captured_at: '2026-05-24'
@@ -922,7 +923,7 @@ mimit_rna:
 ministero_turismo_opendata:
   source_kind: catalog
   protocol: ckan
-  observation_mode: catalog-watch
+  observation_mode: radar-only
   base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
   inventory:
     fq: organization:ministero-del-turismo
@@ -937,7 +938,7 @@ ministero_turismo_opendata:
     note: Conteggio via package_search con fq=organization:ministero-del-turismo su
       dati.gov.it. 16 dataset su strutture ricettive, professioni turistiche, cammini
       religiosi.
-  verdict: go
+  verdict: watchlist
   note: 'Fonte via dati.gov.it (Ministero del Turismo). 16 dataset CSV su BDSR (Banca
     Dati Strutture Ricettive) in formato aggregato per regione/provincia, professioni
     turistiche (guide, accompagnatori, direttori tecnici), cammini religiosi. FOIA
@@ -976,7 +977,7 @@ ministero_salute:
 agcm:
   source_kind: catalog
   protocol: ckan
-  observation_mode: catalog-watch
+  observation_mode: radar-only
   base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
   inventory:
     fq: organization:agcm
@@ -990,7 +991,7 @@ agcm:
     reliability: high
     note: Conteggio via package_search con fq=organization:agcm su dati.gov.it. 53
       dataset (rating di legalità, operazioni di concentrazione).
-  verdict: go
+  verdict: watchlist
   note: 'Fonte via dati.gov.it (AGCM). 53 dataset su concorrenza e mercato: rating
     di legalita'' (elenchi settimanali imprese con rating), operazioni di concentrazione
     2021-2025.
@@ -1011,7 +1012,7 @@ unioncamere:
 pagopa:
   source_kind: catalog
   protocol: ckan
-  observation_mode: catalog-watch
+  observation_mode: radar-only
   base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
   inventory:
     fq: organization:pagopa-s-p-a
@@ -1025,7 +1026,7 @@ pagopa:
     reliability: high
     note: Conteggio via package_search con fq=organization:pagopa-s-p-a su dati.gov.it.
       8 dataset (transazioni pagoPA, IO App, SEND).
-  verdict: go
+  verdict: watchlist
   note: 'Fonte via dati.gov.it. 8 dataset: pagoPA (transazioni per anno, mese, fascia
     importo, categoria ente), IO App (messaggi, geografia enti e servizi), SEND (notifiche
     per ambito, geografia comuni, numero notifiche). Dati su digitalizzazione pagamenti

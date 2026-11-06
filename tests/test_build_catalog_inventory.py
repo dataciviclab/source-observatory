@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pandas as pd
 import pytest
 from lab_connectors.http import HttpResult
 from lab_connectors.testing import FakeHttpClient, fake_response
@@ -629,6 +630,66 @@ class TestScanAreaPagesPagination:
         assert scan_params["area_pages_scanned"] == 3
         assert len(rows) == 3
 
+    def test_robots_disallow_skips_area_page(self, monkeypatch):
+        """Le area page vietate da robots.txt non vengono fetchate."""
+        from scripts.collectors.robots import RobotsGuard
+
+        fake = FakeHttpClient()
+        fake.responses["https://example.com/robots.txt"] = HttpResult(
+            response=fake_response(200, text="User-agent: *\nDisallow: /bloccato\n"),
+            err=None,
+        )
+        fake.responses["https://example.com/libero"] = HttpResult(
+            response=fake_response(
+                200,
+                text='<a href="https://docs.example.com/file.csv">file.csv</a>',
+                headers={"content-type": "text/html"},
+            ),
+            err=None,
+        )
+        # Se la guardia sbagliasse, il fetch della pagina bloccata esploderebbe:
+        # il FakeHttpClient non ha una risposta registrata per quell'URL.
+        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
+
+        rows, scan_params = html_collector._scan_area_pages(
+            area_pages=["https://example.com/bloccato", "https://example.com/libero"],
+            topic_hint=None,
+            source_id="test_source",
+            base_url="https://example.com",
+            page_delay=0,
+            robots=RobotsGuard(client_factory=lambda **kw: fake),
+        )
+
+        assert scan_params["robots_skipped"] == 1
+        assert len(rows) == 1
+        assert rows[0]["url"] == "https://docs.example.com/file.csv"
+
+    def test_robots_disallow_stops_pagination(self, monkeypatch):
+        """Con page_url_template una pagina vietata ferma l'enumerazione."""
+        from scripts.collectors.robots import RobotsGuard
+
+        fake = FakeHttpClient()
+        fake.responses["https://example.com/robots.txt"] = HttpResult(
+            response=fake_response(200, text="User-agent: *\nDisallow: /data\n"),
+            err=None,
+        )
+        monkeypatch.setattr(html_collector, "HttpClient", lambda **kw: fake)
+
+        rows, scan_params = html_collector._scan_area_pages(
+            area_pages=[],
+            topic_hint=None,
+            source_id="test_source",
+            base_url="https://example.com",
+            page_delay=0,
+            page_url_template="https://example.com/data?page={page}",
+            page_max=5,
+            robots=RobotsGuard(client_factory=lambda **kw: fake),
+        )
+
+        assert rows == []
+        assert scan_params["robots_skipped"] == 1
+        assert scan_params["area_pages_scanned"] == 0
+
 
 class TestContentTypeProbe:
     """Test che Content-Type probe ricalcoli by_format nella summary."""
@@ -877,3 +938,85 @@ def test_collect_source_carries_skip_item_validation(monkeypatch) -> None:
 
     assert err is None
     assert rows[0]["skip_item_validation"] is True
+
+
+class TestPreservedInventory:
+    """Il merge dell'inventory non deve trattenere fonti rimosse dal registry."""
+
+    @staticmethod
+    def _existing() -> pd.DataFrame:
+        return pd.DataFrame(
+            [
+                {"source_id": "aci", "item_id": "1"},
+                {"source_id": "dati_cultura", "item_id": "9"},
+                {"source_id": "inps", "item_id": "2"},
+            ]
+        )
+
+    def test_full_run_drops_sources_removed_from_registry(self) -> None:
+        preserved = scripts.build_catalog_inventory._preserved_inventory(
+            self._existing(),
+            this_run_sources={"aci"},
+            registry_keys={"aci", "inps"},
+            filtered=False,
+        )
+        assert sorted(preserved["source_id"]) == ["inps"]
+
+    def test_filtered_run_preserves_sources_outside_registry(self) -> None:
+        preserved = scripts.build_catalog_inventory._preserved_inventory(
+            self._existing(),
+            this_run_sources={"aci"},
+            registry_keys={"aci", "inps"},
+            filtered=True,
+        )
+        assert sorted(preserved["source_id"]) == ["dati_cultura", "inps"]
+
+    def test_report_entry_dropped_for_removed_source(self) -> None:
+        assert (
+            scripts.build_catalog_inventory._keep_report_entry(
+                "dati_cultura", registry_keys={"aci"}, filtered=False
+            )
+            is False
+        )
+        assert (
+            scripts.build_catalog_inventory._keep_report_entry(
+                "dati_cultura", registry_keys={"aci"}, filtered=True
+            )
+            is True
+        )
+
+
+class TestRobotsBlockedSource:
+    """robots.txt che blocca tutto non deve svuotare l'inventory."""
+
+    def test_detects_all_blocked_from_summary(self) -> None:
+        assert scripts.build_catalog_inventory._robots_blocked({"robots_skipped": 6}) is True
+        assert (
+            scripts.build_catalog_inventory._robots_blocked(
+                {"message": "robots.txt disallows homepage"}
+            )
+            is True
+        )
+
+    def test_ignores_empty_catalog(self) -> None:
+        assert scripts.build_catalog_inventory._robots_blocked(None) is False
+        assert scripts.build_catalog_inventory._robots_blocked({}) is False
+        assert scripts.build_catalog_inventory._robots_blocked({"total_links_estimate": 0}) is False
+
+    def test_robots_blocked_preserves_old_rows_as_stale(self) -> None:
+        existing = pd.DataFrame(
+            [
+                {"source_id": "demo", "item_id": "1", "source_status": "active"},
+                {"source_id": "altro", "item_id": "2", "source_status": "active"},
+            ]
+        )
+        stale = scripts.build_catalog_inventory._stale_rows(existing, "demo", "robots_disallow")
+        assert len(stale) == 1
+        assert stale[0]["item_id"] == "1"
+        assert stale[0]["source_status"] == "stale"
+        assert stale[0]["stale_reason"] == "robots_disallow"
+
+    def test_stale_rows_empty_when_nothing_to_preserve(self) -> None:
+        existing = pd.DataFrame([{"source_id": "altro", "item_id": "2"}])
+        assert scripts.build_catalog_inventory._stale_rows(existing, "demo", "x") == []
+        assert scripts.build_catalog_inventory._stale_rows(None, "demo", "x") == []
