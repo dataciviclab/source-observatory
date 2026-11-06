@@ -19,6 +19,7 @@ class TestResolveSource:
 source_id = "demo"
 protocol = "ckan"
 base_url = "https://ex.it/api/3/action/package_list"
+user_agent = "Browser/1.0"
 """,
             encoding="utf-8",
         )
@@ -27,15 +28,19 @@ base_url = "https://ex.it/api/3/action/package_list"
         # Monkeypatch probe_url: niente rete nel test pure_unit
         from scripts.engine.probe import ProbeResult
 
-        monkeypatch.setattr(
-            "scripts.engine.probe.probe_url",
-            lambda url: ProbeResult(status="GREEN", http_code="200"),
-        )
+        calls: list[tuple[str, str | None]] = []
+
+        def fake_probe(url: str, user_agent: str | None = None):
+            calls.append((url, user_agent))
+            return ProbeResult(status="GREEN", http_code="200")
+
+        monkeypatch.setattr("scripts.engine.probe.probe_url", fake_probe)
         rc = main(["probe", "demo"])
         out = capsys.readouterr().out
         assert rc == 0
         assert "demo" in out
         assert "GREEN" in out
+        assert calls == [("https://ex.it/api/3/action/package_list", "Browser/1.0")]
 
     @pytest.mark.pure_unit
     def test_not_found(self, tmp_path: Path, monkeypatch, capsys):

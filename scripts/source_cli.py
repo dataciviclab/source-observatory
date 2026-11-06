@@ -76,7 +76,7 @@ def cmd_probe(args: argparse.Namespace) -> int:
 
     url = cfg["base_url"]
     print(f"🔭 probing {args.source_id}: {url}")
-    result = probe_url(url)
+    result = probe_url(url, user_agent=cfg.get("user_agent"))
     print(f"  status:   {result.status}")
     print(f"  http:     {result.http_code}")
     if result.note:

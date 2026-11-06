@@ -26,13 +26,14 @@ def test_collect_source_carries_user_agent(monkeypatch) -> None:
         lambda source_id, source_cfg, captured_at: _Result(),
     )
 
-    source_id, rows, _, _, err = scripts.build_catalog_inventory._collect_source(
+    source_id, rows, _, _, err, collect_seconds = scripts.build_catalog_inventory._collect_source(
         "anac", {"user_agent": "Browser/1.0"}, "2026-11-06T00:00:00+00:00"
     )
 
     assert err is None
     assert source_id == "anac"
     assert rows[0]["user_agent"] == "Browser/1.0"
+    assert collect_seconds >= 0.0
 
 
 def test_collect_ckan_inventory_via_package_show_sample(monkeypatch) -> None:
