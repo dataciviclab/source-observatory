@@ -60,9 +60,10 @@ Modello v0:
 - i segnali vengono prodotti automaticamente dal workflow schedulato `observatory.yml` (ogni lunedì 03:20)
 - il follow-up resta `human-run`: il report non sostituisce la review umana sui cambi rilevanti
 - il run manuale va usato quando serve un check metodologicamente difendibile fuori schedule
-- gli output canonici sono `catalog_signals.json` e i source report in `data/reports/`
+- gli output canonici sono i source report in `data/reports/` e `sources_dashboard.json`; `catalog_signals.json` resta un contratto legacy per ACB
 - problemi di connessione/HTTP vanno letti in `radar_summary.json`, non in `catalog_signals.json`
 - **Issue automatiche**: in caso di variazioni rilevanti nel catalogo, `observatory.yml` crea o aggiorna una issue `catalog-alert` su GitHub
+- **Verdict**: `DOWN` > `NO_DATA`/`HEALTH_ONLY` > `UNREACHABLE` > `STALE` > `INVENTORY_CHANGED` > `PARTIALLY_SCOPED` > `STABLE`. `STABLE` non è il default: se non c'è misura, il verdict è `NO_DATA` (o `HEALTH_ONLY` per `radar-only`).
 
 ### Catalog per-repo e `pattern_probes`
 
@@ -153,7 +154,6 @@ Disciplina:
 
 - il perimetro segue le fonti `catalog-watch` del registry
 - una fonte può restare osservata in SO ma non essere inventariabile
-- `anac` oggi resta escluso dall'inventory automatico per vincoli WAF
 - l'upload su GCS richiede WIF org-level (GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT) e il prefix hardcoded nella workflow (CATALOG_INVENTORY_GCS_PREFIX)
 - in assenza di GCS il workflow resta valido: usa baseline locale vuota e salta i passaggi opzionali di storage/diff
 - il workflow gira ogni lunedì (schedule) ed è disponibile anche via `workflow_dispatch`

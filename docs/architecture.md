@@ -46,8 +46,8 @@ Radar (daily)
   │ HEAD probe su ogni fonte
   │ → radar_summary.json, radar_history.json
   ▼
-Gate (embedded in radar)
-  │ radar GREEN? → catalog-watch o radar-only
+Osservazione (registry)
+  │ observation_mode: catalog-watch / radar-only
   ▼
 Catalog inventory (weekly)
   │ Enumera item per protocollo (CKAN, SDMX, SPARQL, HTML)

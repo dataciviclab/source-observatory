@@ -222,7 +222,7 @@
       "properties": {
         "label": {
           "type": "string",
-          "enum": ["STABLE", "DOWN", "INVENTORY_CHANGED", "STALE", "PARTIALLY_SCOPED", "NEW_CONTENT", "REFERENCED_MISSING"]
+          "enum": ["STABLE", "DOWN", "NO_DATA", "HEALTH_ONLY", "UNREACHABLE", "INVENTORY_CHANGED", "STALE", "PARTIALLY_SCOPED", "NEW_CONTENT", "REFERENCED_MISSING"]
         },
         "score": { "type": "string" },
         "triggers": {

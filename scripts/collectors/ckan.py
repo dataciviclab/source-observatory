@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
-
-import requests
 
 from .base import USER_AGENT, CollectorResult, inventory_cfg, strip_query
 
@@ -332,49 +329,6 @@ def collect_ckan_inventory_via_search(
     if not rows:
         raise ValueError(f"CKAN package_search returned no rows for {source_id}")
     return rows
-
-
-def _fetch_ckan_chunk_with_fallback(
-    endpoint: str,
-    params: dict[str, Any],
-    page_size: int,
-    *,
-    fallback_page_sizes: tuple[int, ...],
-    request_timeout: int,
-    max_retries: int,
-    retry_delay: float,
-    client: Any | None = None,
-) -> tuple[dict[str, Any] | None, str | None, int]:
-    current_limit = page_size
-
-    while True:
-        for attempt in range(max_retries + 1):
-            try:
-                payload = ckan_get_json(
-                    endpoint,
-                    client=client,
-                    params={**params, "limit": current_limit},
-                    timeout=request_timeout,
-                )
-                return payload, None, current_limit
-            except requests.Timeout:
-                if attempt < max_retries:
-                    time.sleep(retry_delay * (attempt + 1))
-                    continue
-                break
-
-        next_limit = next(
-            (size for size in fallback_page_sizes if size < current_limit),
-            None,
-        )
-        if next_limit is None:
-            offset = params.get("offset")
-            return (
-                None,
-                f"timeout after retry at offset {offset} with limit {current_limit}",
-                current_limit,
-            )
-        current_limit = next_limit
 
 
 def collect_ckan_inventory_via_package_list(

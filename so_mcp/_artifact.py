@@ -424,10 +424,6 @@ def _parquet_not_found(artifact: _ParquetArtifact) -> dict[str, Any]:
     return _artifact_not_found(artifact.local_path, artifact.name)
 
 
-def _json_not_found(artifact: _JsonArtifact) -> dict[str, Any]:
-    return _artifact_not_found(artifact.local_path, artifact.name)
-
-
 # ── Shared report helpers (used by _inventory, _recommend) ───────────────────
 
 

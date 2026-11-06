@@ -61,9 +61,6 @@ from so_mcp._paths import (
 # Repo root per path non esportati da so_mcp._paths (solo script).
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
-# ── Paths non esportati da so_mcp._paths (solo script) ─────────────────────
-CATALOG_WATCH_REPORT_PATH = _REPO_ROOT / "data" / "catalog" / "CATALOG_WATCH_REPORT.md"
-
 
 def validate_schema(instance: dict, schema_name: str) -> None:
     """Validate a dict against the JSON schema file in schemas/."""

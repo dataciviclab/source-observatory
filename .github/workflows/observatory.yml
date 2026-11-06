@@ -66,10 +66,6 @@ jobs:
       # ═══════════════════════════════════════════════════════════════════
       # STEP 2 — PIPELINE (merge + validate)
       # ═══════════════════════════════════════════════════════════════════
-      - name: Clean old artifacts
-        run: |
-          rm -f data/catalog/CATALOG_WATCH_REPORT.md
-
       - name: Run pipeline (merge + validate)
         run: |
           python scripts/pipeline/run_pipeline.py \

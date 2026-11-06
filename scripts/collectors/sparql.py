@@ -16,19 +16,6 @@ logger = logging.getLogger(__name__)
 _endpoint_cache: dict[str, bool] = {}
 
 
-def _group_sparql_bindings(bindings: list[dict]) -> dict[str, dict]:
-    grouped: dict[str, dict] = {}
-    for b in bindings:
-        key = b.get("graph", "")
-        if key not in grouped:
-            grouped[key] = {"graph": key, "subjects": 0, "predicates": set()}
-        grouped[key]["subjects"] += 1
-        pred = b.get("pred", "")
-        if pred:
-            grouped[key]["predicates"].add(pred)
-    return grouped
-
-
 def _binding_val(binding: dict, var: str) -> str:
     """Valore di un binding SPARQL come stringa.
 

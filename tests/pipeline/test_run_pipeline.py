@@ -10,6 +10,8 @@ Marker: pure_unit (nessuna chiamata HTTP reale).
 
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import pytest
 from lab_connectors.http import HttpResult
@@ -136,3 +138,21 @@ def test_run_validate_uses_one_client_per_user_agent(monkeypatch, fake_http):
     run_pipeline.run_validate(df, max_groups=2, workers=1)
 
     assert [call["user_agent"] for call in calls] == ["Browser/1.0", "Browser/2.0"]
+
+
+def test_write_output_records_groups_total(tmp_path):
+    """Il summary conserva i gruppi pre-validazione per fonte."""
+    from scripts.pipeline.run_pipeline import write_output
+
+    results = [{"source_id": "demo", "reachable": True, "columns": ["a"]}]
+    write_output(
+        results,
+        tmp_path / "validated.parquet",
+        tmp_path / "summary.json",
+        groups_by_source={"demo": 5},
+    )
+
+    summary = json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))
+    assert summary["groups_total"] == 5
+    assert summary["by_source"]["demo"]["groups_total"] == 5
+    assert summary["by_source"]["demo"]["total"] == 1
