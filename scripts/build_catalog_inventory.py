@@ -362,6 +362,7 @@ def main() -> None:
                 "protocol": source_cfg.get("protocol"),
                 "error": str(err),
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
+                "elapsed_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
             }
             if existing_df is not None:
                 stale_rows = existing_df[existing_df["source_id"] == source_id].copy()
@@ -386,6 +387,7 @@ def main() -> None:
             "protocol": source_cfg.get("protocol"),
             "rows": len(rows),
             "method": source_cfg.get("catalog_baseline", {}).get("method"),
+            "elapsed_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
         }
         if warning:
             source_report["warning"] = warning
