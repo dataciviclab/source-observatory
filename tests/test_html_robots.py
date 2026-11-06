@@ -95,3 +95,48 @@ def test_fail_open_on_5xx() -> None:
 def test_url_without_scheme_is_allowed() -> None:
     guard = RobotsGuard(client_factory=lambda **kw: FakeHttpClient())
     assert guard.can_fetch("/relative/path") is True
+
+
+def _guard_with(text: str) -> RobotsGuard:
+    fake = FakeHttpClient()
+    fake.responses["https://example.test/robots.txt"] = _robots(200, text)
+    return _guard(fake)
+
+
+def test_allow_more_specific_wins_over_disallow_all() -> None:
+    """`Disallow: /` + `Allow: /public/` non deve bloccare /public/a."""
+    guard = _guard_with("User-agent: *\nDisallow: /\nAllow: /public/\n")
+    assert guard.can_fetch("https://example.test/public/a") is True
+    assert guard.can_fetch("https://example.test/altro/a") is False
+
+
+def test_wildcard_in_disallow_matches_path() -> None:
+    """`Disallow: /private/*` deve bloccare /private/a."""
+    guard = _guard_with("User-agent: *\nDisallow: /private/*\n")
+    assert guard.can_fetch("https://example.test/private/a") is False
+    assert guard.can_fetch("https://example.test/private") is True
+
+
+def test_wildcard_suffix_blocks_all_pdfs() -> None:
+    """`Disallow: /*.pdf` deve bloccare i PDF."""
+    guard = _guard_with("User-agent: *\nDisallow: /*.pdf\n")
+    assert guard.can_fetch("https://example.test/doc/file.pdf") is False
+    assert guard.can_fetch("https://example.test/doc/file.csv") is True
+
+
+def test_dollar_anchor_matches_only_exact_end() -> None:
+    guard = _guard_with("User-agent: *\nDisallow: /solo-questo$\n")
+    assert guard.can_fetch("https://example.test/solo-questo") is False
+    assert guard.can_fetch("https://example.test/solo-questo/altro") is True
+
+
+def test_equal_length_allow_wins_over_disallow() -> None:
+    """A parità di specificità RFC 9309 dà ragione ad Allow."""
+    guard = _guard_with("User-agent: *\nDisallow: /p\nAllow: /p\n")
+    assert guard.can_fetch("https://example.test/p") is True
+
+
+def test_query_string_partecipa_al_match() -> None:
+    guard = _guard_with("User-agent: *\nDisallow: /*?page=2\n")
+    assert guard.can_fetch("https://example.test/dati?page=2") is False
+    assert guard.can_fetch("https://example.test/dati?page=1") is True

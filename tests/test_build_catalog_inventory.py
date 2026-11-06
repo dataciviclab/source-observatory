@@ -984,3 +984,39 @@ class TestPreservedInventory:
             )
             is True
         )
+
+
+class TestRobotsBlockedSource:
+    """robots.txt che blocca tutto non deve svuotare l'inventory."""
+
+    def test_detects_all_blocked_from_summary(self) -> None:
+        assert scripts.build_catalog_inventory._robots_blocked({"robots_skipped": 6}) is True
+        assert (
+            scripts.build_catalog_inventory._robots_blocked(
+                {"message": "robots.txt disallows homepage"}
+            )
+            is True
+        )
+
+    def test_ignores_empty_catalog(self) -> None:
+        assert scripts.build_catalog_inventory._robots_blocked(None) is False
+        assert scripts.build_catalog_inventory._robots_blocked({}) is False
+        assert scripts.build_catalog_inventory._robots_blocked({"total_links_estimate": 0}) is False
+
+    def test_robots_blocked_preserves_old_rows_as_stale(self) -> None:
+        existing = pd.DataFrame(
+            [
+                {"source_id": "demo", "item_id": "1", "source_status": "active"},
+                {"source_id": "altro", "item_id": "2", "source_status": "active"},
+            ]
+        )
+        stale = scripts.build_catalog_inventory._stale_rows(existing, "demo", "robots_disallow")
+        assert len(stale) == 1
+        assert stale[0]["item_id"] == "1"
+        assert stale[0]["source_status"] == "stale"
+        assert stale[0]["stale_reason"] == "robots_disallow"
+
+    def test_stale_rows_empty_when_nothing_to_preserve(self) -> None:
+        existing = pd.DataFrame([{"source_id": "altro", "item_id": "2"}])
+        assert scripts.build_catalog_inventory._stale_rows(existing, "demo", "x") == []
+        assert scripts.build_catalog_inventory._stale_rows(None, "demo", "x") == []

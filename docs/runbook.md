@@ -154,11 +154,20 @@ origine (`scripts/collectors/robots.py`). Politica:
   procede) e l'origine finisce in `summary.robots_error`;
 - pagina vietata → skip, conteggiata in `summary.robots_skipped`. Con
   `page_url_template` l'enumerazione si ferma alla prima pagina vietata,
-  perché le pagine sono sequenziali sullo stesso percorso.
+  perché le pagine sono sequenziali sullo stesso percorso;
+- se **tutte** le pagine sono bloccate, la fonte non produce righe: l'inventory
+  la marca `robots_blocked` e preserva le righe precedenti come `stale`, invece
+  di svuotare il catalogo.
+
+Il matching segue **RFC 9309**, non `urllib.robotparser`: gruppo più specifico
+dello user agent, `*` come jolly, `$` come ancora di fine path, longest-match e
+`Allow` vincente a parità di lunghezza. `urllib.robotparser` non lo fa: ignora
+wildcard e longest-match, quindi con `Disallow: /` + `Allow: /public/`
+bloccherebbe `/public/a`.
 
 Il fail-open è deliberato: un robots.txt temporaneamente rotto non deve
 bloccare l'osservatorio. Se serve fail-closed, il punto unico da cambiare è
-`RobotsGuard._fetch_parser`.
+`RobotsGuard._fetch_rules`.
 
 ### `catalog-only`: inventory senza validate item-level
 
@@ -192,8 +201,15 @@ Per ottenere l'ultimo output senza rieseguire: artifact del workflow `observator
 Disciplina:
 
 - il perimetro segue le fonti `catalog-watch` del registry
-- un run completo droppa dall'inventory le fonti rimosse dal registry; un run
-  filtrato (`--source-ids`) le preserva, perché non è una fotografia completa
+- un run completo droppa dall'inventory **solo** le fonti rimosse dal registry;
+  un run filtrato (`--source-ids`) preserva tutto ciò che non ha girato, perché
+  non è una fotografia completa
+- le fonti `radar-only` restano nell'inventory con le righe esistenti (non
+  vengono più aggiornate né cancellate): se una fonte torna `catalog-watch` non
+  si perde lo storico. Per ripulirle serve una decisione esplicita
+- se robots.txt blocca tutte le pagine, la fonte è `robots_blocked` e le righe
+  vecchie restano come `stale` (`stale_reason: robots_disallow`): un catalogo
+  vuoto non deve sembrare una fonte spenta con il radar verde
 - una fonte può restare osservata in SO ma non essere inventariabile
 - l'upload su GCS richiede WIF org-level (GCP_WORKLOAD_IDENTITY_PROVIDER, GCP_SERVICE_ACCOUNT) e il prefix hardcoded nella workflow (CATALOG_INVENTORY_GCS_PREFIX)
 - in assenza di GCS il workflow resta valido: usa baseline locale vuota e salta i passaggi opzionali di storage/diff

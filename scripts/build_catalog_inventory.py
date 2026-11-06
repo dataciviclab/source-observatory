@@ -148,6 +148,35 @@ def _keep_report_entry(source_id: str, *, registry_keys: set[str], filtered: boo
     return filtered or source_id in registry_keys
 
 
+def _robots_blocked(summary: dict[str, Any] | None) -> bool:
+    """True se il collector non ha righe perché robots.txt ha bloccato le pagine.
+
+    Serve a distinguere "catalogo vuoto" da "robots cambiato": nel secondo
+    caso le righe vecchie vanno preservate come stale, non cancellate.
+    """
+    if not summary:
+        return False
+    if summary.get("robots_skipped"):
+        return True
+    return "robots.txt disallows" in str(summary.get("message") or "")
+
+
+def _stale_rows(
+    existing_df: pd.DataFrame | None,
+    source_id: str,
+    reason: str,
+) -> list[dict[str, Any]]:
+    """Righe inventory di una fonte da preservare come stale."""
+    if existing_df is None:
+        return []
+    stale = existing_df[existing_df["source_id"] == source_id].copy()
+    if stale.empty:
+        return []
+    stale["source_status"] = "stale"
+    stale["stale_reason"] = reason
+    return cast(list[dict[str, Any]], stale.to_dict(orient="records"))
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Costruisce il catalog inventory derivato dal registry di source-observatory."
@@ -416,14 +445,23 @@ def main() -> None:
                 "method": source_cfg.get("catalog_baseline", {}).get("method"),
                 "collect_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
             }
-            if existing_df is not None:
-                stale_rows = existing_df[existing_df["source_id"] == source_id].copy()
-                if not stale_rows.empty:
-                    stale_rows["source_status"] = "stale"
-                    stale_rows["stale_reason"] = stale_reason_from_exception(err)
-                    all_rows.extend(
-                        cast(list[dict[str, Any]], stale_rows.to_dict(orient="records"))
-                    )
+            all_rows.extend(_stale_rows(existing_df, source_id, stale_reason_from_exception(err)))
+            continue
+
+        # robots.txt ha bloccato tutte le pagine: non è un catalogo vuoto.
+        # Preserva le righe vecchie come stale, così una regola cambiata non
+        # fa sparire la fonte dal catalogo con il radar verde.
+        if not rows and _robots_blocked(summary):
+            report["sources"][source_id] = {
+                "status": "robots_blocked",
+                "protocol": source_cfg.get("protocol"),
+                "reason": "robots.txt ha bloccato tutte le pagine",
+                "method": source_cfg.get("catalog_baseline", {}).get("method"),
+                "collect_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
+            }
+            if summary:
+                report["sources"][source_id]["robots_skipped"] = summary.get("robots_skipped")
+            all_rows.extend(_stale_rows(existing_df, source_id, "robots_disallow"))
             continue
 
         # Source succeeded: add rows with active status
@@ -445,6 +483,10 @@ def main() -> None:
             source_report["warning"] = warning
         if summary:
             source_report["summary"] = summary
+            if summary.get("robots_skipped"):
+                source_report["robots_skipped"] = summary["robots_skipped"]
+            if summary.get("robots_error"):
+                source_report["robots_error"] = summary["robots_error"]
         report["sources"][source_id] = source_report
 
     df = pd.DataFrame(all_rows)
@@ -530,6 +572,9 @@ def main() -> None:
         else:
             status = "OK"
             note = f"{len(rows_count)} items" if rows_count else "empty"
+            if not rows_count and _robots_blocked(_summary):
+                status = "ROBOTS"
+                note = "robots.txt blocca tutte le pagine; righe preservate"
         print(f"{source_id:<24} {status:<12} {len(rows_count):<8} {elapsed:>6.1f}s  {note}")
     print()
 
