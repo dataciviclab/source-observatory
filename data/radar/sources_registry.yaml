@@ -30,7 +30,7 @@ anac:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
-  base_url: https://dati.anticorruzione.it/opendata/api/3/action/package_list
+  base_url: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1
   inventory:
     timeout: 180
   last_probed: '2026-11-06'
@@ -548,6 +548,7 @@ opencivitas:
     delay_seconds: 0.3
     timeout_seconds: 10
     max_retries: 1
+    page_start: 1
   datasets_in_use:
     - opencivitas_determinanti
     - opencivitas_fprcm
@@ -808,7 +809,7 @@ agid:
   source_kind: catalog
   protocol: ckan
   observation_mode: catalog-watch
-  base_url: https://indicepa.gov.it/ipa-dati/api/3/action/package_list
+  base_url: https://indicepa.gov.it/ipa-dati/api/3/action/package_list?limit=1
   inventory:
     timeout: 180
   last_probed: '2026-11-06'
@@ -823,9 +824,10 @@ agid:
   verdict: go
   note: 'Portale CKAN diretto IPA (indicepa.gov.it). Enti, unità organizzative, PEC,
     domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione
-    elettronica, cloud. Codice_IPA chiave di join con ANAC. Nota: il validate sceglie
-    i resource JSON di metadati invece degli XLSX (landing_page); 0/27 reachable al
-    2026-11-06 — follow-up dedicato.'
+    elettronica, cloud. Codice_IPA chiave di join con ANAC. Nota: i package hanno
+    resource xlsx,json o txt,json; il validator tabellare li tratta come non-CSV (reachable=None),
+    quindi il validate resta 0/27 finché non esiste un percorso XLSX / formato per-resource.
+    L''inventory resta valido per il catalog-watch.'
   datasets_in_use:
     - ipa_aree_organizzative_omogenee
     - ipa_categorie_enti

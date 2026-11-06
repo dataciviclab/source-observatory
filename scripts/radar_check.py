@@ -216,7 +216,11 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _probe_one(portal: str, base_url: str | None) -> tuple[str, ProbeResult]:
+def _probe_one(
+    portal: str,
+    base_url: str | None,
+    user_agent: str | None = None,
+) -> tuple[str, ProbeResult]:
     """Worker for ThreadPoolExecutor — probes a single portal."""
     if not base_url:
         return portal, ProbeResult(
@@ -225,7 +229,7 @@ def _probe_one(portal: str, base_url: str | None) -> tuple[str, ProbeResult]:
             note="Missing base_url in registry entry",
         )
     try:
-        result = probe_url(base_url)
+        result = probe_url(base_url, user_agent=user_agent)
     except Exception as exc:
         result = ProbeResult(
             status="RED",
@@ -244,7 +248,12 @@ def main() -> int:
     results: dict[str, ProbeResult] = {}
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
         futures = {
-            executor.submit(_probe_one, portal, meta.get("base_url")): portal
+            executor.submit(
+                _probe_one,
+                portal,
+                meta.get("base_url"),
+                meta.get("user_agent"),
+            ): portal
             for portal, meta in registry.items()
         }
         for future in as_completed(futures):
