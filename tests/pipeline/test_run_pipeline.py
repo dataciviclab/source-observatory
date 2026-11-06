@@ -257,3 +257,22 @@ def test_run_validate_skips_catalog_only(monkeypatch):
 
     assert len(results) == 3
     assert all(r["validation_skipped"] is True for r in results)
+
+
+def test_interleave_groups_by_host():
+    """I gruppi vengono alternati per host, non accodati per fonte."""
+    from scripts.pipeline.run_pipeline import _interleave_groups
+
+    def group(name: str, host: str):
+        return (
+            name,
+            pd.DataFrame(
+                [{"dataset_group": name, "distribution_url": f"https://{host}.test/data.csv"}]
+            ),
+        )
+
+    ordered = _interleave_groups(
+        [group("a1", "host-a"), group("a2", "host-a"), group("b1", "host-b"), group("b2", "host-b")]
+    )
+
+    assert [name for name, _ in ordered] == ["a1", "b1", "a2", "b2"]

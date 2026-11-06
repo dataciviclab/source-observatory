@@ -100,6 +100,38 @@ def _validate_one(group_df: pd.DataFrame, client=None) -> dict:
     return validator(items, client=client)
 
 
+def _group_host(group_df: pd.DataFrame) -> str:
+    """Host scelto dallo stesso criterio del validator."""
+    if len(group_df):
+        items = cast(list[dict[str, Any]], group_df.to_dict("records"))
+        best = pick_best_url(items)
+        if best:
+            url = str(best.get("distribution_url") or best.get("url") or "")
+            host = urlsplit(url).hostname
+            if host:
+                return host
+    return "unknown"
+
+
+def _interleave_groups(
+    groups: list[tuple[Any, pd.DataFrame]],
+) -> list[tuple[Any, pd.DataFrame]]:
+    """Round-robin per host: evita che una fonte monopolizzi i worker."""
+    buckets: dict[str, list[tuple[Any, pd.DataFrame]]] = {}
+    for item in groups:
+        buckets.setdefault(_group_host(item[1]), []).append(item)
+
+    ordered: list[tuple[Any, pd.DataFrame]] = []
+    while buckets:
+        for host in list(buckets):
+            queue = buckets[host]
+            if queue:
+                ordered.append(queue.pop(0))
+            if not queue:
+                del buckets[host]
+    return ordered
+
+
 def run_validate(
     df: pd.DataFrame,
     max_groups: int | None = None,
@@ -116,6 +148,7 @@ def run_validate(
     groups = list(df.groupby("dataset_group"))
     if max_groups:
         groups = groups[:max_groups]
+    groups = _interleave_groups(groups)
 
     total = len(groups)
     print(f"\n✅ Step 3: VALIDATE — probing {total} groups (workers={workers})")
@@ -165,17 +198,6 @@ def run_validate(
                 cache[key] = threading.Semaphore(max(1, limit))
             return cache[key]
 
-    def _host_for(group_df: pd.DataFrame) -> str:
-        if len(group_df):
-            items = cast(list[dict[str, Any]], group_df.to_dict("records"))
-            best = pick_best_url(items)
-            if best:
-                url = str(best.get("distribution_url") or best.get("url") or "")
-                host = urlsplit(url).hostname
-                if host:
-                    return host
-        return "unknown"
-
     def _source_for(group_df: pd.DataFrame) -> str:
         return str(group_df.iloc[0].get("source_id") or "unknown") if len(group_df) else "unknown"
 
@@ -200,7 +222,7 @@ def run_validate(
                 "validation_skipped": True,
                 "reason": "catalog-only",
             }
-        host = _host_for(group_df)
+        host = _group_host(group_df)
         source_id = _source_for(group_df)
         source_limit = _source_limit(group_df)
         with ExitStack() as stack:
