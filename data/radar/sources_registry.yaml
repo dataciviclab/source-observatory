@@ -26,6 +26,10 @@ istat_sdmx:
     - istat_pil_territoriale
     - istat_prezzi_agricoli
     - popolazione_istat_comunale_2019_2025
+  source_check:
+    skip_item_validation: true
+    skip_item_validation_reason: 'Catalogo SDMX di 3.580 gruppi: il validate item-level
+      non aggiunge segnale rispetto al dataflow inventory.'
 anac:
   source_kind: catalog
   protocol: ckan
@@ -146,6 +150,10 @@ openbdap:
     - bdap_spesa_statale_regionalizzata
     - bdap_spese_stato
     - dipendenti_pubblici
+  source_check:
+    skip_item_validation: true
+    skip_item_validation_reason: 'Catalogo enorme e oggi quasi tutto non raggiungibile
+      (2/3.882): inventory/diff utile, validate item-level no.'
 inail_opendata:
   source_kind: catalog
   protocol: ckan
@@ -709,6 +717,10 @@ giustizia_statistiche:
     - spese_giustizia
     - ucp_dettaglio
     - ucp_numero
+  source_check:
+    skip_item_validation: true
+    skip_item_validation_reason: 'Export XLSX non gestiti dal validator tabellare:
+      validate item-level non probeable.'
 cortecostituzionale:
   source_kind: catalog
   protocol: html
@@ -838,6 +850,10 @@ agid:
     - ipa_servizi_digitali
     - ipa_servizi_uo
     - ipa_unita_organizzative
+  source_check:
+    skip_item_validation: true
+    skip_item_validation_reason: 'Resource xlsx/json non gestite dal validator tabellare:
+      il validate è strutturalmente non probeable.'
 noipa_sparql:
   source_kind: catalog
   protocol: sparql

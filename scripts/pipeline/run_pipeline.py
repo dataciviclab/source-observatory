@@ -92,12 +92,82 @@ def run_merge(df: pd.DataFrame, dry_run: bool = False) -> pd.DataFrame:
 # ── Step 3: Validate ──────────────────────────────────────────────────────────
 
 
-def _validate_one(group_df: pd.DataFrame, client=None) -> dict:
-    """Validate a single group: pick protocol, dispatch validator."""
-    items = group_df.to_dict("records")
+def _validate_one(
+    group_df: pd.DataFrame,
+    client=None,
+    items: list[dict[str, Any]] | None = None,
+) -> dict:
+    """Validate a single group: pick protocol, dispatch validator.
+
+    ``items`` permette a ``run_validate`` di riusare la lista già costruita
+    per il calcolo dell'host, evitando un secondo ``to_dict("records")``.
+    """
+    items = items if items is not None else cast(list[dict[str, Any]], group_df.to_dict("records"))
     protocol = str(items[0].get("protocol", "")) if items else ""
     validator = dispatch_validate(protocol)
     return validator(items, client=client)
+
+
+def _group_host_cheap(group_df: pd.DataFrame) -> str:
+    """Host della prima riga: usato solo per il bucketing, non per il semaforo."""
+    if len(group_df):
+        first = group_df.iloc[0]
+        url = str(first.get("distribution_url") or first.get("url") or "")
+        host = urlsplit(url).hostname
+        if host:
+            return host
+    return "unknown"
+
+
+def _host_map(df: pd.DataFrame) -> dict[Any, str]:
+    """Host per dataset_group, calcolato una volta in modo vettoriale."""
+    if "dataset_group" not in df:
+        return {}
+    if "distribution_url" in df and "url" in df:
+        urls = df["distribution_url"].where(df["distribution_url"].notna(), df["url"])
+    elif "distribution_url" in df:
+        urls = df["distribution_url"]
+    elif "url" in df:
+        urls = df["url"]
+    else:
+        return {}
+    first = urls.groupby(df["dataset_group"], sort=False).first()
+    return {
+        key: (urlsplit(str(value)).hostname or "unknown") if pd.notna(value) else "unknown"
+        for key, value in first.items()
+    }
+
+
+def _host_from_items(items: list[dict[str, Any]]) -> str:
+    """Host scelto dallo stesso criterio del validator."""
+    best = pick_best_url(items)
+    if best:
+        url = str(best.get("distribution_url") or best.get("url") or "")
+        host = urlsplit(url).hostname
+        if host:
+            return host
+    return "unknown"
+
+
+def _interleave_groups(
+    groups: list[tuple[Any, pd.DataFrame]],
+    host_by_group: dict[Any, str] | None = None,
+) -> list[tuple[Any, pd.DataFrame]]:
+    """Round-robin per host: evita che una fonte monopolizzi i worker."""
+    buckets: dict[str, list[tuple[Any, pd.DataFrame]]] = {}
+    for item in groups:
+        host = (host_by_group or {}).get(item[0]) or _group_host_cheap(item[1])
+        buckets.setdefault(host, []).append(item)
+
+    ordered: list[tuple[Any, pd.DataFrame]] = []
+    while buckets:
+        for host in list(buckets):
+            queue = buckets[host]
+            if queue:
+                ordered.append(queue.pop(0))
+            if not queue:
+                del buckets[host]
+    return ordered
 
 
 def run_validate(
@@ -116,6 +186,7 @@ def run_validate(
     groups = list(df.groupby("dataset_group"))
     if max_groups:
         groups = groups[:max_groups]
+    groups = _interleave_groups(groups, _host_map(df))
 
     total = len(groups)
     print(f"\n✅ Step 3: VALIDATE — probing {total} groups (workers={workers})")
@@ -123,6 +194,7 @@ def run_validate(
     results: list[dict | None] = [None] * total  # pre-allocate per ordine
     ok = 0
     fail = 0
+    skipped = 0
     csv_ok = 0
     t0 = time.time()
 
@@ -164,17 +236,6 @@ def run_validate(
                 cache[key] = threading.Semaphore(max(1, limit))
             return cache[key]
 
-    def _host_for(group_df: pd.DataFrame) -> str:
-        if len(group_df):
-            items = cast(list[dict[str, Any]], group_df.to_dict("records"))
-            best = pick_best_url(items)
-            if best:
-                url = str(best.get("distribution_url") or best.get("url") or "")
-                host = urlsplit(url).hostname
-                if host:
-                    return host
-        return "unknown"
-
     def _source_for(group_df: pd.DataFrame) -> str:
         return str(group_df.iloc[0].get("source_id") or "unknown") if len(group_df) else "unknown"
 
@@ -190,21 +251,37 @@ def run_validate(
             return None
 
     def _validate_limited(group_df: pd.DataFrame) -> dict[str, Any]:
-        host = _host_for(group_df)
+        skip_flag = group_df.iloc[0].get("skip_item_validation") if len(group_df) else None
+        item = getattr(skip_flag, "item", None)
+        if callable(item):
+            skip_flag = item()
+        if skip_flag is True:
+            first = group_df.iloc[0]
+            return {
+                "dataset_group": first.get("dataset_group"),
+                "source_id": first.get("source_id"),
+                "reachable": None,
+                "validation_skipped": True,
+                "reason": "catalog-only",
+            }
+        items = cast(list[dict[str, Any]], group_df.to_dict("records"))
+        host = _host_from_items(items)
         source_id = _source_for(group_df)
         source_limit = _source_limit(group_df)
         with ExitStack() as stack:
             stack.enter_context(_semaphore(host_semaphores, host, max_concurrency_per_host))
             if source_limit:
                 stack.enter_context(_semaphore(source_semaphores, source_id, source_limit))
-            return _validate_one(group_df, client=_client_for(group_df))
+            return _validate_one(group_df, client=_client_for(group_df), items=items)
 
     if workers <= 1:
         # Sequenziale
         for i, (group_name, group_df) in enumerate(groups):
             result = _validate_limited(group_df)
             results[i] = result
-            if result.get("reachable"):
+            if result.get("validation_skipped"):
+                skipped += 1
+            elif result.get("reachable"):
                 ok += 1
                 if result.get("columns"):
                     csv_ok += 1
@@ -222,7 +299,9 @@ def run_validate(
                 i = future_map[future]
                 result = future.result()
                 results[i] = result
-                if result.get("reachable"):
+                if result.get("validation_skipped"):
+                    skipped += 1
+                elif result.get("reachable"):
                     ok += 1
                     if result.get("columns"):
                         csv_ok += 1
@@ -233,7 +312,8 @@ def run_validate(
 
     elapsed = time.time() - t0
     print(
-        f"\n   ✅ Validate done: {ok} reachable, {csv_ok} CSV, {fail} unreachable ({elapsed:.1f}s)"
+        f"\n   ✅ Validate done: {ok} reachable, {csv_ok} CSV, {fail} unreachable, "
+        f"{skipped} catalog-only ({elapsed:.1f}s)"
     )
     return results
 
@@ -278,6 +358,7 @@ def write_output(
     # Write summary JSON
     reachable = sum(1 for r in results if r.get("reachable"))
     csv_with_schema = sum(1 for r in results if r.get("reachable") and r.get("columns"))
+    skipped = sum(1 for r in results if r.get("validation_skipped"))
     by_source: dict[str, dict] = {
         src: {"total": 0, "reachable": 0, "csv": 0, "groups_total": groups}
         for src, groups in (groups_by_source or {}).items()
@@ -291,6 +372,9 @@ def write_output(
             by_source[src]["reachable"] += 1
         if r.get("columns"):
             by_source[src]["csv"] += 1
+        if r.get("validation_skipped"):
+            by_source[src].setdefault("skipped", 0)
+            by_source[src]["skipped"] += 1
 
     summary = {
         "pipeline_version": 1,
@@ -298,7 +382,8 @@ def write_output(
         "total_groups": len(results),
         "groups_total": sum(groups_by_source.values()) if groups_by_source else len(results),
         "reachable": reachable,
-        "unreachable": len(results) - reachable,
+        "unreachable": len(results) - reachable - skipped,
+        "skipped": skipped,
         "csv_with_schema": csv_with_schema,
         "by_source": {
             src: stats for src, stats in sorted(by_source.items(), key=lambda x: -x[1]["total"])

@@ -111,6 +111,8 @@
         "with_csv_schema": { "type": "integer", "minimum": 0 },
         "avg_readiness": { "type": ["number", "null"] },
         "not_checked_non_csv": { "type": "integer", "minimum": 0 },
+        "validation_skipped": { "type": "integer", "minimum": 0 },
+        "catalog_only": { "type": "boolean" },
         "probeable_items": { "type": "integer", "minimum": 0 },
         "reachability_pct": { "type": ["number", "null"] },
         "coverage_pct": { "type": ["number", "null"] },
@@ -225,7 +227,7 @@
       "properties": {
         "label": {
           "type": "string",
-          "enum": ["STABLE", "DOWN", "NO_DATA", "HEALTH_ONLY", "NOT_PROBEABLE", "UNREACHABLE", "INVENTORY_CHANGED", "STALE", "PARTIALLY_SCOPED", "NEW_CONTENT", "REFERENCED_MISSING"]
+          "enum": ["STABLE", "DOWN", "NO_DATA", "HEALTH_ONLY", "NOT_PROBEABLE", "CATALOG_ONLY", "UNREACHABLE", "INVENTORY_CHANGED", "STALE", "PARTIALLY_SCOPED", "NEW_CONTENT", "REFERENCED_MISSING"]
         },
         "score": { "type": "string" },
         "triggers": {

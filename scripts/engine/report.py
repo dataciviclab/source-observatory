@@ -77,26 +77,32 @@ def aggregate_source_check(results: list[dict]) -> dict:
             "problematic": [],
             "csv_count": 0,
             "not_checked_non_csv": 0,
+            "validation_skipped": 0,
+            "catalog_only": False,
             "top_items": [],
         }
 
     total = len(results)
     reachable = sum(1 for r in results if r.get("reachable") is True)
     not_reachable = sum(1 for r in results if r.get("reachable") is False)
-    not_checked = sum(1 for r in results if r.get("reachable") is None)
+    skipped = sum(1 for r in results if r.get("validation_skipped"))
+    not_checked = sum(
+        1 for r in results if r.get("reachable") is None and not r.get("validation_skipped")
+    )
+    active = [r for r in results if not r.get("validation_skipped")]
 
-    formats = Counter(r.get("format") or "?" for r in results)
-    csv_count = sum(1 for r in results if r.get("format") and "csv" in r.get("format", "").lower())
-    with_schema = [r for r in results if r.get("num_columns") and r["num_columns"] > 0]
+    formats = Counter(r.get("format") or "?" for r in active)
+    csv_count = sum(1 for r in active if r.get("format") and "csv" in r.get("format", "").lower())
+    with_schema = [r for r in active if r.get("num_columns") and r["num_columns"] > 0]
 
     # Readiness score medio
-    scores = [r["readiness_score"] for r in results if r.get("readiness_score") is not None]
+    scores = [r["readiness_score"] for r in active if r.get("readiness_score") is not None]
     avg_readiness = round(sum(scores) / len(scores), 1) if scores else None
 
     # Anni
     no_year = sum(
         1
-        for r in results
+        for r in active
         if r.get("dataset_group_year_min") is None
         or (
             isinstance(r.get("dataset_group_year_min"), float)
@@ -111,7 +117,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
             "url": str(r.get("url", ""))[:80],
             "error": r.get("error"),
         }
-        for r in results
+        for r in active
         if r.get("reachable") is False
     ]
 
@@ -137,7 +143,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
             "format": r.get("format"),
             "reachable": r.get("reachable") is True,
         }
-        for r in results
+        for r in active
         if r.get("readiness_score") is not None
     ]
     scored.sort(key=lambda x: x["score"], reverse=True)
@@ -147,6 +153,8 @@ def aggregate_source_check(results: list[dict]) -> dict:
         "reachable": reachable,
         "not_reachable": not_reachable,
         "not_checked_non_csv": not_checked,
+        "validation_skipped": skipped,
+        "catalog_only": skipped > 0 and skipped == total,
         "formats": dict(formats.most_common()),
         "csv_count": csv_count,
         "with_csv_schema": len(with_schema),
@@ -286,10 +294,13 @@ def compute_operational_verdict(
     scored = int(source_check_data.get("total_scored") or 0)
     reachable = int(source_check_data.get("reachable") or 0)
     not_checked = int(source_check_data.get("not_checked_non_csv") or 0)
-    probeable = max(0, scored - not_checked)
+    skipped = int(source_check_data.get("validation_skipped") or 0)
+    probeable = max(0, scored - not_checked - skipped)
     reachability = round(reachable / probeable * 100, 1) if probeable else None
     if scored == 0:
         triggers.append("health_only" if observation_mode == "radar-only" else "no_data")
+    elif skipped and skipped == scored:
+        triggers.append("catalog_only")
     elif probeable == 0:
         triggers.append("not_probeable")
     elif reachability is not None and reachability < 50:
@@ -319,18 +330,20 @@ def compute_operational_verdict(
         label, score, next_action = "NO_DATA", "no_data", "run inventory/validate"
     elif "health_only" in triggers:
         label, score, next_action = "HEALTH_ONLY", "health_only", None
-    elif "not_probeable" in triggers:
-        label, score, next_action = (
-            "NOT_PROBEABLE",
-            "not_probeable",
-            "add a probeable format/schema",
-        )
     elif "unreachable" in triggers:
         label, score, next_action = "UNREACHABLE", "unreachable", "verify used items"
     elif "stale_rows" in triggers or "inventory_stale" in triggers:
         label, score, next_action = "STALE", "stale", "refresh inventory"
     elif "inventory_changed" in triggers:
         label, score, next_action = "INVENTORY_CHANGED", "changed", "review inventory changes"
+    elif "catalog_only" in triggers:
+        label, score, next_action = "CATALOG_ONLY", "catalog_only", "review inventory changes"
+    elif "not_probeable" in triggers:
+        label, score, next_action = (
+            "NOT_PROBEABLE",
+            "not_probeable",
+            "add a probeable format/schema",
+        )
     elif "source_check_partial" in triggers:
         label, score, next_action = "PARTIALLY_SCOPED", "partial", "complete source-check"
     else:
@@ -442,13 +455,19 @@ def build_report(
         "avg_readiness": sc_agg.get("avg_readiness"),
         "top_items": sc_agg["top_items"],
         "not_checked_non_csv": sc_agg["not_checked_non_csv"],
-        "probeable_items": sc_agg["total"] - sc_agg["not_checked_non_csv"],
+        "validation_skipped": sc_agg["validation_skipped"],
+        "catalog_only": sc_agg["catalog_only"],
+        "probeable_items": (
+            sc_agg["total"] - sc_agg["not_checked_non_csv"] - sc_agg["validation_skipped"]
+        ),
         "reachability_pct": (
             round(
-                sc_agg["reachable"] / (sc_agg["total"] - sc_agg["not_checked_non_csv"]) * 100,
+                sc_agg["reachable"]
+                / (sc_agg["total"] - sc_agg["not_checked_non_csv"] - sc_agg["validation_skipped"])
+                * 100,
                 1,
             )
-            if sc_agg["total"] - sc_agg["not_checked_non_csv"]
+            if (sc_agg["total"] - sc_agg["not_checked_non_csv"] - sc_agg["validation_skipped"])
             else None
         ),
         "coverage_pct": (round(sc_agg["total"] / total_groups * 100, 1) if total_groups else None),

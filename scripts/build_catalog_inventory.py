@@ -112,6 +112,13 @@ def _collect_source(
         if isinstance(max_concurrency, int) and max_concurrency > 0:
             for row in res.rows:
                 row["max_concurrency"] = max_concurrency
+        skip_validation = bool(
+            (source_cfg.get("source_check") or {}).get("skip_item_validation")
+            or (source_cfg.get("inventory") or {}).get("skip_item_validation")
+        )
+        if skip_validation:
+            for row in res.rows:
+                row["skip_item_validation"] = True
         return source_id, res.rows, res.warning, res.summary, None, time.monotonic() - collect_start
     except Exception as exc:
         return source_id, [], None, None, exc, time.monotonic() - collect_start
