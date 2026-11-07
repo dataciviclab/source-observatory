@@ -338,3 +338,54 @@ class TestBuildReport:
             results=recent,
         )
         assert report["source_check"]["total_scored"] == 5
+
+
+class TestAggregateBlocked:
+    def test_blocked_excluded_from_not_checked(self):
+        results = [
+            {"dataset_group": "a", "reachable": None, "blocked": True},
+            {"dataset_group": "b", "reachable": None, "format": "zip"},
+            {"dataset_group": "c", "reachable": True, "num_columns": 3},
+        ]
+        agg = aggregate_source_check(results)
+        assert agg["blocked_items"] == 1
+        assert agg["not_checked_non_csv"] == 1
+        assert agg["reachable"] == 1
+
+    def test_nan_blocked_is_not_counted(self):
+        """NaN arriva dal parquet per le righe senza colonna: non è un blocco."""
+        results = [{"dataset_group": "a", "reachable": None, "blocked": float("nan")}]
+        agg = aggregate_source_check(results)
+        assert agg["blocked_items"] == 0
+        assert agg["not_checked_non_csv"] == 1
+
+
+class TestVerdictBlocked:
+    def test_all_blocked_is_unreachable_not_not_probeable(self):
+        v = compute_operational_verdict(
+            {},
+            {},
+            {
+                "total_scored": 10,
+                "reachable": 0,
+                "not_checked_non_csv": 0,
+                "blocked_items": 10,
+                "validation_skipped": 0,
+            },
+        )
+        assert v["label"] == "UNREACHABLE"
+        assert "blocked" in v["triggers"]
+
+    def test_blocked_with_healthy_rest_is_stable(self):
+        v = compute_operational_verdict(
+            {},
+            {},
+            {
+                "total_scored": 10,
+                "reachable": 5,
+                "not_checked_non_csv": 0,
+                "blocked_items": 5,
+                "validation_skipped": 0,
+            },
+        )
+        assert v["label"] == "STABLE"

@@ -143,6 +143,27 @@ python scripts/pipeline/run_pipeline.py --workers 16 --max-concurrency-per-host 
 inventory. Il numero di worker del pool non è il numero di richieste
 concorrenti consentite su un singolo host.
 
+### Semantica di `reachable`
+
+Il probe è una HEAD; `HttpResult.is_ok` significa solo "nessuna eccezione",
+quindi una 404 arriverebbe come "ok". Il validator classifica lo status:
+
+| Esito | Significato |
+|---|---|
+| `reachable=True` | 2xx/3xx |
+| `reachable=False` | 4xx/5xx o errore di rete/timeout → `unreachable` |
+| `reachable=None` | non verificato: formato non-CSV (nessun probe) |
+| `blocked=True` | 401/403/407/429: la risorsa c'è ma non ci è concessa |
+
+`blocked` è escluso dal denominatore di `probeable_items`/`reachability_pct`
+(stessa logica `unknown` del drift): un WAF non è un dato sparito. Se tutti i
+gruppi sono bloccati il verdict è `UNREACHABLE` con trigger `blocked`, non
+`NOT_PROBEABLE`.
+
+`summary.json` espone i conteggi separati: `reachable`, `unreachable` (solo
+`False`), `not_checked` (`None`: non-CSV), `blocked`, `skipped`. Prima
+`unreachable` includeva anche i non verificati, gonfiando il numero.
+
 ### robots.txt nei fetch HTML
 
 Il collector HTML (`area_pages`, `page_url_template`, pagine da sitemap,
@@ -204,9 +225,13 @@ Disciplina:
 - un run completo droppa dall'inventory **solo** le fonti rimosse dal registry;
   un run filtrato (`--source-ids`) preserva tutto ciò che non ha girato, perché
   non è una fotografia completa
-- le fonti `radar-only` restano nell'inventory con le righe esistenti (non
-  vengono più aggiornate né cancellate): se una fonte torna `catalog-watch` non
-  si perde lo storico. Per ripulirle serve una decisione esplicita
+- le fonti `radar-only` restano nell'inventory con le righe esistenti, marcate
+  `stale` con `stale_reason: not_catalog_watch`: sono escluse da validate e
+  report, così una demotion riduce davvero probe e metriche. Se una fonte torna
+  `catalog-watch` lo storico è ancora lì
+- se un collector torna **0 righe** ma l'inventory precedente ne aveva, la
+  fonte è `empty_result` e le righe restano `stale` (`stale_reason:
+  empty_result`): un endpoint che cambia forma non deve cancellare la fonte
 - se robots.txt blocca tutte le pagine, la fonte è `robots_blocked` e le righe
   vecchie restano come `stale` (`stale_reason: robots_disallow`): un catalogo
   vuoto non deve sembrare una fonte spenta con il radar verde

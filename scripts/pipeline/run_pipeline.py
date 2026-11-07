@@ -33,6 +33,7 @@ import pandas as pd
 
 from scripts.collectors import dispatch_validate
 from scripts.collectors._validate_base import pick_best_url
+from scripts.collectors.base import STALE_REASON_NOT_CATALOG_WATCH
 from scripts.pipeline._merge_utils import add_dataset_group_columns
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -55,6 +56,14 @@ def load_inventory(path: Path, source_ids: list[str] | None = None) -> pd.DataFr
 
     df = pd.read_parquet(path)
     print(f"📦 Loaded inventory: {len(df)} items from {path}")
+
+    # Le righe delle fonti demote restano nello storico ma non si validano:
+    # radar-only non produce inventory, quindi non deve costare probe.
+    if "stale_reason" in df.columns:
+        demoted = df["stale_reason"].fillna("") == STALE_REASON_NOT_CATALOG_WATCH
+        if demoted.any():
+            print(f"   Escluse {int(demoted.sum())} righe di fonti non catalog-watch")
+            df = df[~demoted]
 
     if source_ids:
         df = df[df["source_id"].isin(source_ids)]
@@ -196,6 +205,7 @@ def run_validate(
     fail = 0
     skipped = 0
     csv_ok = 0
+    not_checked = 0
     t0 = time.time()
 
     # Client condiviso con circuit breaker: se un host fallisce N volte
@@ -281,13 +291,15 @@ def run_validate(
             results[i] = result
             if result.get("validation_skipped"):
                 skipped += 1
-            elif result.get("reachable"):
+            elif result.get("reachable") is True:
                 ok += 1
                 if result.get("columns"):
                     csv_ok += 1
-            else:
+            elif result.get("reachable") is False:
                 fail += 1
-            _report_progress(i + 1, total, ok, fail, csv_ok, t0)
+            else:
+                not_checked += 1
+            _report_progress(i + 1, total, ok, fail, csv_ok, t0, not_checked)
     else:
         # Parallelo con ThreadPoolExecutor
         with ThreadPoolExecutor(max_workers=workers) as pool:
@@ -301,24 +313,34 @@ def run_validate(
                 results[i] = result
                 if result.get("validation_skipped"):
                     skipped += 1
-                elif result.get("reachable"):
+                elif result.get("reachable") is True:
                     ok += 1
                     if result.get("columns"):
                         csv_ok += 1
-                else:
+                elif result.get("reachable") is False:
                     fail += 1
+                else:
+                    not_checked += 1
                 done = sum(1 for r in results if r is not None)
-                _report_progress(done, total, ok, fail, csv_ok, t0)
+                _report_progress(done, total, ok, fail, csv_ok, t0, not_checked)
 
     elapsed = time.time() - t0
     print(
         f"\n   ✅ Validate done: {ok} reachable, {csv_ok} CSV, {fail} unreachable, "
-        f"{skipped} catalog-only ({elapsed:.1f}s)"
+        f"{not_checked} non verificati, {skipped} catalog-only ({elapsed:.1f}s)"
     )
     return results
 
 
-def _report_progress(done: int, total: int, ok: int, fail: int, csv_ok: int, t0: float):
+def _report_progress(
+    done: int,
+    total: int,
+    ok: int,
+    fail: int,
+    csv_ok: int,
+    t0: float,
+    not_checked: int = 0,
+):
     """Print progress every 50 groups or at the end."""
     if done % 50 != 0 and done != total:
         return
@@ -327,8 +349,9 @@ def _report_progress(done: int, total: int, ok: int, fail: int, csv_ok: int, t0:
     rate = done / elapsed if elapsed > 0 else 0
     print(
         f"   [{done}/{total}] {pct:.0f}% — "
-        f"{ok} ok, {fail} unreachable, {csv_ok} csv — "
-        f"{rate:.1f} groups/s"
+        f"{ok} ok, {fail} unreachable, {not_checked} non verificati, {csv_ok} csv — "
+        f"{rate:.1f} groups/s",
+        flush=True,
     )
 
 
@@ -356,25 +379,53 @@ def write_output(
     print(f"\n💾 Validated: {validated_path} ({len(df)} rows)")
 
     # Write summary JSON
-    reachable = sum(1 for r in results if r.get("reachable"))
-    csv_with_schema = sum(1 for r in results if r.get("reachable") and r.get("columns"))
+    reachable = sum(1 for r in results if r.get("reachable") is True)
+    unreachable = sum(1 for r in results if r.get("reachable") is False)
+    not_checked = sum(
+        1 for r in results if r.get("reachable") is None and not r.get("validation_skipped")
+    )
+    blocked = sum(1 for r in results if r.get("blocked") is True)
+    csv_with_schema = sum(1 for r in results if r.get("reachable") is True and r.get("columns"))
     skipped = sum(1 for r in results if r.get("validation_skipped"))
     by_source: dict[str, dict] = {
-        src: {"total": 0, "reachable": 0, "csv": 0, "groups_total": groups}
+        src: {
+            "total": 0,
+            "reachable": 0,
+            "csv": 0,
+            "unreachable": 0,
+            "not_checked": 0,
+            "blocked": 0,
+            "skipped": 0,
+            "groups_total": groups,
+        }
         for src, groups in (groups_by_source or {}).items()
     }
     for r in results:
         src = r.get("source_id", "unknown")
         if src not in by_source:
-            by_source[src] = {"total": 0, "reachable": 0, "csv": 0, "groups_total": 0}
+            by_source[src] = {
+                "total": 0,
+                "reachable": 0,
+                "csv": 0,
+                "unreachable": 0,
+                "not_checked": 0,
+                "blocked": 0,
+                "skipped": 0,
+                "groups_total": 0,
+            }
         by_source[src]["total"] += 1
-        if r.get("reachable"):
+        if r.get("validation_skipped"):
+            by_source[src]["skipped"] += 1
+        elif r.get("reachable") is True:
             by_source[src]["reachable"] += 1
+        elif r.get("reachable") is False:
+            by_source[src]["unreachable"] += 1
+        else:
+            by_source[src]["not_checked"] += 1
+        if r.get("blocked") is True:
+            by_source[src]["blocked"] += 1
         if r.get("columns"):
             by_source[src]["csv"] += 1
-        if r.get("validation_skipped"):
-            by_source[src].setdefault("skipped", 0)
-            by_source[src]["skipped"] += 1
 
     summary = {
         "pipeline_version": 1,
@@ -382,7 +433,9 @@ def write_output(
         "total_groups": len(results),
         "groups_total": sum(groups_by_source.values()) if groups_by_source else len(results),
         "reachable": reachable,
-        "unreachable": len(results) - reachable - skipped,
+        "unreachable": unreachable,
+        "not_checked": not_checked,
+        "blocked": blocked,
         "skipped": skipped,
         "csv_with_schema": csv_with_schema,
         "by_source": {

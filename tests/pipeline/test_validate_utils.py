@@ -126,15 +126,46 @@ class TestProbeReachability:
         assert result["status_code"] == 200
 
     def test_404_url(self, monkeypatch, fake_http):
-        """HEAD con response HTTP (anche 4xx) → is_ok True (err None)."""
+        """HEAD 404 → non raggiungibile: `is_ok` da solo non basta."""
         fake_http.responses[MEF_URL] = HttpResult(
             response=fake_response(404, "not found"), err=None
         )
         monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
         result = probe_reachability(MEF_URL)
-        # HttpResult.is_ok = response presente e err None → 404 e' 'ok' come response
-        assert result["reachable"] is True
+        assert result["reachable"] is False
         assert result["status_code"] == 404
+        assert result["blocked"] is False
+
+    def test_403_is_blocked_not_unreachable(self, monkeypatch, fake_http):
+        """403 = bloccato (unknown), non risorsa sparita."""
+        fake_http.responses[MEF_URL] = HttpResult(
+            response=fake_response(403, "forbidden"), err=None
+        )
+        monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
+        result = probe_reachability(MEF_URL)
+        assert result["reachable"] is None
+        assert result["blocked"] is True
+        assert "blocked" in result["error"]
+
+    def test_429_is_blocked(self, monkeypatch, fake_http):
+        fake_http.responses[MEF_URL] = HttpResult(response=fake_response(429, ""), err=None)
+        monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
+        result = probe_reachability(MEF_URL)
+        assert result["blocked"] is True
+        assert result["reachable"] is None
+
+    def test_503_is_unreachable(self, monkeypatch, fake_http):
+        fake_http.responses[MEF_URL] = HttpResult(response=fake_response(503, ""), err=None)
+        monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
+        result = probe_reachability(MEF_URL)
+        assert result["reachable"] is False
+        assert result["blocked"] is False
+        assert result["error"] == "HTTP 503"
+
+    def test_redirect_is_reachable(self, monkeypatch, fake_http):
+        fake_http.responses[MEF_URL] = HttpResult(response=fake_response(301, ""), err=None)
+        monkeypatch.setattr("scripts.collectors._validate_base.HttpClient", lambda **kw: fake_http)
+        assert probe_reachability(MEF_URL)["reachable"] is True
 
     def test_connection_error(self, monkeypatch, fake_http):
         """HEAD con errore di rete → reachable False, error valorizzato."""

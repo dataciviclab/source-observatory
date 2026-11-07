@@ -28,6 +28,11 @@ def strip_query(url: str) -> str:
     return urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
 
 
+# Righe inventory di fonti non più `catalog-watch` (radar-only/demote):
+# restano nello storico come stale, ma fuori da validate e report.
+STALE_REASON_NOT_CATALOG_WATCH = "not_catalog_watch"
+
+
 def inventory_cfg(source_cfg: dict[str, Any]) -> dict[str, Any]:
     """Legge il blocco `inventory:` dalla config della fonte nel registry."""
     inv = source_cfg.get("inventory")

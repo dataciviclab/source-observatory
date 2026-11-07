@@ -1020,3 +1020,40 @@ class TestRobotsBlockedSource:
         existing = pd.DataFrame([{"source_id": "altro", "item_id": "2"}])
         assert scripts.build_catalog_inventory._stale_rows(existing, "demo", "x") == []
         assert scripts.build_catalog_inventory._stale_rows(None, "demo", "x") == []
+
+
+class TestDemotedAndEmptySources:
+    """Demotion e collector vuoti non devono né costare probe né perdere dati."""
+
+    def test_mark_demoted_stale_only_touches_radar_only(self) -> None:
+        preserved = pd.DataFrame(
+            [
+                {"source_id": "aci", "item_id": "1", "source_status": "active"},
+                {"source_id": "agcm", "item_id": "2", "source_status": "active"},
+            ]
+        )
+        registry = {
+            "aci": {"observation_mode": "catalog-watch"},
+            "agcm": {"observation_mode": "radar-only"},
+        }
+        out = scripts.build_catalog_inventory._mark_demoted_stale(preserved, registry)
+        row = out.set_index("source_id")
+        assert row.loc["aci", "source_status"] == "active"
+        assert row.loc["agcm", "source_status"] == "stale"
+        assert (
+            row.loc["agcm", "stale_reason"]
+            == scripts.build_catalog_inventory.STALE_REASON_NOT_CATALOG_WATCH
+        )
+
+    def test_mark_demoted_stale_noop_when_nothing_demoted(self) -> None:
+        preserved = pd.DataFrame([{"source_id": "aci", "item_id": "1"}])
+        out = scripts.build_catalog_inventory._mark_demoted_stale(
+            preserved, {"aci": {"observation_mode": "catalog-watch"}}
+        )
+        assert out.equals(preserved)
+
+    def test_has_previous_rows(self) -> None:
+        existing = pd.DataFrame([{"source_id": "noipa_sparql", "item_id": "x"}])
+        assert scripts.build_catalog_inventory._has_previous_rows(existing, "noipa_sparql") is True
+        assert scripts.build_catalog_inventory._has_previous_rows(existing, "altro") is False
+        assert scripts.build_catalog_inventory._has_previous_rows(None, "x") is False

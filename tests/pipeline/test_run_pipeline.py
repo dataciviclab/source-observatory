@@ -321,3 +321,58 @@ def test_run_validate_skips_only_true_flag(monkeypatch):
 
     assert calls == ["nan", "none"]
     assert sum(1 for r in results if r.get("validation_skipped")) == 1
+
+
+def test_write_output_counts_three_states(tmp_path):
+    """Unreachable = solo reachable False; None è 'non verificato', blocked a parte."""
+    from scripts.pipeline.run_pipeline import write_output
+
+    results = [
+        {"source_id": "demo", "reachable": True},
+        {"source_id": "demo", "reachable": False, "error": "HTTP 404"},
+        {"source_id": "demo", "reachable": None, "format": "zip"},
+        {"source_id": "demo", "reachable": None, "blocked": True},
+        {"source_id": "demo", "validation_skipped": True},
+    ]
+    write_output(results, tmp_path / "v.parquet", tmp_path / "s.json")
+
+    summary = json.loads((tmp_path / "s.json").read_text(encoding="utf-8"))
+    assert summary["reachable"] == 1
+    assert summary["unreachable"] == 1
+    assert summary["not_checked"] == 2
+    assert summary["blocked"] == 1
+    assert summary["skipped"] == 1
+    assert summary["by_source"]["demo"]["unreachable"] == 1
+    assert summary["by_source"]["demo"]["not_checked"] == 2
+
+
+def test_load_inventory_drops_not_catalog_watch_rows(tmp_path):
+    """Le righe delle fonti demote restano nello storico ma fuori dal validate."""
+    from scripts.pipeline.run_pipeline import load_inventory
+
+    inventory = tmp_path / "inv.parquet"
+    pd.DataFrame(
+        [
+            {"source_id": "aci", "dataset_group": "a", "stale_reason": None},
+            {"source_id": "agcm", "dataset_group": "b", "stale_reason": "not_catalog_watch"},
+            {"source_id": "anac", "dataset_group": "c", "stale_reason": "timeout"},
+        ]
+    ).to_parquet(inventory, index=False)
+
+    df = load_inventory(inventory)
+    assert sorted(df["source_id"]) == ["aci", "anac"]
+
+
+def test_write_output_nan_blocked_not_counted(tmp_path):
+    """NaN su `blocked` (righe senza probe) non deve contare come bloccato."""
+    from scripts.pipeline.run_pipeline import write_output
+
+    results = [
+        {"source_id": "demo", "reachable": None, "blocked": float("nan"), "format": "zip"},
+        {"source_id": "demo", "reachable": None, "blocked": True},
+    ]
+    write_output(results, tmp_path / "v.parquet", tmp_path / "s.json")
+
+    summary = json.loads((tmp_path / "s.json").read_text(encoding="utf-8"))
+    assert summary["blocked"] == 1
+    assert summary["not_checked"] == 2

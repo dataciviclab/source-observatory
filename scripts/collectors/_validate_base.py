@@ -56,6 +56,11 @@ def pick_best_url(items: list[dict[str, Any]]) -> dict[str, Any] | None:
 # (es. lavoro_opendata: 83 gruppi x ~11s = ~15min senza breaker).
 CIRCUIT_THRESHOLD = 3
 
+# Status che indicano un blocco (WAF, rate limit, auth), non una risorsa
+# sparita: il dato può esserci ma non ci è concesso. Stessa semantica della
+# policy drift (`unknown`, non `missing`).
+BLOCKED_STATUSES = frozenset({401, 403, 407, 429})
+
 
 def probe_reachability(
     url: str,
@@ -68,9 +73,19 @@ def probe_reachability(
     HttpClient con circuit breaker), viene riusato — il breaker resta
     attivo tra gruppi della stessa fonte. Altrimenti crea un client nuovo
     (comportamento storico).
+
+    Semantica di ``reachable``:
+      - True  → 2xx/3xx
+      - False → 4xx (tranne i bloccati) o 5xx
+      - None  → bloccato (401/403/407/429) o errore di rete: non verificato
+
+    ``HttpResult.is_ok`` vale True anche per una risposta 404/503 (significa
+    solo "nessuna eccezione"), quindi non basta: senza questo controllo ogni
+    errore HTTP finiva contato come raggiungibile.
     """
     result: dict[str, Any] = {
-        "reachable": False,
+        "reachable": None,
+        "blocked": False,
         "status_code": None,
         "content_type": None,
         "error": None,
@@ -78,14 +93,25 @@ def probe_reachability(
     try:
         client = client or HttpClient(timeout=timeout)
         resp = client.head(url, verify=False)
-        if resp.is_ok and resp.response is not None:
-            result["reachable"] = True
-            result["status_code"] = resp.response.status_code
+        if resp.response is not None:
+            status = resp.response.status_code
+            result["status_code"] = status
             result["content_type"] = resp.response.headers.get("Content-Type")
+            if 200 <= status < 400:
+                result["reachable"] = True
+            elif status in BLOCKED_STATUSES:
+                result["blocked"] = True
+                result["error"] = f"HTTP {status} (blocked)"
+            else:
+                result["reachable"] = False
+                result["error"] = f"HTTP {status}"
         else:
-            status = resp.response.status_code if resp.response else "?"
-            result["error"] = str(resp.err) if resp.err else f"HTTP {status}"
+            # Errore di rete/timeout/circuit open: la risorsa non risponde,
+            # quindi è unreachable (non "non verificata").
+            result["reachable"] = False
+            result["error"] = str(resp.err) if resp.err else "HTTP ?"
     except Exception as e:
+        result["reachable"] = False
         result["error"] = str(e)
     return result
 

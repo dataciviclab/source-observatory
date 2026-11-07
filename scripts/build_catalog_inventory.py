@@ -17,6 +17,7 @@ from scripts._constants import (
     CATALOG_INVENTORY_DIR_PATH,
     RADAR_SUMMARY_PATH,
     REGISTRY_PATH,
+    STALE_REASON_NOT_CATALOG_WATCH,
     get_red_source_ids,
     load_registry,
     stale_reason_from_exception,
@@ -175,6 +176,36 @@ def _stale_rows(
     stale["source_status"] = "stale"
     stale["stale_reason"] = reason
     return cast(list[dict[str, Any]], stale.to_dict(orient="records"))
+
+
+def _has_previous_rows(existing_df: pd.DataFrame | None, source_id: str) -> bool:
+    """True se l'inventory precedente aveva righe per questa fonte."""
+    if existing_df is None or "source_id" not in existing_df.columns:
+        return False
+    return bool((existing_df["source_id"] == source_id).any())
+
+
+def _mark_demoted_stale(
+    preserved: pd.DataFrame,
+    registry: dict[str, dict[str, Any]],
+) -> pd.DataFrame:
+    """Marca stale le righe preservate di fonti non più `catalog-watch`.
+
+    Restano nello storico ma fuori da validate e report: altrimenti una
+    demotion non riduce né probe né metriche.
+    """
+    if preserved.empty:
+        return preserved
+    demoted = {
+        sid for sid, cfg in registry.items() if cfg.get("observation_mode") != "catalog-watch"
+    }
+    mask = preserved["source_id"].isin(demoted)
+    if not mask.any():
+        return preserved
+    preserved = preserved.copy()
+    preserved.loc[mask, "source_status"] = "stale"
+    preserved.loc[mask, "stale_reason"] = STALE_REASON_NOT_CATALOG_WATCH
+    return preserved
 
 
 def parse_args() -> argparse.Namespace:
@@ -464,6 +495,24 @@ def main() -> None:
             all_rows.extend(_stale_rows(existing_df, source_id, "robots_disallow"))
             continue
 
+        # Collector senza righe ma con storico: non è un catalogo vuoto.
+        # Un endpoint che cambia forma o va giù (es. SPARQL che risponde
+        # errore) non deve cancellare la fonte dall'inventory in silenzio.
+        if not rows and _has_previous_rows(existing_df, source_id):
+            report["sources"][source_id] = {
+                "status": "empty_result",
+                "protocol": source_cfg.get("protocol"),
+                "reason": "collector senza righe; inventory precedente preservato come stale",
+                "method": source_cfg.get("catalog_baseline", {}).get("method"),
+                "collect_seconds": round(max(0.0, source_timing.get(source_id, 0.0)), 1),
+            }
+            if warning:
+                report["sources"][source_id]["warning"] = warning
+            if summary:
+                report["sources"][source_id]["summary"] = summary
+            all_rows.extend(_stale_rows(existing_df, source_id, "empty_result"))
+            continue
+
         # Source succeeded: add rows with active status
         for row in rows:
             row["source_status"] = "active"
@@ -502,6 +551,8 @@ def main() -> None:
             registry_keys=set(registry.keys()),
             filtered=source_id_filter is not None,
         )
+        if source_id_filter is None:
+            preserved = _mark_demoted_stale(preserved, registry)
         if not preserved.empty:
             # Mark as stale if older than last successful fetch
             preserved = preserved.copy()
@@ -575,6 +626,9 @@ def main() -> None:
             if not rows_count and _robots_blocked(_summary):
                 status = "ROBOTS"
                 note = "robots.txt blocca tutte le pagine; righe preservate"
+            elif not rows_count and _has_previous_rows(existing_df, source_id):
+                status = "EMPTY"
+                note = "0 righe; inventory precedente preservato"
         print(f"{source_id:<24} {status:<12} {len(rows_count):<8} {elapsed:>6.1f}s  {note}")
     print()
 
