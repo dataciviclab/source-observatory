@@ -1,6 +1,6 @@
 {
   "source_id": "inps",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN INPS — inventory via package_list + package_show_sample (current_package_list_with_resources lento a offset alti).",
-    "last_probed": "2026-10-28"
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,27 +20,29 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 2505,
+    "total_items": 2517,
+    "active_items": 2517,
+    "stale_items": 0,
     "method": "package_search",
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": 2499,
     "baseline_date": "2026-07-18",
-    "freshness_hours": 0.2,
-    "delta": 6,
-    "delta_pct": 0.2,
+    "freshness_hours": 0.3,
+    "delta": 18,
+    "delta_pct": 0.7,
     "formats": {
       "CSV,JSON,XLS,XML": 942,
-      "CSV,JSON,XML": 419,
+      "CSV,JSON,XML": 432,
       "CSV,JSON,OWL,XLS,XML": 411,
-      "CSV": 371,
+      "CSV": 370,
       "CSV,OWL,JSON,XLS,XML": 117,
       "CSV,XML,RDF_TURTLE,JSON": 104,
       "CSV,JSON,OWL,XML": 83,
       "CSV,JSON,XLS": 13,
       "CSV,JSON,XML,RDF_TURTLE": 12,
       "CSV,RDF_TURTLE,XML,JSON": 6,
-      "CSV,JSON,XLSX,XML": 6,
       "CSV,RDF_TURTLE,XML": 6,
+      "CSV,JSON,XLSX,XML": 6,
       "CSV,XLS,XML,JSON,OWL": 5,
       "CSV,OWL,XLS,XML": 4,
       "JSON": 3,
@@ -50,16 +52,16 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
-    "total_scored": 1809,
-    "reachable": 1807,
-    "csv_count": 1807,
-    "with_csv_schema": 1773,
-    "avg_readiness": 9.9,
+    "last_run": "2026-11-07T00:04:39Z",
+    "total_scored": 1814,
+    "reachable": 1812,
+    "csv_count": 1812,
+    "with_csv_schema": 1803,
+    "avg_readiness": 10.0,
     "top_items": [
       {
         "name": "inps/accertato-lordo-programmato-e-consuntivo",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
           2014,
           2015
@@ -69,17 +71,17 @@
       },
       {
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-categoria-e-reddito",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
-          2016,
-          2016
+          2015,
+          2015
         ],
         "format": "csv,json,xls,xml",
         "reachable": true
       },
       {
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-area-geografica",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
           2015,
           2015
@@ -89,7 +91,7 @@
       },
       {
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-categoria",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
           2015,
           2015
@@ -99,32 +101,113 @@
       },
       {
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-reddito",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
-          2016,
-          2016
+          2015,
+          2015
         ],
         "format": "csv,json,xls,xml",
         "reachable": true
       }
     ],
-    "coverage_pct": 72.2,
+    "not_checked_non_csv": 2,
+    "validation_skipped": 0,
+    "catalog_only": false,
+    "probeable_items": 1812,
+    "reachability_pct": 100.0,
+    "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 5.0,
-      "perc_aperto": 0.0,
+      "score": 90.0,
+      "perc_aperto": 100.0,
       "perc_reachable": 99.9,
-      "total": 1809,
+      "total": 1814,
       "fonte": "source_check"
     }
   },
   "datasets_in_use": [
     {
+      "slug": "inps_assegno_unico",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_bilancio_ce",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_bilancio_gestionale",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_bilancio_missioni",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_cig",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_dipendenti_pubblici",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_dis_coll",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_flussi_settore",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_lavoratori_pubblici",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_lavoratori_redditi",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_naspi",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_pensionamento_flussi",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_pensioni_liquidate",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_pensioni_serie",
+      "status": "in_use"
+    },
+    {
       "slug": "inps_pensioni_trimestrale",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_pensioni_vigenti",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_rapporti_cessazioni",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_rapporti_lavoro",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_rdc_pdc",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_retribuzioni",
+      "status": "in_use"
     },
     {
       "slug": "pensioni_pa_dag",
-      "status": "published"
+      "status": "in_use"
     }
   ],
   "signals": [

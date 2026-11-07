@@ -1,6 +1,6 @@
 {
   "source_id": "dait",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "radar-only",
     "verdict": "go",
     "note": "DAIT — Anagrafe Amministratori locali. CSV snapshot annuali 1991-2026 +  corrente. 41 su 42 entry sono snapshot dello stesso dataset. radar-only iniziale per evitare rumore catalog inventory sui 41 snapshot.\n",
-    "last_probed": "2026-10-28"
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -21,8 +21,10 @@
   },
   "inventory": {
     "total_items": 0,
+    "active_items": 0,
+    "stale_items": 0,
     "method": null,
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "delta": null,
@@ -36,6 +38,11 @@
     "with_csv_schema": 0,
     "avg_readiness": null,
     "top_items": [],
+    "not_checked_non_csv": 0,
+    "validation_skipped": 0,
+    "catalog_only": false,
+    "probeable_items": 0,
+    "reachability_pct": null,
     "coverage_pct": null,
     "formato_aperto": {
       "score": 0.0,
@@ -47,7 +54,11 @@
   "datasets_in_use": [
     {
       "slug": "dait_amministratori_locali",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "dait_amministratori_storico",
+      "status": "in_use"
     }
   ],
   "signals": [
@@ -58,10 +69,10 @@
     }
   ],
   "operational_verdict": {
-    "label": "STABLE",
-    "score": "stable",
+    "label": "HEALTH_ONLY",
+    "score": "health_only",
     "triggers": [
-      "all_green"
+      "health_only"
     ],
     "next_action": null
   }

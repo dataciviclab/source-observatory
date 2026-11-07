@@ -1,6 +1,6 @@
 {
   "source_id": "ispra_linked_data",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo linked-data ISPRA con metadati DCAT interrogabili via SPARQL. Pilot per inventory SPARQL; non sostituisce le fonti operative ISPRA già usate per pipeline tabellari.",
-    "last_probed": "2026-10-28"
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -21,11 +21,13 @@
   },
   "inventory": {
     "total_items": 136,
+    "active_items": 136,
+    "stale_items": 0,
     "method": "sparql_query",
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": 66,
     "baseline_date": "2026-04-11",
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.3,
     "delta": 70,
     "delta_pct": 106.1,
     "formats": {
@@ -33,7 +35,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
+    "last_run": "2026-11-07T00:04:39Z",
     "total_scored": 133,
     "reachable": 133,
     "csv_count": 0,
@@ -42,44 +44,49 @@
     "top_items": [
       {
         "name": "ispra_linked_data/aligns",
-        "score": 3,
+        "score": 3.0,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
         "name": "ispra_linked_data/bodies",
-        "score": 3,
+        "score": 3.0,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
         "name": "ispra_linked_data/capture-types",
-        "score": 3,
+        "score": 3.0,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
         "name": "ispra_linked_data/catalog",
-        "score": 3,
+        "score": 3.0,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
         "name": "ispra_linked_data/certainty",
-        "score": 3,
+        "score": 3.0,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       }
     ],
-    "coverage_pct": 97.8,
+    "not_checked_non_csv": 0,
+    "validation_skipped": 0,
+    "catalog_only": false,
+    "probeable_items": 133,
+    "reachability_pct": 100.0,
+    "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 5.0,
-      "perc_aperto": 0.0,
+      "score": 90.0,
+      "perc_aperto": 100.0,
       "perc_reachable": 100.0,
       "total": 133,
       "fonte": "source_check"
@@ -87,16 +94,96 @@
   },
   "datasets_in_use": [
     {
+      "slug": "ispra_bathw",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_pest",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_pest_stations",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_places",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_rmn",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_rs_export",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_rs_gestione",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_rs_gestione_regionale",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_rs_impianti",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_rs_impianti_regionali",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_rs_import",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_rs_produzione",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_rs_produzione_regionale",
+      "status": "in_use"
+    },
+    {
       "slug": "ispra_ru_base",
-      "status": "published"
+      "status": "in_use"
     },
     {
       "slug": "ispra_ru_costi_kg",
-      "status": "published"
+      "status": "in_use"
     },
     {
       "slug": "ispra_ru_costi_procapite",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_ru_export",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_ru_flussi",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_ru_gestione",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_ru_gestione_impianti",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_ru_gestione_regionale",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_ru_import",
+      "status": "in_use"
+    },
+    {
+      "slug": "ispra_urban",
+      "status": "in_use"
     }
   ],
   "signals": [

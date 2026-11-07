@@ -1,6 +1,6 @@
 {
   "source_id": "giustizia_statistiche",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale statistico Ministero Giustizia — XLSX scaricabili su flussi civili/penali, clearance rate, disposition time, sorveglianza, intercettazioni, monitoraggio tribunali, durata procedimenti. Include dataset già in uso dal Lab.\n",
-    "last_probed": "2026-10-28"
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -21,11 +21,13 @@
   },
   "inventory": {
     "total_items": 9,
+    "active_items": 9,
+    "stale_items": 0,
     "method": null,
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": null,
     "baseline_date": null,
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.3,
     "delta": null,
     "delta_pct": 0.0,
     "formats": {
@@ -37,59 +39,19 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
+    "last_run": "2026-11-07T00:04:39Z",
     "total_scored": 8,
     "reachable": 0,
     "csv_count": 0,
     "with_csv_schema": 0,
-    "avg_readiness": 0.0,
-    "top_items": [
-      {
-        "name": "giustizia_statistiche/dati-e-statistiche-clearance-rate-e-disposition-time-civili",
-        "score": 0,
-        "year_range": null,
-        "format": "XLSX",
-        "reachable": false
-      },
-      {
-        "name": "giustizia_statistiche/dati-e-statistiche-clearance-rate-e-disposition-time-penali",
-        "score": 0,
-        "year_range": null,
-        "format": "XLSX",
-        "reachable": false
-      },
-      {
-        "name": "giustizia_statistiche/dati-e-statistiche-durata-dei-procedimenti-civili/durata-sicid",
-        "score": 0,
-        "year_range": [
-          2014,
-          2014
-        ],
-        "format": "XLSX",
-        "reachable": false
-      },
-      {
-        "name": "giustizia_statistiche/dati-e-statistiche-durata-dei-procedimenti-civili/durata-siecic",
-        "score": 0,
-        "year_range": [
-          2014,
-          2014
-        ],
-        "format": "XLSX",
-        "reachable": false
-      },
-      {
-        "name": "giustizia_statistiche/dati-e-statistiche-flussi-dei-tribunali-ordinari-e-delle-corti-di-appello/civileflussi",
-        "score": 0,
-        "year_range": [
-          2014,
-          2014
-        ],
-        "format": "XLSX",
-        "reachable": false
-      }
-    ],
-    "coverage_pct": 88.9,
+    "avg_readiness": null,
+    "top_items": [],
+    "not_checked_non_csv": 0,
+    "validation_skipped": 8,
+    "catalog_only": true,
+    "probeable_items": 0,
+    "reachability_pct": null,
+    "coverage_pct": 100.0,
     "formato_aperto": {
       "score": 10.0,
       "perc_aperto": 0.0,
@@ -101,23 +63,71 @@
   "datasets_in_use": [
     {
       "slug": "civile_flussi",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "durata_civile",
+      "status": "in_use"
+    },
+    {
+      "slug": "durata_penale_classi",
+      "status": "in_use"
+    },
+    {
+      "slug": "durata_penale_medie",
+      "status": "in_use"
+    },
+    {
+      "slug": "giustizia_civile_indicatori",
+      "status": "in_use"
     },
     {
       "slug": "giustizia_penale_indicatori",
-      "status": "published"
+      "status": "in_use"
     },
     {
       "slug": "intercettazioni",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "mediazione_civile",
+      "status": "in_use"
     },
     {
       "slug": "monitoraggio_mensile_civile",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "monitoraggio_occ",
+      "status": "in_use"
+    },
+    {
+      "slug": "monitoraggio_pnrr_giustizia",
+      "status": "in_use"
     },
     {
       "slug": "penale_flussi",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "sorveglianza_esecuzione",
+      "status": "in_use"
+    },
+    {
+      "slug": "sorveglianza_misure",
+      "status": "in_use"
+    },
+    {
+      "slug": "spese_giustizia",
+      "status": "in_use"
+    },
+    {
+      "slug": "ucp_dettaglio",
+      "status": "in_use"
+    },
+    {
+      "slug": "ucp_numero",
+      "status": "in_use"
     }
   ],
   "signals": [
@@ -128,11 +138,11 @@
     }
   ],
   "operational_verdict": {
-    "label": "STABLE",
-    "score": "stable",
+    "label": "CATALOG_ONLY",
+    "score": "catalog_only",
     "triggers": [
-      "all_green"
+      "catalog_only"
     ],
-    "next_action": null
+    "next_action": "review inventory changes"
   }
 }

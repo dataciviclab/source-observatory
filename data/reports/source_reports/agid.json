@@ -1,17 +1,17 @@
 {
   "source_id": "agid",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
     "source_id": "agid",
     "protocol": "ckan",
-    "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+    "base_url": "https://indicepa.gov.it/ipa-dati/api/3/action/package_list?limit=1",
     "source_kind": "catalog",
     "observation_mode": "catalog-watch",
     "verdict": "go",
-    "note": "Fonte via dati.gov.it. IPA — Indice delle PA: enti, unita organizzative, PEC, domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione elettronica, cloud. Codice_IPA chiave di join con ANAC.",
-    "last_probed": "2026-10-28"
+    "note": "Portale CKAN diretto IPA (indicepa.gov.it). Enti, unità organizzative, PEC, domicili digitali, responsabili transizione digitale, servizi digitali, fatturazione elettronica, cloud. Codice_IPA chiave di join con ANAC. Nota: i package hanno resource xlsx,json o txt,json; il validator tabellare li tratta come non-CSV (reachable=None), quindi il validate resta 0/27 finché non esiste un percorso XLSX / formato per-resource. L'inventory resta valido per il catalog-watch.",
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,96 +20,79 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 40,
+    "total_items": 27,
+    "active_items": 27,
+    "stale_items": 0,
     "method": "package_search",
-    "captured_at": "2026-11-02T11:26:46+00:00",
-    "baseline_value": 40,
-    "baseline_date": "2026-05-24",
-    "freshness_hours": 0.2,
+    "captured_at": "2026-11-06T23:46:59+00:00",
+    "baseline_value": 27,
+    "baseline_date": "2026-11-06",
+    "freshness_hours": 0.3,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
-      "JSON,XLSX": 8,
-      "XLSX,JSON": 7,
-      "TXT,JSON": 7,
-      "CSV,JSON": 5,
-      "JSON,TXT": 5,
-      "JSON": 4,
-      "CSV": 3,
-      "CSV,JSON,XML": 1
+      "XLSX,JSON": 15,
+      "TXT,JSON": 12
     }
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
-    "total_scored": 40,
-    "reachable": 4,
-    "csv_count": 9,
-    "with_csv_schema": 4,
-    "avg_readiness": 1.8,
-    "top_items": [
-      {
-        "name": "agid/casi-di-riutilizzo-portale-datigovit",
-        "score": 10,
-        "year_range": [
-          2026,
-          2026
-        ],
-        "format": "csv,json",
-        "reachable": true
-      },
-      {
-        "name": "agid/appalti-di-innovazione-censiti-piattaforma-appaltinnovativigov",
-        "score": 9,
-        "year_range": [
-          2019,
-          2019
-        ],
-        "format": "csv",
-        "reachable": true
-      },
-      {
-        "name": "agid/monitoraggio-dinamico-portale-datigovit",
-        "score": 9,
-        "year_range": null,
-        "format": "csv",
-        "reachable": true
-      },
-      {
-        "name": "agid/open-data-suapsue",
-        "score": 9,
-        "year_range": null,
-        "format": "csv",
-        "reachable": true
-      },
-      {
-        "name": "agid/3693ac18-2331-4477-a995-5c555990d603",
-        "score": 1,
-        "year_range": null,
-        "format": "txt,json",
-        "reachable": false
-      }
-    ],
+    "last_run": "2026-11-07T00:04:39Z",
+    "total_scored": 27,
+    "reachable": 0,
+    "csv_count": 0,
+    "with_csv_schema": 0,
+    "avg_readiness": null,
+    "top_items": [],
+    "not_checked_non_csv": 0,
+    "validation_skipped": 27,
+    "catalog_only": true,
+    "probeable_items": 0,
+    "reachability_pct": null,
     "coverage_pct": 100.0,
     "formato_aperto": {
       "score": 10.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 10.0,
-      "total": 40,
+      "perc_reachable": 0.0,
+      "total": 27,
       "fonte": "source_check"
     }
   },
   "datasets_in_use": [
     {
       "slug": "ipa_aree_organizzative_omogenee",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "ipa_categorie_enti",
+      "status": "in_use"
+    },
+    {
+      "slug": "ipa_domicili_digitali",
+      "status": "in_use"
+    },
+    {
+      "slug": "ipa_domicili_digitali_uo",
+      "status": "in_use"
     },
     {
       "slug": "ipa_enti",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "ipa_rtd",
+      "status": "in_use"
+    },
+    {
+      "slug": "ipa_servizi_digitali",
+      "status": "in_use"
+    },
+    {
+      "slug": "ipa_servizi_uo",
+      "status": "in_use"
     },
     {
       "slug": "ipa_unita_organizzative",
-      "status": "published"
+      "status": "in_use"
     }
   ],
   "signals": [
@@ -120,11 +103,11 @@
     }
   ],
   "operational_verdict": {
-    "label": "STABLE",
-    "score": "stable",
+    "label": "CATALOG_ONLY",
+    "score": "catalog_only",
     "triggers": [
-      "all_green"
+      "catalog_only"
     ],
-    "next_action": null
+    "next_action": "review inventory changes"
   }
 }

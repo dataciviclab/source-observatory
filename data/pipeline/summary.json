@@ -1,160 +1,203 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-11-02T11:38:22Z",
-  "total_groups": 11128,
-  "reachable": 7056,
-  "unreachable": 4072,
-  "csv_with_schema": 3079,
+  "generated_at": "2026-11-07T00:04:38Z",
+  "total_groups": 11220,
+  "groups_total": 11220,
+  "reachable": 3494,
+  "unreachable": 171,
+  "skipped": 7555,
+  "csv_with_schema": 3122,
   "by_source": {
     "openbdap": {
-      "total": 3882,
-      "reachable": 2,
-      "csv": 0
+      "total": 3878,
+      "reachable": 0,
+      "csv": 0,
+      "groups_total": 3878,
+      "skipped": 3878
     },
     "istat_sdmx": {
-      "total": 3580,
-      "reachable": 3580,
-      "csv": 0
+      "total": 3597,
+      "reachable": 0,
+      "csv": 0,
+      "groups_total": 3597,
+      "skipped": 3597
     },
     "inps": {
-      "total": 1809,
-      "reachable": 1807,
-      "csv": 1773
+      "total": 1814,
+      "reachable": 1812,
+      "csv": 1803,
+      "groups_total": 1814
     },
     "openga": {
       "total": 405,
       "reachable": 405,
-      "csv": 405
+      "csv": 405,
+      "groups_total": 405
     },
     "unioncamere": {
       "total": 256,
       "reachable": 256,
-      "csv": 256
+      "csv": 256,
+      "groups_total": 256
     },
     "opencoesione": {
       "total": 248,
       "reachable": 238,
-      "csv": 210
+      "csv": 210,
+      "groups_total": 248
     },
     "ispra_linked_data": {
       "total": 133,
       "reachable": 133,
-      "csv": 0
+      "csv": 0,
+      "groups_total": 133
     },
     "dati_senato": {
       "total": 100,
       "reachable": 100,
-      "csv": 0
+      "csv": 0,
+      "groups_total": 100
     },
-    "noipa_sparql": {
+    "dati_camera": {
       "total": 99,
       "reachable": 99,
-      "csv": 0
+      "csv": 0,
+      "groups_total": 99
+    },
+    "opencivitas": {
+      "total": 85,
+      "reachable": 60,
+      "csv": 60,
+      "groups_total": 85
     },
     "lavoro_opendata": {
       "total": 83,
       "reachable": 83,
-      "csv": 83
+      "csv": 83,
+      "groups_total": 83
     },
     "mit_opendata": {
       "total": 56,
-      "reachable": 44,
-      "csv": 44
+      "reachable": 3,
+      "csv": 2,
+      "groups_total": 56
     },
     "agcm": {
       "total": 51,
       "reachable": 5,
-      "csv": 4
+      "csv": 4,
+      "groups_total": 51
     },
     "anac": {
       "total": 48,
       "reachable": 47,
-      "csv": 47
+      "csv": 47,
+      "groups_total": 48
+    },
+    "mimit_rna": {
+      "total": 45,
+      "reachable": 0,
+      "csv": 0,
+      "groups_total": 45,
+      "skipped": 45
     },
     "ministero_salute": {
       "total": 44,
       "reachable": 40,
-      "csv": 40
-    },
-    "mimit_rna": {
-      "total": 43,
-      "reachable": 0,
-      "csv": 0
-    },
-    "agid": {
-      "total": 40,
-      "reachable": 4,
-      "csv": 4
+      "csv": 40,
+      "groups_total": 44
     },
     "adm_opendata": {
       "total": 33,
       "reachable": 33,
-      "csv": 33
+      "csv": 33,
+      "groups_total": 33
     },
     "ministero_interno": {
       "total": 33,
       "reachable": 33,
-      "csv": 33
+      "csv": 33,
+      "groups_total": 33
     },
     "art_opendata": {
       "total": 32,
       "reachable": 32,
-      "csv": 32
+      "csv": 32,
+      "groups_total": 32
     },
     "aifa": {
       "total": 30,
       "reachable": 30,
-      "csv": 30
+      "csv": 30,
+      "groups_total": 30
     },
     "mim_opendata": {
       "total": 28,
       "reachable": 28,
-      "csv": 28
+      "csv": 28,
+      "groups_total": 28
+    },
+    "agid": {
+      "total": 27,
+      "reachable": 0,
+      "csv": 0,
+      "groups_total": 27,
+      "skipped": 27
     },
     "mur_ustat": {
       "total": 17,
       "reachable": 0,
-      "csv": 0
+      "csv": 0,
+      "groups_total": 17
     },
     "consip_open_data": {
       "total": 16,
       "reachable": 16,
-      "csv": 16
+      "csv": 16,
+      "groups_total": 16
     },
     "ministero_turismo_opendata": {
       "total": 14,
       "reachable": 14,
-      "csv": 14
+      "csv": 14,
+      "groups_total": 14
     },
     "pagopa": {
       "total": 12,
       "reachable": 12,
-      "csv": 12
+      "csv": 12,
+      "groups_total": 12
     },
-    "mef_irpef": {
+    "mef_finanze": {
       "total": 11,
       "reachable": 9,
-      "csv": 9
+      "csv": 8,
+      "groups_total": 11
     },
     "giustizia_statistiche": {
       "total": 8,
       "reachable": 0,
-      "csv": 0
+      "csv": 0,
+      "groups_total": 8,
+      "skipped": 8
     },
     "inail_opendata": {
       "total": 7,
       "reachable": 4,
-      "csv": 4
+      "csv": 4,
+      "groups_total": 7
     },
     "aci": {
       "total": 5,
       "reachable": 2,
-      "csv": 2
+      "csv": 2,
+      "groups_total": 5
     },
-    "cortecostituzionale": {
+    "corte_costituzionale": {
       "total": 5,
       "reachable": 0,
-      "csv": 0
+      "csv": 0,
+      "groups_total": 5
     }
   }
 }

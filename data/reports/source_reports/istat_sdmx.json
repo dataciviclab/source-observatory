@@ -1,6 +1,6 @@
 {
   "source_id": "istat_sdmx",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Endpoint SDMX ricco e ad alto valore per scouting e source-check.",
-    "last_probed": "2026-10-28"
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,95 +20,70 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 4953,
+    "total_items": 4982,
+    "active_items": 4982,
+    "stale_items": 0,
     "method": "dataflow_count",
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": 4212,
     "baseline_date": "2026-04-10",
-    "freshness_hours": 0.2,
-    "delta": 741,
-    "delta_pct": 17.6,
+    "freshness_hours": 0.3,
+    "delta": 770,
+    "delta_pct": 18.3,
     "formats": {
-      "SDMX": 4953
+      "SDMX": 4982
     }
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
-    "total_scored": 3580,
-    "reachable": 3580,
+    "last_run": "2026-11-07T00:04:39Z",
+    "total_scored": 3597,
+    "reachable": 0,
     "csv_count": 0,
     "with_csv_schema": 0,
-    "avg_readiness": 5.0,
-    "top_items": [
-      {
-        "name": "istat_sdmx/10-and-over-employee",
-        "score": 5,
-        "year_range": null,
-        "format": "SDMX",
-        "reachable": true
-      },
-      {
-        "name": "istat_sdmx/10-and-over-employees",
-        "score": 5,
-        "year_range": null,
-        "format": "SDMX",
-        "reachable": true
-      },
-      {
-        "name": "istat_sdmx/101-1015",
-        "score": 5,
-        "year_range": null,
-        "format": "SDMX",
-        "reachable": true
-      },
-      {
-        "name": "istat_sdmx/abortion-rate-values-per-1000-women-total-and-standardized",
-        "score": 5,
-        "year_range": null,
-        "format": "SDMX",
-        "reachable": true
-      },
-      {
-        "name": "istat_sdmx/absolute-poverty-indicators",
-        "score": 5,
-        "year_range": null,
-        "format": "SDMX",
-        "reachable": true
-      }
-    ],
-    "coverage_pct": 72.3,
+    "avg_readiness": null,
+    "top_items": [],
+    "not_checked_non_csv": 0,
+    "validation_skipped": 3597,
+    "catalog_only": true,
+    "probeable_items": 0,
+    "reachability_pct": null,
+    "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 5.0,
+      "score": 10.0,
       "perc_aperto": 0.0,
-      "perc_reachable": 100.0,
-      "total": 3580,
+      "perc_reachable": 0.0,
+      "total": 3597,
       "fonte": "source_check"
     }
   },
   "datasets_in_use": [
     {
       "slug": "istat_gini_regionale",
-      "status": "published"
+      "status": "in_use"
     },
     {
       "slug": "istat_housing_crowding",
-      "status": "published"
+      "status": "in_use"
     },
     {
       "slug": "istat_ipab_aree",
-      "status": "published"
+      "status": "in_use"
     },
     {
       "slug": "istat_occupazione_provinciale",
-      "status": "published"
+      "status": "in_use"
     },
     {
       "slug": "istat_pil_territoriale",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "istat_prezzi_agricoli",
+      "status": "in_use"
     },
     {
       "slug": "popolazione_istat_comunale_2019_2025",
-      "status": "published"
+      "status": "in_use"
     }
   ],
   "signals": [
@@ -122,6 +97,7 @@
     "label": "INVENTORY_CHANGED",
     "score": "changed",
     "triggers": [
+      "catalog_only",
       "inventory_changed"
     ],
     "next_action": "review inventory changes"

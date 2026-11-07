@@ -1,6 +1,6 @@
 {
   "source_id": "inail_opendata",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. 102 dataset INAIL su infortuni sul lavoro e malattie professionali. Complementare al portale diretto dati.inail.it (protocollo AEM).",
-    "last_probed": "2026-10-28"
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -21,11 +21,13 @@
   },
   "inventory": {
     "total_items": 102,
+    "active_items": 102,
+    "stale_items": 0,
     "method": null,
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": null,
     "baseline_date": null,
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.3,
     "delta": null,
     "delta_pct": 0.0,
     "formats": {
@@ -40,7 +42,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
+    "last_run": "2026-11-07T00:04:39Z",
     "total_scored": 7,
     "reachable": 4,
     "csv_count": 4,
@@ -49,28 +51,28 @@
     "top_items": [
       {
         "name": "inail_opendata/malattie-professionali-dati-con-cadenza-mensile",
-        "score": 9,
+        "score": 9.0,
         "year_range": null,
         "format": "csv,xml,rdf",
         "reachable": true
       },
       {
         "name": "inail_opendata/malattie-professionali-dati-con-cadenza-mensile-per-data-protocollo",
-        "score": 9,
+        "score": 9.0,
         "year_range": null,
         "format": "rdf,xml,csv",
         "reachable": true
       },
       {
         "name": "inail_opendata/malattie-professionali-dati-con-cadenza-semestrale-per-data-decesso",
-        "score": 9,
+        "score": 9.0,
         "year_range": null,
         "format": "csv,xml,rdf",
         "reachable": true
       },
       {
         "name": "inail_opendata/malattie-professionali-dati-con-cadenza-semestrale-per-data-protocollo",
-        "score": 9,
+        "score": 9.0,
         "year_range": null,
         "format": "xml,rdf,csv",
         "reachable": true
@@ -83,10 +85,15 @@
         "reachable": false
       }
     ],
-    "coverage_pct": 6.9,
+    "not_checked_non_csv": 3,
+    "validation_skipped": 0,
+    "catalog_only": false,
+    "probeable_items": 4,
+    "reachability_pct": 100.0,
+    "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 5.0,
-      "perc_aperto": 0.0,
+      "score": 55.0,
+      "perc_aperto": 57.1,
       "perc_reachable": 57.1,
       "total": 7,
       "fonte": "source_check"
@@ -95,7 +102,7 @@
   "datasets_in_use": [
     {
       "slug": "inail_malattie_professionali",
-      "status": "published"
+      "status": "in_use"
     }
   ],
   "signals": [
@@ -106,11 +113,11 @@
     }
   ],
   "operational_verdict": {
-    "label": "PARTIALLY_SCOPED",
-    "score": "partial",
+    "label": "STABLE",
+    "score": "stable",
     "triggers": [
-      "source_check_partial"
+      "all_green"
     ],
-    "next_action": "complete source-check"
+    "next_action": null
   }
 }

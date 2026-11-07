@@ -1,6 +1,6 @@
 {
   "source_id": "aci",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Fonte via dati.gov.it. 35 dataset ACI su parco veicolare: prime iscrizioni autovetture (per comune, alimentazione, classe euro, 2017-2024), radiazioni per demolizione. CSV su lod.aci.it in formato tidy. Incrociabile con MIT incidentalità.",
-    "last_probed": "2026-10-28"
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -21,11 +21,13 @@
   },
   "inventory": {
     "total_items": 39,
+    "active_items": 39,
+    "stale_items": 0,
     "method": "package_search",
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": 35,
     "baseline_date": "2026-06-11",
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.3,
     "delta": 4,
     "delta_pct": 11.4,
     "formats": {
@@ -35,7 +37,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
+    "last_run": "2026-11-07T00:04:39Z",
     "total_scored": 5,
     "reachable": 2,
     "csv_count": 2,
@@ -44,7 +46,7 @@
     "top_items": [
       {
         "name": "aci/prime-iscrizioni-veicoli-nuovi-autovetture-per-ente-territoriale",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
           2025,
           2025
@@ -54,7 +56,7 @@
       },
       {
         "name": "aci/radiazioni-per-demolizione-autovetture-per-ente-territoriale",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
           2025,
           2025
@@ -84,10 +86,15 @@
         "reachable": false
       }
     ],
-    "coverage_pct": 12.8,
+    "not_checked_non_csv": 3,
+    "validation_skipped": 0,
+    "catalog_only": false,
+    "probeable_items": 2,
+    "reachability_pct": 100.0,
+    "coverage_pct": 100.0,
     "formato_aperto": {
       "score": 15.0,
-      "perc_aperto": 0.0,
+      "perc_aperto": 40.0,
       "perc_reachable": 40.0,
       "total": 5,
       "fonte": "source_check"
@@ -95,8 +102,44 @@
   },
   "datasets_in_use": [
     {
+      "slug": "aci_autotrend_mensile",
+      "status": "in_use"
+    },
+    {
+      "slug": "aci_parco_comune",
+      "status": "in_use"
+    },
+    {
+      "slug": "aci_parco_comune_classe_euro",
+      "status": "in_use"
+    },
+    {
+      "slug": "aci_parco_provincia_eta",
+      "status": "in_use"
+    },
+    {
+      "slug": "aci_parco_provincia_soggetto",
+      "status": "in_use"
+    },
+    {
+      "slug": "aci_parco_regione_alimentazione",
+      "status": "in_use"
+    },
+    {
+      "slug": "aci_parco_veicolare",
+      "status": "in_use"
+    },
+    {
       "slug": "aci_prime_iscrizioni_autovetture",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "aci_radiazioni_classe_euro",
+      "status": "in_use"
+    },
+    {
+      "slug": "aci_usato_proprieta",
+      "status": "in_use"
     }
   ],
   "signals": [
@@ -110,8 +153,7 @@
     "label": "INVENTORY_CHANGED",
     "score": "changed",
     "triggers": [
-      "inventory_changed",
-      "source_check_partial"
+      "inventory_changed"
     ],
     "next_action": "review inventory changes"
   }

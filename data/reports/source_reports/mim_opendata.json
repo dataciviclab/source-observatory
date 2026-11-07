@@ -1,6 +1,6 @@
 {
   "source_id": "mim_opendata",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale Ministero Istruzione — csv_magnet scan via area_pages (no sitemap).",
-    "last_probed": "2026-10-28"
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -21,11 +21,13 @@
   },
   "inventory": {
     "total_items": 376,
+    "active_items": 376,
+    "stale_items": 0,
     "method": "csv_magnet_homepage_area_pages",
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": 1116,
     "baseline_date": "2026-04-27",
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.3,
     "delta": -740,
     "delta_pct": -66.3,
     "formats": {
@@ -37,7 +39,7 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
+    "last_run": "2026-11-07T00:04:39Z",
     "total_scored": 28,
     "reachable": 28,
     "csv_count": 28,
@@ -46,7 +48,7 @@
     "top_items": [
       {
         "name": "mim_opendata/aluitast-istruzione",
-        "score": 9,
+        "score": 9.0,
         "year_range": [
           2015,
           2024
@@ -56,7 +58,7 @@
       },
       {
         "name": "mim_opendata/alusecgr-istruzione",
-        "score": 9,
+        "score": 9.0,
         "year_range": [
           2015,
           2024
@@ -66,7 +68,7 @@
       },
       {
         "name": "mim_opendata/alutempo-istruzione",
-        "score": 9,
+        "score": 9.0,
         "year_range": [
           2015,
           2024
@@ -76,7 +78,7 @@
       },
       {
         "name": "mim_opendata/as1516at-istruzione",
-        "score": 9,
+        "score": 9.0,
         "year_range": [
           2016,
           2016
@@ -86,7 +88,7 @@
       },
       {
         "name": "mim_opendata/as1516do-istruzione",
-        "score": 9,
+        "score": 9.0,
         "year_range": [
           2016,
           2016
@@ -95,10 +97,15 @@
         "reachable": true
       }
     ],
-    "coverage_pct": 7.4,
+    "not_checked_non_csv": 0,
+    "validation_skipped": 0,
+    "catalog_only": false,
+    "probeable_items": 28,
+    "reachability_pct": 100.0,
+    "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 5.0,
-      "perc_aperto": 0.0,
+      "score": 90.0,
+      "perc_aperto": 100.0,
       "perc_reachable": 100.0,
       "total": 28,
       "fonte": "source_check"
@@ -107,15 +114,31 @@
   "datasets_in_use": [
     {
       "slug": "mim_alunni_corso_eta",
-      "status": "published"
+      "status": "in_use"
     },
     {
       "slug": "mim_anagrafica_scuole_statali",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "mim_docenti_supplenti",
+      "status": "in_use"
+    },
+    {
+      "slug": "mim_docenti_titolari",
+      "status": "in_use"
+    },
+    {
+      "slug": "mim_personale_ata",
+      "status": "in_use"
+    },
+    {
+      "slug": "mim_personale_ata_supplenti",
+      "status": "in_use"
     },
     {
       "slug": "mim_scuola_infanzia",
-      "status": "published"
+      "status": "in_use"
     }
   ],
   "signals": [
@@ -129,8 +152,7 @@
     "label": "INVENTORY_CHANGED",
     "score": "changed",
     "triggers": [
-      "inventory_changed",
-      "source_check_partial"
+      "inventory_changed"
     ],
     "next_action": "review inventory changes"
   }

@@ -1,6 +1,6 @@
 {
   "source_id": "unioncamere",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "radar-only",
     "verdict": "watchlist",
     "note": "Fonte via dati.gov.it (Unioncamere). 352 dataset su demografia d'impresa provincia-specifici, costo unione alto. Passato a radar-only: se il catalogo publlica dati aggregati nazionali, si rivaluta.",
-    "last_probed": "2026-10-28"
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -21,11 +21,13 @@
   },
   "inventory": {
     "total_items": 384,
+    "active_items": 384,
+    "stale_items": 0,
     "method": null,
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": null,
     "baseline_date": null,
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.3,
     "delta": null,
     "delta_pct": 0.0,
     "formats": {
@@ -33,7 +35,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
+    "last_run": "2026-11-07T00:04:39Z",
     "total_scored": 256,
     "reachable": 256,
     "csv_count": 256,
@@ -42,7 +44,7 @@
     "top_items": [
       {
         "name": "unioncamere/arezzo-siena-imprese-artigiane-registrate",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
           2025,
           2025
@@ -52,7 +54,7 @@
       },
       {
         "name": "unioncamere/arezzo-siena-imprese-femminili-registrate",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
           2025,
           2027
@@ -62,7 +64,7 @@
       },
       {
         "name": "unioncamere/arezzo-siena-imprese-giovanili-registrate",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
           2025,
           2025
@@ -72,7 +74,7 @@
       },
       {
         "name": "unioncamere/arezzo-siena-imprese-registrate",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
           2025,
           2025
@@ -82,7 +84,7 @@
       },
       {
         "name": "unioncamere/arezzo-siena-imprese-straniere-registrate",
-        "score": 10,
+        "score": 10.0,
         "year_range": [
           2025,
           2025
@@ -91,10 +93,15 @@
         "reachable": true
       }
     ],
-    "coverage_pct": 66.7,
+    "not_checked_non_csv": 0,
+    "validation_skipped": 0,
+    "catalog_only": false,
+    "probeable_items": 256,
+    "reachability_pct": 100.0,
+    "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 5.0,
-      "perc_aperto": 0.0,
+      "score": 90.0,
+      "perc_aperto": 100.0,
       "perc_reachable": 100.0,
       "total": 256,
       "fonte": "source_check"

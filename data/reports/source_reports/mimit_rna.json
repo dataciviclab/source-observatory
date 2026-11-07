@@ -1,6 +1,6 @@
 {
   "source_id": "mimit_rna",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -10,8 +10,8 @@
     "source_kind": "catalog",
     "observation_mode": "catalog-watch",
     "verdict": "go",
-    "note": "Fonte via dati.gov.it. RNA — Registro Nazionale Aiuti di Stato. 133 dataset mensili Aiuti (2017-2026, XML, ~14.500 record/mese) + 237 dataset Misure (1994-2023). File su www.rna.gov.it scaricabili (200 MB/mese, XML strutturato). Altissimo valore civico: tracciamento aiuti pubblici alle imprese con beneficiario, CF, importo, regione, CUP.",
-    "last_probed": "2026-10-28"
+    "note": "Fonte via dati.gov.it (harvesting) + portale Incentivi Italia (MIMIT). RNA — Registro Nazionale Aiuti di Stato. 142 dataset mensili Aiuti (2016-11→2026-10, XML, ~500 MB/mese non compresso) + 257 dataset Misure (1994-01→2027, XML). Dal 2026 i file sono serviti dal portale Incentivi Italia: https://www.incentivitalia.gov.it/open-data — il vecchio www.rna.gov.it reindirizza lì restituendo HTML, non XML. NB: su dati.gov.it le resource sono registrate con http:// (reset) o con il vecchio host rna.gov.it → source_check reachable=0; non impatta la pipeline Lab, che scarica gli URL diretti https. Altissimo valore civico: tracciamento aiuti pubblici alle imprese con beneficiario, CF, importo, regione, CUP.",
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,79 +20,52 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 370,
+    "total_items": 401,
+    "active_items": 401,
+    "stale_items": 0,
     "method": "package_search",
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": 370,
     "baseline_date": "2026-05-24",
-    "freshness_hours": 0.2,
-    "delta": 0,
-    "delta_pct": 0.0,
+    "freshness_hours": 0.3,
+    "delta": 31,
+    "delta_pct": 8.4,
     "formats": {
-      "XML": 370
+      "XML": 399,
+      "JSON": 1,
+      "JSON,CSV": 1
     }
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
-    "total_scored": 43,
+    "last_run": "2026-11-07T00:04:39Z",
+    "total_scored": 45,
     "reachable": 0,
     "csv_count": 0,
     "with_csv_schema": 0,
-    "avg_readiness": 1.0,
-    "top_items": [
-      {
-        "name": "mimit_rna/open-data-rna-aiuti-01",
-        "score": 1,
-        "year_range": null,
-        "format": "xml",
-        "reachable": false
-      },
-      {
-        "name": "mimit_rna/open-data-rna-aiuti-01-parte-002",
-        "score": 1,
-        "year_range": null,
-        "format": "xml",
-        "reachable": false
-      },
-      {
-        "name": "mimit_rna/open-data-rna-aiuti-02",
-        "score": 1,
-        "year_range": null,
-        "format": "xml",
-        "reachable": false
-      },
-      {
-        "name": "mimit_rna/open-data-rna-aiuti-02-parte-002",
-        "score": 1,
-        "year_range": null,
-        "format": "xml",
-        "reachable": false
-      },
-      {
-        "name": "mimit_rna/open-data-rna-aiuti-02-parte-003",
-        "score": 1,
-        "year_range": null,
-        "format": "xml",
-        "reachable": false
-      }
-    ],
-    "coverage_pct": 11.6,
+    "avg_readiness": null,
+    "top_items": [],
+    "not_checked_non_csv": 0,
+    "validation_skipped": 45,
+    "catalog_only": true,
+    "probeable_items": 0,
+    "reachability_pct": null,
+    "coverage_pct": 100.0,
     "formato_aperto": {
       "score": 10.0,
       "perc_aperto": 0.0,
       "perc_reachable": 0.0,
-      "total": 43,
+      "total": 45,
       "fonte": "source_check"
     }
   },
   "datasets_in_use": [
     {
       "slug": "rna_aiuti_stato",
-      "status": "published"
+      "status": "in_use"
     },
     {
       "slug": "rna_misure",
-      "status": "published"
+      "status": "in_use"
     }
   ],
   "signals": [
@@ -103,11 +76,12 @@
     }
   ],
   "operational_verdict": {
-    "label": "PARTIALLY_SCOPED",
-    "score": "partial",
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
     "triggers": [
-      "source_check_partial"
+      "catalog_only",
+      "inventory_changed"
     ],
-    "next_action": "complete source-check"
+    "next_action": "review inventory changes"
   }
 }

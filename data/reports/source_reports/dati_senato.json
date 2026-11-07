@@ -1,6 +1,6 @@
 {
   "source_id": "dati_senato",
-  "generated_at": "2026-11-02T11:38:24+00:00",
+  "generated_at": "2026-11-07T00:04:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale Open Data Senato. SPARQL endpoint Virtuoso (GET). Inventory via enumerazione named graphs (~98 grafi categoria/legislatura). Download CSV/JSON via POST form autenticato (non crawlabile). CC BY 3.0. Speculare a dati_camera ma senza DCAT catalog.",
-    "last_probed": "2026-10-28"
+    "last_probed": "2026-11-06"
   },
   "health": {
     "radar_status": "GREEN",
@@ -21,11 +21,13 @@
   },
   "inventory": {
     "total_items": 100,
+    "active_items": 100,
+    "stale_items": 0,
     "method": "named_graphs",
-    "captured_at": "2026-11-02T11:26:46+00:00",
+    "captured_at": "2026-11-06T23:46:59+00:00",
     "baseline_value": 98,
     "baseline_date": "2026-05-31",
-    "freshness_hours": 0.2,
+    "freshness_hours": 0.3,
     "delta": 2,
     "delta_pct": 2.0,
     "formats": {
@@ -33,7 +35,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-02T11:38:24Z",
+    "last_run": "2026-11-07T00:04:39Z",
     "total_scored": 100,
     "reachable": 100,
     "csv_count": 0,
@@ -42,44 +44,49 @@
     "top_items": [
       {
         "name": "dati_senato/b3sifp",
-        "score": 3,
+        "score": 3.0,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
         "name": "dati_senato/b3sonto",
-        "score": 3,
+        "score": 3.0,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
         "name": "dati_senato/facets",
-        "score": 3,
+        "score": 3.0,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
         "name": "dati_senato/httpdatisenatoitcomposizione01",
-        "score": 3,
+        "score": 3.0,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       },
       {
         "name": "dati_senato/httpdatisenatoitcomposizione02",
-        "score": 3,
+        "score": 3.0,
         "year_range": null,
         "format": "SPARQL_NAMED_GRAPH",
         "reachable": true
       }
     ],
+    "not_checked_non_csv": 0,
+    "validation_skipped": 0,
+    "catalog_only": false,
+    "probeable_items": 100,
+    "reachability_pct": 100.0,
     "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 5.0,
-      "perc_aperto": 0.0,
+      "score": 90.0,
+      "perc_aperto": 100.0,
       "perc_reachable": 100.0,
       "total": 100,
       "fonte": "source_check"
@@ -88,15 +95,47 @@
   "datasets_in_use": [
     {
       "slug": "senato_anagrafica",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "senato_commissioni",
+      "status": "in_use"
     },
     {
       "slug": "senato_ddl",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "senato_emendamenti_lod",
+      "status": "in_use"
     },
     {
       "slug": "senato_firmatari",
-      "status": "published"
+      "status": "in_use"
+    },
+    {
+      "slug": "senato_gruppi",
+      "status": "in_use"
+    },
+    {
+      "slug": "senato_interventi",
+      "status": "in_use"
+    },
+    {
+      "slug": "senato_relatori",
+      "status": "in_use"
+    },
+    {
+      "slug": "senato_sindisp",
+      "status": "in_use"
+    },
+    {
+      "slug": "senato_votazioni",
+      "status": "in_use"
+    },
+    {
+      "slug": "senato_votazioni_oggetto",
+      "status": "in_use"
     }
   ],
   "signals": [
