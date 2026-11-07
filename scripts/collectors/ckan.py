@@ -1,9 +1,18 @@
 from __future__ import annotations
 
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from .base import USER_AGENT, CollectorResult, inventory_cfg, strip_query
+
+logger = logging.getLogger(__name__)
+
+# Default storici: invariati per le fonti che non dichiarano override.
+DEFAULT_SEARCH_PAGE_SIZE = 1000
+DEFAULT_SEARCH_TIMEOUT = 60
+DEFAULT_SEARCH_RETRIES = 2
+DEFAULT_SEARCH_MIN_PAGE_SIZE = 10
 
 CKAN_ACTION_NAMES = {
     "package_list",
@@ -61,9 +70,14 @@ def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
     Args:
         url: Endpoint URL (es. ``/api/3/action/package_show``).
         client: Opzionale, ``HttpClient`` riusabile per connection pooling.
-            Se non fornito, ne crea uno nuovo (comportamento legacy).
+            Se non fornito, ne crea uno nuovo con ``timeout``.
         **kwargs: Passati a ``HttpClient.get()``; ``timeout`` e ``headers``
             vengono estratti prima di passarli.
+
+    Nota: ``HttpClient.get()`` non accetta un timeout per-richiesta (usa quello
+    di costruzione). Se il client fornito ha un timeout diverso da quello
+    richiesto, viene costruito un client dedicato: senza questo, il timeout
+    configurato nel registry veniva ignorato in silenzio.
     """
     from lab_connectors.http import HttpClient
 
@@ -71,6 +85,8 @@ def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
     timeout = kwargs.pop("timeout", 60)
     headers = kwargs.pop("headers", None)
 
+    if client is not None and getattr(client, "timeout", timeout) != timeout:
+        client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
     if client is None:
         client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
 
@@ -96,6 +112,21 @@ def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
             f"(status={response.status_code}, content_type={content_type or 'unknown'}, "
             f"preview={preview!r})"
         ) from exc
+
+
+def force_https(url: str | None) -> str | None:
+    """Upgrade ``http://`` a ``https://``.
+
+    Non è un default globale: un portale http-only si romperebbe. Si attiva
+    per fonte con ``inventory.force_https: true`` quando l'endpoint in chiaro
+    è noto per essere morto (es. OpenBDAP: ``http://`` va in timeout,
+    ``https://`` risponde in <1s).
+    """
+    if not url:
+        return url
+    if url.lower().startswith("http://"):
+        return "https://" + url[len("http://") :]
+    return url
 
 
 def _resource_format(item: dict) -> str | None:
@@ -133,6 +164,23 @@ def _landing_page(item: dict) -> str | None:
     return _resource_first_url(item)
 
 
+def _url_shape_score(url: str) -> int:
+    """Tie-breaker: il format dichiarato dalle fonti a volte mente.
+
+    OpenBDAP etichetta come "CSV" anche il resource che punta a un PDF, e
+    siccome arriva prima vinceva il tie-break sul solo ``format_score``.
+    Qui si guarda la forma reale dell'URL.
+    """
+    low = url.lower().strip()
+    if "/datastore/dump/" in low or low.endswith(".csv") or ".csv?" in low:
+        return 3
+    if low.endswith((".xls", ".xlsx", ".ods")):
+        return 1
+    if low.endswith(".pdf"):
+        return -5
+    return 0
+
+
 def _best_resource_url(item: dict) -> str | None:
     """Return the URL of the resource with the most pipeline-friendly format.
 
@@ -149,7 +197,7 @@ def _best_resource_url(item: dict) -> str | None:
         return None
 
     best_url: str | None = None
-    best_score = -1
+    best_score = -(10**6)
 
     for r in resources:
         url = r.get("url")
@@ -158,7 +206,7 @@ def _best_resource_url(item: dict) -> str | None:
         fmt = r.get("format") or ""
         from scripts.engine.formats import format_score
 
-        score = format_score(fmt)
+        score = format_score(fmt) * 100 + _url_shape_score(url)
         if score > best_score:
             best_score = score
             best_url = url.strip()
@@ -188,6 +236,23 @@ def _has_datastore_active(item: dict) -> bool:
 
 def _resource_count(item: dict) -> int:
     return len(item.get("resources") or [])
+
+
+def _resources_size_bytes(item: dict) -> int | None:
+    """Somma delle dimensioni dichiarate nei resource (``size`` in byte).
+
+    Molte fonti non popolano ``size``: in quel caso torna ``None`` invece di 0,
+    così il triage distingue "non dichiarato" da "vuoto".
+    """
+    total = 0
+    found = False
+    for r in item.get("resources") or []:
+        raw = str(r.get("size") or "").strip()
+        if not raw.isdigit():
+            continue
+        total += int(raw)
+        found = True
+    return total if found else None
 
 
 def extract_ckan_inventory_row(
@@ -224,6 +289,12 @@ def extract_ckan_inventory_row(
         if isinstance(e, dict) and "key" in e and "value" in e:
             extras[e["key"]] = str(e["value"])
 
+    landing_page = _landing_page(item)
+    distribution_url = _distribution_url(item)
+    if inventory_cfg(source_cfg).get("force_https"):
+        landing_page = force_https(landing_page)
+        distribution_url = force_https(distribution_url)
+
     return {
         "captured_at": captured_at,
         "source_id": source_id,
@@ -242,10 +313,13 @@ def extract_ckan_inventory_row(
         "api_base_url": _ckan_api_base(source_cfg.get("base_url") or endpoint),
         "ordinal": ordinal,
         "format": _resource_format(item),
-        "landing_page": _landing_page(item),
-        "distribution_url": _distribution_url(item),
+        "landing_page": landing_page,
+        "distribution_url": distribution_url,
         "datastore_active": _has_datastore_active(item),
         "resource_count": _resource_count(item),
+        # Somma dei size dichiarati: utile per il triage dei cataloghi enormi.
+        # None = dimensione non dichiarata dalla fonte (non "zero byte").
+        "download_size_bytes": _resources_size_bytes(item),
         # Data di creazione/modifica lato fonte (CKAN metadata_created/modified)
         "issued": item.get("metadata_created") or None,
         "modified": item.get("metadata_modified") or None,
@@ -269,6 +343,67 @@ def _ckan_search_params(
     return params
 
 
+def _fetch_search_page(
+    *,
+    endpoint: str,
+    source_cfg: dict[str, Any],
+    source_id: str,
+    client: Any,
+    start: int,
+    page_size: int,
+    timeout: int,
+    retries: int,
+    min_page_size: int,
+) -> tuple[dict[str, Any], int]:
+    """Fetcha una pagina di ``package_search`` con retry e dimezzamento adattivo.
+
+    Alcuni portali (es. OpenBDAP) non reggono pagine grandi: una richiesta da
+    1000 righe supera il timeout e il vecchio codice faceva fallire l'intera
+    fonte. Qui, dopo ``retries`` tentativi falliti, il page size viene
+    dimezzato (fino a ``min_page_size``) e la pagina viene ritentata dallo
+    stesso ``start``.
+
+    Returns:
+        ``(payload, page_size_effettivo)`` — il page size può essere sceso,
+        e il chiamante deve usarlo per le pagine successive.
+    """
+    current = page_size
+    # Margine per i dimezzamenti: 1000 -> 10 sono 7 passi, quindi margine ampio.
+    max_attempts = max(retries, 1) * 8
+    last_exc: Exception | None = None
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            payload = ckan_get_json(
+                endpoint,
+                client=client,
+                params=_ckan_search_params(source_cfg, page_size=current, start=start),
+                timeout=timeout,
+            )
+            return payload, current
+        except Exception as exc:  # noqa: BLE001 — timeout/HTTP/JSON, si ritenta
+            last_exc = exc
+            can_shrink = current > min_page_size
+            logger.warning(
+                "CKAN %s: package_search start=%s rows=%s fallita (%s/%s): %s%s",
+                source_id,
+                start,
+                current,
+                attempt,
+                max_attempts,
+                exc,
+                " — dimezzo page_size" if can_shrink else "",
+            )
+            if can_shrink:
+                current = max(current // 2, min_page_size)
+
+    raise (
+        last_exc
+        if last_exc is not None
+        else RuntimeError(f"CKAN package_search failed for {source_id}")
+    )
+
+
 def collect_ckan_inventory_via_search(
     source_id: str,
     source_cfg: dict[str, Any],
@@ -278,28 +413,53 @@ def collect_ckan_inventory_via_search(
 ) -> list[dict[str, Any]]:
     """Inventory via paginated package_search.
 
+    Configurabile per fonte da ``inventory``:
+
+    - ``package_search_page_size`` (default 1000)
+    - ``package_search_timeout`` (default 60s)
+    - ``package_search_retries`` (default 2)
+    - ``package_search_min_page_size`` (default 10)
+
+    Nota: ``count`` in ``package_search`` non è affidabile su tutti i portali
+    (OpenBDAP restituisce ``rows``). La paginazione termina quando arriva una
+    pagina vuota o più corta del page size effettivo, mai sul ``count``.
+
     Args:
         client: Opzionale, ``HttpClient`` riusabile per connection pooling.
             Se non fornito, ne crea uno nuovo.
     """
     from lab_connectors.http import HttpClient
 
-    if client is None:
-        ua = source_cfg.get("user_agent") or USER_AGENT
-        client = HttpClient(timeout=60, user_agent=ua)
+    inv = inventory_cfg(source_cfg)
+    page_size = int(inv.get("package_search_page_size", DEFAULT_SEARCH_PAGE_SIZE))
+    timeout = int(inv.get("package_search_timeout", DEFAULT_SEARCH_TIMEOUT))
+    retries = int(inv.get("package_search_retries", DEFAULT_SEARCH_RETRIES))
+    min_page_size = int(inv.get("package_search_min_page_size", DEFAULT_SEARCH_MIN_PAGE_SIZE))
+
+    if client is None or getattr(client, "timeout", timeout) != timeout:
+        # Un client condiviso con timeout diverso verrebbe sostituito a ogni
+        # pagina da ckan_get_json, perdendo il connection pooling: lo si crea
+        # una volta qui con il timeout giusto.
+        client = HttpClient(timeout=timeout, user_agent=source_cfg.get("user_agent") or USER_AGENT)
 
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_search")
-    page_size = 1000
     start = 0
     ordinal = 1
     rows: list[dict[str, Any]] = []
 
     while True:
-        payload = ckan_get_json(
-            endpoint,
+        payload, page_size_used = _fetch_search_page(
+            endpoint=endpoint,
+            source_cfg=source_cfg,
+            source_id=source_id,
             client=client,
-            params=_ckan_search_params(source_cfg, page_size=page_size, start=start),
+            start=start,
+            page_size=page_size,
+            timeout=timeout,
+            retries=retries,
+            min_page_size=min_page_size,
         )
+        page_size = page_size_used
         if not payload.get("success"):
             raise ValueError(f"CKAN package_search failed for {source_id}")
 
@@ -321,6 +481,15 @@ def collect_ckan_inventory_via_search(
                 )
             )
             ordinal += 1
+
+        logger.info(
+            "CKAN %s: start=%s rows=%s -> %s item (totale %s)",
+            source_id,
+            start,
+            page_size,
+            len(items),
+            len(rows),
+        )
 
         if len(items) < page_size:
             break

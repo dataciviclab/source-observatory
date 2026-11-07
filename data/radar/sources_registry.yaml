@@ -112,11 +112,18 @@ openbdap:
   base_url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
   inventory:
     timeout: 1200
-    skip_package_search: true
-    skip_package_search_reason: timeout sistematico a 60s
+    # Pagine piccole: il portale non regge rows=1000 (timeout ~60s).
+    # rows=100 risponde in ~15s; retry + dimezzamento coprono i page lenti.
+    package_search_page_size: 50
+    package_search_timeout: 90
+    package_search_retries: 2
+    package_search_min_page_size: 25
+    # http:// su questo host va in timeout, https:// risponde in <1s.
+    # Senza il force, il source-check marca ~tutto come non raggiungibile.
+    force_https: true
     package_show_sample: true
-    package_show_max_workers: 8
-    package_show_timeout: 10
+    package_show_max_workers: 4
+    package_show_timeout: 20
     sample_size: 25
   last_probed: '2026-11-07'
   catalog_baseline:
@@ -125,11 +132,12 @@ openbdap:
     value: 3772
     method: package_list
     reliability: medium
-    note: Conteggio totale package rilevati via package_list; package_search restituisce
-      count inaffidabile.
+    note: package_list conta anche i package privati (198 su 3.882 al 2026-11-07,
+      es. PDI/SDB/PNC). Il catalogo pubblico è 3.684 via package_search; count
+      resta inaffidabile, si pagina finché la pagina è vuota.
   verdict: go
   note: Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario
-    senza intake o monitor diffuso.
+    senza intake o monitor diffuso. Harvest completo (package_search) in ~15 min.
   datasets_in_use:
     - bdap_anagrafe_enti
     - bdap_dlb_spese_serie
@@ -152,8 +160,9 @@ openbdap:
     - dipendenti_pubblici
   source_check:
     skip_item_validation: true
-    skip_item_validation_reason: 'Catalogo enorme e oggi quasi tutto non raggiungibile
-      (2/3.882): inventory/diff utile, validate item-level no.'
+    skip_item_validation_reason: 'Catalogo di 3.684 package pubblici: il validate
+      item-level su tutti non aggiunge segnale rispetto a inventory/diff (e il
+      catalogo è dominato da partizioni annuali della stessa serie).'
 inail_opendata:
   source_kind: catalog
   protocol: ckan
