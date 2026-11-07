@@ -1,6 +1,6 @@
 {
   "source_id": "opencoesione",
-  "generated_at": "2026-11-07T00:04:39+00:00",
+  "generated_at": "2026-11-07T09:40:03+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -24,7 +24,7 @@
     "active_items": 561,
     "stale_items": 0,
     "method": "package_search",
-    "captured_at": "2026-11-06T23:46:59+00:00",
+    "captured_at": "2026-11-07T09:24:26+00:00",
     "baseline_value": 561,
     "baseline_date": "2026-06-03",
     "freshness_hours": 0.3,
@@ -37,12 +37,12 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-07T00:04:39Z",
+    "last_run": "2026-11-07T09:40:03Z",
     "total_scored": 248,
-    "reachable": 238,
+    "reachable": 30,
     "csv_count": 238,
-    "with_csv_schema": 210,
-    "avg_readiness": 6.9,
+    "with_csv_schema": 2,
+    "avg_readiness": 1.0,
     "top_items": [
       {
         "name": "opencoesione/elenco-dei-processi-valutativi",
@@ -66,45 +66,37 @@
       },
       {
         "name": "opencoesione/bc467d34-9576-4cf9-b3e3-e77e804b6185",
-        "score": 8.0,
-        "year_range": [
-          2025,
-          2025
-        ],
+        "score": 1.0,
+        "year_range": null,
         "format": "csv,bin",
+        "reachable": false
+      },
+      {
+        "name": "opencoesione/beneficiari-dei-programmi",
+        "score": 1.0,
+        "year_range": null,
+        "format": "csv",
         "reachable": true
       },
       {
-        "name": "opencoesione/impegni",
-        "score": 8.0,
-        "year_range": [
-          2025,
-          2025
-        ],
-        "format": "csv,bin",
-        "reachable": true
-      },
-      {
-        "name": "opencoesione/indicatori",
-        "score": 8.0,
-        "year_range": [
-          2025,
-          2025
-        ],
-        "format": "csv,bin",
+        "name": "opencoesione/beneficiari-del-pon-fesr-cultura-e-turismo",
+        "score": 1.0,
+        "year_range": null,
+        "format": "csv",
         "reachable": true
       }
     ],
     "not_checked_non_csv": 10,
+    "blocked_items": 0,
     "validation_skipped": 0,
     "catalog_only": false,
     "probeable_items": 238,
-    "reachability_pct": 100.0,
+    "reachability_pct": 12.6,
     "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 90.0,
+      "score": 10.0,
       "perc_aperto": 96.0,
-      "perc_reachable": 96.0,
+      "perc_reachable": 12.1,
       "total": 248,
       "fonte": "source_check"
     }
@@ -151,11 +143,11 @@
     }
   ],
   "operational_verdict": {
-    "label": "STABLE",
-    "score": "stable",
+    "label": "UNREACHABLE",
+    "score": "unreachable",
     "triggers": [
-      "all_green"
+      "unreachable"
     ],
-    "next_action": null
+    "next_action": "verify used items"
   }
 }

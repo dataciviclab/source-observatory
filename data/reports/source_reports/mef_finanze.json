@@ -1,6 +1,6 @@
 {
   "source_id": "mef_finanze",
-  "generated_at": "2026-11-07T00:04:39+00:00",
+  "generated_at": "2026-11-07T09:40:03+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -18,7 +18,7 @@
     "active_items": 147,
     "stale_items": 0,
     "method": "csv_magnet_homepage_direct",
-    "captured_at": "2026-11-06T23:46:59+00:00",
+    "captured_at": "2026-11-07T09:24:26+00:00",
     "baseline_value": 147,
     "baseline_date": "2026-05-03",
     "freshness_hours": 0.3,
@@ -34,12 +34,12 @@
     ]
   },
   "source_check": {
-    "last_run": "2026-11-07T00:04:39Z",
+    "last_run": "2026-11-07T09:40:03Z",
     "total_scored": 11,
     "reachable": 9,
     "csv_count": 9,
-    "with_csv_schema": 8,
-    "avg_readiness": 7.5,
+    "with_csv_schema": 9,
+    "avg_readiness": 8.2,
     "top_items": [
       {
         "name": "mef_finanze/dipartimento-delle-finanze-statistiche-sulle-dichiarazioni/cla-anno-bonus-irpef",
@@ -93,6 +93,7 @@
       }
     ],
     "not_checked_non_csv": 2,
+    "blocked_items": 0,
     "validation_skipped": 0,
     "catalog_only": false,
     "probeable_items": 9,

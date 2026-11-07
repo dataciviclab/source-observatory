@@ -1,6 +1,6 @@
 {
   "source_id": "anac",
-  "generated_at": "2026-11-07T00:04:39+00:00",
+  "generated_at": "2026-11-07T09:40:03+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -24,7 +24,7 @@
     "active_items": 0,
     "stale_items": 70,
     "method": "package_search",
-    "captured_at": "2026-11-06T23:46:59+00:00",
+    "captured_at": "2026-11-07T09:24:26+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-11-06",
     "freshness_hours": 0.3,
@@ -44,74 +44,60 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-07T00:04:39Z",
+    "last_run": "2026-11-07T09:40:03Z",
     "total_scored": 48,
-    "reachable": 47,
+    "reachable": 0,
     "csv_count": 47,
-    "with_csv_schema": 47,
-    "avg_readiness": 7.6,
+    "with_csv_schema": 0,
+    "avg_readiness": 1.0,
     "top_items": [
       {
+        "name": "anac/1414d5b0-56b1-4702-9115-8efeecb020a3",
+        "score": 1.0,
+        "year_range": null,
+        "format": "csv,ttl,json",
+        "reachable": false
+      },
+      {
         "name": "anac/1fd421d9-691f-4fa7-bd9f-b5ac72d8b0af",
-        "score": 8.0,
-        "year_range": [
-          2016,
-          2016
-        ],
+        "score": 1.0,
+        "year_range": null,
         "format": "json,csv,ttl",
-        "reachable": true
+        "reachable": false
       },
       {
         "name": "anac/2b188f40-94ce-49fb-9213-93e5d57d027a",
-        "score": 8.0,
-        "year_range": [
-          2013,
-          2013
-        ],
+        "score": 1.0,
+        "year_range": null,
         "format": "csv,json,ttl",
-        "reachable": true
+        "reachable": false
       },
       {
         "name": "anac/3251cd5b-10fa-495c-943a-c6f67df8b23b",
-        "score": 8.0,
-        "year_range": [
-          2021,
-          2021
-        ],
+        "score": 1.0,
+        "year_range": null,
         "format": "ttl,csv,json",
-        "reachable": true
+        "reachable": false
       },
       {
         "name": "anac/3932ba46-4153-4114-8f27-6d6ecc678fb9",
-        "score": 8.0,
-        "year_range": [
-          2007,
-          2007
-        ],
+        "score": 1.0,
+        "year_range": null,
         "format": "csv,json,ttl",
-        "reachable": true
-      },
-      {
-        "name": "anac/48a28e5e-a010-4671-b1b3-ccbb1fbc149b",
-        "score": 8.0,
-        "year_range": [
-          2020,
-          2020
-        ],
-        "format": "csv,ttl,json",
-        "reachable": true
+        "reachable": false
       }
     ],
     "not_checked_non_csv": 1,
+    "blocked_items": 47,
     "validation_skipped": 0,
     "catalog_only": false,
-    "probeable_items": 47,
-    "reachability_pct": 100.0,
+    "probeable_items": 0,
+    "reachability_pct": null,
     "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 90.0,
+      "score": 10.0,
       "perc_aperto": 100.0,
-      "perc_reachable": 97.9,
+      "perc_reachable": 0.0,
       "total": 48,
       "fonte": "source_check"
     }
@@ -177,6 +163,7 @@
     "label": "STALE",
     "score": "stale",
     "triggers": [
+      "blocked",
       "stale_rows"
     ],
     "next_action": "refresh inventory"

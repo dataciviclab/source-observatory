@@ -1,6 +1,6 @@
 {
   "source_id": "inps",
-  "generated_at": "2026-11-07T00:04:39+00:00",
+  "generated_at": "2026-11-07T09:40:03+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -24,7 +24,7 @@
     "active_items": 2517,
     "stale_items": 0,
     "method": "package_search",
-    "captured_at": "2026-11-06T23:46:59+00:00",
+    "captured_at": "2026-11-07T09:24:26+00:00",
     "baseline_value": 2499,
     "baseline_date": "2026-07-18",
     "freshness_hours": 0.3,
@@ -52,11 +52,11 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-07T00:04:39Z",
+    "last_run": "2026-11-07T09:40:03Z",
     "total_scored": 1814,
     "reachable": 1812,
     "csv_count": 1812,
-    "with_csv_schema": 1803,
+    "with_csv_schema": 1808,
     "avg_readiness": 10.0,
     "top_items": [
       {
@@ -111,6 +111,7 @@
       }
     ],
     "not_checked_non_csv": 2,
+    "blocked_items": 0,
     "validation_skipped": 0,
     "catalog_only": false,
     "probeable_items": 1812,
