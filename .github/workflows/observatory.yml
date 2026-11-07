@@ -21,6 +21,14 @@ env:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    # Run tipico ~19 min (inventory 3' + validate 15'). Il tetto esiste per
+    # non bruciare 6 ore di runner se un host si blocca: meglio fallire e
+    # ripartire con i dati parziali del run precedente.
+    timeout-minutes: 45
+    env:
+      # Log live: senza questo Python bufferizza su pipe e il job sembra
+      # fermo per tutti i 15 minuti del validate.
+      PYTHONUNBUFFERED: "1"
     defaults:
       run:
         shell: bash
