@@ -273,6 +273,7 @@ def run_validate(
                 "reachable": None,
                 "validation_skipped": True,
                 "reason": "catalog-only",
+                "duration_seconds": 0.0,
             }
         items = cast(list[dict[str, Any]], group_df.to_dict("records"))
         host = _host_from_items(items)
@@ -282,7 +283,10 @@ def run_validate(
             stack.enter_context(_semaphore(host_semaphores, host, max_concurrency_per_host))
             if source_limit:
                 stack.enter_context(_semaphore(source_semaphores, source_id, source_limit))
-            return _validate_one(group_df, client=_client_for(group_df), items=items)
+            started = time.perf_counter()
+            result = _validate_one(group_df, client=_client_for(group_df), items=items)
+            result["duration_seconds"] = round(time.perf_counter() - started, 3)
+            return result
 
     if workers <= 1:
         # Sequenziale
@@ -382,7 +386,11 @@ def write_output(
     reachable = sum(1 for r in results if r.get("reachable") is True)
     unreachable = sum(1 for r in results if r.get("reachable") is False)
     not_checked = sum(
-        1 for r in results if r.get("reachable") is None and not r.get("validation_skipped")
+        1
+        for r in results
+        if r.get("reachable") is None
+        and not r.get("validation_skipped")
+        and r.get("blocked") is not True
     )
     blocked = sum(1 for r in results if r.get("blocked") is True)
     csv_with_schema = sum(1 for r in results if r.get("reachable") is True and r.get("columns"))
@@ -396,6 +404,7 @@ def write_output(
             "not_checked": 0,
             "blocked": 0,
             "skipped": 0,
+            "duration_seconds": 0.0,
             "groups_total": groups,
         }
         for src, groups in (groups_by_source or {}).items()
@@ -411,6 +420,7 @@ def write_output(
                 "not_checked": 0,
                 "blocked": 0,
                 "skipped": 0,
+                "duration_seconds": 0.0,
                 "groups_total": 0,
             }
         by_source[src]["total"] += 1
@@ -420,12 +430,22 @@ def write_output(
             by_source[src]["reachable"] += 1
         elif r.get("reachable") is False:
             by_source[src]["unreachable"] += 1
-        else:
+        elif r.get("blocked") is not True:
             by_source[src]["not_checked"] += 1
         if r.get("blocked") is True:
             by_source[src]["blocked"] += 1
         if r.get("columns"):
             by_source[src]["csv"] += 1
+        duration = r.get("duration_seconds")
+        if isinstance(duration, (int, float)) and duration == duration:
+            by_source[src]["duration_seconds"] += float(duration)
+
+    for stats in by_source.values():
+        stats["duration_seconds"] = round(stats["duration_seconds"], 1)
+        probed = stats["total"] - stats["skipped"]
+        stats["avg_seconds_per_group"] = (
+            round(stats["duration_seconds"] / probed, 3) if probed else None
+        )
 
     summary = {
         "pipeline_version": 1,
@@ -438,6 +458,9 @@ def write_output(
         "blocked": blocked,
         "skipped": skipped,
         "csv_with_schema": csv_with_schema,
+        "duration_seconds": round(
+            sum(stats["duration_seconds"] for stats in by_source.values()), 1
+        ),
         "by_source": {
             src: stats for src, stats in sorted(by_source.items(), key=lambda x: -x[1]["total"])
         },

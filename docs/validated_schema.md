@@ -23,6 +23,7 @@ Sostituisce il vecchio `source_check_results.parquet`.
 | `dataset_group_year_max` | DOUBLE | se disponibile | Anno massimo dal merge |
 | `note` | VARCHAR | solo non-CSV | Nota operativa (es. "Non-CSV format: zip") |
 | `readiness_score` | BIGINT | ✅ | Score 0-10 |
+| `duration_seconds` | DOUBLE | ✅ | Tempo del probe+sniff per gruppo (0 per catalog-only) |
 | `columns` | VARCHAR[] | solo CSV sniffati | Nomi colonne sniffate |
 | `num_columns` | DOUBLE | solo CSV sniffati | Numero colonne |
 | `num_sample_rows` | DOUBLE | solo CSV sniffati | Righe campionate |

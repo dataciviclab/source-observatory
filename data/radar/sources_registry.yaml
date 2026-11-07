@@ -415,7 +415,7 @@ mur_ustat:
   observation_mode: catalog-watch
   base_url: https://dati-ustat.mur.gov.it/api/3/action/package_list?limit=1
   inventory:
-    timeout: 180
+    timeout: 45
   last_probed: '2026-11-06'
   catalog_baseline:
     captured_at: '2026-11-06'
@@ -879,6 +879,8 @@ noipa_sparql:
     (usare prefix="https://sparql-noipa.mef.gov.it/entries-" in discover_graphs).
 
     '
+  sparql:
+    timeout_seconds: 20
   datasets_in_use:
     - noipa_amministrati
     - noipa_assenze

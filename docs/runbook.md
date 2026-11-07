@@ -164,6 +164,12 @@ gruppi sono bloccati il verdict è `UNREACHABLE` con trigger `blocked`, non
 `False`), `not_checked` (`None`: non-CSV), `blocked`, `skipped`. Prima
 `unreachable` includeva anche i non verificati, gonfiando il numero.
 
+Il tempo è tracciato per gruppo (`duration_seconds` in `validated.parquet`) e
+aggregato per fonte (`duration_seconds`, `avg_seconds_per_group` in
+`by_source`). Per capire dove va il wall del validate: confronta
+`avg_seconds_per_group` con il numero di gruppi e il limite per host — il collo
+è la fonte con `gruppi / max_concurrency_per_host * avg` più alto.
+
 ### robots.txt nei fetch HTML
 
 Il collector HTML (`area_pages`, `page_url_template`, pagine da sitemap,

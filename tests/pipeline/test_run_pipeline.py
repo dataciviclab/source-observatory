@@ -339,11 +339,11 @@ def test_write_output_counts_three_states(tmp_path):
     summary = json.loads((tmp_path / "s.json").read_text(encoding="utf-8"))
     assert summary["reachable"] == 1
     assert summary["unreachable"] == 1
-    assert summary["not_checked"] == 2
+    assert summary["not_checked"] == 1
     assert summary["blocked"] == 1
     assert summary["skipped"] == 1
     assert summary["by_source"]["demo"]["unreachable"] == 1
-    assert summary["by_source"]["demo"]["not_checked"] == 2
+    assert summary["by_source"]["demo"]["not_checked"] == 1
 
 
 def test_load_inventory_drops_not_catalog_watch_rows(tmp_path):
@@ -375,4 +375,50 @@ def test_write_output_nan_blocked_not_counted(tmp_path):
 
     summary = json.loads((tmp_path / "s.json").read_text(encoding="utf-8"))
     assert summary["blocked"] == 1
-    assert summary["not_checked"] == 2
+    assert summary["not_checked"] == 1
+
+
+def test_write_output_aggregates_durations(tmp_path):
+    """Il summary espone il tempo per fonte: serve a trovare il collo."""
+    from scripts.pipeline.run_pipeline import write_output
+
+    results = [
+        {"source_id": "demo", "reachable": True, "duration_seconds": 1.0},
+        {"source_id": "demo", "reachable": True, "duration_seconds": 2.0},
+        {"source_id": "demo", "validation_skipped": True, "duration_seconds": 0.0},
+        {"source_id": "altro", "reachable": False, "duration_seconds": float("nan")},
+    ]
+    write_output(results, tmp_path / "v.parquet", tmp_path / "s.json")
+
+    summary = json.loads((tmp_path / "s.json").read_text(encoding="utf-8"))
+    assert summary["by_source"]["demo"]["duration_seconds"] == 3.0
+    assert summary["by_source"]["demo"]["avg_seconds_per_group"] == 1.5
+    assert summary["by_source"]["altro"]["duration_seconds"] == 0.0
+    assert summary["duration_seconds"] == 3.0
+
+
+def test_run_validate_sets_duration(monkeypatch):
+    """Ogni gruppo validato porta il proprio tempo; i catalog-only 0."""
+    from scripts.pipeline import run_pipeline
+
+    def fake_validate(group_df, client=None, items=None):
+        return {"dataset_group": group_df.iloc[0]["dataset_group"], "reachable": True}
+
+    monkeypatch.setattr(run_pipeline, "_validate_one", fake_validate)
+    monkeypatch.setattr("lab_connectors.http.HttpClient", lambda **kw: object())
+
+    df = pd.DataFrame(
+        [
+            {"dataset_group": "a", "source_id": "demo", "distribution_url": "https://x.test/a.csv"},
+            {
+                "dataset_group": "b",
+                "source_id": "demo",
+                "distribution_url": "https://x.test/b.csv",
+                "skip_item_validation": True,
+            },
+        ]
+    )
+    results = run_pipeline.run_validate(df, workers=1)
+    by_group = {r["dataset_group"]: r for r in results}
+    assert by_group["a"]["duration_seconds"] >= 0.0
+    assert by_group["b"]["duration_seconds"] == 0.0
