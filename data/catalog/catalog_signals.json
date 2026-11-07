@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-07T00:04:39+00:00",
+  "captured_at": "2026-11-07T09:40:03+00:00",
   "sources_checked": 35,
   "signals": [
     {
@@ -16,7 +16,7 @@
       "protocol": "ckan",
       "signal_type": "validated_metrics",
       "result": "changed",
-      "detail": "reachable=100.0%; readiness=9.8",
+      "detail": "reachable=100.0%; readiness=9.9",
       "metric_value": 33,
       "suggested_action": "nessuna"
     },
@@ -24,9 +24,9 @@
       "source": "agcm",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=9.8%; readiness=1.7",
-      "metric_value": 51,
+      "result": "health_only",
+      "detail": "no data",
+      "metric_value": 0,
       "suggested_action": "nessuna"
     },
     {
@@ -42,8 +42,8 @@
       "source": "aifa",
       "protocol": "html",
       "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=9.5",
+      "result": "unreachable",
+      "detail": "reachable=3.3%; readiness=1.2",
       "metric_value": 30,
       "suggested_action": "nessuna"
     },
@@ -52,7 +52,7 @@
       "protocol": "ckan",
       "signal_type": "validated_metrics",
       "result": "stale",
-      "detail": "reachable=97.9%; readiness=7.6",
+      "detail": "reachable=0.0%; readiness=1.0",
       "metric_value": 48,
       "suggested_action": "nessuna"
     },
@@ -168,8 +168,8 @@
       "source": "lavoro_opendata",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=8.0",
+      "result": "unreachable",
+      "detail": "reachable=0.0%; readiness=1.0",
       "metric_value": 83,
       "suggested_action": "nessuna"
     },
@@ -178,7 +178,7 @@
       "protocol": "html",
       "signal_type": "validated_metrics",
       "result": "stable",
-      "detail": "reachable=81.8%; readiness=7.5",
+      "detail": "reachable=81.8%; readiness=8.2",
       "metric_value": 11,
       "suggested_action": "nessuna"
     },
@@ -204,9 +204,9 @@
       "source": "ministero_interno",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=9.3",
-      "metric_value": 33,
+      "result": "health_only",
+      "detail": "no data",
+      "metric_value": 0,
       "suggested_action": "nessuna"
     },
     {
@@ -222,17 +222,17 @@
       "source": "ministero_turismo_opendata",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=8.9",
-      "metric_value": 14,
+      "result": "health_only",
+      "detail": "no data",
+      "metric_value": 0,
       "suggested_action": "nessuna"
     },
     {
       "source": "mit_opendata",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "unreachable",
-      "detail": "reachable=5.4%; readiness=1.2",
+      "result": "changed",
+      "detail": "reachable=78.6%; readiness=7.6",
       "metric_value": 56,
       "suggested_action": "nessuna"
     },
@@ -258,7 +258,7 @@
       "source": "openbdap",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "changed",
+      "result": "stale",
       "detail": "reachable=0.0%",
       "metric_value": 3878,
       "suggested_action": "nessuna"
@@ -276,8 +276,8 @@
       "source": "opencoesione",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=96.0%; readiness=6.9",
+      "result": "unreachable",
+      "detail": "reachable=12.1%; readiness=1.0",
       "metric_value": 248,
       "suggested_action": "nessuna"
     },
@@ -294,9 +294,9 @@
       "source": "pagopa",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=100.0%; readiness=8.8",
-      "metric_value": 12,
+      "result": "health_only",
+      "detail": "no data",
+      "metric_value": 0,
       "suggested_action": "nessuna"
     },
     {
@@ -312,9 +312,9 @@
       "source": "unioncamere",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=9.4",
-      "metric_value": 256,
+      "result": "health_only",
+      "detail": "no data",
+      "metric_value": 0,
       "suggested_action": "nessuna"
     }
   ]

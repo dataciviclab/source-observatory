@@ -14,7 +14,10 @@ from pathlib import Path
 
 import jsonschema
 
-# Format scoring: definizione unica nel motore, re-export per il centrale.
+# Format scoring e stale-reason vivono nel motore: re-export per il centrale.
+from scripts.collectors.base import (  # noqa: F401
+    STALE_REASON_NOT_CATALOG_WATCH as STALE_REASON_NOT_CATALOG_WATCH,
+)
 from scripts.engine.formats import (  # noqa: F401
     FORMAT_CSV_KEYWORDS as FORMAT_CSV_KEYWORDS,
 )

@@ -77,6 +77,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
             "problematic": [],
             "csv_count": 0,
             "not_checked_non_csv": 0,
+            "blocked_items": 0,
             "validation_skipped": 0,
             "catalog_only": False,
             "top_items": [],
@@ -86,8 +87,13 @@ def aggregate_source_check(results: list[dict]) -> dict:
     reachable = sum(1 for r in results if r.get("reachable") is True)
     not_reachable = sum(1 for r in results if r.get("reachable") is False)
     skipped = sum(1 for r in results if r.get("validation_skipped"))
+    blocked = sum(1 for r in results if r.get("blocked") is True)
     not_checked = sum(
-        1 for r in results if r.get("reachable") is None and not r.get("validation_skipped")
+        1
+        for r in results
+        if r.get("reachable") is None
+        and not r.get("validation_skipped")
+        and r.get("blocked") is not True
     )
     active = [r for r in results if not r.get("validation_skipped")]
 
@@ -153,6 +159,7 @@ def aggregate_source_check(results: list[dict]) -> dict:
         "reachable": reachable,
         "not_reachable": not_reachable,
         "not_checked_non_csv": not_checked,
+        "blocked_items": blocked,
         "validation_skipped": skipped,
         "catalog_only": skipped > 0 and skipped == total,
         "formats": dict(formats.most_common()),
@@ -294,13 +301,16 @@ def compute_operational_verdict(
     scored = int(source_check_data.get("total_scored") or 0)
     reachable = int(source_check_data.get("reachable") or 0)
     not_checked = int(source_check_data.get("not_checked_non_csv") or 0)
+    blocked = int(source_check_data.get("blocked_items") or 0)
     skipped = int(source_check_data.get("validation_skipped") or 0)
-    probeable = max(0, scored - not_checked - skipped)
+    probeable = max(0, scored - not_checked - blocked - skipped)
     reachability = round(reachable / probeable * 100, 1) if probeable else None
     if scored == 0:
         triggers.append("health_only" if observation_mode == "radar-only" else "no_data")
     elif skipped and skipped == scored:
         triggers.append("catalog_only")
+    elif probeable == 0 and blocked:
+        triggers.append("blocked")
     elif probeable == 0:
         triggers.append("not_probeable")
     elif reachability is not None and reachability < 50:
@@ -338,6 +348,8 @@ def compute_operational_verdict(
         label, score, next_action = "INVENTORY_CHANGED", "changed", "review inventory changes"
     elif "catalog_only" in triggers:
         label, score, next_action = "CATALOG_ONLY", "catalog_only", "review inventory changes"
+    elif "blocked" in triggers:
+        label, score, next_action = "UNREACHABLE", "unreachable", "check WAF/user-agent"
     elif "not_probeable" in triggers:
         label, score, next_action = (
             "NOT_PROBEABLE",
@@ -455,19 +467,33 @@ def build_report(
         "avg_readiness": sc_agg.get("avg_readiness"),
         "top_items": sc_agg["top_items"],
         "not_checked_non_csv": sc_agg["not_checked_non_csv"],
+        "blocked_items": sc_agg["blocked_items"],
         "validation_skipped": sc_agg["validation_skipped"],
         "catalog_only": sc_agg["catalog_only"],
         "probeable_items": (
-            sc_agg["total"] - sc_agg["not_checked_non_csv"] - sc_agg["validation_skipped"]
+            sc_agg["total"]
+            - sc_agg["not_checked_non_csv"]
+            - sc_agg["blocked_items"]
+            - sc_agg["validation_skipped"]
         ),
         "reachability_pct": (
             round(
                 sc_agg["reachable"]
-                / (sc_agg["total"] - sc_agg["not_checked_non_csv"] - sc_agg["validation_skipped"])
+                / (
+                    sc_agg["total"]
+                    - sc_agg["not_checked_non_csv"]
+                    - sc_agg["blocked_items"]
+                    - sc_agg["validation_skipped"]
+                )
                 * 100,
                 1,
             )
-            if (sc_agg["total"] - sc_agg["not_checked_non_csv"] - sc_agg["validation_skipped"])
+            if (
+                sc_agg["total"]
+                - sc_agg["not_checked_non_csv"]
+                - sc_agg["blocked_items"]
+                - sc_agg["validation_skipped"]
+            )
             else None
         ),
         "coverage_pct": (round(sc_agg["total"] / total_groups * 100, 1) if total_groups else None),

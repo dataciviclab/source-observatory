@@ -25,7 +25,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 
-from scripts._constants import load_registry
+from scripts._constants import STALE_REASON_NOT_CATALOG_WATCH, load_registry
 from scripts.engine.report import build_report
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -56,8 +56,11 @@ def _load_inventory_rows() -> dict[str, list[dict]]:
     result: dict[str, list[dict]] = {}
     for r in rows:
         sid = r.get("source_id")
-        if sid:
-            result.setdefault(sid, []).append(r)
+        if not sid:
+            continue
+        if r.get("stale_reason") == STALE_REASON_NOT_CATALOG_WATCH:
+            continue
+        result.setdefault(sid, []).append(r)
     return result
 
 

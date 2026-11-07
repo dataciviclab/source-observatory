@@ -13,15 +13,17 @@ Sostituisce il vecchio `source_check_results.parquet`.
 | `item_count` | BIGINT | ✅ | Numero di item aggregati in questo gruppo |
 | `url` | VARCHAR | solo CSV | URL della risorsa migliore (per formato) |
 | `format` | VARCHAR | ✅ | Formato della risorsa (es. "csv", "csv,json") |
-| `reachable` | BOOLEAN | ✅ | True/False/None (non verificato per non-CSV) |
+| `reachable` | BOOLEAN | ✅ | `True` = 2xx/3xx; `False` = 4xx/5xx o errore di rete; `None` = non verificato (non-CSV) o bloccato |
+| `blocked` | BOOLEAN | solo HTTP probed | `True` se 401/403/407/429: risorsa probabilmente viva ma non accessibile |
 | `status_code` | DOUBLE | solo HTTP probed | HTTP status code dalla HEAD probe |
 | `content_type` | VARCHAR | solo HTTP probed | Content-Type response |
-| `error` | VARCHAR | solo falliti | Messaggio errore se non reachable |
+| `error` | VARCHAR | solo falliti | Messaggio errore (`HTTP 404`, `HTTP 403 (blocked)`, eccezione) |
 | `dataset_group_size` | DOUBLE | ✅ | Numero item nel gruppo logico |
 | `dataset_group_year_min` | DOUBLE | se disponibile | Anno minimo dal merge |
 | `dataset_group_year_max` | DOUBLE | se disponibile | Anno massimo dal merge |
 | `note` | VARCHAR | solo non-CSV | Nota operativa (es. "Non-CSV format: zip") |
 | `readiness_score` | BIGINT | ✅ | Score 0-10 |
+| `duration_seconds` | DOUBLE | ✅ | Tempo del probe+sniff per gruppo (0 per catalog-only) |
 | `columns` | VARCHAR[] | solo CSV sniffati | Nomi colonne sniffate |
 | `num_columns` | DOUBLE | solo CSV sniffati | Numero colonne |
 | `num_sample_rows` | DOUBLE | solo CSV sniffati | Righe campionate |

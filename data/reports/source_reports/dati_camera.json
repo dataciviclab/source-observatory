@@ -1,6 +1,6 @@
 {
   "source_id": "dati_camera",
-  "generated_at": "2026-11-07T00:04:39+00:00",
+  "generated_at": "2026-11-07T09:40:03+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -24,7 +24,7 @@
     "active_items": 104,
     "stale_items": 0,
     "method": "sparql_query",
-    "captured_at": "2026-11-06T23:46:59+00:00",
+    "captured_at": "2026-11-07T09:24:26+00:00",
     "baseline_value": 104,
     "baseline_date": "2026-04-11",
     "freshness_hours": 0.3,
@@ -35,7 +35,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-07T00:04:39Z",
+    "last_run": "2026-11-07T09:40:03Z",
     "total_scored": 99,
     "reachable": 99,
     "csv_count": 0,
@@ -79,6 +79,7 @@
       }
     ],
     "not_checked_non_csv": 0,
+    "blocked_items": 0,
     "validation_skipped": 0,
     "catalog_only": false,
     "probeable_items": 99,
