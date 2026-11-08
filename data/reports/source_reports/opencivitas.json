@@ -1,6 +1,6 @@
 {
   "source_id": "opencivitas",
-  "generated_at": "2026-11-07T09:40:03+00:00",
+  "generated_at": "2026-11-08T12:27:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,11 +11,11 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Portale OpenCivitas (Liferay, live 2026-06). File su /portale/documents/ con UUID. Inventario via tabella catalogo; il vecchio /it/open-data è 404.",
-    "last_probed": "2026-11-06"
+    "last_probed": "2026-11-08"
   },
   "health": {
-    "radar_status": "YELLOW",
-    "http_code": "404",
+    "radar_status": "GREEN",
+    "http_code": "200",
     "note": null,
     "ssl_fallback": false
   },
@@ -24,10 +24,10 @@
     "active_items": 334,
     "stale_items": 0,
     "method": "liferay_catalog_table",
-    "captured_at": "2026-11-07T09:24:26+00:00",
+    "captured_at": "2026-11-08T11:56:21+00:00",
     "baseline_value": 334,
     "baseline_date": "2026-11-06",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.5,
     "delta": 0,
     "delta_pct": 0.0,
     "formats": {
@@ -38,7 +38,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-07T09:40:03Z",
+    "last_run": "2026-11-08T12:27:39Z",
     "total_scored": 85,
     "reachable": 60,
     "csv_count": 60,

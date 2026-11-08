@@ -1,6 +1,6 @@
 {
   "source_id": "ministero_turismo_opendata",
-  "generated_at": "2026-11-07T09:40:03+00:00",
+  "generated_at": "2026-11-08T12:27:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "radar-only",
     "verdict": "watchlist",
     "note": "Fonte via dati.gov.it (Ministero del Turismo). 16 dataset CSV su BDSR (Banca Dati Strutture Ricettive) in formato aggregato per regione/provincia, professioni turistiche (guide, accompagnatori, direttori tecnici), cammini religiosi. FOIA #17 aperta per dati micro BDSR e catalogo completo.",
-    "last_probed": "2026-11-06"
+    "last_probed": "2026-11-08"
   },
   "health": {
     "radar_status": "GREEN",
@@ -24,7 +24,7 @@
     "active_items": 0,
     "stale_items": 0,
     "method": "package_search",
-    "captured_at": "2026-11-07T09:24:26+00:00",
+    "captured_at": "2026-11-08T11:56:21+00:00",
     "baseline_value": 16,
     "baseline_date": "2026-07-16",
     "delta": null,

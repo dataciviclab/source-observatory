@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-07T09:40:03+00:00",
+  "captured_at": "2026-11-08T12:27:39+00:00",
   "sources_checked": 35,
   "signals": [
     {
@@ -42,7 +42,7 @@
       "source": "aifa",
       "protocol": "html",
       "signal_type": "validated_metrics",
-      "result": "unreachable",
+      "result": "down",
       "detail": "reachable=3.3%; readiness=1.2",
       "metric_value": 30,
       "suggested_action": "nessuna"
@@ -231,8 +231,8 @@
       "source": "mit_opendata",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "changed",
-      "detail": "reachable=78.6%; readiness=7.6",
+      "result": "unreachable",
+      "detail": "reachable=5.4%; readiness=1.3",
       "metric_value": 56,
       "suggested_action": "nessuna"
     },
@@ -249,18 +249,18 @@
       "source": "noipa_sparql",
       "protocol": "sparql",
       "signal_type": "validated_metrics",
-      "result": "no_data",
-      "detail": "no data",
-      "metric_value": 0,
+      "result": "stable",
+      "detail": "reachable=100.0%; readiness=3.0",
+      "metric_value": 99,
       "suggested_action": "nessuna"
     },
     {
       "source": "openbdap",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "stale",
+      "result": "catalog_only",
       "detail": "reachable=0.0%",
-      "metric_value": 3878,
+      "metric_value": 240,
       "suggested_action": "nessuna"
     },
     {

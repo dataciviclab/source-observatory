@@ -1,6 +1,6 @@
 {
   "source_id": "noipa_sparql",
-  "generated_at": "2026-11-07T09:40:03+00:00",
+  "generated_at": "2026-11-08T12:27:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "NoiPA SPARQL — MEF/RGS. Dati mensili personale PA\n(entries-{YYYYMM}, 2019-2026) + pensioni PA (entriesPensioni-{YYYYMM},\n2017-oggi). ~509k soggetti/mese, 39 predicati (ente, comparto, qualifica,\nritenute previdenziali/IRPEF, detrazioni, assenze, genere, eta', residenza).\nPOST bloccato (403), solo GET funziona. XML SPARQL parsato da\nlab-connectors via _parse_sparql_xml() dal 2026-06-25.\nI named graph usano URI completi:\nhttps://sparql-noipa.mef.gov.it/entries-YYYYMM\n(usare prefix=\"https://sparql-noipa.mef.gov.it/entries-\" in discover_graphs).\n",
-    "last_probed": "2026-11-06"
+    "last_probed": "2026-11-08"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,36 +20,77 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 0,
-    "active_items": 0,
+    "total_items": 100,
+    "active_items": 100,
     "stale_items": 0,
     "method": null,
-    "captured_at": "2026-11-07T09:24:26+00:00",
+    "captured_at": "2026-11-08T11:56:21+00:00",
     "baseline_value": null,
     "baseline_date": null,
+    "freshness_hours": 0.5,
     "delta": null,
-    "delta_pct": 0.0
+    "delta_pct": 0.0,
+    "formats": {
+      "SPARQL_NAMED_GRAPH": 100
+    }
   },
   "source_check": {
-    "last_run": null,
-    "total_scored": 0,
-    "reachable": 0,
+    "last_run": "2026-11-08T12:27:39Z",
+    "total_scored": 99,
+    "reachable": 99,
     "csv_count": 0,
     "with_csv_schema": 0,
-    "avg_readiness": null,
-    "top_items": [],
+    "avg_readiness": 3.0,
+    "top_items": [
+      {
+        "name": "noipa_sparql/entries",
+        "score": 3.0,
+        "year_range": null,
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
+      },
+      {
+        "name": "noipa_sparql/entries-201901/httpssparql-noipamefgovitentries-20",
+        "score": 3.0,
+        "year_range": null,
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
+      },
+      {
+        "name": "noipa_sparql/entries-201902/httpssparql-noipamefgovitentries-20",
+        "score": 3.0,
+        "year_range": null,
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
+      },
+      {
+        "name": "noipa_sparql/entries-201903/httpssparql-noipamefgovitentries-20",
+        "score": 3.0,
+        "year_range": null,
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
+      },
+      {
+        "name": "noipa_sparql/entries-201904/httpssparql-noipamefgovitentries-20",
+        "score": 3.0,
+        "year_range": null,
+        "format": "SPARQL_NAMED_GRAPH",
+        "reachable": true
+      }
+    ],
     "not_checked_non_csv": 0,
     "blocked_items": 0,
     "validation_skipped": 0,
     "catalog_only": false,
-    "probeable_items": 0,
-    "reachability_pct": null,
-    "coverage_pct": null,
+    "probeable_items": 99,
+    "reachability_pct": 100.0,
+    "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 0.0,
-      "perc_aperto": 0.0,
-      "total": 0,
-      "fonte": "missing"
+      "score": 90.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 100.0,
+      "total": 99,
+      "fonte": "source_check"
     }
   },
   "datasets_in_use": [
@@ -86,11 +127,11 @@
     }
   ],
   "operational_verdict": {
-    "label": "NO_DATA",
-    "score": "no_data",
+    "label": "STABLE",
+    "score": "stable",
     "triggers": [
-      "no_data"
+      "all_green"
     ],
-    "next_action": "run inventory/validate"
+    "next_action": null
   }
 }

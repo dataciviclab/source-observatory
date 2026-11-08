@@ -1,6 +1,6 @@
 {
   "source_id": "inps",
-  "generated_at": "2026-11-07T09:40:03+00:00",
+  "generated_at": "2026-11-08T12:27:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Catalogo CKAN INPS — inventory via package_list + package_show_sample (current_package_list_with_resources lento a offset alti).",
-    "last_probed": "2026-11-06"
+    "last_probed": "2026-11-08"
   },
   "health": {
     "radar_status": "GREEN",
@@ -24,10 +24,10 @@
     "active_items": 2517,
     "stale_items": 0,
     "method": "package_search",
-    "captured_at": "2026-11-07T09:24:26+00:00",
+    "captured_at": "2026-11-08T11:56:21+00:00",
     "baseline_value": 2499,
     "baseline_date": "2026-07-18",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.5,
     "delta": 18,
     "delta_pct": 0.7,
     "formats": {
@@ -52,7 +52,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-07T09:40:03Z",
+    "last_run": "2026-11-08T12:27:39Z",
     "total_scored": 1814,
     "reachable": 1812,
     "csv_count": 1812,
@@ -93,8 +93,8 @@
         "name": "inps/agricoli-autonomi-aziende-per-aliquota-contributiva-e-categoria",
         "score": 10.0,
         "year_range": [
-          2015,
-          2015
+          2016,
+          2016
         ],
         "format": "csv,json,xls,xml",
         "reachable": true
@@ -156,6 +156,10 @@
     },
     {
       "slug": "inps_flussi_settore",
+      "status": "in_use"
+    },
+    {
+      "slug": "inps_invalidi_civili",
       "status": "in_use"
     },
     {

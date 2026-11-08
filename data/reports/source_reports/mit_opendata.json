@@ -1,6 +1,6 @@
 {
   "source_id": "mit_opendata",
-  "generated_at": "2026-11-07T09:40:03+00:00",
+  "generated_at": "2026-11-08T12:27:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "Dataset del Ministero Infrastrutture e Trasporti via dati.gov.it (portale MIT dati.mit.gov.it non raggiungibile da 2026-05). 70 dataset: contratti pubblici, incidentalità, trasporti, opere pubbliche. CC-BY-4.0.",
-    "last_probed": "2026-11-06"
+    "last_probed": "2026-11-08"
   },
   "health": {
     "radar_status": "GREEN",
@@ -24,10 +24,10 @@
     "active_items": 71,
     "stale_items": 0,
     "method": "package_search",
-    "captured_at": "2026-11-07T09:24:26+00:00",
+    "captured_at": "2026-11-08T11:56:21+00:00",
     "baseline_value": 70,
     "baseline_date": "2026-06-22",
-    "freshness_hours": 0.3,
+    "freshness_hours": 0.5,
     "delta": 1,
     "delta_pct": 1.4,
     "formats": {
@@ -52,62 +52,47 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-07T09:40:03Z",
+    "last_run": "2026-11-08T12:27:39Z",
     "total_scored": 56,
-    "reachable": 44,
+    "reachable": 3,
     "csv_count": 46,
-    "with_csv_schema": 44,
-    "avg_readiness": 7.6,
+    "with_csv_schema": 3,
+    "avg_readiness": 1.3,
     "top_items": [
       {
-        "name": "mit_opendata/concessioni-demaniali-marittime-a",
-        "score": 10.0,
-        "year_range": [
-          1905,
-          2026
-        ],
-        "format": "zip,csv",
+        "name": "mit_opendata/aeroporti-certificati",
+        "score": 9.0,
+        "year_range": null,
+        "format": "csv,json",
         "reachable": true
       },
       {
-        "name": "mit_opendata/concessioni-demaniali-marittime-ad",
-        "score": 10.0,
-        "year_range": [
-          1905,
-          2019
-        ],
-        "format": "json,zip,csv",
+        "name": "mit_opendata/autorita-di-sistema-portuale-adsp",
+        "score": 9.0,
+        "year_range": null,
+        "format": "csv,json",
         "reachable": true
       },
       {
-        "name": "mit_opendata/general-contractor",
-        "score": 10.0,
-        "year_range": [
-          2026,
-          2026
-        ],
-        "format": "csv,xlsx",
+        "name": "mit_opendata/banca-dati-servizio-contratti-pubblici-scp",
+        "score": 9.0,
+        "year_range": null,
+        "format": "csv,json",
         "reachable": true
       },
       {
-        "name": "mit_opendata/incidentalita-stradale",
-        "score": 10.0,
-        "year_range": [
-          2010,
-          2018
-        ],
+        "name": "mit_opendata/72d632e5-56d9-4d00-810e-89c24002943f",
+        "score": 1.0,
+        "year_range": null,
+        "format": "csv,json,pdf",
+        "reachable": false
+      },
+      {
+        "name": "mit_opendata/cantieri-navali",
+        "score": 1.0,
+        "year_range": null,
         "format": "xlsx,csv",
-        "reachable": true
-      },
-      {
-        "name": "mit_opendata/incidenti-morti-feriti-ed-indicatori-dellincidentalita-stradale-per-mese",
-        "score": 10.0,
-        "year_range": [
-          2001,
-          2018
-        ],
-        "format": "csv,xlsx",
-        "reachable": true
+        "reachable": false
       }
     ],
     "not_checked_non_csv": 10,
@@ -115,12 +100,12 @@
     "validation_skipped": 0,
     "catalog_only": false,
     "probeable_items": 46,
-    "reachability_pct": 95.7,
+    "reachability_pct": 6.5,
     "coverage_pct": 100.0,
     "formato_aperto": {
-      "score": 75.0,
+      "score": 10.0,
       "perc_aperto": 87.5,
-      "perc_reachable": 78.6,
+      "perc_reachable": 5.4,
       "total": 56,
       "fonte": "source_check"
     }
@@ -143,11 +128,12 @@
     }
   ],
   "operational_verdict": {
-    "label": "INVENTORY_CHANGED",
-    "score": "changed",
+    "label": "UNREACHABLE",
+    "score": "unreachable",
     "triggers": [
+      "unreachable",
       "inventory_changed"
     ],
-    "next_action": "review inventory changes"
+    "next_action": "verify used items"
   }
 }

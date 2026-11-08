@@ -1,6 +1,6 @@
 {
   "source_id": "dait",
-  "generated_at": "2026-11-07T09:40:03+00:00",
+  "generated_at": "2026-11-08T12:27:39+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "radar-only",
     "verdict": "go",
     "note": "DAIT — Anagrafe Amministratori locali. CSV snapshot annuali 1991-2026 +  corrente. 41 su 42 entry sono snapshot dello stesso dataset. radar-only iniziale per evitare rumore catalog inventory sui 41 snapshot.\n",
-    "last_probed": "2026-11-06"
+    "last_probed": "2026-11-08"
   },
   "health": {
     "radar_status": "GREEN",
@@ -24,7 +24,7 @@
     "active_items": 0,
     "stale_items": 0,
     "method": null,
-    "captured_at": "2026-11-07T09:24:26+00:00",
+    "captured_at": "2026-11-08T11:56:21+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "delta": null,

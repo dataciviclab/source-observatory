@@ -1,25 +1,16 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-11-07T09:40:01Z",
-  "total_groups": 10854,
-  "groups_total": 10854,
-  "reachable": 2848,
-  "unreachable": 339,
-  "not_checked": 112,
+  "generated_at": "2026-11-08T12:27:37Z",
+  "total_groups": 7315,
+  "groups_total": 7315,
+  "reachable": 2906,
+  "unreachable": 380,
+  "not_checked": 65,
   "blocked": 47,
-  "skipped": 7555,
-  "csv_with_schema": 2484,
+  "skipped": 3917,
+  "csv_with_schema": 2443,
+  "duration_seconds": 3892.9,
   "by_source": {
-    "openbdap": {
-      "total": 3878,
-      "reachable": 0,
-      "csv": 0,
-      "unreachable": 0,
-      "not_checked": 0,
-      "blocked": 0,
-      "skipped": 3878,
-      "groups_total": 3878
-    },
     "istat_sdmx": {
       "total": 3597,
       "reachable": 0,
@@ -28,7 +19,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 3597,
-      "groups_total": 3597
+      "duration_seconds": 0.0,
+      "groups_total": 3597,
+      "avg_seconds_per_group": null
     },
     "inps": {
       "total": 1814,
@@ -38,7 +31,9 @@
       "not_checked": 2,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 1814
+      "duration_seconds": 2012.6,
+      "groups_total": 1814,
+      "avg_seconds_per_group": 1.109
     },
     "openga": {
       "total": 405,
@@ -48,7 +43,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 405
+      "duration_seconds": 696.0,
+      "groups_total": 405,
+      "avg_seconds_per_group": 1.719
     },
     "opencoesione": {
       "total": 248,
@@ -58,7 +55,21 @@
       "not_checked": 10,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 248
+      "duration_seconds": 103.6,
+      "groups_total": 248,
+      "avg_seconds_per_group": 0.418
+    },
+    "openbdap": {
+      "total": 240,
+      "reachable": 0,
+      "csv": 0,
+      "unreachable": 0,
+      "not_checked": 0,
+      "blocked": 0,
+      "skipped": 240,
+      "duration_seconds": 0.0,
+      "groups_total": 240,
+      "avg_seconds_per_group": null
     },
     "ispra_linked_data": {
       "total": 133,
@@ -68,7 +79,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 133
+      "duration_seconds": 1.1,
+      "groups_total": 133,
+      "avg_seconds_per_group": 0.008
     },
     "dati_senato": {
       "total": 100,
@@ -78,7 +91,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 100
+      "duration_seconds": 3.4,
+      "groups_total": 100,
+      "avg_seconds_per_group": 0.034
     },
     "dati_camera": {
       "total": 99,
@@ -88,7 +103,21 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 99
+      "duration_seconds": 0.7,
+      "groups_total": 99,
+      "avg_seconds_per_group": 0.007
+    },
+    "noipa_sparql": {
+      "total": 99,
+      "reachable": 99,
+      "csv": 0,
+      "unreachable": 0,
+      "not_checked": 0,
+      "blocked": 0,
+      "skipped": 0,
+      "duration_seconds": 16.8,
+      "groups_total": 99,
+      "avg_seconds_per_group": 0.17
     },
     "opencivitas": {
       "total": 85,
@@ -98,7 +127,9 @@
       "not_checked": 25,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 85
+      "duration_seconds": 422.7,
+      "groups_total": 85,
+      "avg_seconds_per_group": 4.973
     },
     "lavoro_opendata": {
       "total": 83,
@@ -108,27 +139,33 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 83
+      "duration_seconds": 18.6,
+      "groups_total": 83,
+      "avg_seconds_per_group": 0.224
     },
     "mit_opendata": {
       "total": 56,
-      "reachable": 44,
-      "csv": 44,
-      "unreachable": 2,
+      "reachable": 3,
+      "csv": 3,
+      "unreachable": 43,
       "not_checked": 10,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 56
+      "duration_seconds": 30.8,
+      "groups_total": 56,
+      "avg_seconds_per_group": 0.55
     },
     "anac": {
       "total": 48,
       "reachable": 0,
       "csv": 0,
       "unreachable": 0,
-      "not_checked": 48,
+      "not_checked": 1,
       "blocked": 47,
       "skipped": 0,
-      "groups_total": 48
+      "duration_seconds": 4.9,
+      "groups_total": 48,
+      "avg_seconds_per_group": 0.102
     },
     "mimit_rna": {
       "total": 45,
@@ -138,7 +175,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 45,
-      "groups_total": 45
+      "duration_seconds": 0.0,
+      "groups_total": 45,
+      "avg_seconds_per_group": null
     },
     "ministero_salute": {
       "total": 44,
@@ -148,7 +187,9 @@
       "not_checked": 4,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 44
+      "duration_seconds": 236.8,
+      "groups_total": 44,
+      "avg_seconds_per_group": 5.382
     },
     "adm_opendata": {
       "total": 33,
@@ -158,7 +199,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 33
+      "duration_seconds": 34.5,
+      "groups_total": 33,
+      "avg_seconds_per_group": 1.045
     },
     "art_opendata": {
       "total": 32,
@@ -168,7 +211,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 32
+      "duration_seconds": 14.8,
+      "groups_total": 32,
+      "avg_seconds_per_group": 0.463
     },
     "aifa": {
       "total": 30,
@@ -178,7 +223,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 30
+      "duration_seconds": 7.7,
+      "groups_total": 30,
+      "avg_seconds_per_group": 0.257
     },
     "mim_opendata": {
       "total": 28,
@@ -188,7 +235,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 28
+      "duration_seconds": 157.9,
+      "groups_total": 28,
+      "avg_seconds_per_group": 5.639
     },
     "agid": {
       "total": 27,
@@ -198,7 +247,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 27,
-      "groups_total": 27
+      "duration_seconds": 0.0,
+      "groups_total": 27,
+      "avg_seconds_per_group": null
     },
     "mur_ustat": {
       "total": 17,
@@ -208,7 +259,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 17
+      "duration_seconds": 69.1,
+      "groups_total": 17,
+      "avg_seconds_per_group": 4.065
     },
     "consip_open_data": {
       "total": 16,
@@ -218,7 +271,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 16
+      "duration_seconds": 19.1,
+      "groups_total": 16,
+      "avg_seconds_per_group": 1.194
     },
     "mef_finanze": {
       "total": 11,
@@ -228,7 +283,9 @@
       "not_checked": 2,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 11
+      "duration_seconds": 13.3,
+      "groups_total": 11,
+      "avg_seconds_per_group": 1.209
     },
     "giustizia_statistiche": {
       "total": 8,
@@ -238,7 +295,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 8,
-      "groups_total": 8
+      "duration_seconds": 0.0,
+      "groups_total": 8,
+      "avg_seconds_per_group": null
     },
     "inail_opendata": {
       "total": 7,
@@ -248,7 +307,9 @@
       "not_checked": 3,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 7
+      "duration_seconds": 26.4,
+      "groups_total": 7,
+      "avg_seconds_per_group": 3.771
     },
     "aci": {
       "total": 5,
@@ -258,7 +319,9 @@
       "not_checked": 3,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 5
+      "duration_seconds": 2.1,
+      "groups_total": 5,
+      "avg_seconds_per_group": 0.42
     },
     "corte_costituzionale": {
       "total": 5,
@@ -268,7 +331,9 @@
       "not_checked": 5,
       "blocked": 0,
       "skipped": 0,
-      "groups_total": 5
+      "duration_seconds": 0.0,
+      "groups_total": 5,
+      "avg_seconds_per_group": 0.0
     }
   }
 }
