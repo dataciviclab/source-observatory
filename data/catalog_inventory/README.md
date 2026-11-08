@@ -44,7 +44,7 @@ La directory `generated/` non è versionata nel repo:
 
 ## Schema parquet
 
-Colonne chiave (per schema completo vedere `docs/source_check_results_schema.md`):
+Colonne chiave:
 - `captured_at`: timestamp UTC del run inventory
 - `source_id`: id della fonte nel registry (`istat_sdmx`, `inps`, `openbdap`, ...)
 - `source_kind`: oggi atteso `catalog`
@@ -63,6 +63,11 @@ Colonne chiave (per schema completo vedere `docs/source_check_results_schema.md`
 - `format`: formato della risorsa (`CSV`, `XLSX`, `ZIP`, ...)
 - `prefix`: segmento iniziale del filename (utile per inferenza granularità)
 - `year_signal`: anno estratto dal nome file
+- `download_size_bytes`: somma delle dimensioni dichiarate dai resource, in byte
+  (`null` = la fonte non dichiara il `size`, non "zero byte")
+- `distribution_url` / `landing_page`: URL della risorsa dati e pagina di
+  dettaglio, quando la fonte le espone (per CKAN: resource preferita e dataset)
+- `resource_count` / `datastore_active`: numero di resource e disponibilità DataStore (CKAN)
 
 ## Accesso via MCP
 

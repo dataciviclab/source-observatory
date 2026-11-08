@@ -11,8 +11,14 @@ logger = logging.getLogger(__name__)
 # Default storici: invariati per le fonti che non dichiarano override.
 DEFAULT_SEARCH_PAGE_SIZE = 1000
 DEFAULT_SEARCH_TIMEOUT = 60
-DEFAULT_SEARCH_RETRIES = 2
-DEFAULT_SEARCH_MIN_PAGE_SIZE = 10
+# None => nessun dimezzamento: si usa sempre il page size configurato, come
+# prima dell'introduzione dell'adattamento. Il dimezzamento è opt-in per fonte.
+DEFAULT_SEARCH_MIN_PAGE_SIZE: int | None = None
+
+# Dopo quanti successi consecutivi si prova a risalire di page size, e quante
+# volte una dimensione che ha già fallito può essere riprovata.
+_RECOVER_AFTER_SUCCESSES = 3
+_MAX_FAILURES_PER_SIZE = 2
 
 CKAN_ACTION_NAMES = {
     "package_list",
@@ -114,19 +120,27 @@ def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
         ) from exc
 
 
-def force_https(url: str | None) -> str | None:
+def force_https(url: str | None, allowed_host: str | None = None) -> str | None:
     """Upgrade ``http://`` a ``https://``.
 
     Non è un default globale: un portale http-only si romperebbe. Si attiva
     per fonte con ``inventory.force_https: true`` quando l'endpoint in chiaro
     è noto per essere morto (es. OpenBDAP: ``http://`` va in timeout,
     ``https://`` risponde in <1s).
+
+    Se ``allowed_host`` è passato, riscrive solo gli URL di quell'host: un
+    resource esterno in http-only non viene toccato.
     """
     if not url:
         return url
-    if url.lower().startswith("http://"):
-        return "https://" + url[len("http://") :]
-    return url
+    if not url.lower().startswith("http://"):
+        return url
+    if allowed_host:
+        from urllib.parse import urlsplit
+
+        if (urlsplit(url).hostname or "").lower() != allowed_host.lower():
+            return url
+    return "https://" + url[len("http://") :]
 
 
 def _resource_format(item: dict) -> str | None:
@@ -242,12 +256,13 @@ def _resources_size_bytes(item: dict) -> int | None:
     """Somma delle dimensioni dichiarate nei resource (``size`` in byte).
 
     Molte fonti non popolano ``size``: in quel caso torna ``None`` invece di 0,
-    così il triage distingue "non dichiarato" da "vuoto".
+    così il triage distingue "non dichiarato" da "vuoto". Un ``size: 0``
+    esplicito è invece un valore dichiarato e contribuisce come zero.
     """
     total = 0
     found = False
     for r in item.get("resources") or []:
-        raw = str(r.get("size") or "").strip()
+        raw = str(r["size"]).strip() if r.get("size") is not None else ""
         if not raw.isdigit():
             continue
         total += int(raw)
@@ -292,8 +307,12 @@ def extract_ckan_inventory_row(
     landing_page = _landing_page(item)
     distribution_url = _distribution_url(item)
     if inventory_cfg(source_cfg).get("force_https"):
-        landing_page = force_https(landing_page)
-        distribution_url = force_https(distribution_url)
+        # Solo l'host della fonte: un resource esterno in http-only non va toccato.
+        from urllib.parse import urlsplit
+
+        allowed_host = urlsplit(str(source_cfg.get("base_url") or "")).hostname
+        landing_page = force_https(landing_page, allowed_host)
+        distribution_url = force_https(distribution_url, allowed_host)
 
     return {
         "captured_at": captured_at,
@@ -343,65 +362,71 @@ def _ckan_search_params(
     return params
 
 
-def _fetch_search_page(
-    *,
-    endpoint: str,
-    source_cfg: dict[str, Any],
-    source_id: str,
-    client: Any,
-    start: int,
-    page_size: int,
-    timeout: int,
-    retries: int,
-    min_page_size: int,
-) -> tuple[dict[str, Any], int]:
-    """Fetcha una pagina di ``package_search`` con retry e dimezzamento adattivo.
+def _is_transient_error(exc: BaseException) -> bool:
+    """True per errori su cui ha senso riprovare (timeout, connessione, 5xx).
 
-    Alcuni portali (es. OpenBDAP) non reggono pagine grandi: una richiesta da
-    1000 righe supera il timeout e il vecchio codice faceva fallire l'intera
-    fonte. Qui, dopo ``retries`` tentativi falliti, il page size viene
-    dimezzato (fino a ``min_page_size``) e la pagina viene ritentata dallo
-    stesso ``start``.
-
-    Returns:
-        ``(payload, page_size_effettivo)`` — il page size può essere sceso,
-        e il chiamante deve usarlo per le pagine successive.
+    ``HttpClient`` fa già retry sui transitori: qui serve solo per decidere se
+    vale la pena ridurre la pagina. Un 4xx o un JSON invalido non migliorano
+    con una pagina più piccola.
     """
-    current = page_size
-    # Margine per i dimezzamenti: 1000 -> 10 sono 7 passi, quindi margine ampio.
-    max_attempts = max(retries, 1) * 8
-    last_exc: Exception | None = None
+    name = type(exc).__name__.lower()
+    if "timeout" in name or "connection" in name:
+        return True
+    try:
+        import requests
+    except ImportError:  # pragma: no cover — requests è dipendenza di lab-connectors
+        return False
+    if isinstance(exc, (requests.exceptions.Timeout, requests.exceptions.ConnectionError)):
+        return True
+    if isinstance(exc, requests.exceptions.HTTPError):
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        return bool(status and status >= 500)
+    return False
 
-    for attempt in range(1, max_attempts + 1):
-        try:
-            payload = ckan_get_json(
-                endpoint,
-                client=client,
-                params=_ckan_search_params(source_cfg, page_size=current, start=start),
-                timeout=timeout,
-            )
-            return payload, current
-        except Exception as exc:  # noqa: BLE001 — timeout/HTTP/JSON, si ritenta
-            last_exc = exc
-            can_shrink = current > min_page_size
-            logger.warning(
-                "CKAN %s: package_search start=%s rows=%s fallita (%s/%s): %s%s",
-                source_id,
-                start,
-                current,
-                attempt,
-                max_attempts,
-                exc,
-                " — dimezzo page_size" if can_shrink else "",
-            )
-            if can_shrink:
-                current = max(current // 2, min_page_size)
 
-    raise (
-        last_exc
-        if last_exc is not None
-        else RuntimeError(f"CKAN package_search failed for {source_id}")
-    )
+class _PageSizer:
+    """Adatta il page size di ``package_search`` con un budget di tentativi finito.
+
+    - se ``min_size == ceiling`` (default) non adatta nulla: un tentativo, come
+      prima dell'introduzione dell'adattamento;
+    - su errore transitorio dimezza, fino a ``min_size``;
+    - dopo ``_RECOVER_AFTER_SUCCESSES`` successi consecutivi prova a risalire,
+      senza riprovare una dimensione fallita più di ``_MAX_FAILURES_PER_SIZE``
+      volte.
+
+    Il costo massimo è quindi ``2 * numero_dimezzamenti`` timeout per pagina.
+    """
+
+    def __init__(self, ceiling: int, min_size: int | None) -> None:
+        self.ceiling = max(1, ceiling)
+        self.min_size = max(1, min(min_size or ceiling, ceiling))
+        self.current = self.ceiling
+        self.adaptive = self.min_size < self.ceiling
+        self.failures: dict[int, int] = {}
+        self._successes = 0
+
+    def on_success(self) -> None:
+        self._successes += 1
+        if not self.adaptive or self.current >= self.ceiling:
+            return
+        if self._successes < _RECOVER_AFTER_SUCCESSES:
+            return
+        nxt = min(self.ceiling, self.current * 2)
+        if self.failures.get(nxt, 0) < _MAX_FAILURES_PER_SIZE:
+            self.current = nxt
+            self._successes = 0
+
+    def on_transient_failure(self) -> bool:
+        """True se conviene ritentare (con una pagina più piccola, se possibile)."""
+        if not self.adaptive:
+            return False
+        self._successes = 0
+        self.failures[self.current] = self.failures.get(self.current, 0) + 1
+        nxt = self.current // 2
+        if nxt >= self.min_size and nxt < self.current:
+            self.current = nxt
+            return True
+        return self.failures[self.current] < _MAX_FAILURES_PER_SIZE
 
 
 def collect_ckan_inventory_via_search(
@@ -417,8 +442,13 @@ def collect_ckan_inventory_via_search(
 
     - ``package_search_page_size`` (default 1000)
     - ``package_search_timeout`` (default 60s)
-    - ``package_search_retries`` (default 2)
-    - ``package_search_min_page_size`` (default 10)
+    - ``package_search_min_page_size`` (default: nessun dimezzamento)
+    - ``fq`` (filtro CKAN opzionale)
+
+    L'adattamento della pagina (dimezzamento + recupero) è **opt-in**: scatta
+    solo se ``package_search_min_page_size`` è minore del page size. I retry
+    sui transitori restano delegati a ``HttpClient``; qui si riduce la pagina
+    solo quando l'errore è transitorio (timeout/connessione/5xx).
 
     Nota: ``count`` in ``package_search`` non è affidabile su tutti i portali
     (OpenBDAP restituisce ``rows``). La paginazione termina quando arriva una
@@ -433,33 +463,47 @@ def collect_ckan_inventory_via_search(
     inv = inventory_cfg(source_cfg)
     page_size = int(inv.get("package_search_page_size", DEFAULT_SEARCH_PAGE_SIZE))
     timeout = int(inv.get("package_search_timeout", DEFAULT_SEARCH_TIMEOUT))
-    retries = int(inv.get("package_search_retries", DEFAULT_SEARCH_RETRIES))
-    min_page_size = int(inv.get("package_search_min_page_size", DEFAULT_SEARCH_MIN_PAGE_SIZE))
+    min_page_size = inv.get("package_search_min_page_size", DEFAULT_SEARCH_MIN_PAGE_SIZE)
 
     if client is None or getattr(client, "timeout", timeout) != timeout:
         # Un client condiviso con timeout diverso verrebbe sostituito a ogni
         # pagina da ckan_get_json, perdendo il connection pooling: lo si crea
-        # una volta qui con il timeout giusto.
-        client = HttpClient(timeout=timeout, user_agent=source_cfg.get("user_agent") or USER_AGENT)
+        # una volta qui con il timeout giusto, riusando lo user_agent del client
+        # se presente.
+        user_agent = (
+            getattr(client, "user_agent", None) or source_cfg.get("user_agent") or USER_AGENT
+        )
+        client = HttpClient(timeout=timeout, user_agent=user_agent)
 
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_search")
+    sizer = _PageSizer(page_size, min_page_size)
     start = 0
     ordinal = 1
     rows: list[dict[str, Any]] = []
 
     while True:
-        payload, page_size_used = _fetch_search_page(
-            endpoint=endpoint,
-            source_cfg=source_cfg,
-            source_id=source_id,
-            client=client,
-            start=start,
-            page_size=page_size,
-            timeout=timeout,
-            retries=retries,
-            min_page_size=min_page_size,
-        )
-        page_size = page_size_used
+        used = sizer.current
+        try:
+            payload = ckan_get_json(
+                endpoint,
+                client=client,
+                params=_ckan_search_params(source_cfg, page_size=used, start=start),
+                timeout=timeout,
+            )
+        except Exception as exc:  # noqa: BLE001 — classificato subito sotto
+            if _is_transient_error(exc) and sizer.on_transient_failure():
+                logger.warning(
+                    "CKAN %s: package_search start=%s rows=%s fallita (%s), riprovo con rows=%s",
+                    source_id,
+                    start,
+                    used,
+                    exc,
+                    sizer.current,
+                )
+                continue
+            raise
+
+        sizer.on_success()
         if not payload.get("success"):
             raise ValueError(f"CKAN package_search failed for {source_id}")
 
@@ -486,14 +530,14 @@ def collect_ckan_inventory_via_search(
             "CKAN %s: start=%s rows=%s -> %s item (totale %s)",
             source_id,
             start,
-            page_size,
+            used,
             len(items),
             len(rows),
         )
 
-        if len(items) < page_size:
+        if len(items) < used:
             break
-        start += page_size
+        start += used
 
     if not rows:
         raise ValueError(f"CKAN package_search returned no rows for {source_id}")
