@@ -238,11 +238,22 @@ def parse_args() -> argparse.Namespace:
         default=False,
         help="Skip fonti con status RED in radar_summary.json (evita timeout su fonti down).",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        default=False,
+        help="Log INFO (progresso delle pagine per le fonti lente, es. OpenBDAP).",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    logging.basicConfig(
+        level=logging.INFO if args.verbose else logging.WARNING,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        force=True,  # alcune lib configurano il root logger all'import
+    )
     out_dir = args.out_dir
     out_parquet = out_dir / DEFAULT_OUT_PARQUET
     out_report = out_dir / DEFAULT_OUT_REPORT

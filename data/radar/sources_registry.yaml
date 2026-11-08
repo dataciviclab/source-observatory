@@ -112,25 +112,38 @@ openbdap:
   observation_mode: catalog-watch
   base_url: https://bdap-opendata.rgs.mef.gov.it/SpodCkanApi/api/3/action/package_list?limit=1
   inventory:
-    timeout: 1200
-    skip_package_search: true
-    skip_package_search_reason: timeout sistematico a 60s
+    # Harvest completo osservato: ~1030s con rows=50 (74 richieste) + sample.
+    # 1800 lascia margine per una giornata lenta senza cambiare il resto.
+    timeout: 1800
+    # Pagine piccole: il portale non regge rows=1000 (timeout ~60s).
+    # rows=50 risponde in ~8s. I retry sui transitori restano delegati a
+    # HttpClient; qui si dimezza la pagina solo quando il timeout suggerisce
+    # che è troppo grande (min < page_size attiva l'adattamento).
+    package_search_page_size: 50
+    package_search_timeout: 90
+    package_search_min_page_size: 25
+    # http:// su questo host va in timeout, https:// risponde in <1s.
+    # Senza il force, il source-check marca ~tutto come non raggiungibile.
+    force_https: true
     package_show_sample: true
-    package_show_max_workers: 8
-    package_show_timeout: 10
+    package_show_max_workers: 4
+    package_show_timeout: 20
     sample_size: 25
   last_probed: '2026-11-08'
   catalog_baseline:
-    captured_at: '2026-04-02'
+    # Conteggio pubblico (package_search). package_list ne conta 3.882 perché
+    # include 198 package `private: true` (PDI/SDB/PNC), non interrogabili.
+    captured_at: '2026-11-07'
     metric: package_count
-    value: 3772
-    method: package_list
+    value: 3684
+    method: package_search
     reliability: medium
-    note: Conteggio totale package rilevati via package_list; package_search restituisce
-      count inaffidabile.
+    note: Baseline allineata al metodo usato dall'inventory (package_search).
+      Il count della risposta resta inaffidabile, si pagina finché la pagina è
+      vuota.
   verdict: go
   note: Catalogo CKAN molto ricco; osservazione iniziale stretta a livello inventario
-    senza intake o monitor diffuso.
+    senza intake o monitor diffuso. Harvest completo (package_search) in ~15 min.
   datasets_in_use:
     - bdap_anagrafe_enti
     - bdap_dlb_spese_serie
@@ -153,8 +166,9 @@ openbdap:
     - dipendenti_pubblici
   source_check:
     skip_item_validation: true
-    skip_item_validation_reason: 'Catalogo enorme e oggi quasi tutto non raggiungibile
-      (2/3.882): inventory/diff utile, validate item-level no.'
+    skip_item_validation_reason: 'Catalogo di 3.684 package pubblici: il validate
+      item-level su tutti non aggiunge segnale rispetto a inventory/diff (e il
+      catalogo è dominato da partizioni annuali della stessa serie).'
 inail_opendata:
   source_kind: catalog
   protocol: ckan

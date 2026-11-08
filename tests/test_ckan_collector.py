@@ -12,6 +12,7 @@ from scripts.collectors.ckan import (
     collect_ckan_inventory_via_package_show_sample,
     collect_ckan_inventory_via_search,
     extract_ckan_inventory_row,
+    force_https,
 )
 
 pytestmark = pytest.mark.pure_unit
@@ -408,4 +409,304 @@ class TestSearchWithFqPropagation:
         )
 
 
-pytestmark = pytest.mark.pure_unit
+class TestBestResourceUrl:
+    def test_prefers_datastore_dump_over_pdf_labeled_csv(self):
+        """OpenBDAP: due resource "csv", il primo punta a un PDF."""
+        row = extract_ckan_inventory_row(
+            source_id="openbdap",
+            source_cfg={"inventory": {}},
+            captured_at="2026-11-07",
+            item={
+                "id": "x",
+                "name": "x",
+                "title": "x",
+                "resources": [
+                    {
+                        "format": "CSV",
+                        "url": "https://x.test//sites/default/files/report/1_dati.pdf",
+                    },
+                    {
+                        "format": "csv",
+                        "url": "https://x.test/SpodCkanApi/api/3/datastore/dump/uuid.csv",
+                    },
+                    {"format": "XML", "url": "https://x.test/ODataProxy/MdData('y')/DataRows"},
+                ],
+            },
+            endpoint="https://x.test/api/3/action/package_search",
+            ordinal=1,
+            inventory_method="package_search",
+        )
+        assert "/datastore/dump/" in row["distribution_url"]
+
+    def test_pdf_only_resource_still_returned(self):
+        row = extract_ckan_inventory_row(
+            source_id="test",
+            source_cfg={"inventory": {}},
+            captured_at="2026-11-07",
+            item={
+                "id": "x",
+                "name": "x",
+                "title": "x",
+                "resources": [{"format": "PDF", "url": "https://x.test/a.pdf"}],
+            },
+            endpoint="https://x.test/api/3/action/package_search",
+            ordinal=1,
+            inventory_method="package_search",
+        )
+        assert row["distribution_url"] == "https://x.test/a.pdf"
+
+
+class TestResourceSize:
+    def test_sums_declared_sizes(self):
+        item = {
+            "resources": [
+                {"format": "CSV", "size": "1000"},
+                {"format": "XML", "size": "250"},
+                {"format": "CSV", "size": ""},
+            ]
+        }
+        row = extract_ckan_inventory_row(
+            source_id="test",
+            source_cfg={"inventory": {}},
+            captured_at="2026-11-07",
+            item=item,
+            endpoint="https://x.test/api/3/action/package_search",
+            ordinal=1,
+            inventory_method="package_search",
+        )
+        assert row["download_size_bytes"] == 1250
+
+    def test_zero_size_is_declared_not_missing(self):
+        item = {"resources": [{"format": "CSV", "size": 0}]}
+        row = extract_ckan_inventory_row(
+            source_id="test",
+            source_cfg={"inventory": {}},
+            captured_at="2026-11-07",
+            item=item,
+            endpoint="https://x.test/api/3/action/package_search",
+            ordinal=1,
+            inventory_method="package_search",
+        )
+        assert row["download_size_bytes"] == 0
+
+    def test_none_when_size_not_declared(self):
+        item = {"resources": [{"format": "CSV"}, {"format": "CSV", "size": "n/a"}]}
+        row = extract_ckan_inventory_row(
+            source_id="test",
+            source_cfg={"inventory": {}},
+            captured_at="2026-11-07",
+            item=item,
+            endpoint="https://x.test/api/3/action/package_search",
+            ordinal=1,
+            inventory_method="package_search",
+        )
+        assert row["download_size_bytes"] is None
+
+
+class TestForceHttps:
+    """Upgrade opt-in degli URL http:// (OpenBDAP: http morto, https ok)."""
+
+    def test_upgrades_http(self):
+        assert force_https("http://x.test/a.csv") == "https://x.test/a.csv"
+
+    def test_idempotent_on_https(self):
+        assert force_https("https://x.test/a.csv") == "https://x.test/a.csv"
+
+    def test_leaves_other_hosts_untouched(self):
+        """Solo l'host della fonte viene riscritto: un resource esterno resta http."""
+        assert force_https("http://altro.example/a.csv", "x.test") == "http://altro.example/a.csv"
+        assert force_https("http://x.test/a.csv", "x.test") == "https://x.test/a.csv"
+
+    def test_preserves_empty(self):
+        assert force_https(None) is None
+        assert force_https("") == ""
+
+    def test_opt_in_in_extract_row(self):
+        item = {
+            "id": "ds-1",
+            "name": "ds-1",
+            "title": "T",
+            "resources": [{"format": "CSV", "url": "http://x.test/a.csv"}],
+        }
+        common = {
+            "source_id": "test",
+            "captured_at": "2026-11-07",
+            "item": item,
+            "endpoint": "https://x.test/api/3/action/package_search",
+            "ordinal": 1,
+            "inventory_method": "package_search",
+        }
+        plain = extract_ckan_inventory_row(source_cfg={"inventory": {}}, **common)
+        forced = extract_ckan_inventory_row(
+            source_cfg={"inventory": {"force_https": True}}, **common
+        )
+        assert plain["distribution_url"] == "http://x.test/a.csv"
+        assert forced["distribution_url"] == "https://x.test/a.csv"
+
+
+class TestSearchPaginationConfig:
+    """La paginazione non deve fidarsi di count e deve essere configurabile."""
+
+    def _fake_pages(self, pages: dict[tuple[int, int], list[dict]], captured: list[dict]):
+        def fake_ckan_get_json(endpoint, **kwargs):
+            params = kwargs.get("params", {})
+            captured.append(params)
+            key = (params.get("start"), params.get("rows"))
+            items = pages.get(key, [])
+            return {"success": True, "result": {"results": items, "count": len(items)}}
+
+        return fake_ckan_get_json
+
+    def _item(self, i: int) -> dict:
+        return {
+            "id": f"pkg-{i}",
+            "name": f"pkg-{i}",
+            "title": f"Title {i}",
+            "tags": [],
+            "resources": [],
+        }
+
+    def test_page_size_from_config(self, monkeypatch):
+        captured: list[dict] = []
+        pages = {(0, 25): [self._item(i) for i in range(25)], (25, 25): []}
+        monkeypatch.setattr(
+            "scripts.collectors.ckan.ckan_get_json", self._fake_pages(pages, captured)
+        )
+        rows = collect_ckan_inventory_via_search(
+            source_id="test",
+            source_cfg={
+                "base_url": "https://x.test/api/3/action/package_list",
+                "inventory": {"package_search_page_size": 25},
+            },
+            captured_at="2026-11-07",
+        )
+        assert len(rows) == 25
+        assert [p["rows"] for p in captured] == [25, 25]
+        assert [p["start"] for p in captured] == [0, 25]
+
+    def test_timeout_forwarded(self, monkeypatch):
+        captured_timeouts: list[int] = []
+
+        def fake(endpoint, **kwargs):
+            captured_timeouts.append(kwargs.get("timeout", -1))
+            return {"success": True, "result": {"results": [], "count": 0}}
+
+        monkeypatch.setattr("scripts.collectors.ckan.ckan_get_json", fake)
+        with pytest.raises(ValueError):
+            collect_ckan_inventory_via_search(
+                source_id="test",
+                source_cfg={
+                    "base_url": "https://x.test/api/3/action/package_list",
+                    "inventory": {"package_search_timeout": 42},
+                },
+                captured_at="2026-11-07",
+            )
+        assert captured_timeouts and all(t == 42 for t in captured_timeouts)
+
+    def test_adaptive_shrinks_on_timeout_then_recovers(self, monkeypatch):
+        """Timeout → dimezza; dopo 3 successi → risale (recupero del throughput)."""
+        calls: list[tuple[int, int]] = []
+        total = 200
+
+        def fake(endpoint, **kwargs):
+            params = kwargs.get("params", {})
+            key = (params.get("start"), int(params.get("rows")))
+            calls.append(key)
+            # rows=100 e 50 non reggono: la fonte regge solo 25
+            if key[1] != 25:
+                raise TimeoutError("simulated timeout")
+            start = key[0]
+            items = [self._item(i) for i in range(start, min(start + 25, total))]
+            return {"success": True, "result": {"results": items, "count": total}}
+
+        monkeypatch.setattr("scripts.collectors.ckan.ckan_get_json", fake)
+        rows = collect_ckan_inventory_via_search(
+            source_id="test",
+            source_cfg={
+                "base_url": "https://x.test/api/3/action/package_list",
+                "inventory": {
+                    "package_search_page_size": 100,
+                    "package_search_min_page_size": 25,
+                },
+            },
+            captured_at="2026-11-07",
+        )
+        assert len(rows) == total
+        # prima pagina: 100 → timeout, 50 → timeout, poi 25
+        assert calls[:3] == [(0, 100), (0, 50), (0, 25)]
+        # dopo 3 successi a 25 il sizer prova a risalire a 50 (fallita una volta sola)
+        assert any(rows_ == 50 for _, rows_ in calls), f"nessun recupero: {calls}"
+
+    def test_attempts_are_bounded_when_page_always_fails(self, monkeypatch):
+        """Budget finito: niente retry illimitati alla stessa dimensione."""
+        calls: list[tuple[int, int]] = []
+
+        def fake(endpoint, **kwargs):
+            params = kwargs.get("params", {})
+            calls.append((params.get("start"), int(params.get("rows"))))
+            raise TimeoutError("always")
+
+        monkeypatch.setattr("scripts.collectors.ckan.ckan_get_json", fake)
+        with pytest.raises(TimeoutError):
+            collect_ckan_inventory_via_search(
+                source_id="test",
+                source_cfg={
+                    "base_url": "https://x.test/api/3/action/package_list",
+                    "inventory": {
+                        "package_search_page_size": 100,
+                        "package_search_min_page_size": 25,
+                    },
+                },
+                captured_at="2026-11-07",
+            )
+        # 100 fallisce, 50 fallisce, 25 fallisce due volte → stop: 4 tentativi
+        assert len(calls) == 4, f"attesi 4 tentativi, trovati {len(calls)}: {calls}"
+        assert [rows_ for _, rows_ in calls] == [100, 50, 25, 25]
+
+    def test_non_transient_error_is_not_retried(self, monkeypatch):
+        """Un 4xx non migliora con una pagina più piccola: si propaga subito."""
+        calls: list[tuple[int, int]] = []
+
+        class NotFound(Exception):
+            pass
+
+        def fake(endpoint, **kwargs):
+            params = kwargs.get("params", {})
+            calls.append((params.get("start"), int(params.get("rows"))))
+            raise NotFound("404")
+
+        monkeypatch.setattr("scripts.collectors.ckan.ckan_get_json", fake)
+        with pytest.raises(NotFound):
+            collect_ckan_inventory_via_search(
+                source_id="test",
+                source_cfg={
+                    "base_url": "https://x.test/api/3/action/package_list",
+                    "inventory": {
+                        "package_search_page_size": 100,
+                        "package_search_min_page_size": 25,
+                    },
+                },
+                captured_at="2026-11-07",
+            )
+        assert calls == [(0, 100)]
+
+    def test_defaults_keep_single_attempt(self, monkeypatch):
+        """Senza min_page_size l'adattamento è spento: un tentativo, come prima."""
+        calls: list[tuple[int, int]] = []
+
+        def fake(endpoint, **kwargs):
+            params = kwargs.get("params", {})
+            calls.append((params.get("start"), int(params.get("rows"))))
+            raise TimeoutError("boom")
+
+        monkeypatch.setattr("scripts.collectors.ckan.ckan_get_json", fake)
+        with pytest.raises(TimeoutError):
+            collect_ckan_inventory_via_search(
+                source_id="test",
+                source_cfg={
+                    "base_url": "https://x.test/api/3/action/package_list",
+                    "inventory": {"package_search_page_size": 1000},
+                },
+                captured_at="2026-11-07",
+            )
+        assert calls == [(0, 1000)]

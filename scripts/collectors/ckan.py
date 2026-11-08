@@ -1,9 +1,24 @@
 from __future__ import annotations
 
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from .base import USER_AGENT, CollectorResult, inventory_cfg, strip_query
+
+logger = logging.getLogger(__name__)
+
+# Default storici: invariati per le fonti che non dichiarano override.
+DEFAULT_SEARCH_PAGE_SIZE = 1000
+DEFAULT_SEARCH_TIMEOUT = 60
+# None => nessun dimezzamento: si usa sempre il page size configurato, come
+# prima dell'introduzione dell'adattamento. Il dimezzamento è opt-in per fonte.
+DEFAULT_SEARCH_MIN_PAGE_SIZE: int | None = None
+
+# Dopo quanti successi consecutivi si prova a risalire di page size, e quante
+# volte una dimensione che ha già fallito può essere riprovata.
+_RECOVER_AFTER_SUCCESSES = 3
+_MAX_FAILURES_PER_SIZE = 2
 
 CKAN_ACTION_NAMES = {
     "package_list",
@@ -61,9 +76,14 @@ def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
     Args:
         url: Endpoint URL (es. ``/api/3/action/package_show``).
         client: Opzionale, ``HttpClient`` riusabile per connection pooling.
-            Se non fornito, ne crea uno nuovo (comportamento legacy).
+            Se non fornito, ne crea uno nuovo con ``timeout``.
         **kwargs: Passati a ``HttpClient.get()``; ``timeout`` e ``headers``
             vengono estratti prima di passarli.
+
+    Nota: ``HttpClient.get()`` non accetta un timeout per-richiesta (usa quello
+    di costruzione). Se il client fornito ha un timeout diverso da quello
+    richiesto, viene costruito un client dedicato: senza questo, il timeout
+    configurato nel registry veniva ignorato in silenzio.
     """
     from lab_connectors.http import HttpClient
 
@@ -71,6 +91,8 @@ def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
     timeout = kwargs.pop("timeout", 60)
     headers = kwargs.pop("headers", None)
 
+    if client is not None and getattr(client, "timeout", timeout) != timeout:
+        client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
     if client is None:
         client = HttpClient(timeout=timeout, user_agent=USER_AGENT)
 
@@ -96,6 +118,29 @@ def ckan_get_json(url: str, **kwargs: Any) -> dict[str, Any]:
             f"(status={response.status_code}, content_type={content_type or 'unknown'}, "
             f"preview={preview!r})"
         ) from exc
+
+
+def force_https(url: str | None, allowed_host: str | None = None) -> str | None:
+    """Upgrade ``http://`` a ``https://``.
+
+    Non è un default globale: un portale http-only si romperebbe. Si attiva
+    per fonte con ``inventory.force_https: true`` quando l'endpoint in chiaro
+    è noto per essere morto (es. OpenBDAP: ``http://`` va in timeout,
+    ``https://`` risponde in <1s).
+
+    Se ``allowed_host`` è passato, riscrive solo gli URL di quell'host: un
+    resource esterno in http-only non viene toccato.
+    """
+    if not url:
+        return url
+    if not url.lower().startswith("http://"):
+        return url
+    if allowed_host:
+        from urllib.parse import urlsplit
+
+        if (urlsplit(url).hostname or "").lower() != allowed_host.lower():
+            return url
+    return "https://" + url[len("http://") :]
 
 
 def _resource_format(item: dict) -> str | None:
@@ -133,6 +178,23 @@ def _landing_page(item: dict) -> str | None:
     return _resource_first_url(item)
 
 
+def _url_shape_score(url: str) -> int:
+    """Tie-breaker: il format dichiarato dalle fonti a volte mente.
+
+    OpenBDAP etichetta come "CSV" anche il resource che punta a un PDF, e
+    siccome arriva prima vinceva il tie-break sul solo ``format_score``.
+    Qui si guarda la forma reale dell'URL.
+    """
+    low = url.lower().strip()
+    if "/datastore/dump/" in low or low.endswith(".csv") or ".csv?" in low:
+        return 3
+    if low.endswith((".xls", ".xlsx", ".ods")):
+        return 1
+    if low.endswith(".pdf"):
+        return -5
+    return 0
+
+
 def _best_resource_url(item: dict) -> str | None:
     """Return the URL of the resource with the most pipeline-friendly format.
 
@@ -149,7 +211,7 @@ def _best_resource_url(item: dict) -> str | None:
         return None
 
     best_url: str | None = None
-    best_score = -1
+    best_score = -(10**6)
 
     for r in resources:
         url = r.get("url")
@@ -158,7 +220,7 @@ def _best_resource_url(item: dict) -> str | None:
         fmt = r.get("format") or ""
         from scripts.engine.formats import format_score
 
-        score = format_score(fmt)
+        score = format_score(fmt) * 100 + _url_shape_score(url)
         if score > best_score:
             best_score = score
             best_url = url.strip()
@@ -188,6 +250,24 @@ def _has_datastore_active(item: dict) -> bool:
 
 def _resource_count(item: dict) -> int:
     return len(item.get("resources") or [])
+
+
+def _resources_size_bytes(item: dict) -> int | None:
+    """Somma delle dimensioni dichiarate nei resource (``size`` in byte).
+
+    Molte fonti non popolano ``size``: in quel caso torna ``None`` invece di 0,
+    così il triage distingue "non dichiarato" da "vuoto". Un ``size: 0``
+    esplicito è invece un valore dichiarato e contribuisce come zero.
+    """
+    total = 0
+    found = False
+    for r in item.get("resources") or []:
+        raw = str(r["size"]).strip() if r.get("size") is not None else ""
+        if not raw.isdigit():
+            continue
+        total += int(raw)
+        found = True
+    return total if found else None
 
 
 def extract_ckan_inventory_row(
@@ -224,6 +304,16 @@ def extract_ckan_inventory_row(
         if isinstance(e, dict) and "key" in e and "value" in e:
             extras[e["key"]] = str(e["value"])
 
+    landing_page = _landing_page(item)
+    distribution_url = _distribution_url(item)
+    if inventory_cfg(source_cfg).get("force_https"):
+        # Solo l'host della fonte: un resource esterno in http-only non va toccato.
+        from urllib.parse import urlsplit
+
+        allowed_host = urlsplit(str(source_cfg.get("base_url") or "")).hostname
+        landing_page = force_https(landing_page, allowed_host)
+        distribution_url = force_https(distribution_url, allowed_host)
+
     return {
         "captured_at": captured_at,
         "source_id": source_id,
@@ -242,10 +332,13 @@ def extract_ckan_inventory_row(
         "api_base_url": _ckan_api_base(source_cfg.get("base_url") or endpoint),
         "ordinal": ordinal,
         "format": _resource_format(item),
-        "landing_page": _landing_page(item),
-        "distribution_url": _distribution_url(item),
+        "landing_page": landing_page,
+        "distribution_url": distribution_url,
         "datastore_active": _has_datastore_active(item),
         "resource_count": _resource_count(item),
+        # Somma dei size dichiarati: utile per il triage dei cataloghi enormi.
+        # None = dimensione non dichiarata dalla fonte (non "zero byte").
+        "download_size_bytes": _resources_size_bytes(item),
         # Data di creazione/modifica lato fonte (CKAN metadata_created/modified)
         "issued": item.get("metadata_created") or None,
         "modified": item.get("metadata_modified") or None,
@@ -269,6 +362,73 @@ def _ckan_search_params(
     return params
 
 
+def _is_transient_error(exc: BaseException) -> bool:
+    """True per errori su cui ha senso riprovare (timeout, connessione, 5xx).
+
+    ``HttpClient`` fa già retry sui transitori: qui serve solo per decidere se
+    vale la pena ridurre la pagina. Un 4xx o un JSON invalido non migliorano
+    con una pagina più piccola.
+    """
+    name = type(exc).__name__.lower()
+    if "timeout" in name or "connection" in name:
+        return True
+    try:
+        import requests
+    except ImportError:  # pragma: no cover — requests è dipendenza di lab-connectors
+        return False
+    if isinstance(exc, (requests.exceptions.Timeout, requests.exceptions.ConnectionError)):
+        return True
+    if isinstance(exc, requests.exceptions.HTTPError):
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        return bool(status and status >= 500)
+    return False
+
+
+class _PageSizer:
+    """Adatta il page size di ``package_search`` con un budget di tentativi finito.
+
+    - se ``min_size == ceiling`` (default) non adatta nulla: un tentativo, come
+      prima dell'introduzione dell'adattamento;
+    - su errore transitorio dimezza, fino a ``min_size``;
+    - dopo ``_RECOVER_AFTER_SUCCESSES`` successi consecutivi prova a risalire,
+      senza riprovare una dimensione fallita più di ``_MAX_FAILURES_PER_SIZE``
+      volte.
+
+    Il costo massimo è quindi ``2 * numero_dimezzamenti`` timeout per pagina.
+    """
+
+    def __init__(self, ceiling: int, min_size: int | None) -> None:
+        self.ceiling = max(1, ceiling)
+        self.min_size = max(1, min(min_size or ceiling, ceiling))
+        self.current = self.ceiling
+        self.adaptive = self.min_size < self.ceiling
+        self.failures: dict[int, int] = {}
+        self._successes = 0
+
+    def on_success(self) -> None:
+        self._successes += 1
+        if not self.adaptive or self.current >= self.ceiling:
+            return
+        if self._successes < _RECOVER_AFTER_SUCCESSES:
+            return
+        nxt = min(self.ceiling, self.current * 2)
+        if self.failures.get(nxt, 0) < _MAX_FAILURES_PER_SIZE:
+            self.current = nxt
+            self._successes = 0
+
+    def on_transient_failure(self) -> bool:
+        """True se conviene ritentare (con una pagina più piccola, se possibile)."""
+        if not self.adaptive:
+            return False
+        self._successes = 0
+        self.failures[self.current] = self.failures.get(self.current, 0) + 1
+        nxt = self.current // 2
+        if nxt >= self.min_size and nxt < self.current:
+            self.current = nxt
+            return True
+        return self.failures[self.current] < _MAX_FAILURES_PER_SIZE
+
+
 def collect_ckan_inventory_via_search(
     source_id: str,
     source_cfg: dict[str, Any],
@@ -278,28 +438,72 @@ def collect_ckan_inventory_via_search(
 ) -> list[dict[str, Any]]:
     """Inventory via paginated package_search.
 
+    Configurabile per fonte da ``inventory``:
+
+    - ``package_search_page_size`` (default 1000)
+    - ``package_search_timeout`` (default 60s)
+    - ``package_search_min_page_size`` (default: nessun dimezzamento)
+    - ``fq`` (filtro CKAN opzionale)
+
+    L'adattamento della pagina (dimezzamento + recupero) è **opt-in**: scatta
+    solo se ``package_search_min_page_size`` è minore del page size. I retry
+    sui transitori restano delegati a ``HttpClient``; qui si riduce la pagina
+    solo quando l'errore è transitorio (timeout/connessione/5xx).
+
+    Nota: ``count`` in ``package_search`` non è affidabile su tutti i portali
+    (OpenBDAP restituisce ``rows``). La paginazione termina quando arriva una
+    pagina vuota o più corta del page size effettivo, mai sul ``count``.
+
     Args:
         client: Opzionale, ``HttpClient`` riusabile per connection pooling.
             Se non fornito, ne crea uno nuovo.
     """
     from lab_connectors.http import HttpClient
 
-    if client is None:
-        ua = source_cfg.get("user_agent") or USER_AGENT
-        client = HttpClient(timeout=60, user_agent=ua)
+    inv = inventory_cfg(source_cfg)
+    page_size = int(inv.get("package_search_page_size", DEFAULT_SEARCH_PAGE_SIZE))
+    timeout = int(inv.get("package_search_timeout", DEFAULT_SEARCH_TIMEOUT))
+    min_page_size = inv.get("package_search_min_page_size", DEFAULT_SEARCH_MIN_PAGE_SIZE)
+
+    if client is None or getattr(client, "timeout", timeout) != timeout:
+        # Un client condiviso con timeout diverso verrebbe sostituito a ogni
+        # pagina da ckan_get_json, perdendo il connection pooling: lo si crea
+        # una volta qui con il timeout giusto, riusando lo user_agent del client
+        # se presente.
+        user_agent = (
+            getattr(client, "user_agent", None) or source_cfg.get("user_agent") or USER_AGENT
+        )
+        client = HttpClient(timeout=timeout, user_agent=user_agent)
 
     endpoint = ckan_action_endpoint(source_cfg["base_url"], "package_search")
-    page_size = 1000
+    sizer = _PageSizer(page_size, min_page_size)
     start = 0
     ordinal = 1
     rows: list[dict[str, Any]] = []
 
     while True:
-        payload = ckan_get_json(
-            endpoint,
-            client=client,
-            params=_ckan_search_params(source_cfg, page_size=page_size, start=start),
-        )
+        used = sizer.current
+        try:
+            payload = ckan_get_json(
+                endpoint,
+                client=client,
+                params=_ckan_search_params(source_cfg, page_size=used, start=start),
+                timeout=timeout,
+            )
+        except Exception as exc:  # noqa: BLE001 — classificato subito sotto
+            if _is_transient_error(exc) and sizer.on_transient_failure():
+                logger.warning(
+                    "CKAN %s: package_search start=%s rows=%s fallita (%s), riprovo con rows=%s",
+                    source_id,
+                    start,
+                    used,
+                    exc,
+                    sizer.current,
+                )
+                continue
+            raise
+
+        sizer.on_success()
         if not payload.get("success"):
             raise ValueError(f"CKAN package_search failed for {source_id}")
 
@@ -322,9 +526,18 @@ def collect_ckan_inventory_via_search(
             )
             ordinal += 1
 
-        if len(items) < page_size:
+        logger.info(
+            "CKAN %s: start=%s rows=%s -> %s item (totale %s)",
+            source_id,
+            start,
+            used,
+            len(items),
+            len(rows),
+        )
+
+        if len(items) < used:
             break
-        start += page_size
+        start += used
 
     if not rows:
         raise ValueError(f"CKAN package_search returned no rows for {source_id}")
