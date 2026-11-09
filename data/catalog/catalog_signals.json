@@ -1,5 +1,5 @@
 {
-  "captured_at": "2026-11-08T12:27:39+00:00",
+  "captured_at": "2026-11-09T12:17:49+00:00",
   "sources_checked": 35,
   "signals": [
     {
@@ -42,8 +42,8 @@
       "source": "aifa",
       "protocol": "html",
       "signal_type": "validated_metrics",
-      "result": "down",
-      "detail": "reachable=3.3%; readiness=1.2",
+      "result": "stable",
+      "detail": "reachable=93.3%; readiness=9.1",
       "metric_value": 30,
       "suggested_action": "nessuna"
     },
@@ -161,7 +161,7 @@
       "signal_type": "validated_metrics",
       "result": "changed",
       "detail": "reachable=0.0%",
-      "metric_value": 3597,
+      "metric_value": 3599,
       "suggested_action": "nessuna"
     },
     {
@@ -285,8 +285,8 @@
       "source": "openga",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=9.1",
+      "result": "unreachable",
+      "detail": "reachable=27.4%; readiness=3.2",
       "metric_value": 405,
       "suggested_action": "nessuna"
     },
