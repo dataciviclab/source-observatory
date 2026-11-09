@@ -220,6 +220,7 @@ def _probe_one(
     portal: str,
     base_url: str | None,
     user_agent: str | None = None,
+    probe_timeout: int | None = None,
 ) -> tuple[str, ProbeResult]:
     """Worker for ThreadPoolExecutor — probes a single portal."""
     if not base_url:
@@ -228,8 +229,11 @@ def _probe_one(
             http_code="-",
             note="Missing base_url in registry entry",
         )
+    kwargs: dict[str, Any] = {"user_agent": user_agent}
+    if probe_timeout:
+        kwargs["timeout"] = probe_timeout
     try:
-        result = probe_url(base_url, user_agent=user_agent)
+        result = probe_url(base_url, **kwargs)
     except Exception as exc:
         result = ProbeResult(
             status="RED",
@@ -253,6 +257,7 @@ def main() -> int:
                 portal,
                 meta.get("base_url"),
                 meta.get("user_agent"),
+                meta.get("probe_timeout"),
             ): portal
             for portal, meta in registry.items()
         }

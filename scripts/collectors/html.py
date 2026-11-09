@@ -228,6 +228,7 @@ def _scan_sitemap_pages(
     *,
     sample_pages: int = 30,
     page_delay: float = 0.2,
+    user_agent: str | None = None,
     robots: RobotsGuard | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Scan un portale HTML via lista di URL pagine (es. da sitemap).
@@ -274,7 +275,7 @@ def _scan_sitemap_pages(
             continue
         time.sleep(page_delay)
         # Fetch page directly — no separate HEAD probe (saves one round-trip)
-        client = HttpClient(timeout=10)
+        client = HttpClient(timeout=10, user_agent=user_agent)
         result = client.get(page_url)
         if not result.is_ok or result.response is None:
             continue
@@ -325,6 +326,7 @@ def _scan_liferay_catalog(
     page_max: int = 50,
     timeout_seconds: int = 10,
     max_retries: int = 1,
+    user_agent: str | None = None,
     robots: RobotsGuard | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Scan portale Liferay con tabella catalogo strutturata.
@@ -432,7 +434,7 @@ def _scan_liferay_catalog(
             robots_skipped = 1
             break
         time.sleep(page_delay)
-        client = HttpClient(timeout=timeout_seconds)
+        client = HttpClient(timeout=timeout_seconds, user_agent=user_agent)
         result = None
         for attempt in range(1 + max_retries):
             if _ssl_bypass:
@@ -562,6 +564,7 @@ def _scan_area_pages(
     page_start: int = 0,
     page_max: int = 200,
     page_stop_on_empty: bool = True,
+    user_agent: str | None = None,
     robots: RobotsGuard | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Scan portale HTML via area_pages (nessun second-level crawl).
@@ -599,7 +602,7 @@ def _scan_area_pages(
                 robots_skipped = 1
                 break
             time.sleep(page_delay)
-            client = HttpClient(timeout=5)
+            client = HttpClient(timeout=5, user_agent=user_agent)
             if _ssl_bypass:
                 result = client.get(area_url, verify=False)
             else:
@@ -629,7 +632,7 @@ def _scan_area_pages(
                 robots_skipped += 1
                 continue
             time.sleep(page_delay)
-            client = HttpClient(timeout=15)
+            client = HttpClient(timeout=15, user_agent=user_agent)
             result = client.get(area_url)
             if not result.is_ok or result.response is None:
                 continue
@@ -707,6 +710,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
     probe_ct = html_portal_cfg.get("probe_content_type", False)
     sample = html_portal_cfg.get("sample_pages", 30)
     extraction_mode = html_portal_cfg.get("extraction")  # None | "liferay_catalog"
+    user_agent = source_cfg.get("user_agent")
 
     rows: list[dict[str, Any]] = []
     scan_params: dict[str, Any] = {}
@@ -726,6 +730,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             page_max=page_max,
             timeout_seconds=timeout_cfg,
             max_retries=max_retries,
+            user_agent=user_agent,
             robots=robots,
         )
 
@@ -740,6 +745,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 base_url,
                 sample_pages=sample,
                 page_delay=delay,
+                user_agent=user_agent,
                 robots=robots,
             )
         else:
@@ -756,6 +762,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                 base_url,
                 sample_pages=sample,
                 page_delay=delay,
+                user_agent=user_agent,
                 robots=robots,
             )
         else:
@@ -773,6 +780,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
             page_start=page_start,
             page_max=page_max,
             page_stop_on_empty=page_stop_on_empty,
+            user_agent=user_agent,
             robots=robots,
         )
     else:
@@ -786,7 +794,7 @@ def collect(source_id: str, source_cfg: dict[str, Any], captured_at: str) -> Col
                     "source_id": source_id,
                 },
             )
-        client = HttpClient(timeout=5)
+        client = HttpClient(timeout=5, user_agent=user_agent)
         result = client.get(base_url)
         if not result.is_ok or result.response is None:
             err_msg = str(result.err) if result.err else "unknown"

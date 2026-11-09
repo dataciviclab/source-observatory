@@ -362,3 +362,43 @@ class TestLiferayCatalogParser:
         assert extless[0]["format"] == "CSV"
         assert params["method"] == "liferay_catalog_table"
         assert "resolved_unknown=1/1" in params.get("format_resolution", "")
+
+
+@pytest.mark.pure_unit
+def test_scan_area_pages_passes_user_agent(monkeypatch):
+    """Lo user_agent della fonte deve arrivare a ogni HttpClient (WAF)."""
+    from scripts.collectors.html import _scan_area_pages
+
+    seen_uas: list[str | None] = []
+
+    class FakeResp:
+        status_code = 200
+        text = '<html><body><a href="https://ex.it/open-data/a.csv">a.csv</a></body></html>'
+        headers: dict = {}
+
+    class FakeResult:
+        is_ok = True
+        response = FakeResp()
+        err = None
+        ssl_fallback_used = False
+
+    class FakeClient:
+        def __init__(self, **kw):
+            seen_uas.append(kw.get("user_agent"))
+
+        def get(self, url, **kw):
+            return FakeResult()
+
+    monkeypatch.setattr("scripts.collectors.html.HttpClient", FakeClient)
+    monkeypatch.setattr("scripts.collectors.html.time.sleep", lambda s: None)
+
+    rows, _ = _scan_area_pages(
+        ["https://ex.it/open-data"],
+        "pensioni",
+        "covip",
+        "https://ex.it/open-data",
+        user_agent="Browser/1.0",
+    )
+
+    assert seen_uas == ["Browser/1.0"]
+    assert len(rows) == 1
