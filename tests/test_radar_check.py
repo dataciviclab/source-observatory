@@ -46,6 +46,33 @@ class TestProbeOne:
             )
         ]
 
+    def test_uses_registry_probe_timeout(self, monkeypatch) -> None:
+        """Il probe daily deve onorare il probe_timeout della fonte lenta."""
+        calls: list[tuple[str, str | None, int | None]] = []
+
+        def fake_probe(url: str, user_agent: str | None = None, timeout: int | None = None):
+            calls.append((url, user_agent, timeout))
+            return radar_check.ProbeResult(status="GREEN", http_code="200")
+
+        monkeypatch.setattr(radar_check, "probe_url", fake_probe)
+
+        portal, result = radar_check._probe_one(
+            "agcm",
+            "https://dati.agcm.it/api/3/action/package_list?limit=1",
+            "Browser/1.0",
+            45,
+        )
+
+        assert portal == "agcm"
+        assert result.status == "GREEN"
+        assert calls == [
+            (
+                "https://dati.agcm.it/api/3/action/package_list?limit=1",
+                "Browser/1.0",
+                45,
+            )
+        ]
+
     def test_main_passes_registry_user_agent(self, monkeypatch, capsys) -> None:
         """Il main legge l'UA dal registry e lo passa al probe."""
         registry = {

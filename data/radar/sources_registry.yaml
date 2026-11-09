@@ -456,28 +456,32 @@ mur_ustat:
     - mur_tasso_abbandono
 opencoesione:
   source_kind: catalog
-  protocol: ckan
+  protocol: html
   observation_mode: catalog-watch
-  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
-  inventory:
-    fq: organization:pcm-opencoesione
-    timeout: 180
+  base_url: https://opencoesione.gov.it/it/opendata/
+  user_agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)
+    Chrome/120.0.0.0 Safari/537.36
   last_probed: '2026-11-09'
   verdict: go
-  note: 'Fonte via dati.gov.it (harvesting PCM-OpenCoesione). Sostituisce accesso
-    diretto a opencoesione.gov.it (API REST instabile: 403/timeout). 561 dataset totali
-    su dati.gov.it; i 3 core sono progetti, soggetti, pagamenti (CSV + Parquet). Licenza
-    CC BY 4.0. File raw su opencoesione.gov.it. Ultimo aggiornamento contenuti: 2026-02-28.
-
-    '
   catalog_baseline:
-    captured_at: '2026-06-03'
-    metric: package_count
-    value: 561
-    method: package_search
+    captured_at: '2026-11-09'
+    metric: data_file_links
+    value: 427
+    method: csv_magnet_area_pages
     reliability: high
-    note: Conteggio via package_search con fq=organization:pcm-opencoesione su dati.gov.it.
-      561 dataset harvestati da OpenCoesione (3 core + 558 granulari per tema/ciclo/ambito).
+    note: 'Pagina /it/opendata/ all''origine: 427 link (348 ZIP, 27 XLSX, 25 PARQUET,
+      22 XLS, 5 CSV). Include progetti_esteso in ZIP e Parquet per ciclo 2007-2013,
+      2014-2020 e corrente.'
+  note: 'OpenCoesione — portale diretto, pagina /it/opendata/. Migrata dal mirror
+    dati.gov.it il 2026-11-09. Il mirror (561 package) resta un fallback: la nota
+    precedente segnalava l''API REST instabile (403/timeout), non la pagina di download,
+    che è stabile e enumerabile. I file core (progetti, soggetti, pagamenti) sono
+    qui in CSV/Parquet. Licenza CC BY 4.0.'
+  html_portal:
+    topic_hint: coesione
+    area_pages:
+      - https://opencoesione.gov.it/it/opendata/
+    delay_seconds: 0.3
   datasets_in_use:
     - opencoesione_fasi
     - opencoesione_impegni
@@ -984,37 +988,47 @@ ministero_salute:
 agcm:
   source_kind: catalog
   protocol: ckan
-  observation_mode: radar-only
-  base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  observation_mode: catalog-watch
+  base_url: https://dati.agcm.it/api/3/action/package_list?limit=1
+  user_agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)
+    Chrome/120.0.0.0 Safari/537.36
+  probe_timeout: 45
   inventory:
     fq: organization:agcm
     timeout: 180
+    package_search_page_size: 100
+    package_search_min_page_size: 50
   last_probed: '2026-11-09'
   catalog_baseline:
-    captured_at: '2026-06-04'
+    captured_at: '2026-11-09'
     metric: package_count
-    value: 53
+    value: 756
     method: package_search
     reliability: high
-    note: Conteggio via package_search con fq=organization:agcm su dati.gov.it. 53
-      dataset (rating di legalità, operazioni di concentrazione).
+    note: Conteggio al 2026-11-09 sul portale diretto dati.agcm.it (CKAN, org unica
+      agcm). 756 package contro 683 harvestati su dati.gov.it, con 73 dataset visibili
+      solo all'origine. Il baseline precedente (53, 2026-06-04) era fermo prima del
+      grande harvest.
   verdict: watchlist
-  note: 'Fonte via dati.gov.it (AGCM). 53 dataset su concorrenza e mercato: rating
-    di legalita'' (elenchi settimanali imprese con rating), operazioni di concentrazione
-    2021-2025.
-
-    '
+  note: 'Fonte diretta AGCM (dati.agcm.it, CKAN). Concorrenza e mercato: rating di
+    legalità, operazioni di concentrazione, delibere. WAF: richiede User-Agent browser.
+    Migrata dal mirror dati.gov.it il 2026-11-09 perché l''origine espone 73 package
+    in più.'
   datasets_in_use: []
 unioncamere:
   source_kind: catalog
   protocol: ckan
   observation_mode: radar-only
   base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
+  inventory:
+    fq: organization:unione-italiana-delle-camere-di-commercio-industria-artigianato-e-agricoltura
+    timeout: 180
   last_probed: '2026-11-09'
   verdict: watchlist
-  note: 'Fonte via dati.gov.it (Unioncamere). 352 dataset su demografia d''impresa
-    provincia-specifici, costo unione alto. Passato a radar-only: se il catalogo publlica
-    dati aggregati nazionali, si rivaluta.'
+  note: 'Canary di dati.gov.it, NON dell''ente: Unioncamere non ha un catalogo open
+    data proprio (verificato 2026-11-09 su unioncamere.gov.it e opengovernment.unioncamere.gov.it).
+    485 dataset sul mirror, in prevalenza demografia d''impresa provincia-specifica.
+    Se non emerge un catalogo proprio, valutare la rimozione dalla registry.'
   datasets_in_use: []
 pagopa:
   source_kind: catalog
@@ -1122,3 +1136,68 @@ adm_opendata:
     granularità regionale. CSV su dati.gov.it. FOIA #16 aperta per catalogo completo.'
   datasets_in_use:
     - adm_accertato_accise
+arera:
+  source_kind: catalog
+  protocol: html
+  observation_mode: radar-only
+  base_url: https://www.arera.it/dati-e-statistiche
+  last_probed: '2026-11-09'
+  verdict: watchlist
+  note: 'ARERA — Autorità di Regolazione per Energia Reti e Ambiente. Dati e statistiche
+    su elettricità, gas, acqua, rifiuti e teleriscaldamento: prezzi retail, switching,
+    qualità del servizio, tariffe, bonus sociali. Circa 200 tabelle in xlsx/zip su
+    pagine Drupal paginate (?pagina=N&settore=S), nessun catalogo né API. Assente
+    da dati.gov.it. Collector paginato da costruire: per ora radar-only.'
+covip:
+  source_kind: catalog
+  protocol: html
+  observation_mode: catalog-watch
+  base_url: https://www.covip.it/open-data
+  user_agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko)
+    Chrome/120.0.0.0 Safari/537.36
+  last_probed: '2026-11-09'
+  catalog_baseline:
+    captured_at: '2026-11-09'
+    metric: data_file_links
+    value: 39
+    method: csv_magnet_area_pages
+    reliability: high
+    note: 18 dataset COVIP, 39 file (11 JSON, 10 CSV, 18 XLSX) su path stabili /sites/default/files/open-data/.
+      Harvested anche su dati.gov.it (org commissione-di-vigilanza-sui-fondi-pensione,
+      18 package).
+  verdict: go
+  note: 'COVIP — Commissione di vigilanza sui fondi pensione. Albi fondi aperti e
+    negoziali, PIP, rendimenti, schede costi, tavole della relazione annuale. Formato
+    macchina pulito (CSV+JSON+XLSX). Fonte primaria per la previdenza complementare;
+    il WAF richiede User-Agent browser. Source-check 2026-11-09: 18 dataset tutti
+    raggiungibili (~1 MB), CSV e JSON con lo stesso numero di righe; gli albi sono
+    anagrafiche, gli ISC 2/5/10/35 anni stanno in indicatori-sintetici-costi (XLSX,
+    111 righe, header pulito); le schede-costi CSV linkano PDF sui siti dei singoli
+    fondi.'
+  html_portal:
+    topic_hint: pensioni
+    area_pages:
+      - https://www.covip.it/open-data
+    delay_seconds: 0.3
+agenas:
+  source_kind: catalog
+  protocol: html
+  observation_mode: radar-only
+  base_url: https://stat.agenas.it/
+  last_probed: '2026-11-09'
+  verdict: watchlist
+  note: 'AGENAS — Agenzia Nazionale per i Servizi Sanitari Regionali. Portale statistico
+    (stat.agenas.it): LEA, mobilità sanitaria interregionale, tempi di attesa, grandi
+    apparecchiature, performance delle aziende SSN. Report e dashboard, niente bulk
+    né API; data.agenas.it è raccolta dati autenticata. Assente da dati.gov.it.'
+gse:
+  source_kind: catalog
+  protocol: html
+  observation_mode: radar-only
+  base_url: https://opendata.gse.it/
+  last_probed: '2026-11-09'
+  verdict: watchlist
+  note: 'GSE — Gestore dei Servizi Energetici. Open data su incentivi FER, Conto Energia,
+    certificati verdi/bianchi, GRIN. Portale SharePoint (opendata.gse.it) con catena
+    TLS non valida e redirect a http: il probe usa fallback SSL. Nessuna API/bulk
+    stabile; assente da dati.gov.it.'
