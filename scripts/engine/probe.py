@@ -194,7 +194,11 @@ def _probe_once(
 def probe_url(
     base_url: str, user_agent: str | None = None, timeout: int | None = None
 ) -> ProbeResult:
-    """Probe URL with retry/backoff for SDMX endpoints known to be intermittent."""
+    """Probe URL with retry/backoff for SDMX endpoints known to be intermittent.
+
+    ``timeout`` vale per gli endpoint non-SDMX; il ramo SDMX usa il timeout dedicato
+    ``SDMX_TIMEOUT_SECONDS`` e ignora il parametro.
+    """
     effective_timeout = timeout or TIMEOUT_SECONDS
     if not is_sdmx_url(base_url):
         result = _probe_once(base_url, timeout=effective_timeout, user_agent=user_agent)

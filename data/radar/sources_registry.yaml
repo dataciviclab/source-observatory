@@ -473,10 +473,11 @@ opencoesione:
       22 XLS, 5 CSV). Include progetti_esteso in ZIP e Parquet per ciclo 2007-2013,
       2014-2020 e corrente.'
   note: 'OpenCoesione — portale diretto, pagina /it/opendata/. Migrata dal mirror
-    dati.gov.it il 2026-11-09. Il mirror (561 package) resta un fallback: la nota
-    precedente segnalava l''API REST instabile (403/timeout), non la pagina di download,
-    che è stabile e enumerabile. I file core (progetti, soggetti, pagamenti) sono
-    qui in CSV/Parquet. Licenza CC BY 4.0.'
+    dati.gov.it il 2026-11-09. Il mirror (561 package, org pcm-opencoesione) non è
+    più monitorato e resta solo come riferimento storico: la nota precedente segnalava
+    l''API REST instabile (403/timeout), non la pagina di download, che è stabile e
+    enumerabile. I file core (progetti, soggetti, pagamenti) sono qui in CSV/Parquet.
+    Licenza CC BY 4.0.'
   html_portal:
     topic_hint: coesione
     area_pages:
@@ -1013,16 +1014,14 @@ agcm:
   note: 'Fonte diretta AGCM (dati.agcm.it, CKAN). Concorrenza e mercato: rating di
     legalità, operazioni di concentrazione, delibere. WAF: richiede User-Agent browser.
     Migrata dal mirror dati.gov.it il 2026-11-09 perché l''origine espone 73 package
-    in più.'
+    in più. verdict watchlist: inventario attivo (catalog-watch) ma nessun dataset
+    ancora in uso.'
   datasets_in_use: []
 unioncamere:
   source_kind: catalog
   protocol: ckan
   observation_mode: radar-only
   base_url: https://dati.gov.it/opendata/api/3/action/package_list?limit=1
-  inventory:
-    fq: organization:unione-italiana-delle-camere-di-commercio-industria-artigianato-e-agricoltura
-    timeout: 180
   last_probed: '2026-11-09'
   verdict: watchlist
   note: 'Canary di dati.gov.it, NON dell''ente: Unioncamere non ha un catalogo open
@@ -1171,9 +1170,9 @@ covip:
     macchina pulito (CSV+JSON+XLSX). Fonte primaria per la previdenza complementare;
     il WAF richiede User-Agent browser. Source-check 2026-11-09: 18 dataset tutti
     raggiungibili (~1 MB), CSV e JSON con lo stesso numero di righe; gli albi sono
-    anagrafiche, gli ISC 2/5/10/35 anni stanno in indicatori-sintetici-costi (XLSX,
-    111 righe, header pulito); le schede-costi CSV linkano PDF sui siti dei singoli
-    fondi.'
+    anagrafiche, gli ISC 2/5/10/35 anni stanno nei tre indicatori-sintetici-costi
+    (XLSX, header pulito): fondi aperti 169 righe, negoziali 111, PIP 207; le
+    schede-costi CSV linkano PDF sui siti dei singoli fondi.'
   html_portal:
     topic_hint: pensioni
     area_pages:
