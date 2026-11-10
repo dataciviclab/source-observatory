@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-11-09T11:24:07.319985+00:00",
-  "probe_date": "2026-11-09",
-  "sources_total": 35,
+  "generated_at": "2026-11-10T11:04:57.765610+00:00",
+  "probe_date": "2026-11-10",
+  "sources_total": 39,
   "status_counts": {
-    "GREEN": 33,
-    "YELLOW": 2,
+    "GREEN": 34,
+    "YELLOW": 5,
     "RED": 0
   },
   "persistent_red": 0,
@@ -107,9 +107,9 @@
     },
     {
       "id": "opencoesione",
-      "status": "GREEN",
-      "protocol": "ckan",
-      "http_code": "200",
+      "status": "YELLOW",
+      "protocol": "html",
+      "http_code": "403",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -131,10 +131,10 @@
     },
     {
       "id": "aifa",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "html",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -287,6 +287,38 @@
       "protocol": "ckan",
       "http_code": "200",
       "note": null,
+      "ssl_fallback_used": false
+    },
+    {
+      "id": "arera",
+      "status": "GREEN",
+      "protocol": "html",
+      "http_code": "200",
+      "note": null,
+      "ssl_fallback_used": false
+    },
+    {
+      "id": "covip",
+      "status": "GREEN",
+      "protocol": "html",
+      "http_code": "200",
+      "note": null,
+      "ssl_fallback_used": false
+    },
+    {
+      "id": "agenas",
+      "status": "GREEN",
+      "protocol": "html",
+      "http_code": "200",
+      "note": null,
+      "ssl_fallback_used": false
+    },
+    {
+      "id": "gse",
+      "status": "YELLOW",
+      "protocol": "html",
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ConnectTimeout)",
       "ssl_fallback_used": false
     }
   ]
