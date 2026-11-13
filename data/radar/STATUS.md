@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-11-12
+Ultimo run: 2026-11-13
 
 ## Sommario
 
 - Fonti controllate: 39
-- GREEN: 35
+- GREEN: 34
 - YELLOW: 4
-- RED: 0
+- RED: 1
 
 ## Tipi sorgente
 
@@ -31,7 +31,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, istat_prezzi_agricoli, popolazione_istat_comunale_2019_2025 |
+| istat_sdmx | catalog | sdmx | catalog-watch | RED | 500 | istat_asia_ul, istat_cittadinanze, istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, istat_prezzi_agricoli, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | catalog-watch | YELLOW | 403 | anac_aggiudicatari, anac_aggiudicazioni, anac_avvio_contratto, anac_bandi_gara, anac_collaudo, anac_cup, anac_fine_contratto, anac_partecipanti, anac_sospensioni, anac_stati_avanzamento, anac_subappalti, anac_varianti |
 | inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_assegno_unico, inps_bilancio_ce, inps_bilancio_gestionale, inps_bilancio_missioni, inps_cig, inps_dipendenti_pubblici, inps_dis_coll, inps_flussi_settore, inps_invalidi_civili, inps_lavoratori_pubblici, inps_lavoratori_redditi, inps_naspi, inps_pensionamento_flussi, inps_pensioni_liquidate, inps_pensioni_serie, inps_pensioni_trimestrale, inps_pensioni_vigenti, inps_rapporti_cessazioni, inps_rapporti_lavoro, inps_rdc_pdc, inps_retribuzioni, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_dlb_entrate_articolo, bdap_dlb_spese_capitolo, bdap_dlb_spese_serie, bdap_entrate_stato, bdap_lb_spese_missione, bdap_lb_spese_serie, bdap_lea, bdap_ni_amministrazioni, bdap_ni_azioni, bdap_ni_indicatori, bdap_ni_obiettivi, bdap_ni_priorita, bdap_pagamenti_stato, bdap_rnd_entrate_articolo, bdap_rnd_spese_capitolo, bdap_rnd_spese_serie, bdap_saldi_stato, bdap_spesa_statale_regionalizzata, bdap_spese_stato, bdap_ssn_ce_per_ente, bdap_ssn_conto_economico, bdap_ssn_sp_per_ente, bdap_ssn_stato_patrimoniale, dipendenti_pubblici |
@@ -73,6 +73,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
+- `istat_sdmx`: HTTP 500 | content-type: text/plain | url finale: https://esploradati.istat.it/SDMXWS/rest/dataflow/IT1?detail=allstubs | Endpoint SDMX ricco e ad alto valore per scouting e source-check.
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | Portale CKAN diretto ANAC (dati.anticorruzione.it). WAF: richiede User-Agent browser. 70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari, subappalti, varianti, PNRR indicatori, SOA. CC-BY-SA 4.0.
 - `mur_ustat`: Retry timeout/connection: Timeout (ConnectTimeout)
 - `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/opendata/ | OpenCoesione — portale diretto, pagina /it/opendata/. Migrata dal mirror dati.gov.it il 2026-11-09. Il mirror (561 package, org pcm-opencoesione) non è più monitorato e resta solo come riferimento storico: la nota precedente segnalava l'API REST instabile (403/timeout), non la pagina di download, che è stabile e enumerabile. I file core (progetti, soggetti, pagamenti) sono qui in CSV/Parquet. Licenza CC BY 4.0.
