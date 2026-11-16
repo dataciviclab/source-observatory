@@ -1,6 +1,6 @@
 {
-  "captured_at": "2026-11-09T12:17:49+00:00",
-  "sources_checked": 35,
+  "captured_at": "2026-11-16T12:13:54+00:00",
+  "sources_checked": 39,
   "signals": [
     {
       "source": "aci",
@@ -23,6 +23,15 @@
     {
       "source": "agcm",
       "protocol": "ckan",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=0.5%; readiness=1.0",
+      "metric_value": 992,
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "agenas",
+      "protocol": "html",
       "signal_type": "validated_metrics",
       "result": "health_only",
       "detail": "no data",
@@ -51,9 +60,18 @@
       "source": "anac",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "stale",
-      "detail": "reachable=0.0%; readiness=1.0",
+      "result": "stable",
+      "detail": "reachable=97.9%; readiness=8.3",
       "metric_value": 48,
+      "suggested_action": "nessuna"
+    },
+    {
+      "source": "arera",
+      "protocol": "html",
+      "signal_type": "validated_metrics",
+      "result": "health_only",
+      "detail": "no data",
+      "metric_value": 0,
       "suggested_action": "nessuna"
     },
     {
@@ -84,6 +102,15 @@
       "suggested_action": "nessuna"
     },
     {
+      "source": "covip",
+      "protocol": "html",
+      "signal_type": "validated_metrics",
+      "result": "changed",
+      "detail": "reachable=0.0%; readiness=1.0",
+      "metric_value": 1,
+      "suggested_action": "nessuna"
+    },
+    {
       "source": "dait",
       "protocol": "html",
       "signal_type": "validated_metrics",
@@ -96,8 +123,8 @@
       "source": "dati_camera",
       "protocol": "sparql",
       "signal_type": "validated_metrics",
-      "result": "stable",
-      "detail": "reachable=100.0%; readiness=3.0",
+      "result": "unreachable",
+      "detail": "reachable=0.0%",
       "metric_value": 99,
       "suggested_action": "nessuna"
     },
@@ -129,6 +156,15 @@
       "suggested_action": "nessuna"
     },
     {
+      "source": "gse",
+      "protocol": "html",
+      "signal_type": "validated_metrics",
+      "result": "health_only",
+      "detail": "no data",
+      "metric_value": 0,
+      "suggested_action": "nessuna"
+    },
+    {
       "source": "inail_opendata",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
@@ -142,7 +178,7 @@
       "protocol": "ckan",
       "signal_type": "validated_metrics",
       "result": "changed",
-      "detail": "reachable=99.9%; readiness=10.0",
+      "detail": "reachable=99.4%; readiness=9.9",
       "metric_value": 1814,
       "suggested_action": "nessuna"
     },
@@ -161,7 +197,7 @@
       "signal_type": "validated_metrics",
       "result": "changed",
       "detail": "reachable=0.0%",
-      "metric_value": 3599,
+      "metric_value": 3604,
       "suggested_action": "nessuna"
     },
     {
@@ -258,7 +294,7 @@
       "source": "openbdap",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "catalog_only",
+      "result": "changed",
       "detail": "reachable=0.0%",
       "metric_value": 240,
       "suggested_action": "nessuna"
@@ -274,7 +310,7 @@
     },
     {
       "source": "opencoesione",
-      "protocol": "ckan",
+      "protocol": "html",
       "signal_type": "validated_metrics",
       "result": "unreachable",
       "detail": "reachable=12.1%; readiness=1.0",
@@ -285,8 +321,8 @@
       "source": "openga",
       "protocol": "ckan",
       "signal_type": "validated_metrics",
-      "result": "unreachable",
-      "detail": "reachable=27.4%; readiness=3.2",
+      "result": "stable",
+      "detail": "reachable=100.0%; readiness=9.1",
       "metric_value": 405,
       "suggested_action": "nessuna"
     },

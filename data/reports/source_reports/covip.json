@@ -1,0 +1,86 @@
+{
+  "source_id": "covip",
+  "generated_at": "2026-11-16T12:13:54+00:00",
+  "report_version": 1,
+  "timing": {},
+  "identity": {
+    "source_id": "covip",
+    "protocol": "html",
+    "base_url": "https://www.covip.it/open-data",
+    "source_kind": "catalog",
+    "observation_mode": "catalog-watch",
+    "verdict": "go",
+    "note": "COVIP — Commissione di vigilanza sui fondi pensione. Albi fondi aperti e negoziali, PIP, rendimenti, schede costi, tavole della relazione annuale. Formato macchina pulito (CSV+JSON+XLSX). Fonte primaria per la previdenza complementare; il WAF richiede User-Agent browser. Source-check 2026-11-09: 18 dataset tutti raggiungibili (~1 MB), CSV e JSON con lo stesso numero di righe; gli albi sono anagrafiche, gli ISC 2/5/10/35 anni stanno nei tre indicatori-sintetici-costi (XLSX, header pulito): fondi aperti 169 righe, negoziali 111, PIP 207; le schede-costi CSV linkano PDF sui siti dei singoli fondi.",
+    "last_probed": "2026-11-16"
+  },
+  "health": {
+    "radar_status": "GREEN",
+    "http_code": "200",
+    "note": null,
+    "ssl_fallback": false
+  },
+  "inventory": {
+    "total_items": 18,
+    "active_items": 18,
+    "stale_items": 0,
+    "method": "csv_magnet_area_pages",
+    "captured_at": "2026-11-16T11:45:40+00:00",
+    "baseline_value": 39,
+    "baseline_date": "2026-11-09",
+    "freshness_hours": 0.5,
+    "delta": -21,
+    "delta_pct": -53.8,
+    "formats": {
+      "JSON": 11,
+      "XLSX": 7
+    }
+  },
+  "source_check": {
+    "last_run": "2026-11-16T12:13:54Z",
+    "total_scored": 1,
+    "reachable": 0,
+    "csv_count": 0,
+    "with_csv_schema": 0,
+    "avg_readiness": 1.0,
+    "top_items": [
+      {
+        "name": "covip/open-data-covip",
+        "score": 1.0,
+        "year_range": null,
+        "format": "JSON",
+        "reachable": false
+      }
+    ],
+    "not_checked_non_csv": 1,
+    "blocked_items": 0,
+    "validation_skipped": 0,
+    "catalog_only": false,
+    "probeable_items": 0,
+    "reachability_pct": null,
+    "coverage_pct": 100.0,
+    "formato_aperto": {
+      "score": 10.0,
+      "perc_aperto": 100.0,
+      "perc_reachable": 0.0,
+      "total": 1,
+      "fonte": "source_check"
+    }
+  },
+  "datasets_in_use": [],
+  "signals": [
+    {
+      "type": "validated_metrics",
+      "result": "stabile",
+      "detail": "Metriche da validated.parquet."
+    }
+  ],
+  "operational_verdict": {
+    "label": "INVENTORY_CHANGED",
+    "score": "changed",
+    "triggers": [
+      "not_probeable",
+      "inventory_changed"
+    ],
+    "next_action": "review inventory changes"
+  }
+}

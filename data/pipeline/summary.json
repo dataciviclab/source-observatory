@@ -1,51 +1,63 @@
 {
   "pipeline_version": 1,
-  "generated_at": "2026-11-09T12:17:48Z",
-  "total_groups": 7317,
-  "groups_total": 7317,
-  "reachable": 2639,
-  "unreachable": 647,
-  "not_checked": 65,
-  "blocked": 47,
-  "skipped": 3919,
-  "csv_with_schema": 2175,
-  "duration_seconds": 4001.8,
+  "generated_at": "2026-11-16T12:13:52Z",
+  "total_groups": 8315,
+  "groups_total": 8315,
+  "reachable": 2877,
+  "unreachable": 461,
+  "not_checked": 1053,
+  "blocked": 0,
+  "skipped": 3924,
+  "csv_with_schema": 2514,
+  "duration_seconds": 5793.3,
   "by_source": {
     "istat_sdmx": {
-      "total": 3599,
+      "total": 3604,
       "reachable": 0,
       "csv": 0,
       "unreachable": 0,
       "not_checked": 0,
       "blocked": 0,
-      "skipped": 3599,
+      "skipped": 3604,
       "duration_seconds": 0.0,
-      "groups_total": 3599,
+      "groups_total": 3604,
       "avg_seconds_per_group": null
     },
     "inps": {
       "total": 1814,
-      "reachable": 1812,
-      "csv": 1807,
-      "unreachable": 0,
+      "reachable": 1803,
+      "csv": 1801,
+      "unreachable": 9,
       "not_checked": 2,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 2155.9,
+      "duration_seconds": 3001.5,
       "groups_total": 1814,
-      "avg_seconds_per_group": 1.188
+      "avg_seconds_per_group": 1.655
+    },
+    "agcm": {
+      "total": 992,
+      "reachable": 5,
+      "csv": 4,
+      "unreachable": 0,
+      "not_checked": 987,
+      "blocked": 0,
+      "skipped": 0,
+      "duration_seconds": 8.0,
+      "groups_total": 992,
+      "avg_seconds_per_group": 0.008
     },
     "openga": {
       "total": 405,
-      "reachable": 111,
-      "csv": 111,
-      "unreachable": 294,
+      "reachable": 405,
+      "csv": 405,
+      "unreachable": 0,
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 523.8,
+      "duration_seconds": 1053.5,
       "groups_total": 405,
-      "avg_seconds_per_group": 1.293
+      "avg_seconds_per_group": 2.601
     },
     "opencoesione": {
       "total": 248,
@@ -55,9 +67,9 @@
       "not_checked": 10,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 122.3,
+      "duration_seconds": 140.0,
       "groups_total": 248,
-      "avg_seconds_per_group": 0.493
+      "avg_seconds_per_group": 0.565
     },
     "openbdap": {
       "total": 240,
@@ -79,9 +91,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 1.2,
+      "duration_seconds": 0.8,
       "groups_total": 133,
-      "avg_seconds_per_group": 0.009
+      "avg_seconds_per_group": 0.006
     },
     "dati_senato": {
       "total": 100,
@@ -91,21 +103,21 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 1.9,
+      "duration_seconds": 3.3,
       "groups_total": 100,
-      "avg_seconds_per_group": 0.019
+      "avg_seconds_per_group": 0.033
     },
     "dati_camera": {
       "total": 99,
-      "reachable": 99,
+      "reachable": 0,
       "csv": 0,
-      "unreachable": 0,
+      "unreachable": 99,
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 0.9,
+      "duration_seconds": 5.8,
       "groups_total": 99,
-      "avg_seconds_per_group": 0.009
+      "avg_seconds_per_group": 0.059
     },
     "noipa_sparql": {
       "total": 99,
@@ -115,9 +127,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 6.4,
+      "duration_seconds": 4.5,
       "groups_total": 99,
-      "avg_seconds_per_group": 0.065
+      "avg_seconds_per_group": 0.045
     },
     "opencivitas": {
       "total": 85,
@@ -127,9 +139,9 @@
       "not_checked": 25,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 472.0,
+      "duration_seconds": 646.8,
       "groups_total": 85,
-      "avg_seconds_per_group": 5.553
+      "avg_seconds_per_group": 7.609
     },
     "lavoro_opendata": {
       "total": 83,
@@ -139,9 +151,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 21.2,
+      "duration_seconds": 24.0,
       "groups_total": 83,
-      "avg_seconds_per_group": 0.255
+      "avg_seconds_per_group": 0.289
     },
     "mit_opendata": {
       "total": 56,
@@ -151,21 +163,21 @@
       "not_checked": 10,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 31.1,
+      "duration_seconds": 22.9,
       "groups_total": 56,
-      "avg_seconds_per_group": 0.555
+      "avg_seconds_per_group": 0.409
     },
     "anac": {
       "total": 48,
-      "reachable": 0,
-      "csv": 0,
+      "reachable": 47,
+      "csv": 47,
       "unreachable": 0,
       "not_checked": 1,
-      "blocked": 47,
+      "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 8.1,
+      "duration_seconds": 58.5,
       "groups_total": 48,
-      "avg_seconds_per_group": 0.169
+      "avg_seconds_per_group": 1.219
     },
     "mimit_rna": {
       "total": 45,
@@ -187,9 +199,9 @@
       "not_checked": 4,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 262.8,
+      "duration_seconds": 355.0,
       "groups_total": 44,
-      "avg_seconds_per_group": 5.973
+      "avg_seconds_per_group": 8.068
     },
     "adm_opendata": {
       "total": 33,
@@ -199,9 +211,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 35.8,
+      "duration_seconds": 43.4,
       "groups_total": 33,
-      "avg_seconds_per_group": 1.085
+      "avg_seconds_per_group": 1.315
     },
     "art_opendata": {
       "total": 32,
@@ -211,9 +223,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 15.3,
+      "duration_seconds": 17.6,
       "groups_total": 32,
-      "avg_seconds_per_group": 0.478
+      "avg_seconds_per_group": 0.55
     },
     "aifa": {
       "total": 30,
@@ -223,9 +235,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 37.3,
+      "duration_seconds": 49.7,
       "groups_total": 30,
-      "avg_seconds_per_group": 1.243
+      "avg_seconds_per_group": 1.657
     },
     "mim_opendata": {
       "total": 28,
@@ -235,9 +247,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 172.0,
+      "duration_seconds": 226.9,
       "groups_total": 28,
-      "avg_seconds_per_group": 6.143
+      "avg_seconds_per_group": 8.104
     },
     "agid": {
       "total": 27,
@@ -259,9 +271,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 68.0,
+      "duration_seconds": 55.6,
       "groups_total": 17,
-      "avg_seconds_per_group": 4.0
+      "avg_seconds_per_group": 3.271
     },
     "consip_open_data": {
       "total": 16,
@@ -271,9 +283,9 @@
       "not_checked": 0,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 21.6,
+      "duration_seconds": 25.4,
       "groups_total": 16,
-      "avg_seconds_per_group": 1.35
+      "avg_seconds_per_group": 1.587
     },
     "mef_finanze": {
       "total": 11,
@@ -283,9 +295,9 @@
       "not_checked": 2,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 13.7,
+      "duration_seconds": 15.3,
       "groups_total": 11,
-      "avg_seconds_per_group": 1.245
+      "avg_seconds_per_group": 1.391
     },
     "giustizia_statistiche": {
       "total": 8,
@@ -307,9 +319,9 @@
       "not_checked": 3,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 28.4,
+      "duration_seconds": 32.6,
       "groups_total": 7,
-      "avg_seconds_per_group": 4.057
+      "avg_seconds_per_group": 4.657
     },
     "aci": {
       "total": 5,
@@ -319,9 +331,9 @@
       "not_checked": 3,
       "blocked": 0,
       "skipped": 0,
-      "duration_seconds": 2.1,
+      "duration_seconds": 2.2,
       "groups_total": 5,
-      "avg_seconds_per_group": 0.42
+      "avg_seconds_per_group": 0.44
     },
     "corte_costituzionale": {
       "total": 5,
@@ -333,6 +345,18 @@
       "skipped": 0,
       "duration_seconds": 0.0,
       "groups_total": 5,
+      "avg_seconds_per_group": 0.0
+    },
+    "covip": {
+      "total": 1,
+      "reachable": 0,
+      "csv": 0,
+      "unreachable": 0,
+      "not_checked": 1,
+      "blocked": 0,
+      "skipped": 0,
+      "duration_seconds": 0.0,
+      "groups_total": 1,
       "avg_seconds_per_group": 0.0
     }
   }

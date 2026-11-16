@@ -1,35 +1,35 @@
 {
   "source_id": "opencoesione",
-  "generated_at": "2026-11-09T12:17:49+00:00",
+  "generated_at": "2026-11-16T12:13:54+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
     "source_id": "opencoesione",
-    "protocol": "ckan",
-    "base_url": "https://dati.gov.it/opendata/api/3/action/package_list?limit=1",
+    "protocol": "html",
+    "base_url": "https://opencoesione.gov.it/it/opendata/",
     "source_kind": "catalog",
     "observation_mode": "catalog-watch",
     "verdict": "go",
-    "note": "Fonte via dati.gov.it (harvesting PCM-OpenCoesione). Sostituisce accesso diretto a opencoesione.gov.it (API REST instabile: 403/timeout). 561 dataset totali su dati.gov.it; i 3 core sono progetti, soggetti, pagamenti (CSV + Parquet). Licenza CC BY 4.0. File raw su opencoesione.gov.it. Ultimo aggiornamento contenuti: 2026-02-28.\n",
-    "last_probed": "2026-11-09"
+    "note": "OpenCoesione — portale diretto, pagina /it/opendata/. Migrata dal mirror dati.gov.it il 2026-11-09. Il mirror (561 package, org pcm-opencoesione) non è più monitorato e resta solo come riferimento storico: la nota precedente segnalava l'API REST instabile (403/timeout), non la pagina di download, che è stabile e enumerabile. I file core (progetti, soggetti, pagamenti) sono qui in CSV/Parquet. Licenza CC BY 4.0.",
+    "last_probed": "2026-11-16"
   },
   "health": {
-    "radar_status": "GREEN",
-    "http_code": "200",
+    "radar_status": "YELLOW",
+    "http_code": "403",
     "note": null,
     "ssl_fallback": false
   },
   "inventory": {
     "total_items": 561,
-    "active_items": 561,
-    "stale_items": 0,
-    "method": "package_search",
-    "captured_at": "2026-11-09T11:49:40+00:00",
-    "baseline_value": 561,
-    "baseline_date": "2026-06-03",
+    "active_items": 0,
+    "stale_items": 561,
+    "method": "csv_magnet_area_pages",
+    "captured_at": "2026-11-16T11:45:40+00:00",
+    "baseline_value": 427,
+    "baseline_date": "2026-11-09",
     "freshness_hours": 0.5,
-    "delta": 0,
-    "delta_pct": 0.0,
+    "delta": 134,
+    "delta_pct": 31.4,
     "formats": {
       "CSV": 520,
       "CSV,BIN": 23,
@@ -37,7 +37,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-09T12:17:49Z",
+    "last_run": "2026-11-16T12:13:54Z",
     "total_scored": 248,
     "reachable": 30,
     "csv_count": 238,
@@ -146,7 +146,9 @@
     "label": "UNREACHABLE",
     "score": "unreachable",
     "triggers": [
-      "unreachable"
+      "unreachable",
+      "stale_rows",
+      "inventory_changed"
     ],
     "next_action": "verify used items"
   }
