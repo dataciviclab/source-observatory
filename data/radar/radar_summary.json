@@ -1,20 +1,20 @@
 {
-  "generated_at": "2026-11-16T11:05:38.193478+00:00",
-  "probe_date": "2026-11-16",
+  "generated_at": "2026-11-17T11:50:07.002442+00:00",
+  "probe_date": "2026-11-17",
   "sources_total": 39,
   "status_counts": {
-    "GREEN": 35,
-    "YELLOW": 4,
-    "RED": 0
+    "GREEN": 32,
+    "YELLOW": 6,
+    "RED": 1
   },
   "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "sdmx",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -27,10 +27,10 @@
     },
     {
       "id": "inps",
-      "status": "GREEN",
+      "status": "YELLOW",
       "protocol": "ckan",
-      "http_code": "200",
-      "note": null,
+      "http_code": "-",
+      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
       "ssl_fallback_used": false
     },
     {
@@ -155,9 +155,9 @@
     },
     {
       "id": "mit_opendata",
-      "status": "GREEN",
+      "status": "RED",
       "protocol": "ckan",
-      "http_code": "200",
+      "http_code": "502",
       "note": null,
       "ssl_fallback_used": false
     },

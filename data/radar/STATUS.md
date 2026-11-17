@@ -1,13 +1,13 @@
 # Stato Radar
 
-Ultimo run: 2026-11-16
+Ultimo run: 2026-11-17
 
 ## Sommario
 
 - Fonti controllate: 39
-- GREEN: 35
-- YELLOW: 4
-- RED: 0
+- GREEN: 32
+- YELLOW: 6
+- RED: 1
 
 ## Tipi sorgente
 
@@ -31,9 +31,9 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 | Fonte | Tipo | Protocollo | Modalita' | Stato | HTTP code | Datasets collegati |
 | --- | --- | --- | --- | --- | --- | --- |
-| istat_sdmx | catalog | sdmx | catalog-watch | GREEN | 200 | istat_asia_ul, istat_cittadinanze, istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, istat_prezzi_agricoli, popolazione_istat_comunale_2019_2025 |
+| istat_sdmx | catalog | sdmx | catalog-watch | YELLOW | - | istat_asia_ul, istat_cittadinanze, istat_gini_regionale, istat_housing_crowding, istat_ipab_aree, istat_occupazione_provinciale, istat_pil_territoriale, istat_prezzi_agricoli, popolazione_istat_comunale_2019_2025 |
 | anac | catalog | ckan | catalog-watch | YELLOW | 403 | anac_aggiudicatari, anac_aggiudicazioni, anac_avvio_contratto, anac_bandi_gara, anac_collaudo, anac_cup, anac_fine_contratto, anac_partecipanti, anac_sospensioni, anac_stati_avanzamento, anac_subappalti, anac_varianti |
-| inps | catalog | ckan | catalog-watch | GREEN | 200 | inps_assegno_unico, inps_bilancio_ce, inps_bilancio_gestionale, inps_bilancio_missioni, inps_cig, inps_dipendenti_pubblici, inps_dis_coll, inps_flussi_settore, inps_invalidi_civili, inps_lavoratori_pubblici, inps_lavoratori_redditi, inps_naspi, inps_pensionamento_flussi, inps_pensioni_liquidate, inps_pensioni_serie, inps_pensioni_trimestrale, inps_pensioni_vigenti, inps_rapporti_cessazioni, inps_rapporti_lavoro, inps_rdc_pdc, inps_retribuzioni, pensioni_pa_dag |
+| inps | catalog | ckan | catalog-watch | YELLOW | - | inps_assegno_unico, inps_bilancio_ce, inps_bilancio_gestionale, inps_bilancio_missioni, inps_cig, inps_dipendenti_pubblici, inps_dis_coll, inps_flussi_settore, inps_invalidi_civili, inps_lavoratori_pubblici, inps_lavoratori_redditi, inps_naspi, inps_pensionamento_flussi, inps_pensioni_liquidate, inps_pensioni_serie, inps_pensioni_trimestrale, inps_pensioni_vigenti, inps_rapporti_cessazioni, inps_rapporti_lavoro, inps_rdc_pdc, inps_retribuzioni, pensioni_pa_dag |
 | openbdap | catalog | ckan | catalog-watch | GREEN | 200 | bdap_anagrafe_enti, bdap_dlb_entrate_articolo, bdap_dlb_spese_capitolo, bdap_dlb_spese_serie, bdap_entrate_stato, bdap_lb_spese_missione, bdap_lb_spese_serie, bdap_lea, bdap_ni_amministrazioni, bdap_ni_azioni, bdap_ni_indicatori, bdap_ni_obiettivi, bdap_ni_priorita, bdap_pagamenti_stato, bdap_rnd_entrate_articolo, bdap_rnd_spese_capitolo, bdap_rnd_spese_serie, bdap_saldi_stato, bdap_spesa_statale_regionalizzata, bdap_spese_stato, bdap_ssn_ce_per_ente, bdap_ssn_conto_economico, bdap_ssn_sp_per_ente, bdap_ssn_stato_patrimoniale, dipendenti_pubblici |
 | inail_opendata | catalog | ckan | catalog-watch | GREEN | 200 | inail_malattie_professionali |
 | mim_opendata | catalog | html | catalog-watch | GREEN | 200 | mim_alunni_corso_eta, mim_anagrafica_scuole_statali, mim_docenti_supplenti, mim_docenti_titolari, mim_personale_ata, mim_personale_ata_supplenti, mim_scuola_infanzia |
@@ -49,7 +49,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
 | dait | catalog | html | radar-only | GREEN | 200 | dait_amministratori_locali, dait_amministratori_storico |
 | eligendo | catalog | html | radar-only | GREEN | 200 | elezioni_comunali, elezioni_europee, elezioni_politiche, elezioni_provinciali, elezioni_referendum, elezioni_regionali |
-| mit_opendata | catalog | ckan | catalog-watch | GREEN | 200 | mit_incidentalita_mensile, mit_opere_incompiute_2020 |
+| mit_opendata | catalog | ckan | catalog-watch | RED | 502 | mit_incidentalita_mensile, mit_opere_incompiute_2020 |
 | openga | catalog | ckan | catalog-watch | GREEN | 200 | ga_decreti, ga_ordinanze, ga_pareri, ga_provvedimenti, ga_ricorsi_definiti, ga_ricorsi_pendenti, ga_ricorsi_pervenuti_class, ga_ricorsi_tipo_decisione, ga_sentenze, ga_sentenze_brevi, openga_ricorsi_appalto |
 | giustizia_statistiche | catalog | html | catalog-watch | GREEN | 200 | civile_flussi, durata_civile, durata_penale_classi, durata_penale_medie, giustizia_civile_indicatori, giustizia_penale_indicatori, intercettazioni, mediazione_civile, monitoraggio_mensile_civile, monitoraggio_occ, monitoraggio_pnrr_giustizia, penale_flussi, sorveglianza_esecuzione, sorveglianza_misure, spese_giustizia, ucp_dettaglio, ucp_numero |
 | corte_costituzionale | catalog | html | catalog-watch | GREEN | 200 | atti_promovimento_corte_costituzionale, giudici_corte_costituzionale, massime_corte_costituzionale, pronunce_corte_costituzionale, sentenze_complete |
@@ -73,7 +73,10 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 
 ## Note
 
+- `istat_sdmx`: Timeout (ReadTimeout)
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | Portale CKAN diretto ANAC (dati.anticorruzione.it). WAF: richiede User-Agent browser. 70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari, subappalti, varianti, PNRR indicatori, SOA. CC-BY-SA 4.0.
+- `inps`: Retry timeout/connection: Timeout (ReadTimeout)
 - `mur_ustat`: Retry timeout/connection: Timeout (ConnectTimeout)
 - `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/opendata/ | OpenCoesione — portale diretto, pagina /it/opendata/. Migrata dal mirror dati.gov.it il 2026-11-09. Il mirror (561 package, org pcm-opencoesione) non è più monitorato e resta solo come riferimento storico: la nota precedente segnalava l'API REST instabile (403/timeout), non la pagina di download, che è stabile e enumerabile. I file core (progetti, soggetti, pagamenti) sono qui in CSV/Parquet. Licenza CC BY 4.0.
+- `mit_opendata`: HTTP 502 | content-type: text/html | url finale: https://dati.gov.it/opendata/api/3/action/package_list?limit=1 | Dataset del Ministero Infrastrutture e Trasporti via dati.gov.it (portale MIT dati.mit.gov.it non raggiungibile da 2026-05). 70 dataset: contratti pubblici, incidentalità, trasporti, opere pubbliche. CC-BY-4.0.
 - `gse`: Retry timeout/connection: Timeout (ConnectTimeout)
