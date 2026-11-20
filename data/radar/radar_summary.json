@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-11-19T11:31:58.238890+00:00",
-  "probe_date": "2026-11-19",
+  "generated_at": "2026-11-20T11:28:34.249613+00:00",
+  "probe_date": "2026-11-20",
   "sources_total": 39,
   "status_counts": {
-    "GREEN": 33,
-    "YELLOW": 5,
-    "RED": 1
+    "GREEN": 35,
+    "YELLOW": 4,
+    "RED": 0
   },
   "persistent_red": 0,
   "sources": [
     {
       "id": "istat_sdmx",
-      "status": "RED",
+      "status": "GREEN",
       "protocol": "sdmx",
-      "http_code": "500",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
@@ -131,10 +131,10 @@
     },
     {
       "id": "aifa",
-      "status": "YELLOW",
+      "status": "GREEN",
       "protocol": "html",
-      "http_code": "-",
-      "note": "Retry timeout/connection: Timeout (ReadTimeout)",
+      "http_code": "200",
+      "note": null,
       "ssl_fallback_used": false
     },
     {
