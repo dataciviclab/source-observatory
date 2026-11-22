@@ -1,12 +1,12 @@
 # Stato Radar
 
-Ultimo run: 2026-11-21
+Ultimo run: 2026-11-22
 
 ## Sommario
 
 - Fonti controllate: 39
-- GREEN: 34
-- YELLOW: 5
+- GREEN: 35
+- YELLOW: 4
 - RED: 0
 
 ## Tipi sorgente
@@ -46,7 +46,7 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 | opencoesione | catalog | html | catalog-watch | YELLOW | 403 | opencoesione_fasi, opencoesione_impegni, opencoesione_indicatori, opencoesione_localizzazioni, opencoesione_pagamenti, opencoesione_progetti, opencoesione_progetti_esteso, opencoesione_soggetti |
 | mef_finanze | catalog | html | catalog-watch | GREEN | 200 | abpf_titolari_piva_regione, acsp_imprese_regione, acsp_professionisti_regione, acsp_tutte_classi_reddito, acsp_tutte_classi_volume, acsp_tutte_regione, irap_imposta_pa_regione, irap_imposta_regione, irap_imposta_settore, irap_italia_estero, irap_vp_regime, ires_redditi_regione, irpef_calcolo_tipologia, irpef_comunale, irpef_imposta_tipologia, iva_regionale, iva_sez_attivita, mef_irpef_regionale |
 | opencivitas | catalog | html | catalog-watch | GREEN | 200 | opencivitas_determinanti, opencivitas_fprcm, opencivitas_fprcm_enti, opencivitas_fsc_enti_rso, opencivitas_fsc_rso, opencivitas_glossario, opencivitas_indicatori |
-| aifa | catalog | html | catalog-watch | YELLOW | - | aifa_spesa_consumo |
+| aifa | catalog | html | catalog-watch | GREEN | 200 | aifa_spesa_consumo |
 | dait | catalog | html | radar-only | GREEN | 200 | dait_amministratori_locali, dait_amministratori_storico |
 | eligendo | catalog | html | radar-only | GREEN | 200 | elezioni_comunali, elezioni_europee, elezioni_politiche, elezioni_provinciali, elezioni_referendum, elezioni_regionali |
 | mit_opendata | catalog | ckan | catalog-watch | GREEN | 200 | mit_incidentalita_mensile, mit_opere_incompiute_2020 |
@@ -76,5 +76,4 @@ Nota: lo stato radar descrive la salute della fonte, non il valore o l'aggiornam
 - `anac`: HTTP 403 | content-type: text/html; charset=UTF-8 | url finale: https://dati.anticorruzione.it/opendata/api/3/action/package_list?limit=1 | Portale CKAN diretto ANAC (dati.anticorruzione.it). WAF: richiede User-Agent browser. 70 dataset: CIG (2007-2023), SMARTCIG, OCDS, stazioni appaltanti, aggiudicatari, subappalti, varianti, PNRR indicatori, SOA. CC-BY-SA 4.0.
 - `mur_ustat`: Retry timeout/connection: Timeout (ConnectTimeout)
 - `opencoesione`: HTTP 403 | content-type: text/html; charset=utf-8 | url finale: https://opencoesione.gov.it/it/opendata/ | OpenCoesione — portale diretto, pagina /it/opendata/. Migrata dal mirror dati.gov.it il 2026-11-09. Il mirror (561 package, org pcm-opencoesione) non è più monitorato e resta solo come riferimento storico: la nota precedente segnalava l'API REST instabile (403/timeout), non la pagina di download, che è stabile e enumerabile. I file core (progetti, soggetti, pagamenti) sono qui in CSV/Parquet. Licenza CC BY 4.0.
-- `aifa`: Retry timeout/connection: Timeout (ReadTimeout)
 - `gse`: Retry timeout/connection: Timeout (ConnectTimeout)
