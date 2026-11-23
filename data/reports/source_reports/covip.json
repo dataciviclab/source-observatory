@@ -1,6 +1,6 @@
 {
   "source_id": "covip",
-  "generated_at": "2026-11-16T12:13:54+00:00",
+  "generated_at": "2026-11-23T13:43:09+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "go",
     "note": "COVIP — Commissione di vigilanza sui fondi pensione. Albi fondi aperti e negoziali, PIP, rendimenti, schede costi, tavole della relazione annuale. Formato macchina pulito (CSV+JSON+XLSX). Fonte primaria per la previdenza complementare; il WAF richiede User-Agent browser. Source-check 2026-11-09: 18 dataset tutti raggiungibili (~1 MB), CSV e JSON con lo stesso numero di righe; gli albi sono anagrafiche, gli ISC 2/5/10/35 anni stanno nei tre indicatori-sintetici-costi (XLSX, header pulito): fondi aperti 169 righe, negoziali 111, PIP 207; le schede-costi CSV linkano PDF sui siti dei singoli fondi.",
-    "last_probed": "2026-11-16"
+    "last_probed": "2026-11-23"
   },
   "health": {
     "radar_status": "GREEN",
@@ -24,7 +24,7 @@
     "active_items": 18,
     "stale_items": 0,
     "method": "csv_magnet_area_pages",
-    "captured_at": "2026-11-16T11:45:40+00:00",
+    "captured_at": "2026-11-23T13:14:00+00:00",
     "baseline_value": 39,
     "baseline_date": "2026-11-09",
     "freshness_hours": 0.5,
@@ -36,7 +36,7 @@
     }
   },
   "source_check": {
-    "last_run": "2026-11-16T12:13:54Z",
+    "last_run": "2026-11-23T13:43:09Z",
     "total_scored": 1,
     "reachable": 0,
     "csv_count": 0,

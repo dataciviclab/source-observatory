@@ -1,6 +1,6 @@
 {
   "source_id": "gse",
-  "generated_at": "2026-11-16T12:13:54+00:00",
+  "generated_at": "2026-11-23T13:43:09+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "radar-only",
     "verdict": "watchlist",
     "note": "GSE — Gestore dei Servizi Energetici. Open data su incentivi FER, Conto Energia, certificati verdi/bianchi, GRIN. Portale SharePoint (opendata.gse.it) con catena TLS non valida e redirect a http: il probe usa fallback SSL. Nessuna API/bulk stabile; assente da dati.gov.it.",
-    "last_probed": "2026-11-16"
+    "last_probed": "2026-11-23"
   },
   "health": {
     "radar_status": "YELLOW",
@@ -24,7 +24,7 @@
     "active_items": 0,
     "stale_items": 0,
     "method": null,
-    "captured_at": "2026-11-16T11:45:40+00:00",
+    "captured_at": "2026-11-23T13:14:00+00:00",
     "baseline_value": null,
     "baseline_date": null,
     "delta": null,

@@ -1,6 +1,6 @@
 {
   "source_id": "agcm",
-  "generated_at": "2026-11-16T12:13:54+00:00",
+  "generated_at": "2026-11-23T13:43:09+00:00",
   "report_version": 1,
   "timing": {},
   "identity": {
@@ -11,7 +11,7 @@
     "observation_mode": "catalog-watch",
     "verdict": "watchlist",
     "note": "Fonte diretta AGCM (dati.agcm.it, CKAN). Concorrenza e mercato: rating di legalità, operazioni di concentrazione, delibere. WAF: richiede User-Agent browser. Migrata dal mirror dati.gov.it il 2026-11-09 perché l'origine espone 73 package in più. verdict watchlist: inventario attivo (catalog-watch) ma nessun dataset ancora in uso.",
-    "last_probed": "2026-11-16"
+    "last_probed": "2026-11-23"
   },
   "health": {
     "radar_status": "GREEN",
@@ -20,24 +20,24 @@
     "ssl_fallback": false
   },
   "inventory": {
-    "total_items": 1047,
-    "active_items": 1047,
+    "total_items": 1141,
+    "active_items": 1141,
     "stale_items": 0,
     "method": "package_search",
-    "captured_at": "2026-11-16T11:45:40+00:00",
+    "captured_at": "2026-11-23T13:14:00+00:00",
     "baseline_value": 756,
     "baseline_date": "2026-11-09",
     "freshness_hours": 0.5,
-    "delta": 291,
-    "delta_pct": 38.5,
+    "delta": 385,
+    "delta_pct": 50.9,
     "formats": {
-      "XML,ZIP,PDF": 988,
+      "XML,ZIP,PDF": 1082,
       "CSV,JSON": 59
     }
   },
   "source_check": {
-    "last_run": "2026-11-16T12:13:54Z",
-    "total_scored": 992,
+    "last_run": "2026-11-23T13:43:09Z",
+    "total_scored": 1086,
     "reachable": 5,
     "csv_count": 5,
     "with_csv_schema": 4,
@@ -81,14 +81,14 @@
         "reachable": true
       },
       {
-        "name": "agcm/c10934b-monradioimpianto-di-radiodiffusione-di-mediatelecom",
+        "name": "agcm/c1030-henkel-chimicaboston",
         "score": 1.0,
         "year_range": null,
         "format": "xml,zip,pdf",
         "reachable": false
       }
     ],
-    "not_checked_non_csv": 987,
+    "not_checked_non_csv": 1081,
     "blocked_items": 0,
     "validation_skipped": 0,
     "catalog_only": false,
@@ -99,7 +99,7 @@
       "score": 10.0,
       "perc_aperto": 100.0,
       "perc_reachable": 0.5,
-      "total": 992,
+      "total": 1086,
       "fonte": "source_check"
     }
   },
