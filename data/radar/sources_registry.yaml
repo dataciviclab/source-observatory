@@ -113,7 +113,6 @@ inps:
     - inps_rapporti_lavoro
     - inps_rdc_pdc
     - inps_retribuzioni
-    - pensioni_pa_dag
 openbdap:
   source_kind: catalog
   protocol: ckan
@@ -505,6 +504,22 @@ opencoesione:
     - opencoesione_progetti
     - opencoesione_progetti_esteso
     - opencoesione_soggetti
+mef_dag:
+  source_kind: catalog
+  protocol: html
+  observation_mode: radar-only
+  base_url: https://datipensioni.mef.gov.it/datipensioni/download
+  last_probed: '2026-11-26'
+  verdict: go
+  note: >-
+    Portale MEF DAG — open data pensioni (Tipo Pensione) e oneri per
+    amministrazione. Il download dei file e' via POST form-encoded, non
+    catalogabile dal radar: il probe controlla la pagina di download.
+    Licenza CC BY 4.0 (link nella pagina).
+  datasets_in_use:
+    - oneri_pensioni_pa
+    - pensioni_pa_dag
+
 mef_finanze:
   source_kind: catalog
   protocol: html
