@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-11-26T12:20:17.380594+00:00",
-  "probe_date": "2026-11-26",
-  "sources_total": 39,
+  "generated_at": "2026-11-27T12:07:54.722103+00:00",
+  "probe_date": "2026-11-27",
+  "sources_total": 40,
   "status_counts": {
-    "GREEN": 34,
+    "GREEN": 35,
     "YELLOW": 5,
     "RED": 0
   },
@@ -110,6 +110,14 @@
       "status": "YELLOW",
       "protocol": "html",
       "http_code": "403",
+      "note": null,
+      "ssl_fallback_used": false
+    },
+    {
+      "id": "mef_dag",
+      "status": "GREEN",
+      "protocol": "html",
+      "http_code": "200",
       "note": null,
       "ssl_fallback_used": false
     },
